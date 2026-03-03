@@ -72,18 +72,22 @@ export default function GroupSetup() {
   };
 
   const handleInvite = async () => {
-    setInviteSent(true);
     const sessionId = await getOrCreateSessionId();
     const appUrl = window.location.origin;
 
     if (isLiffAvailable()) {
-      await sendGroupInvite(sessionId);
+      const shared = await sendGroupInvite(sessionId);
+      if (shared) {
+        setInviteSent(true);
+        setTimeout(() => navigate(`/group/waiting?session=${sessionId}`), 800);
+      }
     } else {
       const message = `Join my Toast session! Let's decide what to eat together.\n\n${appUrl}/group/waiting?session=${sessionId}`;
-      window.open(`https://line.me/R/share?text=${encodeURIComponent(message)}`, "_blank");
+      const lineShareUrl = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
+      window.location.href = lineShareUrl;
+      setInviteSent(true);
+      setTimeout(() => navigate(`/group/waiting?session=${sessionId}`), 2000);
     }
-
-    setTimeout(() => navigate(`/group/waiting?session=${sessionId}`), 1500);
   };
 
   return (
