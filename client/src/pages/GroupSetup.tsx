@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { ChevronRight, ArrowLeft, Share2 } from "lucide-react";
 import { sendGroupInvite, isLiffAvailable } from "@/lib/liff";
+import { useLineProfile } from "@/lib/useLineProfile";
 
 const LOCATIONS_GROUP = [
   { emoji: "🍢", label: "Street food" },
@@ -37,6 +38,7 @@ const staggerIn = (delay: number) => ({
 
 export default function GroupSetup() {
   const [, navigate] = useLocation();
+  const { profile } = useLineProfile();
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<string>("");
   const [selectedDiet, setSelectedDiet] = useState<string[]>([]);
@@ -179,8 +181,22 @@ export default function GroupSetup() {
 
       <div className="flex-shrink-0 bg-white border-t border-gray-100/60 px-6 py-4 pb-5 safe-bottom">
         <button
-          onClick={() => {
+          onClick={async () => {
             const sessionId = Math.random().toString(36).substring(2, 10);
+            if (profile) {
+              try {
+                await fetch("/api/group/sessions", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    sessionCode: sessionId,
+                    hostLineUserId: profile.userId,
+                    hostDisplayName: profile.displayName,
+                    hostPictureUrl: profile.pictureUrl || "",
+                  }),
+                });
+              } catch {}
+            }
             navigate(`/group/waiting?session=${sessionId}`);
           }}
           data-testid="button-start-session"

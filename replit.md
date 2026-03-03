@@ -33,8 +33,9 @@ The design adheres to an Airbnb-inspired system with a #FFCC02 golden yellow bra
 - **Save Bucket System:** Users can save restaurants into "mine" or "partner" buckets, displayed through a custom picker and profile sections.
 
 **Technical Implementations:**
-- **LINE Integration:** Deep integration using the @line/liff SDK for login, profile access, and share target picking, with fallbacks to LINE URL schemes.
-- **Data Model:** Structured PostgreSQL tables for `restaurants`, `user_preferences`, `user_profiles`, `campaigns`, `analytics_events`, `ad_banners`, and `admin_users`.
+- **LINE LIFF Integration:** Deep integration using the @line/liff SDK (LIFF ID: `2009293021-mFgkOhqd`, Channel ID: `2009293021`). Initializes on app load, provides user authentication, profile retrieval (userId, displayName, pictureUrl), and LINE shareTargetPicker for group invites. Guest fallback generates local profile for non-LINE users. LIFF URL: `https://liff.line.me/2009293021-mFgkOhqd`. The `VITE_LIFF_ID` env var controls LIFF initialization.
+- **Real-time Group Sessions:** Backend-powered group sessions with PostgreSQL tables (`group_sessions`, `group_session_members`, `group_swipes`). Session flow: create session with code → invite friends via LINE share → friends join via `/group/waiting?session=CODE` → waiting room polls `/api/group/sessions/:code` every 3s for real member list → start swiping → each swipe recorded to API → matches computed server-side when all members swipe right on same item.
+- **Data Model:** Structured PostgreSQL tables for `restaurants`, `user_preferences`, `user_profiles`, `campaigns`, `analytics_events`, `ad_banners`, `admin_users`, `group_sessions`, `group_session_members`, `group_swipes`.
 - **Session Management:** Utilizes `sessionStorage` with `useSyncExternalStore` for persistent, global session tracking across multiple concurrent sessions.
 - **Search Functionality:** Matches restaurant names, categories, and menu keywords with priority.
 - **Performance Optimizations:** Lazy loading for images and map iframes, and preloading of critical assets like the Toast logo.

@@ -112,3 +112,41 @@ export const adminUsers = pgTable("admin_users", {
 export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({ id: true });
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
+
+export const groupSessions = pgTable("group_sessions", {
+  id: serial("id").primaryKey(),
+  sessionCode: text("session_code").notNull().unique(),
+  hostLineUserId: text("host_line_user_id").notNull(),
+  status: text("status").default("waiting"),
+  createdAt: text("created_at").notNull(),
+});
+
+export const insertGroupSessionSchema = createInsertSchema(groupSessions).omit({ id: true });
+export type GroupSession = typeof groupSessions.$inferSelect;
+export type InsertGroupSession = z.infer<typeof insertGroupSessionSchema>;
+
+export const groupSessionMembers = pgTable("group_session_members", {
+  id: serial("id").primaryKey(),
+  sessionCode: text("session_code").notNull(),
+  lineUserId: text("line_user_id").notNull(),
+  displayName: text("display_name").notNull(),
+  pictureUrl: text("picture_url"),
+  joinedAt: text("joined_at").notNull(),
+});
+
+export const insertGroupSessionMemberSchema = createInsertSchema(groupSessionMembers).omit({ id: true });
+export type GroupSessionMember = typeof groupSessionMembers.$inferSelect;
+export type InsertGroupSessionMember = z.infer<typeof insertGroupSessionMemberSchema>;
+
+export const groupSwipes = pgTable("group_swipes", {
+  id: serial("id").primaryKey(),
+  sessionCode: text("session_code").notNull(),
+  lineUserId: text("line_user_id").notNull(),
+  menuItemId: integer("menu_item_id").notNull(),
+  direction: text("direction").notNull(),
+  swipedAt: text("swiped_at").notNull(),
+});
+
+export const insertGroupSwipeSchema = createInsertSchema(groupSwipes).omit({ id: true });
+export type GroupSwipe = typeof groupSwipes.$inferSelect;
+export type InsertGroupSwipe = z.infer<typeof insertGroupSwipeSchema>;

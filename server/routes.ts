@@ -820,5 +820,179 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/group/sessions", async (req, res) => {
+    try {
+      const schema = z.object({
+        sessionCode: z.string().min(1),
+        hostLineUserId: z.string().min(1),
+        hostDisplayName: z.string().min(1),
+        hostPictureUrl: z.string().optional(),
+      });
+      const input = schema.parse(req.body);
+
+      const existing = await storage.getGroupSession(input.sessionCode);
+      if (existing) {
+        return res.status(409).json({ message: "Session already exists" });
+      }
+
+      const session = await storage.createGroupSession({
+        sessionCode: input.sessionCode,
+        hostLineUserId: input.hostLineUserId,
+        status: "waiting",
+        createdAt: new Date().toISOString(),
+      });
+
+      await storage.addGroupMember({
+        sessionCode: input.sessionCode,
+        lineUserId: input.hostLineUserId,
+        displayName: input.hostDisplayName,
+        pictureUrl: input.hostPictureUrl || null,
+        joinedAt: new Date().toISOString(),
+      });
+
+      res.status(201).json(session);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/group/sessions/:code/join", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const schema = z.object({
+        lineUserId: z.string().min(1),
+        displayName: z.string().min(1),
+        pictureUrl: z.string().optional(),
+      });
+      const input = schema.parse(req.body);
+
+      const session = await storage.getGroupSession(code);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      const alreadyMember = await storage.isGroupMember(code, input.lineUserId);
+      if (alreadyMember) {
+        const members = await storage.getGroupMembers(code);
+        return res.json({ session, members });
+      }
+
+      const member = await storage.addGroupMember({
+        sessionCode: code,
+        lineUserId: input.lineUserId,
+        displayName: input.displayName,
+        pictureUrl: input.pictureUrl || null,
+        joinedAt: new Date().toISOString(),
+      });
+
+      const members = await storage.getGroupMembers(code);
+      res.status(201).json({ session, members, newMember: member });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/group/sessions/:code", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const session = await storage.getGroupSession(code);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+      const members = await storage.getGroupMembers(code);
+      res.json({ session, members });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/group/sessions/:code/status", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const schema = z.object({
+        status: z.enum(["waiting", "swiping", "completed"]),
+        lineUserId: z.string().min(1),
+      });
+      const input = schema.parse(req.body);
+
+      const session = await storage.getGroupSession(code);
+      if (!session) return res.status(404).json({ message: "Session not found" });
+      if (session.hostLineUserId !== input.lineUserId) {
+        return res.status(403).json({ message: "Only the host can change session status" });
+      }
+
+      await storage.updateGroupSessionStatus(code, input.status);
+      res.json({ success: true });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/group/sessions/:code/swipe", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const schema = z.object({
+        lineUserId: z.string().min(1),
+        menuItemId: z.number(),
+        direction: z.enum(["left", "right", "super"]),
+      });
+      const input = schema.parse(req.body);
+
+      const isMember = await storage.isGroupMember(code, input.lineUserId);
+      if (!isMember) {
+        return res.status(403).json({ message: "Not a member of this session" });
+      }
+
+      const swipe = await storage.recordGroupSwipe({
+        sessionCode: code,
+        lineUserId: input.lineUserId,
+        menuItemId: input.menuItemId,
+        direction: input.direction,
+        swipedAt: new Date().toISOString(),
+      });
+
+      const matches = await storage.getGroupMatches(code);
+      const members = await storage.getGroupMembers(code);
+
+      res.json({ swipe, matches, memberCount: members.length });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/group/sessions/:code/matches", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const matches = await storage.getGroupMatches(code);
+      const members = await storage.getGroupMembers(code);
+      res.json({ matches, members });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/group/sessions/:code/swipes", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const swipes = await storage.getGroupSwipes(code);
+      const members = await storage.getGroupMembers(code);
+      res.json({ swipes, members });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   return httpServer;
 }

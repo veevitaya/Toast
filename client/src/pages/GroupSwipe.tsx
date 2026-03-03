@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { addSession, updateSession } from "@/lib/sessionStore";
 import { BottomNav } from "@/components/BottomNav";
 import { trackEvent } from "@/lib/analytics";
+import { useLineProfile } from "@/lib/useLineProfile";
 
 interface MenuItem {
   id: number;
@@ -15,34 +16,36 @@ interface MenuItem {
   rating: string;
   address: string;
   imageUrl: string;
-  matchChance: number;
   isNew?: boolean;
 }
 
-const MENU_ITEMS: MenuItem[] = [
-  { id: 101, name: "Pad Thai", category: "Thai  •  Street food", tags: ["Noodles", "Spicy", "Shrimp", "Budget"], description: "Wok-fried rice noodles with tamarind sauce, crushed peanuts, and fresh lime", priceLevel: 1, rating: "4.8", address: "All over Bangkok", imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600&auto=format&fit=crop&q=60", matchChance: 0, isNew: true },
-  { id: 102, name: "Korean BBQ", category: "Korean  •  BBQ", tags: ["Grilled", "Meat", "Group", "Popular"], description: "Sizzling grilled meats at the table with banchan sides and ssamjang sauce", priceLevel: 3, rating: "4.4", address: "Sukhumvit, Siam", imageUrl: "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=600&auto=format&fit=crop&q=60", matchChance: 0.7 },
-  { id: 103, name: "Tonkotsu Ramen", category: "Japanese  •  Noodles", tags: ["Noodles", "Pork", "Rich broth", "Quick"], description: "Rich 18-hour pork bone broth with thin noodles, chashu, and seasoned egg", priceLevel: 2, rating: "4.6", address: "Thonglor, Silom", imageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&auto=format&fit=crop&q=60", matchChance: 0 },
-  { id: 104, name: "Margherita Pizza", category: "Italian  •  Pizza", tags: ["Cheesy", "Tomato", "Basil", "Classic"], description: "Wood-fired with San Marzano tomatoes, fresh mozzarella, and basil", priceLevel: 2, rating: "4.6", address: "Ekkamai, Sukhumvit", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=60", matchChance: 0.5 },
-  { id: 105, name: "Smash Burger", category: "American  •  Burgers", tags: ["Burger", "Cheesy", "Fries", "Trending"], description: "Double smash patties with aged cheddar, caramelized onions, and secret sauce", priceLevel: 2, rating: "4.2", address: "Ekkamai, Sukhumvit", imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=60", matchChance: 0, isNew: true },
-  { id: 106, name: "Green Curry", category: "Thai  •  Curry", tags: ["Spicy", "Coconut", "Rice", "Herbal"], description: "Aromatic coconut milk curry with Thai basil, eggplant, and chicken", priceLevel: 1, rating: "4.5", address: "Old Town, Samsen", imageUrl: "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=600&auto=format&fit=crop&q=60", matchChance: 1.0 },
-  { id: 107, name: "Sushi Omakase", category: "Japanese  •  Sushi", tags: ["Fresh", "Raw", "Premium", "Authentic"], description: "Chef's choice premium course — seasonal fish flown from Tsukiji market", priceLevel: 4, rating: "4.7", address: "Thonglor, Gaysorn", imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&auto=format&fit=crop&q=60", matchChance: 0 },
-  { id: 108, name: "Som Tum", category: "Thai  •  Salad", tags: ["Healthy", "Spicy", "Peanuts", "Cheap"], description: "Crunchy green papaya salad with dried shrimp and roasted peanuts", priceLevel: 1, rating: "4.3", address: "All over Bangkok", imageUrl: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&auto=format&fit=crop&q=60", matchChance: 0.3 },
-  { id: 109, name: "Dim Sum", category: "Chinese  •  Dumplings", tags: ["Dumpling", "Tea time", "Brunch", "Family"], description: "Steamed dumplings, siu mai, and har gow served with jasmine tea", priceLevel: 2, rating: "4.5", address: "Chinatown, CentralWorld", imageUrl: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600&auto=format&fit=crop&q=60", matchChance: 0 },
-  { id: 110, name: "Tacos al Pastor", category: "Mexican  •  Tacos", tags: ["Taco", "Spicy", "Fresh", "Fun"], description: "Spit-roasted pork with pineapple, cilantro, and house-made salsa", priceLevel: 2, rating: "4.1", address: "Sukhumvit 11", imageUrl: "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=600&auto=format&fit=crop&q=60", matchChance: 0 },
-  { id: 111, name: "Khao Soi", category: "Thai  •  Northern", tags: ["Curry", "Noodles", "Rich", "Northern"], description: "Rich coconut curry noodles topped with crispy egg noodles", priceLevel: 1, rating: "4.7", address: "Ekkamai, Ari", imageUrl: "https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=600&auto=format&fit=crop&q=60", matchChance: 0.8 },
-  { id: 112, name: "Pasta Carbonara", category: "Italian  •  Pasta", tags: ["Pasta", "Bacon", "Creamy", "Classic"], description: "Classic Roman recipe with guanciale, pecorino, and egg yolk", priceLevel: 3, rating: "4.4", address: "Sathorn, Sukhumvit", imageUrl: "https://images.unsplash.com/photo-1612874742237-6526221588e3?w=600&auto=format&fit=crop&q=60", matchChance: 0 },
-  { id: 113, name: "Eggs Benedict", category: "Brunch  •  Western", tags: ["Eggs", "Bacon", "Brunch", "Coffee"], description: "Poached eggs with hollandaise on toasted brioche — the perfect weekend brunch", priceLevel: 2, rating: "4.7", address: "Thonglor, Phrom Phong", imageUrl: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=600&auto=format&fit=crop&q=60", matchChance: 0.6, isNew: true },
-  { id: 114, name: "Souffle Pancakes", category: "Japanese  •  Cafe", tags: ["Fluffy", "Sweet", "Insta", "Japanese"], description: "Jiggly souffle pancakes from Osaka with fresh cream and berries", priceLevel: 2, rating: "4.6", address: "Siam Paragon", imageUrl: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=600&auto=format&fit=crop&q=60", matchChance: 0 },
-  { id: 115, name: "Smoothie Bowl", category: "Healthy  •  Vegan", tags: ["Berry", "Bowl", "Healthy", "Pretty"], description: "Vibrant acai or pitaya base topped with granola, fresh fruit, and chia seeds", priceLevel: 2, rating: "4.5", address: "Sukhumvit, Thonglor", imageUrl: "https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=600&auto=format&fit=crop&q=60", matchChance: 0.4 },
-  { id: 116, name: "Bubble Tea", category: "Taiwanese  •  Drinks", tags: ["Boba", "Drink", "Chewy", "Sweet"], description: "Chewy tapioca pearls in creamy milk tea — customize your sweetness", priceLevel: 1, rating: "4.5", address: "Siam, CentralWorld", imageUrl: "https://images.unsplash.com/photo-1541696490-8744a5dc0228?w=600&auto=format&fit=crop&q=60", matchChance: 0.9 },
-  { id: 117, name: "Croissant & Coffee", category: "French  •  Bakery", tags: ["Pastry", "Buttery", "Coffee", "French"], description: "Flaky, buttery croissant with perfectly pulled espresso", priceLevel: 2, rating: "4.7", address: "Sukhumvit, Ekkamai", imageUrl: "https://images.unsplash.com/photo-1530610476181-d83430b64dcd?w=600&auto=format&fit=crop&q=60", matchChance: 0 },
-];
+interface SessionMember {
+  id: number;
+  sessionCode: string;
+  lineUserId: string;
+  displayName: string;
+  pictureUrl: string | null;
+  joinedAt: string;
+}
 
-const MEMBERS = [
-  { name: "You", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face" },
-  { name: "Nook", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" },
-  { name: "Beam", avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&crop=face" },
+const MENU_ITEMS: MenuItem[] = [
+  { id: 101, name: "Pad Thai", category: "Thai  •  Street food", tags: ["Noodles", "Spicy", "Shrimp", "Budget"], description: "Wok-fried rice noodles with tamarind sauce, crushed peanuts, and fresh lime", priceLevel: 1, rating: "4.8", address: "All over Bangkok", imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600&auto=format&fit=crop&q=60", isNew: true },
+  { id: 102, name: "Korean BBQ", category: "Korean  •  BBQ", tags: ["Grilled", "Meat", "Group", "Popular"], description: "Sizzling grilled meats at the table with banchan sides and ssamjang sauce", priceLevel: 3, rating: "4.4", address: "Sukhumvit, Siam", imageUrl: "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=600&auto=format&fit=crop&q=60" },
+  { id: 103, name: "Tonkotsu Ramen", category: "Japanese  •  Noodles", tags: ["Noodles", "Pork", "Rich broth", "Quick"], description: "Rich 18-hour pork bone broth with thin noodles, chashu, and seasoned egg", priceLevel: 2, rating: "4.6", address: "Thonglor, Silom", imageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&auto=format&fit=crop&q=60" },
+  { id: 104, name: "Margherita Pizza", category: "Italian  •  Pizza", tags: ["Cheesy", "Tomato", "Basil", "Classic"], description: "Wood-fired with San Marzano tomatoes, fresh mozzarella, and basil", priceLevel: 2, rating: "4.6", address: "Ekkamai, Sukhumvit", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=60" },
+  { id: 105, name: "Smash Burger", category: "American  •  Burgers", tags: ["Burger", "Cheesy", "Fries", "Trending"], description: "Double smash patties with aged cheddar, caramelized onions, and secret sauce", priceLevel: 2, rating: "4.2", address: "Ekkamai, Sukhumvit", imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=60", isNew: true },
+  { id: 106, name: "Green Curry", category: "Thai  •  Curry", tags: ["Spicy", "Coconut", "Rice", "Herbal"], description: "Aromatic coconut milk curry with Thai basil, eggplant, and chicken", priceLevel: 1, rating: "4.5", address: "Old Town, Samsen", imageUrl: "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=600&auto=format&fit=crop&q=60" },
+  { id: 107, name: "Sushi Omakase", category: "Japanese  •  Sushi", tags: ["Fresh", "Raw", "Premium", "Authentic"], description: "Chef's choice premium course — seasonal fish flown from Tsukiji market", priceLevel: 4, rating: "4.7", address: "Thonglor, Gaysorn", imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&auto=format&fit=crop&q=60" },
+  { id: 108, name: "Som Tum", category: "Thai  •  Salad", tags: ["Healthy", "Spicy", "Peanuts", "Cheap"], description: "Crunchy green papaya salad with dried shrimp and roasted peanuts", priceLevel: 1, rating: "4.3", address: "All over Bangkok", imageUrl: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&auto=format&fit=crop&q=60" },
+  { id: 109, name: "Dim Sum", category: "Chinese  •  Dumplings", tags: ["Dumpling", "Tea time", "Brunch", "Family"], description: "Steamed dumplings, siu mai, and har gow served with jasmine tea", priceLevel: 2, rating: "4.5", address: "Chinatown, CentralWorld", imageUrl: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600&auto=format&fit=crop&q=60" },
+  { id: 110, name: "Tacos al Pastor", category: "Mexican  •  Tacos", tags: ["Taco", "Spicy", "Fresh", "Fun"], description: "Spit-roasted pork with pineapple, cilantro, and house-made salsa", priceLevel: 2, rating: "4.1", address: "Sukhumvit 11", imageUrl: "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=600&auto=format&fit=crop&q=60" },
+  { id: 111, name: "Khao Soi", category: "Thai  •  Northern", tags: ["Curry", "Noodles", "Rich", "Northern"], description: "Rich coconut curry noodles topped with crispy egg noodles", priceLevel: 1, rating: "4.7", address: "Ekkamai, Ari", imageUrl: "https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=600&auto=format&fit=crop&q=60" },
+  { id: 112, name: "Pasta Carbonara", category: "Italian  •  Pasta", tags: ["Pasta", "Bacon", "Creamy", "Classic"], description: "Classic Roman recipe with guanciale, pecorino, and egg yolk", priceLevel: 3, rating: "4.4", address: "Sathorn, Sukhumvit", imageUrl: "https://images.unsplash.com/photo-1612874742237-6526221588e3?w=600&auto=format&fit=crop&q=60" },
+  { id: 113, name: "Eggs Benedict", category: "Brunch  •  Western", tags: ["Eggs", "Bacon", "Brunch", "Coffee"], description: "Poached eggs with hollandaise on toasted brioche — the perfect weekend brunch", priceLevel: 2, rating: "4.7", address: "Thonglor, Phrom Phong", imageUrl: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=600&auto=format&fit=crop&q=60", isNew: true },
+  { id: 114, name: "Souffle Pancakes", category: "Japanese  •  Cafe", tags: ["Fluffy", "Sweet", "Insta", "Japanese"], description: "Jiggly souffle pancakes from Osaka with fresh cream and berries", priceLevel: 2, rating: "4.6", address: "Siam Paragon", imageUrl: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=600&auto=format&fit=crop&q=60" },
+  { id: 115, name: "Smoothie Bowl", category: "Healthy  •  Vegan", tags: ["Berry", "Bowl", "Healthy", "Pretty"], description: "Vibrant acai or pitaya base topped with granola, fresh fruit, and chia seeds", priceLevel: 2, rating: "4.5", address: "Sukhumvit, Thonglor", imageUrl: "https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=600&auto=format&fit=crop&q=60" },
+  { id: 116, name: "Bubble Tea", category: "Taiwanese  •  Drinks", tags: ["Boba", "Drink", "Chewy", "Sweet"], description: "Chewy tapioca pearls in creamy milk tea — customize your sweetness", priceLevel: 1, rating: "4.5", address: "Siam, CentralWorld", imageUrl: "https://images.unsplash.com/photo-1541696490-8744a5dc0228?w=600&auto=format&fit=crop&q=60" },
+  { id: 117, name: "Croissant & Coffee", category: "French  •  Bakery", tags: ["Pastry", "Buttery", "Coffee", "French"], description: "Flaky, buttery croissant with perfectly pulled espresso", priceLevel: 2, rating: "4.7", address: "Sukhumvit, Ekkamai", imageUrl: "https://images.unsplash.com/photo-1530610476181-d83430b64dcd?w=600&auto=format&fit=crop&q=60" },
 ];
 
 function ConfettiExplosion() {
@@ -114,7 +117,7 @@ function useSwipeHintGroup(active: boolean, showHint: boolean) {
   return scope;
 }
 
-function SwipeCardGroup({ item, active, behind, onSwipe, onTap, showHint = false }: { item: MenuItem; active: boolean; behind: boolean; onSwipe: (id: number, dir: "left" | "right" | "super") => void; onTap: () => void; showHint?: boolean }) {
+function SwipeCardGroup({ item, active, behind, onSwipe, onTap, showHint = false, members }: { item: MenuItem; active: boolean; behind: boolean; onSwipe: (id: number, dir: "left" | "right" | "super") => void; onTap: () => void; showHint?: boolean; members: SessionMember[] }) {
   const hintRef = useSwipeHintGroup(active, showHint);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -233,16 +236,6 @@ function SwipeCardGroup({ item, active, behind, onSwipe, onTap, showHint = false
             </div>
           )}
         </div>
-
-        <div className="absolute top-5 right-5">
-          {item.matchChance >= 0.7 && (
-            <div className="bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-[hsl(160,60%,45%)] flex items-center gap-1"
-              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
-            >
-              {Math.round(item.matchChance * 100)}% match
-            </div>
-          )}
-        </div>
       </div>
 
       <div className="p-5 pt-3 flex flex-col h-[42%]">
@@ -257,11 +250,17 @@ function SwipeCardGroup({ item, active, behind, onSwipe, onTap, showHint = false
         <div className="mt-auto pt-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex -space-x-1.5">
-              {MEMBERS.map((m) => (
-                <img key={m.name} src={m.avatar} alt={m.name} className="w-5 h-5 rounded-full border-[1.5px] border-white object-cover" />
+              {members.map((m) => (
+                m.pictureUrl ? (
+                  <img key={m.lineUserId} src={m.pictureUrl} alt={m.displayName} className="w-5 h-5 rounded-full border-[1.5px] border-white object-cover" />
+                ) : (
+                  <div key={m.lineUserId} className="w-5 h-5 rounded-full border-[1.5px] border-white bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                    <span className="text-[8px] font-bold text-amber-600">{m.displayName.charAt(0)}</span>
+                  </div>
+                )
               ))}
             </div>
-            <span className="text-[10px] text-muted-foreground">{MEMBERS.length} swiping</span>
+            <span className="text-[10px] text-muted-foreground">{members.length} swiping</span>
           </div>
           <span className="text-xs text-muted-foreground truncate max-w-[40%]">{item.address}</span>
         </div>
@@ -272,6 +271,9 @@ function SwipeCardGroup({ item, active, behind, onSwipe, onTap, showHint = false
 
 export default function GroupSwipe() {
   const [, navigate] = useLocation();
+  const { profile } = useLineProfile();
+  const sessionCode = new URLSearchParams(window.location.search).get("session") || "";
+  const [members, setMembers] = useState<SessionMember[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [matchNotification, setMatchNotification] = useState<string | null>(null);
   const [fullMatch, setFullMatch] = useState(false);
@@ -282,18 +284,54 @@ export default function GroupSwipe() {
   const [matchCount, setMatchCount] = useState(0);
   const [likedCount, setLikedCount] = useState(0);
   const [lastAction, setLastAction] = useState<string | null>(null);
+  const [notifiedPartials, setNotifiedPartials] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    if (!sessionCode) return;
+    const fetchMembers = async () => {
+      try {
+        const res = await fetch(`/api/group/sessions/${sessionCode}`);
+        if (res.ok) {
+          const data = await res.json();
+          setMembers(data.members);
+        }
+      } catch {}
+    };
+    fetchMembers();
+  }, [sessionCode]);
 
   useEffect(() => {
     addSession({
-      id: "group-1",
+      id: sessionCode || "group-1",
       type: "group",
       label: "Group Session",
-      route: "/group/swipe",
-      memberCount: MEMBERS.length,
+      route: `/group/swipe${sessionCode ? `?session=${sessionCode}` : ""}`,
+      memberCount: members.length,
       matchCount: 0,
       startedAt: Date.now(),
     });
-  }, []);
+  }, [sessionCode, members.length]);
+
+  const recordSwipe = useCallback(async (menuItemId: number, direction: "left" | "right" | "super") => {
+    if (!sessionCode || !profile) return null;
+    try {
+      const res = await fetch(`/api/group/sessions/${sessionCode}/swipe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lineUserId: profile.userId,
+          menuItemId,
+          direction,
+        }),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (err) {
+      console.error("Failed to record swipe:", err);
+    }
+    return null;
+  }, [sessionCode, profile]);
 
   const handleSwipe = useCallback((id: number, dir: "left" | "right" | "super") => {
     const item = MENU_ITEMS.find((m) => m.id === id);
@@ -307,45 +345,78 @@ export default function GroupSwipe() {
       if (dir === "super") setSuperLiked((prev) => new Set([...prev, id]));
     }
 
-    setLastAction(dir === "right" ? "YUM!" : dir === "up" || dir === "super" ? "SUPERLIKE!" : "Nah");
+    setLastAction(dir === "right" ? "YUM!" : dir === "super" ? "SUPERLIKE!" : "Nah");
     setTimeout(() => setLastAction(null), 800);
 
-    setTimeout(() => {
-      setCurrentIndex((prev) => {
-        const next = prev + 1;
+    recordSwipe(id, dir).then((result) => {
+      if (!result) return;
 
-        if (dir === "right" || dir === "super") {
-          if (item.matchChance > 0 && item.matchChance < 1) {
-            setTimeout(() => {
-              const partner = item.matchChance > 0.5 ? "Nook" : "Beam";
-              setMatchNotification(`You and ${partner} both liked ${item.name}!`);
-              setMatchCount(c => {
-                const newCount = c + 1;
-                updateSession("group-1", { matchCount: newCount });
-                return newCount;
-              });
-              setTimeout(() => setMatchNotification(null), 3000);
-            }, 300);
-          }
+      const { matches, memberCount } = result;
 
-          if (item.matchChance === 1.0) {
-            setTimeout(() => {
-              setMatchedItem(item);
-              setConfetti(true);
-              setFullMatch(true);
-              setMatchCount(c => {
-                const newCount = c + 1;
-                updateSession("group-1", { matchCount: newCount });
-                return newCount;
-              });
-            }, 300);
+      if (matches && matches.length > 0) {
+        for (const match of matches) {
+          const matchedMenuItem = MENU_ITEMS.find(m => m.id === match.menuItemId);
+          if (matchedMenuItem && match.voters.length >= memberCount) {
+            setMatchedItem(matchedMenuItem);
+            setConfetti(true);
+            setFullMatch(true);
+            setMatchCount(c => {
+              const newCount = c + 1;
+              updateSession(sessionCode || "group-1", { matchCount: newCount });
+              return newCount;
+            });
+            return;
           }
         }
+      }
 
-        return next;
-      });
+      if (dir === "right" || dir === "super") {
+        checkPartialMatches(id);
+      }
+    });
+
+    setTimeout(() => {
+      setCurrentIndex((prev) => prev + 1);
     }, 300);
-  }, []);
+  }, [recordSwipe, sessionCode, members]);
+
+  const checkPartialMatches = useCallback(async (menuItemId: number) => {
+    if (!sessionCode || notifiedPartials.has(menuItemId)) return;
+    try {
+      const res = await fetch(`/api/group/sessions/${sessionCode}/swipes`);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      const positiveSwipes = data.swipes.filter((s: any) => s.direction === "right" || s.direction === "super");
+      const votersForItem = new Set<string>();
+      for (const s of positiveSwipes) {
+        if (s.menuItemId === menuItemId) {
+          votersForItem.add(s.lineUserId);
+        }
+      }
+
+      if (votersForItem.size > 1 && votersForItem.size < data.members.length) {
+        const voterNames = data.members
+          .filter((m: SessionMember) => votersForItem.has(m.lineUserId) && m.lineUserId !== profile?.userId)
+          .map((m: SessionMember) => m.displayName);
+
+        if (voterNames.length > 0) {
+          setNotifiedPartials(prev => new Set(prev).add(menuItemId));
+          const item = MENU_ITEMS.find(m => m.id === menuItemId);
+          if (item) {
+            const nameStr = voterNames.join(" and ");
+            setMatchNotification(`You and ${nameStr} both liked ${item.name}!`);
+            setMatchCount(c => {
+              const newCount = c + 1;
+              updateSession(sessionCode || "group-1", { matchCount: newCount });
+              return newCount;
+            });
+            setTimeout(() => setMatchNotification(null), 3000);
+          }
+        }
+      }
+    } catch {}
+  }, [sessionCode, profile, notifiedPartials]);
 
   const handleButtonSwipe = (dir: "left" | "right" | "super") => {
     if (currentIndex < MENU_ITEMS.length) {
@@ -404,18 +475,24 @@ export default function GroupSwipe() {
           transition={{ delay: 0.4, duration: 0.3 }}
           className="flex gap-2.5 mb-7"
         >
-          {MEMBERS.map((m, i) => (
+          {members.map((m, i) => (
             <motion.div
-              key={m.name}
+              key={m.lineUserId}
               initial={{ scale: 0, y: 8 }}
               animate={{ scale: 1, y: 0 }}
               transition={{ delay: 0.5 + i * 0.08, type: "spring", damping: 18, stiffness: 250 }}
               className="flex items-center gap-2 bg-green-50/80 rounded-full px-4 py-2 border border-green-200/50"
               style={{ boxShadow: "0 2px 10px rgba(0,200,100,0.08)" }}
             >
-              <img src={m.avatar} alt={m.name} className="w-6 h-6 rounded-full object-cover" />
+              {m.pictureUrl ? (
+                <img src={m.pictureUrl} alt={m.displayName} className="w-6 h-6 rounded-full object-cover" />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                  <span className="text-[9px] font-bold text-amber-600">{m.displayName.charAt(0)}</span>
+                </div>
+              )}
               <span className="text-[hsl(160,60%,40%)] text-[11px] font-bold">✓</span>
-              <span className="text-xs font-bold">{m.name}</span>
+              <span className="text-xs font-bold">{m.lineUserId === profile?.userId ? "You" : m.displayName}</span>
             </motion.div>
           ))}
         </motion.div>
@@ -486,8 +563,14 @@ export default function GroupSwipe() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center -space-x-1.5">
-            {MEMBERS.map((m) => (
-              <img key={m.name} src={m.avatar} alt={m.name} className="w-7 h-7 rounded-full border-[2px] border-white object-cover" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }} />
+            {members.map((m) => (
+              m.pictureUrl ? (
+                <img key={m.lineUserId} src={m.pictureUrl} alt={m.displayName} className="w-7 h-7 rounded-full border-[2px] border-white object-cover" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }} />
+              ) : (
+                <div key={m.lineUserId} className="w-7 h-7 rounded-full border-[2px] border-white bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+                  <span className="text-[10px] font-bold text-amber-600">{m.displayName.charAt(0)}</span>
+                </div>
+              )
             ))}
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-muted-foreground"
@@ -568,6 +651,7 @@ export default function GroupSwipe() {
                   onSwipe={handleSwipe}
                   onTap={() => handleTap(item)}
                   showHint={idx === 0 && currentIndex === 0}
+                  members={members}
                 />
               );
             })}
