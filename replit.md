@@ -1,0 +1,46 @@
+# Toast - Food Decision Making App
+
+## Overview
+Toast is a Tinder-style food discovery mobile application designed to help users decide what to eat, both individually and with friends. The project aims to provide a fun, interactive, and personalized experience for finding restaurants, incorporating features like a solo quiz for recommendations, synchronized group swiping, and a personalized "Taste Profile." The business vision is to become a leading platform for social food discovery, leveraging gamification and LINE integration to drive user engagement and facilitate dining decisions.
+
+## User Preferences
+I prefer iterative development with clear, concise communication. Please ask before making major architectural changes or introducing new external dependencies. I value a clean, functional coding style, and detailed explanations when complex logic is involved. Please ensure all changes are well-documented and follow the established design system meticulously.
+
+## System Architecture
+The application features a modern full-stack architecture. The frontend is built with React, Vite, TailwindCSS, and Framer Motion for a dynamic and visually appealing user interface. State management is handled by TanStack React Query, and routing uses wouter. The backend leverages Express.js with PostgreSQL and Drizzle ORM for robust data management.
+
+**UI/UX and Design System:**
+The design adheres to an Airbnb-inspired system with a #FFCC02 golden yellow brand color, warm cream background, and pure white cards with soft layered shadows. Typography uses Plus Jakarta Sans for headings and Inter for body text. Animations are spring-based for structural elements (drawers, modals, page transitions) using Framer Motion, while interactive elements use CSS transitions. Key UI components include a draggable bottom sheet, animated emoji filters, horizontally scrollable restaurant rows, and a floating multi-session status bar. The interactive map uses Leaflet with custom divIcons for markers, styled with a warm illustrated CSS filter.
+
+**Key Features:**
+- **Home Screen:** Features an interactive map (OpenStreetMap, Bangkok-centric), a draggable bottom sheet with various modes, and personalized restaurant recommendations.
+- **Solo Journey:** A guided 3-step quiz (mood/cuisine, location/budget, interests) leading to personalized restaurant results and details.
+- **Group Journey:** Allows users to set up sessions, invite friends via LINE, and engage in synchronized swiping to decide on a restaurant collectively.
+- **Swipe Mode:** Tinder-like card swiping for discovering restaurants based on different categories.
+- **Taste Profile:** Tracks user swipe behavior to personalize recommendations, displayed as "Because you like..." sections.
+- **Restaurant Detail:** Comprehensive view with photos, reviews, opening hours, map location, and "Order Delivery" button that opens a bottom drawer to choose between Grab, LINE MAN, or Robinhood — deep links to each app with web fallbacks. Delivery clicks tracked via `delivery_click` event with platform metadata.
+- **User Profile:** Editable profile for managing dietary restrictions, preferences, and LINE integration settings.
+- **Admin Panel:** A comprehensive data analytics platform for selling insights to partners (Grab, LINE MAN, malls). Design matches the Owner Profile section: light white sidebar with `border-gray-200`, golden `#FFCC02` active indicator, semantic Tailwind colors (`text-foreground`, `text-muted-foreground`, `bg-gray-50`, `border-gray-100`), HSL gradient bar fills (`hsl(222, 47%, 20%)` to `hsl(222, 47%, 35%)`), soft pastel gradient icon containers, pill-style tab switchers. No dark navy blocks. Login: admin/toast2024. Pages include:
+    - **Dashboard:** KPIs (Users, Restaurants, Swipes, Campaigns, Delivery Clicks), Activity chart, Data Insights Catalog (5 categories with pastel gradient headers), Platform Health with Grab/LINE MAN/Robinhood delivery clicks, User Segments with HSL gradient bars, Live Activity feed.
+    - **Users (Insights):** Demographics (gender, age), User Type Segments (Solo/Couples/Friends/Families/Coworkers with cuisine prefs, budget, peak times), Behavioral Cohorts (Power/Regular/Casual/Dormant), Activity Patterns, Cuisine Preferences by Segment table, Delivery App Engagement table, AI-Powered Insights card.
+    - **Campaigns (Ad Platform):** Performance KPIs (Impressions/Clicks/CTR/Revenue), Ad type badges, placement info, per-campaign mock metrics, budget progress bars, targeting pills. Existing CRUD preserved.
+    - **Banners (Ad Creative):** Enhanced form with Ad Format, Targeting, Scheduling, CTA Type, Budget fields, A/B Variant. Enhanced cards with format badge, performance stats, budget bar, targeting pills. Existing CRUD preserved.
+    - **Analytics (Data Intelligence):** 6 KPIs, Restaurant Performance table, User Activity Heatmap (7×18 grid), Delivery Platform Analytics, Target Customer Behaviors, Partner Data Export. Plus existing: Event Breakdown, Conversion Funnel, Geo Hotspots, Trending Cuisines, User Segments, Top Restaurants, Recent Events.
+    - **App Config:** Feature toggles (Group Mode, Delivery Links, Decide for Me, Map, Swipe, Owner Dashboard, Toast Picks, Partner Linking, Drunk Sway, Smart Vibe Sorting, Deal Badges, LINE Integration), Branding (logo/mascot/images upload, accent color picker), Vibe toggle grid (enable/disable individual vibes), UI & Text settings (hero title/subtitle, mascot greeting, bottom nav labels). Includes live phone preview panel, pending changes tracker, and a review modal to preview before confirming. Categories: Core, Discovery, Social, Revenue, Interface.
+- **Campaign System:** Allows restaurant owners to create and manage promotional campaigns with various deal types, targeting, and workflow. Campaign banners appear on the home screen (between "Pick a vibe" and "New near you" as compact scrollable cards) and on restaurant detail pages for restaurants with active campaigns. A dedicated Campaign Detail page (`/campaign/:id`) shows deal info, redemption steps, terms, and links to the related restaurant. A "Deals" vibe option in Pick a Vibe lets users swipe through campaign cards. Components: `client/src/components/CampaignBanner.tsx`, `client/src/pages/CampaignDetail.tsx`.
+- **Analytics Tracking:** Client-side event tracking for user behavior analysis.
+- **Toast Picks:** A personalized predictive recommendation system that uses user preferences and context to suggest top restaurants.
+- **Save Bucket System:** Users can save restaurants into "mine" or "partner" buckets, displayed through a custom picker and profile sections.
+
+**Technical Implementations:**
+- **LINE Integration:** Deep integration using the @line/liff SDK for login, profile access, and share target picking, with fallbacks to LINE URL schemes.
+- **Data Model:** Structured PostgreSQL tables for `restaurants`, `user_preferences`, `user_profiles`, `campaigns`, `analytics_events`, `ad_banners`, and `admin_users`.
+- **Session Management:** Utilizes `sessionStorage` with `useSyncExternalStore` for persistent, global session tracking across multiple concurrent sessions.
+- **Search Functionality:** Matches restaurant names, categories, and menu keywords with priority.
+- **Performance Optimizations:** Lazy loading for images and map iframes, and preloading of critical assets like the Toast logo.
+
+## External Dependencies
+- **LINE LIFF:** For user authentication, profile retrieval, and social sharing capabilities within the LINE ecosystem.
+- **Leaflet + Stadia Alidade Smooth:** Used for interactive map rendering with subtle blue-toned CSS filter for a premium cool-toned look.
+- **OpenStreetMap:** Provides static map embeds for restaurant locations.
+- **Grab:** Integrated for deep linking to food delivery services.
