@@ -253,6 +253,142 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/restaurants/personalized", async (req, res) => {
+    try {
+      const { userId, tasteProfile, hour, dayOfWeek } = req.body;
+      const allRestaurants = await storage.getRestaurants();
+
+      let userEvents: any[] = [];
+      if (userId) {
+        userEvents = await storage.getUserEvents(userId, 300);
+      }
+
+      const swipeRightIds = new Set<number>();
+      const swipeLeftIds = new Set<number>();
+      const savedIds = new Set<number>();
+      const viewedIds = new Set<number>();
+      const categoryAffinities: Record<string, number> = {};
+
+      for (const evt of userEvents) {
+        if (evt.eventType === "swipe_right" && evt.restaurantId) swipeRightIds.add(evt.restaurantId);
+        if (evt.eventType === "swipe_left" && evt.restaurantId) swipeLeftIds.add(evt.restaurantId);
+        if (evt.eventType === "save" && evt.restaurantId) savedIds.add(evt.restaurantId);
+        if (evt.eventType === "view_detail" && evt.restaurantId) viewedIds.add(evt.restaurantId);
+
+        if (evt.metadata) {
+          try {
+            const meta = JSON.parse(evt.metadata);
+            if (meta.category) {
+              const cats = meta.category.split(/[,·•]/).map((c: string) => c.trim().toLowerCase());
+              for (const cat of cats) {
+                if (!cat) continue;
+                const weight = evt.eventType === "swipe_right" ? 2 : evt.eventType === "save" ? 3 : evt.eventType === "swipe_left" ? -1 : 0.5;
+                categoryAffinities[cat] = (categoryAffinities[cat] || 0) + weight;
+              }
+            }
+          } catch {}
+        }
+      }
+
+      if (tasteProfile) {
+        const { likes = {}, superLikes = {}, dislikes = {} } = tasteProfile;
+        for (const [cat, entry] of Object.entries(likes) as [string, any][]) {
+          const key = cat.toLowerCase();
+          categoryAffinities[key] = (categoryAffinities[key] || 0) + (entry.count || 1) * 1.5;
+        }
+        for (const [cat, entry] of Object.entries(superLikes) as [string, any][]) {
+          const key = cat.toLowerCase();
+          categoryAffinities[key] = (categoryAffinities[key] || 0) + (entry.count || 1) * 3;
+        }
+        for (const [cat, entry] of Object.entries(dislikes) as [string, any][]) {
+          const key = cat.toLowerCase();
+          categoryAffinities[key] = (categoryAffinities[key] || 0) - (entry.count || 1) * 1;
+        }
+      }
+
+      const timeSlot = hour !== undefined ? (
+        hour >= 6 && hour < 11 ? "morning" :
+        hour >= 11 && hour < 14 ? "lunch" :
+        hour >= 14 && hour < 17 ? "afternoon" :
+        hour >= 17 && hour < 21 ? "dinner" : "latenight"
+      ) : "dinner";
+
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+      const TIME_BOOSTS: Record<string, string[]> = {
+        morning: ["cafe", "brunch", "coffee", "bakery", "breakfast"],
+        lunch: ["thai", "japanese", "noodles", "street food", "quick"],
+        afternoon: ["cafe", "dessert", "tea", "boba", "snack"],
+        dinner: ["bbq", "fine dining", "sushi", "italian", "korean", "seafood"],
+        latenight: ["street food", "ramen", "noodles", "thai", "bar"],
+      };
+
+      const scored = allRestaurants.map((r) => {
+        let score = 50;
+        const rCats = r.category.toLowerCase().split(/[,·•]/).map(c => c.trim());
+
+        for (const cat of rCats) {
+          if (categoryAffinities[cat]) {
+            score += categoryAffinities[cat] * 3;
+          }
+          for (const [affCat, affScore] of Object.entries(categoryAffinities)) {
+            if (cat.includes(affCat) || affCat.includes(cat)) {
+              score += affScore * 1.5;
+            }
+          }
+        }
+
+        if (swipeRightIds.has(r.id)) score += 15;
+        if (savedIds.has(r.id)) score += 20;
+        if (swipeLeftIds.has(r.id)) score -= 25;
+        if (viewedIds.has(r.id)) score += 5;
+
+        const timeBoostCats = TIME_BOOSTS[timeSlot] || [];
+        for (const cat of rCats) {
+          for (const tb of timeBoostCats) {
+            if (cat.includes(tb) || tb.includes(cat)) {
+              score += 8;
+            }
+          }
+        }
+
+        if (isWeekend) {
+          for (const cat of rCats) {
+            if (["brunch", "cafe", "fine dining", "premium", "bbq"].some(w => cat.includes(w))) {
+              score += 5;
+            }
+          }
+        }
+
+        const rating = parseFloat(r.rating) || 4.0;
+        score += (rating - 4.0) * 10;
+
+        if (r.trendingScore) score += r.trendingScore * 0.1;
+        if (r.isNew) score += 3;
+
+        score = Math.max(0, Math.min(99, Math.round(score)));
+
+        return {
+          id: r.id,
+          name: r.name,
+          category: r.category,
+          rating: r.rating,
+          imageUrl: r.imageUrl,
+          address: r.address,
+          priceLevel: r.priceLevel,
+          match: score,
+        };
+      });
+
+      scored.sort((a, b) => b.match - a.match);
+
+      res.json(scored.slice(0, 5));
+    } catch (err) {
+      console.error("Personalized suggestions error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get("/api/restaurants/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

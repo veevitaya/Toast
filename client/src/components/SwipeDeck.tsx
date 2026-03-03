@@ -16,14 +16,24 @@ export function SwipeDeck({ restaurants, isLoading }: SwipeDeckProps) {
 
   const handleSwipe = (id: number, direction: 'left' | 'right') => {
     setCurrentIndex((prev) => prev + 1);
-    
+    const restaurant = restaurants.find(r => r.id === id);
+
+    let currentUserId = "anonymous";
+    try {
+      const gp = localStorage.getItem("toast_guest_profile");
+      if (gp) { const p = JSON.parse(gp); if (p.userId) currentUserId = p.userId; }
+    } catch {}
+
     recordPreference.mutate({
-      userId: "user_123",
+      userId: currentUserId,
       restaurantId: id,
       preference: direction === 'right' ? 'like' : 'dislike'
     });
 
-    trackEvent(direction === 'right' ? 'swipe_right' : 'swipe_left', { restaurantId: id });
+    trackEvent(direction === 'right' ? 'swipe_right' : 'swipe_left', {
+      restaurantId: id,
+      metadata: { category: restaurant?.category || "" },
+    });
   };
 
   if (isLoading) {

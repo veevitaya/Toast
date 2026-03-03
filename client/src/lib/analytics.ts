@@ -4,10 +4,10 @@ export function trackEvent(
 ) {
   let userId = "anonymous";
   try {
-    const profile = localStorage.getItem("toast_user_profile");
-    if (profile) {
-      const parsed = JSON.parse(profile);
-      if (parsed.displayName) userId = parsed.displayName;
+    const guestProfile = localStorage.getItem("toast_guest_profile");
+    if (guestProfile) {
+      const parsed = JSON.parse(guestProfile);
+      if (parsed.userId) userId = parsed.userId;
     }
   } catch {}
 

@@ -37,6 +37,7 @@ export interface IStorage {
   getRestaurants(mode?: string, lat?: number, lng?: number, query?: string): Promise<Restaurant[]>;
   getRestaurantById(id: number): Promise<Restaurant | undefined>;
   getSuggestions(): Promise<Restaurant[]>;
+  getUserEvents(userId: string, limit?: number): Promise<AnalyticsEvent[]>;
   createPreference(pref: InsertUserPreference): Promise<UserPreference>;
   seedRestaurants(data: InsertRestaurant[]): Promise<void>;
   getProfile(lineUserId: string): Promise<UserProfile | undefined>;
@@ -95,6 +96,13 @@ export class DatabaseStorage implements IStorage {
 
   async getSuggestions(): Promise<Restaurant[]> {
     return await db.select().from(restaurants).limit(5);
+  }
+
+  async getUserEvents(userId: string, limit: number = 200): Promise<AnalyticsEvent[]> {
+    return await db.select().from(analyticsEvents)
+      .where(eq(analyticsEvents.userId, userId))
+      .orderBy(desc(analyticsEvents.id))
+      .limit(limit);
   }
 
   async createPreference(pref: InsertUserPreference): Promise<UserPreference> {

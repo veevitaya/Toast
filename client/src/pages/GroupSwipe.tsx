@@ -337,7 +337,10 @@ export default function GroupSwipe() {
     const item = MENU_ITEMS.find((m) => m.id === id);
     if (!item) return;
 
-    trackEvent(dir === "left" ? "swipe_left" : "swipe_right", { restaurantId: id });
+    trackEvent(dir === "left" ? "swipe_left" : "swipe_right", {
+      restaurantId: id,
+      metadata: { category: item.category || "" },
+    });
 
     if (dir === "right" || dir === "super") {
       setLiked((prev) => new Set([...prev, id]));

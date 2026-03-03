@@ -14,6 +14,7 @@ import { useRestaurants, useSuggestions } from "@/hooks/use-restaurants";
 import { useVibeFrequency } from "@/hooks/use-vibe-frequency";
 import { SaveBucketPicker } from "@/components/SaveBucketPicker";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
+import { useLineProfile } from "@/lib/useLineProfile";
 import toastLogoPath from "@assets/toast_logo_nobg.png";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 
@@ -160,10 +161,21 @@ const BANGKOK_LOCATIONS = [
   { name: "Riverside", lat: 13.7230, lng: 100.5130 },
 ];
 
-const AI_RECOMMENDATIONS = [
-  { id: 251, name: "Sushi Masato", emoji: "🍣", rating: "4.9", distance: "0.4km", match: 87, imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=300&auto=format&fit=crop&q=60" },
-  { id: 221, name: "Fuji Ramen", emoji: "🍜", rating: "4.6", distance: "0.6km", match: 74, imageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&auto=format&fit=crop&q=60" },
-  { id: 244, name: "Jay Fai", emoji: "🔥", rating: "4.9", distance: "0.9km", match: 68, imageUrl: "https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=300&auto=format&fit=crop&q=60" },
+interface PersonalizedRec {
+  id: number;
+  name: string;
+  category: string;
+  rating: string;
+  imageUrl: string;
+  address: string;
+  priceLevel: number;
+  match: number;
+}
+
+const FALLBACK_RECOMMENDATIONS: PersonalizedRec[] = [
+  { id: 5, name: "Pad Thai Plus", category: "Thai", rating: "4.8", imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=300&auto=format&fit=crop&q=60", address: "Central World", priceLevel: 1, match: 72 },
+  { id: 12, name: "Ramen Champ", category: "Japanese", rating: "4.6", imageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&auto=format&fit=crop&q=60", address: "Thonglor", priceLevel: 2, match: 65 },
+  { id: 8, name: "Pizza Paradise", category: "Italian", rating: "4.6", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300&auto=format&fit=crop&q=60", address: "Silom", priceLevel: 2, match: 60 },
 ];
 
 function getGreeting(): string {
@@ -184,10 +196,47 @@ function getContextLine(): string {
 
 export default function Home() {
   const [, navigate] = useLocation();
-  const { getSuggestionTitle, topPreference, getMoodSignal } = useTasteProfile();
+  const { profile: tasteProfile, getSuggestionTitle, topPreference, getMoodSignal } = useTasteProfile();
   const { recordVibe } = useVibeFrequency();
   const { data: suggestions = [], isLoading: suggestionsLoading } = useSuggestions();
   const { data: nearbyRestaurants = [], isLoading: nearbyLoading } = useRestaurants("new");
+  const { profile: userProfile } = useLineProfile();
+
+  const [personalizedRecs, setPersonalizedRecs] = useState<PersonalizedRec[]>([]);
+  const [recsLoading, setRecsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchPersonalized() {
+      try {
+        const now = new Date();
+        const res = await fetch("/api/restaurants/personalized", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: userProfile?.userId || null,
+            tasteProfile: tasteProfile,
+            hour: now.getHours(),
+            dayOfWeek: now.getDay(),
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.length > 0) {
+            setPersonalizedRecs(data);
+          } else {
+            setPersonalizedRecs(FALLBACK_RECOMMENDATIONS);
+          }
+        } else {
+          setPersonalizedRecs(FALLBACK_RECOMMENDATIONS);
+        }
+      } catch {
+        setPersonalizedRecs(FALLBACK_RECOMMENDATIONS);
+      } finally {
+        setRecsLoading(false);
+      }
+    }
+    fetchPersonalized();
+  }, [userProfile?.userId, topPreference.key]);
 
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -289,7 +338,7 @@ export default function Home() {
     navigate(`/solo/results${qs ? `?${qs}` : ""}`);
   }, [navigate, recordVibe]);
 
-  const topMatch = AI_RECOMMENDATIONS[0];
+  const topMatch = personalizedRecs.length > 0 ? personalizedRecs[0] : FALLBACK_RECOMMENDATIONS[0];
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden" data-testid="home-page">
@@ -813,30 +862,38 @@ export default function Home() {
               </p>
 
               <div className="flex gap-2.5 overflow-x-auto hide-scrollbar -mx-1 px-1 pb-2">
-                {AI_RECOMMENDATIONS.map((rec, idx) => (
-                  <motion.button
-                    key={rec.id}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.45 + idx * 0.08, type: "spring", stiffness: 280, damping: 22 }}
-                    whileHover={{ scale: 1.04, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate(`/restaurant/${rec.id}`)}
-                    className="flex-shrink-0 w-[110px] group"
-                    data-testid={`card-ai-rec-${rec.id}`}
-                  >
-                    <div className="relative w-full h-[80px] rounded-xl overflow-hidden mb-1.5 border border-gray-100">
-                      <img src={rec.imageUrl} alt={rec.name} className="w-full h-full object-cover" />
-                      {idx === 0 && (
+                {recsLoading ? (
+                  [0, 1, 2].map((i) => (
+                    <div key={i} className="flex-shrink-0 w-[110px] animate-pulse">
+                      <div className="w-full h-[80px] rounded-xl bg-gray-100 mb-1.5" />
+                      <div className="h-3 bg-gray-100 rounded w-3/4 mb-1" />
+                      <div className="h-2.5 bg-gray-50 rounded w-1/2" />
+                    </div>
+                  ))
+                ) : (
+                  personalizedRecs.map((rec, idx) => (
+                    <motion.button
+                      key={rec.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.45 + idx * 0.08, type: "spring", stiffness: 280, damping: 22 }}
+                      whileHover={{ scale: 1.04, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => navigate(`/restaurant/${rec.id}`)}
+                      className="flex-shrink-0 w-[110px] group"
+                      data-testid={`card-ai-rec-${rec.id}`}
+                    >
+                      <div className="relative w-full h-[80px] rounded-xl overflow-hidden mb-1.5 border border-gray-100">
+                        <img src={rec.imageUrl} alt={rec.name} className="w-full h-full object-cover" />
                         <div className="absolute top-1.5 right-1.5 bg-emerald-500 text-white text-[9px] font-bold rounded-full px-1.5 py-0.5">
                           {rec.match}%
                         </div>
-                      )}
-                    </div>
-                    <p className="text-xs font-semibold text-foreground truncate">{rec.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{rec.distance} &middot; ★{rec.rating}</p>
-                  </motion.button>
-                ))}
+                      </div>
+                      <p className="text-xs font-semibold text-foreground truncate">{rec.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{rec.address} &middot; ★{rec.rating}</p>
+                    </motion.button>
+                  ))
+                )}
               </div>
 
               <div className="mt-3 pt-3 border-t border-gray-100">
