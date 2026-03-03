@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { ChevronRight, ArrowLeft, Share2 } from "lucide-react";
+import { sendGroupInvite, isLiffAvailable } from "@/lib/liff";
 
 const LOCATIONS_GROUP = [
   { emoji: "🍢", label: "Street food" },
@@ -46,11 +47,19 @@ export default function GroupSetup() {
     else if (list.length < 3) setter([...list, item]);
   };
 
-  const handleInvite = () => {
+  const handleInvite = async () => {
     setInviteSent(true);
-    const text = encodeURIComponent("Join my Toast session! Let's decide what to eat together 🍞✨");
-    window.open(`https://line.me/R/share?text=${text}`, "_blank");
-    setTimeout(() => navigate("/group/waiting"), 1500);
+    const sessionId = Math.random().toString(36).substring(2, 10);
+    const appUrl = window.location.origin;
+
+    if (isLiffAvailable()) {
+      await sendGroupInvite(sessionId);
+    } else {
+      const message = `Join my Toast session! Let's decide what to eat together.\n\n${appUrl}/group/waiting?session=${sessionId}`;
+      window.open(`https://line.me/R/share?text=${encodeURIComponent(message)}`, "_blank");
+    }
+
+    setTimeout(() => navigate(`/group/waiting?session=${sessionId}`), 1500);
   };
 
   return (
@@ -170,7 +179,10 @@ export default function GroupSetup() {
 
       <div className="flex-shrink-0 bg-white border-t border-gray-100/60 px-6 py-4 pb-5 safe-bottom">
         <button
-          onClick={() => navigate("/group/waiting")}
+          onClick={() => {
+            const sessionId = Math.random().toString(36).substring(2, 10);
+            navigate(`/group/waiting?session=${sessionId}`);
+          }}
           data-testid="button-start-session"
           className="w-full py-4 rounded-full bg-foreground text-white font-bold text-[15px] active:scale-[0.97] transition-transform duration-200"
           style={{ boxShadow: "0 8px 25px -5px rgba(0,0,0,0.25)" }}

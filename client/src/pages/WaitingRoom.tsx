@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { BottomNav } from "@/components/BottomNav";
 import mascotImg from "@assets/toast_mascot_nobg.png";
+import { shareMessage, isLiffAvailable } from "@/lib/liff";
 
 const MOCK_MEMBERS = [
   { name: "You", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face", joined: true },
@@ -28,10 +29,18 @@ export default function WaitingRoom() {
   const allJoined = members.every((m) => m.joined);
   const joinedCount = members.filter((m) => m.joined).length;
 
-  const handleNudgeMember = (memberName: string) => {
+  const sessionId = new URLSearchParams(window.location.search).get("session") || "default";
+
+  const handleNudgeMember = async (memberName: string) => {
     setNudgedMembers((prev) => new Set(prev).add(memberName));
-    const text = `Hey ${memberName}! We're waiting for you on Toast 🍞 Join our food session!`;
-    window.open(`https://line.me/R/share?text=${encodeURIComponent(text)}`, "_blank");
+    const appUrl = window.location.origin;
+    const text = `Hey ${memberName}! We're waiting for you on Toast. Join our food session!\n\n${appUrl}/group/waiting?session=${sessionId}`;
+
+    if (isLiffAvailable()) {
+      await shareMessage(text);
+    } else {
+      window.open(`https://line.me/R/share?text=${encodeURIComponent(text)}`, "_blank");
+    }
   };
 
   return (
