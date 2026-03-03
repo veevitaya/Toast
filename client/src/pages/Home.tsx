@@ -601,8 +601,8 @@ export default function Home() {
                       data-testid="button-solo-collapsed"
                     >
                       <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "#FFCC02" }} />
-                      <span className="absolute top-0 right-2 text-[32px] font-bold select-none pointer-events-none" style={{ fontFamily: "Georgia, serif", color: "rgba(0,0,0,0.04)" }}>1</span>
-                      <p className="text-sm font-bold text-foreground leading-tight" style={{ fontFamily: "Georgia, serif" }}>Solo</p>
+                      <span className="absolute top-0 right-2 text-[32px] font-bold select-none pointer-events-none" style={{ color: "rgba(0,0,0,0.04)" }}>1</span>
+                      <p className="text-sm font-bold text-foreground leading-tight">Solo</p>
                       <p className="text-[10px] text-muted-foreground">Just you</p>
                     </button>
                     <button
@@ -611,9 +611,9 @@ export default function Home() {
                       style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
                       data-testid="button-group-collapsed"
                     >
-                      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "hsl(0, 0%, 35%)" }} />
-                      <span className="absolute top-0 right-2 text-[32px] font-bold select-none pointer-events-none" style={{ fontFamily: "Georgia, serif", color: "rgba(0,0,0,0.04)" }}>2+</span>
-                      <p className="text-sm font-bold text-foreground leading-tight" style={{ fontFamily: "Georgia, serif" }}>Group</p>
+                      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "#00B14F" }} />
+                      <span className="absolute top-0 right-2 text-[32px] font-bold select-none pointer-events-none" style={{ color: "rgba(0,0,0,0.04)" }}>2+</span>
+                      <p className="text-sm font-bold text-foreground leading-tight">Group</p>
                       <p className="text-[10px] text-muted-foreground">With others</p>
                     </button>
                   </div>
@@ -683,7 +683,6 @@ export default function Home() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
               className="text-[20px] font-bold text-foreground mb-4"
-              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
               data-testid="text-who-eating"
             >
               Who's joining you tonight?
@@ -706,7 +705,7 @@ export default function Home() {
                 <div className="relative pt-5 px-5 pb-5">
                   <span
                     className="absolute top-2 left-4 text-[72px] font-bold leading-none select-none pointer-events-none"
-                    style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: "rgba(0,0,0,0.04)" }}
+                    style={{ color: "rgba(0,0,0,0.04)" }}
                   >
                     1
                   </span>
@@ -716,7 +715,6 @@ export default function Home() {
                     </p>
                     <p
                       className="text-[24px] font-bold text-foreground leading-tight"
-                      style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
                     >
                       Solo
                     </p>
@@ -738,11 +736,11 @@ export default function Home() {
                   boxShadow: "0 4px 20px -4px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.9)",
                 }}
               >
-                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-[20px]" style={{ background: "linear-gradient(90deg, hsl(0, 0%, 25%), hsl(0, 0%, 45%))" }} />
+                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-[20px]" style={{ background: "linear-gradient(90deg, #00B14F, #00C300)" }} />
                 <div className="relative pt-5 px-5 pb-5">
                   <span
                     className="absolute top-2 left-4 text-[72px] font-bold leading-none select-none pointer-events-none"
-                    style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: "rgba(0,0,0,0.04)" }}
+                    style={{ color: "rgba(0,0,0,0.04)" }}
                   >
                     2+
                   </span>
@@ -757,7 +755,6 @@ export default function Home() {
                     </p>
                     <p
                       className="text-[24px] font-bold text-foreground leading-tight"
-                      style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
                     >
                       Group
                     </p>
