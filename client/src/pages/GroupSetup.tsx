@@ -43,15 +43,37 @@ export default function GroupSetup() {
   const [selectedBudget, setSelectedBudget] = useState<string>("");
   const [selectedDiet, setSelectedDiet] = useState<string[]>([]);
   const [inviteSent, setInviteSent] = useState(false);
+  const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
 
   const toggleList = (list: string[], item: string, setter: (v: string[]) => void) => {
     if (list.includes(item)) setter(list.filter((i) => i !== item));
     else if (list.length < 3) setter([...list, item]);
   };
 
+  const getOrCreateSessionId = async () => {
+    if (pendingSessionId) return pendingSessionId;
+    const sessionId = Math.random().toString(36).substring(2, 10);
+    setPendingSessionId(sessionId);
+    if (profile) {
+      try {
+        await fetch("/api/group/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionCode: sessionId,
+            hostLineUserId: profile.userId,
+            hostDisplayName: profile.displayName,
+            hostPictureUrl: profile.pictureUrl || "",
+          }),
+        });
+      } catch {}
+    }
+    return sessionId;
+  };
+
   const handleInvite = async () => {
     setInviteSent(true);
-    const sessionId = Math.random().toString(36).substring(2, 10);
+    const sessionId = await getOrCreateSessionId();
     const appUrl = window.location.origin;
 
     if (isLiffAvailable()) {
@@ -182,21 +204,7 @@ export default function GroupSetup() {
       <div className="flex-shrink-0 bg-white border-t border-gray-100/60 px-6 py-4 pb-5 safe-bottom">
         <button
           onClick={async () => {
-            const sessionId = Math.random().toString(36).substring(2, 10);
-            if (profile) {
-              try {
-                await fetch("/api/group/sessions", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    sessionCode: sessionId,
-                    hostLineUserId: profile.userId,
-                    hostDisplayName: profile.displayName,
-                    hostPictureUrl: profile.pictureUrl || "",
-                  }),
-                });
-              } catch {}
-            }
+            const sessionId = await getOrCreateSessionId();
             navigate(`/group/waiting?session=${sessionId}`);
           }}
           data-testid="button-start-session"

@@ -596,27 +596,25 @@ export default function Home() {
                   <div className="grid grid-cols-2 gap-2.5">
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate("/solo/quiz"); }}
-                      className="flex items-center gap-2.5 bg-white rounded-xl px-4 py-3 border border-gray-100"
+                      className="relative overflow-hidden bg-white rounded-xl px-4 py-3 border border-gray-100 text-left"
                       style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
                       data-testid="button-solo-collapsed"
                     >
-                      <span className="text-lg">👤</span>
-                      <div className="text-left">
-                        <p className="text-sm font-bold text-foreground leading-tight">Solo</p>
-                        <p className="text-[10px] text-muted-foreground">Swipe alone</p>
-                      </div>
+                      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "#FFCC02" }} />
+                      <span className="absolute top-0 right-2 text-[32px] font-bold select-none pointer-events-none" style={{ fontFamily: "Georgia, serif", color: "rgba(0,0,0,0.04)" }}>1</span>
+                      <p className="text-sm font-bold text-foreground leading-tight" style={{ fontFamily: "Georgia, serif" }}>Solo</p>
+                      <p className="text-[10px] text-muted-foreground">Just you</p>
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate("/group/setup"); }}
-                      className="flex items-center gap-2.5 bg-white rounded-xl px-4 py-3 border border-gray-100"
+                      className="relative overflow-hidden bg-white rounded-xl px-4 py-3 border border-gray-100 text-left"
                       style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
                       data-testid="button-group-collapsed"
                     >
-                      <Users className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                      <div className="text-left">
-                        <p className="text-sm font-bold text-foreground leading-tight">Group</p>
-                        <p className="text-[10px] text-muted-foreground">With crew</p>
-                      </div>
+                      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "hsl(0, 0%, 35%)" }} />
+                      <span className="absolute top-0 right-2 text-[32px] font-bold select-none pointer-events-none" style={{ fontFamily: "Georgia, serif", color: "rgba(0,0,0,0.04)" }}>2+</span>
+                      <p className="text-sm font-bold text-foreground leading-tight" style={{ fontFamily: "Georgia, serif" }}>Group</p>
+                      <p className="text-[10px] text-muted-foreground">With others</p>
                     </button>
                   </div>
                 </div>
@@ -684,12 +682,12 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="text-[17px] font-bold text-foreground mb-1"
+              className="text-[20px] font-bold text-foreground mb-4"
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
               data-testid="text-who-eating"
             >
-              Who are you eating with?
+              Who's joining you tonight?
             </motion.h2>
-            <p className="text-xs text-muted-foreground mb-4">Your choice shapes the whole experience</p>
             <div className="grid grid-cols-2 gap-3">
               <motion.button
                 initial={{ opacity: 0, y: 12 }}
@@ -699,24 +697,32 @@ export default function Home() {
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/solo/quiz")}
                 data-testid="button-solo"
-                className="relative overflow-hidden rounded-[20px] p-5 text-left bg-white border border-gray-100"
+                className="relative overflow-hidden rounded-[20px] text-left bg-white border border-gray-100"
                 style={{
                   boxShadow: "0 4px 20px -4px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.9)",
                 }}
               >
-                <div className="absolute top-0 left-0 right-0 h-1 rounded-t-[20px]" style={{ background: "linear-gradient(90deg, hsl(45, 80%, 65%), hsl(40, 70%, 75%))" }} />
-                <motion.div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
-                  style={{ background: "hsl(45, 50%, 94%)" }}
-                  whileHover={{ rotate: 5 }}
-                >
-                  <span className="text-xl">👤</span>
-                </motion.div>
-                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFCC02]" /> Just you
-                </p>
-                <p className="text-[18px] font-bold text-foreground">Solo</p>
-                <p className="text-xs text-muted-foreground mt-1">Compare options til one wins</p>
+                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-[20px]" style={{ background: "linear-gradient(90deg, #FFCC02, hsl(40, 75%, 68%))" }} />
+                <div className="relative pt-5 px-5 pb-5">
+                  <span
+                    className="absolute top-2 left-4 text-[72px] font-bold leading-none select-none pointer-events-none"
+                    style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: "rgba(0,0,0,0.04)" }}
+                  >
+                    1
+                  </span>
+                  <div className="relative z-10 pt-12">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/70 flex items-center gap-1.5 mb-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#FFCC02]" /> Just you
+                    </p>
+                    <p
+                      className="text-[24px] font-bold text-foreground leading-tight"
+                      style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+                    >
+                      Solo
+                    </p>
+                    <p className="text-[13px] text-muted-foreground mt-2 leading-snug">Two options face off until one wins</p>
+                  </div>
+                </div>
               </motion.button>
 
               <motion.button
@@ -727,25 +733,37 @@ export default function Home() {
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/group/setup")}
                 data-testid="button-group"
-                className="relative overflow-hidden rounded-[20px] p-5 text-left bg-white border border-gray-100"
+                className="relative overflow-hidden rounded-[20px] text-left bg-white border border-gray-100"
                 style={{
                   boxShadow: "0 4px 20px -4px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.9)",
                 }}
               >
-                <div className="absolute top-0 left-0 right-0 h-1 rounded-t-[20px]" style={{ background: "linear-gradient(90deg, hsl(160, 50%, 55%), hsl(170, 45%, 65%))" }} />
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "hsl(160, 35%, 94%)" }}>
-                    <Users className="w-5 h-5 text-emerald-600" />
-                  </div>
-                  <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-600 rounded-full px-2 py-0.5 flex items-center gap-1 border border-emerald-100">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> 4 live
+                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-[20px]" style={{ background: "linear-gradient(90deg, hsl(0, 0%, 25%), hsl(0, 0%, 45%))" }} />
+                <div className="relative pt-5 px-5 pb-5">
+                  <span
+                    className="absolute top-2 left-4 text-[72px] font-bold leading-none select-none pointer-events-none"
+                    style={{ fontFamily: "Georgia, 'Times New Roman', serif", color: "rgba(0,0,0,0.04)" }}
+                  >
+                    2+
                   </span>
+                  <div className="absolute top-4 right-4">
+                    <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-600 rounded-full px-2 py-0.5 flex items-center gap-1 border border-emerald-100">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> 4 live
+                    </span>
+                  </div>
+                  <div className="relative z-10 pt-12">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/70 flex items-center gap-1.5 mb-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> With others
+                    </p>
+                    <p
+                      className="text-[24px] font-bold text-foreground leading-tight"
+                      style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+                    >
+                      Group
+                    </p>
+                    <p className="text-[13px] text-muted-foreground mt-2 leading-snug">Everyone swipes, the match wins</p>
+                  </div>
                 </div>
-                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> With crew
-                </p>
-                <p className="text-[18px] font-bold text-foreground">Group</p>
-                <p className="text-xs text-muted-foreground mt-1">Swipe together, matches win</p>
               </motion.button>
             </div>
           </div>

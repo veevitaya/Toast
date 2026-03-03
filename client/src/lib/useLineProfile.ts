@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { initLiff, getProfile, isLoggedIn, isLiffAvailable, type LineProfile } from "./liff";
+import { initLiff, getProfile, isLoggedIn, isLiffAvailable, login, isInLiff, type LineProfile } from "./liff";
 
 const GUEST_KEY = "toast_guest_profile";
 
@@ -27,12 +27,18 @@ export function useLineProfile() {
     async function init() {
       if (isLiffAvailable()) {
         const ready = await initLiff();
-        if (ready && isLoggedIn()) {
-          const p = await getProfile();
-          if (p) {
-            setProfile(p);
-            setIsLineUser(true);
-            setLoading(false);
+        if (ready) {
+          if (isLoggedIn()) {
+            const p = await getProfile();
+            if (p) {
+              localStorage.setItem(GUEST_KEY, JSON.stringify(p));
+              setProfile(p);
+              setIsLineUser(true);
+              setLoading(false);
+              return;
+            }
+          } else if (isInLiff()) {
+            login();
             return;
           }
         }
