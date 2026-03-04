@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
   ArrowLeft, Users, MapPin, Calendar as CalendarIcon,
   Clock, Utensils, Heart, Baby, Briefcase,
-  ChevronRight, ChevronLeft, Sparkles, UserPlus,
+  ChevronRight, Sparkles, UserPlus,
 } from "lucide-react";
 import { sendGroupInvite, isLiffAvailable } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
@@ -43,24 +43,38 @@ const RESTRICTIONS = [
   { id: "nut-free", icon: "🥜", label: "Nut-Free" },
 ];
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const MINUTES = [0, 15, 30, 45];
+const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const DAY_NAMES = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const TIME_PERIODS = [
+  { id: "morning", label: "Morning", hours: [7, 8, 9, 10, 11] },
+  { id: "afternoon", label: "Afternoon", hours: [12, 13, 14, 15, 16] },
+  { id: "evening", label: "Evening", hours: [17, 18, 19, 20, 21] },
+  { id: "latenight", label: "Late", hours: [22, 23, 0, 1, 2] },
+];
 
-function getMiniCalendarDays(year: number, month: number) {
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const days: (number | null)[] = [];
-  for (let i = 0; i < firstDay; i++) days.push(null);
-  for (let i = 1; i <= daysInMonth; i++) days.push(i);
+function getNext14Days() {
+  const days: Date[] = [];
+  const now = new Date();
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() + i);
+    d.setHours(0, 0, 0, 0);
+    days.push(d);
+  }
   return days;
 }
 
 function isSameDay(a: Date | null, b: Date) {
   if (!a) return false;
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function formatHourLabel(h: number) {
+  if (h === 0) return "12a";
+  if (h < 12) return `${h}a`;
+  if (h === 12) return "12p";
+  return `${h - 12}p`;
 }
 
 export default function GroupSetup() {
@@ -73,22 +87,12 @@ export default function GroupSetup() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedHour, setSelectedHour] = useState<number | null>(null);
   const [selectedMinute, setSelectedMinute] = useState<number>(0);
+  const [activePeriod, setActivePeriod] = useState<string>("evening");
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [calendarMonth, setCalendarMonth] = useState(() => new Date().getMonth());
-  const [calendarYear, setCalendarYear] = useState(() => new Date().getFullYear());
   const [inviteSent, setInviteSent] = useState(false);
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
-  const hourScrollRef = useRef<HTMLDivElement>(null);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  useEffect(() => {
-    if (showTimePicker && hourScrollRef.current && selectedHour !== null) {
-      const el = hourScrollRef.current.querySelector(`[data-hour="${selectedHour}"]`);
-      if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
-    }
-  }, [showTimePicker, selectedHour]);
+  const dateScrollRef = useRef<HTMLDivElement>(null);
+  const upcomingDays = getNext14Days();
 
   const toggleList = (list: string[], item: string, setter: (v: string[]) => void) => {
     if (list.includes(item)) setter(list.filter((i) => i !== item));
@@ -135,24 +139,13 @@ export default function GroupSetup() {
     }
   };
 
-  const calendarDays = getMiniCalendarDays(calendarYear, calendarMonth);
-
-  const prevMonth = () => {
-    if (calendarMonth === 0) { setCalendarMonth(11); setCalendarYear(calendarYear - 1); }
-    else setCalendarMonth(calendarMonth - 1);
-  };
-  const nextMonth = () => {
-    if (calendarMonth === 11) { setCalendarMonth(0); setCalendarYear(calendarYear + 1); }
-    else setCalendarMonth(calendarMonth + 1);
-  };
-
-  const canGoPrev = calendarYear > today.getFullYear() || (calendarYear === today.getFullYear() && calendarMonth > today.getMonth());
-
   const formatTime = (h: number, m: number) => {
     const period = h >= 12 ? "PM" : "AM";
     const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
     return `${displayH}:${m.toString().padStart(2, "0")} ${period}`;
   };
+
+  const currentPeriodHours = TIME_PERIODS.find(p => p.id === activePeriod)?.hours || [];
 
   const completedSteps = [
     selectedDate || selectedHour !== null,
@@ -190,186 +183,201 @@ export default function GroupSetup() {
 
       <div className="flex-1 overflow-y-auto pb-6 hide-scrollbar">
 
-        <div className="px-5 pt-4 pb-3">
+        <div className="pt-4 pb-3">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
           >
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-3 px-5">
               <CalendarIcon className="w-4 h-4 text-[#FFCC02]" />
               <h2 className="text-[12px] font-bold uppercase tracking-[0.1em] text-foreground">When?</h2>
               <span className="text-[10px] text-muted-foreground ml-auto">Optional</span>
             </div>
 
             <div
-              className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
-              style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.04)" }}
+              ref={dateScrollRef}
+              className="flex gap-2 overflow-x-auto hide-scrollbar pl-5 pr-5 pb-1"
             >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-                <button
-                  onClick={prevMonth}
-                  disabled={!canGoPrev}
-                  className="w-7 h-7 rounded-full hover:bg-gray-50 flex items-center justify-center disabled:opacity-30 transition-colors"
-                  data-testid="calendar-prev-month"
-                >
-                  <ChevronLeft className="w-4 h-4 text-foreground" />
-                </button>
-                <span className="text-[13px] font-bold text-foreground">
-                  {MONTH_NAMES[calendarMonth]} {calendarYear}
-                </span>
-                <button
-                  onClick={nextMonth}
-                  className="w-7 h-7 rounded-full hover:bg-gray-50 flex items-center justify-center transition-colors"
-                  data-testid="calendar-next-month"
-                >
-                  <ChevronRight className="w-4 h-4 text-foreground" />
-                </button>
-              </div>
+              {upcomingDays.map((day, idx) => {
+                const isSelected = isSameDay(selectedDate, day);
+                const isToday = idx === 0;
+                return (
+                  <motion.button
+                    key={day.toISOString()}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => setSelectedDate(isSelected ? null : day)}
+                    data-testid={`calendar-day-${day.getDate()}`}
+                    className={`flex flex-col items-center flex-shrink-0 w-[52px] py-2.5 rounded-2xl transition-all duration-200 ${
+                      isSelected
+                        ? "bg-foreground text-white"
+                        : "bg-white border border-gray-100"
+                    }`}
+                    style={{
+                      boxShadow: isSelected
+                        ? "0 4px 16px rgba(0,0,0,0.15)"
+                        : "0 1px 3px rgba(0,0,0,0.03)",
+                    }}
+                  >
+                    <span className={`text-[9px] font-semibold uppercase tracking-wider ${
+                      isSelected ? "text-white/60" : "text-muted-foreground"
+                    }`}>
+                      {isToday ? "Today" : DAY_NAMES_SHORT[day.getDay()]}
+                    </span>
+                    <span className={`text-[18px] font-bold leading-tight mt-0.5 ${
+                      isSelected ? "text-white" : "text-foreground"
+                    }`}>
+                      {day.getDate()}
+                    </span>
+                    <span className={`text-[9px] font-medium ${
+                      isSelected ? "text-white/50" : "text-muted-foreground/60"
+                    }`}>
+                      {MONTH_NAMES_SHORT[day.getMonth()]}
+                    </span>
+                  </motion.button>
+                );
+              })}
+            </div>
 
-              <div className="px-3 pt-2 pb-1">
-                <div className="grid grid-cols-7 gap-0">
-                  {DAY_NAMES.map((d) => (
-                    <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground py-1">{d}</div>
-                  ))}
-                  {calendarDays.map((day, idx) => {
-                    if (day === null) return <div key={`empty-${idx}`} />;
-                    const date = new Date(calendarYear, calendarMonth, day);
-                    const isPast = date < today;
-                    const isSelected = isSameDay(selectedDate, date);
-                    const isToday = isSameDay(today, date);
-                    return (
-                      <button
-                        key={`day-${day}`}
-                        disabled={isPast}
-                        onClick={() => {
-                          if (isSelected) setSelectedDate(null);
-                          else setSelectedDate(date);
-                        }}
-                        data-testid={`calendar-day-${day}`}
-                        className={`relative w-full aspect-square flex items-center justify-center text-[12px] font-medium rounded-xl transition-all duration-150 ${
-                          isPast
-                            ? "text-gray-200 cursor-not-allowed"
-                            : isSelected
-                              ? "bg-foreground text-white font-bold"
-                              : isToday
-                                ? "text-foreground font-bold"
-                                : "text-foreground hover:bg-gray-50 active:scale-90"
-                        }`}
-                      >
-                        {day}
-                        {isToday && !isSelected && (
-                          <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#FFCC02]" />
-                        )}
-                      </button>
-                    );
-                  })}
+            <div className="px-5 mt-3">
+              <div
+                onClick={() => setShowTimePicker(!showTimePicker)}
+                role="button"
+                tabIndex={0}
+                data-testid="button-toggle-time"
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 cursor-pointer ${
+                  showTimePicker || selectedHour !== null
+                    ? "bg-white border border-gray-100"
+                    : "bg-white border border-dashed border-gray-200"
+                }`}
+                style={{ boxShadow: selectedHour !== null ? "0 2px 8px rgba(0,0,0,0.04)" : "none" }}
+              >
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
+                  selectedHour !== null ? "bg-[#FFCC02]/10" : "bg-gray-50"
+                }`}>
+                  <Clock className="w-4 h-4" style={{ color: selectedHour !== null ? "#FFCC02" : "#999" }} />
                 </div>
+                <span className={`text-[13px] flex-1 text-left ${
+                  selectedHour !== null ? "font-bold text-foreground" : "font-medium text-muted-foreground"
+                }`}>
+                  {selectedHour !== null ? formatTime(selectedHour, selectedMinute) : "Add a time"}
+                </span>
+                {selectedHour !== null && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setSelectedHour(null); setSelectedMinute(0); setShowTimePicker(false); }}
+                    className="text-[10px] text-muted-foreground bg-gray-100 rounded-full px-2.5 py-1 hover:bg-gray-200 transition-colors font-medium"
+                    data-testid="button-clear-time"
+                  >
+                    Clear
+                  </button>
+                )}
+                <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground/30 transition-transform duration-200 ${showTimePicker ? "rotate-90" : ""}`} />
               </div>
 
-              <div className="px-4 pb-3 pt-1 border-t border-gray-50">
-                <button
-                  onClick={() => setShowTimePicker(!showTimePicker)}
-                  data-testid="button-toggle-time"
-                  className="w-full flex items-center gap-2.5 py-2.5 rounded-xl hover:bg-gray-50 transition-colors px-1"
-                >
-                  <Clock className="w-4 h-4 text-[#FFCC02]" />
-                  <span className="text-[13px] font-semibold text-foreground flex-1 text-left">
-                    {selectedHour !== null ? formatTime(selectedHour, selectedMinute) : "Add a time"}
-                  </span>
-                  {selectedHour !== null && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setSelectedHour(null); setSelectedMinute(0); setShowTimePicker(false); }}
-                      className="text-[10px] text-muted-foreground bg-gray-100 rounded-full px-2 py-0.5 hover:bg-gray-200 transition-colors"
-                      data-testid="button-clear-time"
-                    >
-                      Clear
-                    </button>
-                  )}
-                  <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground/40 transition-transform duration-200 ${showTimePicker ? "rotate-90" : ""}`} />
-                </button>
-
-                <AnimatePresence>
-                  {showTimePicker && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="flex gap-3 pt-2">
-                        <div className="flex-1">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 px-1">Hour</p>
-                          <div ref={hourScrollRef} className="h-[140px] overflow-y-auto hide-scrollbar rounded-xl bg-gray-50 py-1">
-                            {HOURS.map((h) => {
-                              const active = selectedHour === h;
-                              const period = h >= 12 ? "PM" : "AM";
-                              const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
-                              return (
-                                <button
-                                  key={h}
-                                  data-hour={h}
-                                  onClick={() => setSelectedHour(h)}
-                                  data-testid={`time-hour-${h}`}
-                                  className={`w-full text-center py-2 text-[13px] font-medium transition-colors rounded-lg mx-auto ${
-                                    active
-                                      ? "bg-foreground text-white font-bold"
-                                      : "text-foreground hover:bg-gray-100"
-                                  }`}
-                                >
-                                  {displayH} {period}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                        <div className="w-[90px]">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 px-1">Minute</p>
-                          <div className="flex flex-col gap-1">
-                            {MINUTES.map((m) => {
-                              const active = selectedMinute === m;
-                              return (
-                                <button
-                                  key={m}
-                                  onClick={() => setSelectedMinute(m)}
-                                  data-testid={`time-minute-${m}`}
-                                  className={`w-full text-center py-2.5 text-[13px] font-medium transition-colors rounded-xl ${
-                                    active
-                                      ? "bg-foreground text-white font-bold"
-                                      : "bg-gray-50 text-foreground hover:bg-gray-100"
-                                  }`}
-                                >
-                                  :{m.toString().padStart(2, "0")}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
+              <AnimatePresence>
+                {showTimePicker && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ type: "spring", damping: 28, stiffness: 300 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pt-3">
+                      <div className="flex gap-1 p-1 bg-gray-50 rounded-xl mb-3">
+                        {TIME_PERIODS.map((p) => (
+                          <button
+                            key={p.id}
+                            onClick={() => setActivePeriod(p.id)}
+                            data-testid={`time-period-${p.id}`}
+                            className={`flex-1 py-2 rounded-lg text-[11px] font-semibold transition-all duration-200 ${
+                              activePeriod === p.id
+                                ? "bg-white text-foreground shadow-sm"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            {p.label}
+                          </button>
+                        ))}
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+
+                      <div className="grid grid-cols-5 gap-1.5 mb-3">
+                        {currentPeriodHours.map((h) => {
+                          const active = selectedHour === h;
+                          return (
+                            <motion.button
+                              key={h}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => setSelectedHour(active ? null : h)}
+                              data-testid={`time-hour-${h}`}
+                              className={`py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-150 ${
+                                active
+                                  ? "bg-foreground text-white"
+                                  : "bg-white border border-gray-100 text-foreground hover:border-gray-200"
+                              }`}
+                              style={{
+                                boxShadow: active ? "0 3px 10px rgba(0,0,0,0.12)" : "none",
+                              }}
+                            >
+                              {formatHourLabel(h)}
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+
+                      {selectedHour !== null && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex gap-1.5"
+                        >
+                          {[0, 15, 30, 45].map((m) => {
+                            const active = selectedMinute === m;
+                            return (
+                              <button
+                                key={m}
+                                onClick={() => setSelectedMinute(m)}
+                                data-testid={`time-minute-${m}`}
+                                className={`flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150 ${
+                                  active
+                                    ? "bg-[#FFCC02] text-foreground"
+                                    : "bg-white border border-gray-100 text-muted-foreground hover:border-gray-200"
+                                }`}
+                                style={{
+                                  boxShadow: active ? "0 2px 8px rgba(255,204,2,0.3)" : "none",
+                                }}
+                              >
+                                :{m.toString().padStart(2, "0")}
+                              </button>
+                            );
+                          })}
+                        </motion.div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {(selectedDate || selectedHour !== null) && (
               <motion.div
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-2 flex items-center gap-2 px-1"
+                className="mt-2.5 mx-5 flex items-center gap-2 bg-white rounded-xl px-3.5 py-2.5 border border-gray-100"
+                style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}
               >
-                <span className="text-[11px] text-muted-foreground">
-                  {selectedDate ? `${DAY_NAMES[selectedDate.getDay()]}, ${selectedDate.getDate()} ${MONTH_NAMES[selectedDate.getMonth()]}` : ""}
+                <CalendarIcon className="w-3.5 h-3.5 text-[#FFCC02] flex-shrink-0" />
+                <span className="text-[12px] font-medium text-foreground flex-1">
+                  {selectedDate ? `${DAY_NAMES_SHORT[selectedDate.getDay()]}, ${MONTH_NAMES_SHORT[selectedDate.getMonth()]} ${selectedDate.getDate()}` : ""}
                   {selectedDate && selectedHour !== null ? " at " : ""}
                   {selectedHour !== null ? formatTime(selectedHour, selectedMinute) : ""}
                 </span>
                 <button
                   onClick={() => { setSelectedDate(null); setSelectedHour(null); setSelectedMinute(0); setShowTimePicker(false); }}
-                  className="text-[10px] text-[#E11D48] font-semibold ml-auto"
+                  className="text-[10px] text-muted-foreground font-semibold hover:text-foreground transition-colors"
                   data-testid="button-clear-datetime"
                 >
-                  Clear all
+                  Clear
                 </button>
               </motion.div>
             )}
