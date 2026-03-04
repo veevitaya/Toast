@@ -353,7 +353,7 @@ export default function Home() {
         />
       </div>
 
-      <div className="absolute top-0 left-0 right-0 z-40 safe-top" ref={locationRef}>
+      <div className="absolute top-0 left-0 right-0 z-[60] safe-top" ref={locationRef}>
         <div className="px-4 pt-3 pb-2">
           <div
             className="w-full flex items-center gap-2.5 bg-white/95 backdrop-blur-md rounded-2xl px-4 py-3 border border-gray-200/60"
@@ -453,7 +453,7 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -4, scale: 0.95 }}
                 transition={{ type: "spring", damping: 26, stiffness: 300 }}
-                className="mt-2 w-[200px] ml-auto bg-white rounded-2xl overflow-hidden border border-gray-100 z-[60]"
+                className="mt-2 w-[200px] ml-auto bg-white rounded-2xl overflow-hidden border border-gray-100 z-[110]"
                 style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.06)" }}
                 data-testid="location-picker-dropdown"
               >
@@ -840,7 +840,7 @@ export default function Home() {
                 <div className="flex items-center gap-3">
                   <img src={mascotPath} alt="" className="w-10 h-10 object-contain" />
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 rounded-full px-2.5 py-1 flex items-center gap-1.5 border border-emerald-100">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> AI &middot; Your Taste
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Just for you
                   </span>
                 </div>
                 <motion.button
@@ -1068,7 +1068,7 @@ export default function Home() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -4, scale: 0.95 }}
                         transition={{ type: "spring", damping: 26, stiffness: 260, mass: 0.8 }}
-                        className="absolute top-11 right-0 w-[260px] bg-white rounded-2xl overflow-hidden border border-gray-100"
+                        className="absolute top-11 right-0 w-[260px] bg-white rounded-2xl overflow-hidden border border-gray-100 z-[110]"
                         style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.15)" }}
                       >
                         <div className="p-4 space-y-4 max-h-[340px] overflow-y-auto">
