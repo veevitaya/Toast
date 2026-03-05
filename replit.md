@@ -15,7 +15,7 @@ The design adheres to an Airbnb-inspired system with a #FFCC02 golden yellow bra
 **Key Features:**
 - **Home Screen:** Features an interactive map (OpenStreetMap, Bangkok-centric), a draggable bottom sheet with various modes, and personalized restaurant recommendations.
 - **Solo Journey:** A guided 3-step quiz (mood/cuisine, location/budget, interests) leading to personalized restaurant results and details.
-- **Group Journey:** Allows users to set up sessions, invite friends via LINE, and engage in synchronized swiping to decide on a restaurant collectively.
+- **Group Journey:** Full-screen immersive 4-step setup wizard (Budget, Group Type, Location, Mood) with gradient backgrounds per step, horizontal scroll pickers with large active text and faded adjacent options, step indicator dots, and food preview images. Creates session and navigates to waiting room. Waiting room auto-navigates all members when host starts swiping. GroupSwipe loads restaurants from API, supports host "End Session" button with confirmation bottom sheet, and shows session summary with all matches when completed.
 - **Swipe Mode:** Tinder-like card swiping for discovering restaurants based on different categories.
 - **Taste Profile:** Tracks user swipe behavior to personalize recommendations, displayed as "Because you like..." sections.
 - **Restaurant Detail:** Comprehensive view with photos, reviews, opening hours, map location, and "Order Delivery" button that opens a bottom drawer to choose between Grab, LINE MAN, or Robinhood — deep links to each app with web fallbacks. Delivery clicks tracked via `delivery_click` event with platform metadata.
