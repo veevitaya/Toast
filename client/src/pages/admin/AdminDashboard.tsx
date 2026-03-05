@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Flame,
 } from "lucide-react";
+import { Icon3D, type ColorTheme } from "@/components/Icon3D";
 
 interface DashboardData {
   totalUsers: number;
@@ -265,7 +266,7 @@ export default function AdminDashboard() {
   const maxRestaurantSwipes = Math.max(...TOP_RESTAURANTS.map((r) => r.swipes));
   const maxGeoOrders = Math.max(...GEO_HOTSPOTS.map((s) => s.orders));
 
-  const kpis = [
+  const kpis: { label: string; value: number; icon: typeof Users; delta: string; deltaUp: boolean; sparkline: number[]; theme: ColorTheme }[] = [
     {
       label: "Total Users",
       value: stats.totalUsers,
@@ -273,7 +274,7 @@ export default function AdminDashboard() {
       delta: "+12%",
       deltaUp: true,
       sparkline: [18, 24, 32, 28, 35, 42, 48],
-      iconGradient: "linear-gradient(135deg, hsl(220,50%,93%) 0%, hsl(230,45%,87%) 100%)",
+      theme: "blue",
     },
     {
       label: "Restaurants",
@@ -282,7 +283,7 @@ export default function AdminDashboard() {
       delta: "+5",
       deltaUp: true,
       sparkline: [12, 14, 15, 16, 18, 19, 22],
-      iconGradient: "linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)",
+      theme: "orange",
     },
     {
       label: "Total Swipes",
@@ -291,7 +292,7 @@ export default function AdminDashboard() {
       delta: "+340",
       deltaUp: true,
       sparkline: [120, 180, 210, 190, 260, 310, 340],
-      iconGradient: "linear-gradient(135deg, hsl(260,50%,93%) 0%, hsl(270,45%,87%) 100%)",
+      theme: "purple",
     },
     {
       label: "Delivery Clicks",
@@ -300,7 +301,7 @@ export default function AdminDashboard() {
       delta: "+18%",
       deltaUp: true,
       sparkline: [320, 380, 410, 390, 450, 480, 520],
-      iconGradient: "linear-gradient(135deg, hsl(155,50%,92%) 0%, hsl(165,45%,85%) 100%)",
+      theme: "green",
     },
     {
       label: "Campaigns",
@@ -309,7 +310,7 @@ export default function AdminDashboard() {
       delta: "active",
       deltaUp: true,
       sparkline: [3, 4, 4, 5, 6, 5, 6],
-      iconGradient: "linear-gradient(135deg, hsl(35,80%,92%) 0%, hsl(40,70%,85%) 100%)",
+      theme: "yellow",
     },
   ];
 
@@ -334,9 +335,7 @@ export default function AdminDashboard() {
           >
             <div className="absolute top-0 left-0 w-full h-[2px]" style={{ background: "linear-gradient(to right, hsl(222, 47%, 25%), hsl(222, 47%, 45%))" }} />
             <div className="flex items-start justify-between mb-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: kpi.iconGradient }}>
-                <kpi.icon className="w-4 h-4 text-foreground" />
-              </div>
+              <Icon3D icon={kpi.icon} theme={kpi.theme} size="sm" />
               <MiniSparkline data={kpi.sparkline} />
             </div>
             <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">{kpi.label}</p>

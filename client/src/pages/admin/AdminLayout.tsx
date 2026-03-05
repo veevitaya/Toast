@@ -14,6 +14,7 @@ import {
   Store,
   ShieldCheck,
 } from "lucide-react";
+import { Icon3D, type ColorTheme } from "@/components/Icon3D";
 import toastLogo from "@assets/toast_logo_nobg.png";
 
 interface AdminSession {
@@ -30,20 +31,20 @@ interface AdminSession {
   subscriptionTier?: string;
 }
 
-const adminNavItems = [
-  { label: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard" },
-  { label: "Users", icon: Users, href: "/admin/users" },
-  { label: "Restaurants", icon: Utensils, href: "/admin/restaurants" },
-  { label: "Campaigns", icon: Megaphone, href: "/admin/campaigns" },
-  { label: "Banners", icon: ImageIcon, href: "/admin/banners" },
-  { label: "Analytics", icon: BarChart3, href: "/admin/analytics" },
-  { label: "App Config", icon: Settings2, href: "/admin/config" },
+const adminNavItems: { label: string; icon: typeof LayoutDashboard; href: string; theme: ColorTheme }[] = [
+  { label: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard", theme: "blue" },
+  { label: "Users", icon: Users, href: "/admin/users", theme: "purple" },
+  { label: "Restaurants", icon: Utensils, href: "/admin/restaurants", theme: "orange" },
+  { label: "Campaigns", icon: Megaphone, href: "/admin/campaigns", theme: "yellow" },
+  { label: "Banners", icon: ImageIcon, href: "/admin/banners", theme: "pink" },
+  { label: "Analytics", icon: BarChart3, href: "/admin/analytics", theme: "teal" },
+  { label: "App Config", icon: Settings2, href: "/admin/config", theme: "slate" },
 ];
 
-const ownerNavItems = [
-  { label: "My Restaurant", icon: Store, href: "/admin/my-restaurant" },
-  { label: "Campaigns", icon: Megaphone, href: "/admin/campaigns" },
-  { label: "Analytics", icon: BarChart3, href: "/admin/analytics" },
+const ownerNavItems: { label: string; icon: typeof LayoutDashboard; href: string; theme: ColorTheme }[] = [
+  { label: "My Restaurant", icon: Store, href: "/admin/my-restaurant", theme: "green" },
+  { label: "Campaigns", icon: Megaphone, href: "/admin/campaigns", theme: "yellow" },
+  { label: "Analytics", icon: BarChart3, href: "/admin/analytics", theme: "teal" },
 ];
 
 function getPageTitle(path: string, items: typeof adminNavItems): string {
@@ -123,12 +124,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all ${
                     active
-                      ? "bg-gray-100 dark:bg-muted text-foreground border-l-[3px] border-[#FFCC02]"
+                      ? "bg-gray-50 dark:bg-muted text-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-gray-50 dark:hover:bg-muted"
                   }`}
                   data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
                 >
-                  <item.icon className={`w-4 h-4 ${active ? "text-[#FFCC02]" : ""}`} />
+                  <Icon3D
+                    icon={item.icon}
+                    theme={active ? item.theme : "slate"}
+                    size="xs"
+                  />
                   <span>{item.label}</span>
                 </div>
               </Link>

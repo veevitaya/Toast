@@ -6,6 +6,7 @@ import {
   Clock, Utensils, Heart, Baby, Briefcase,
   ChevronRight, ChevronDown, Sparkles, UserPlus,
 } from "lucide-react";
+import { Icon3D, type ColorTheme } from "@/components/Icon3D";
 import { sendGroupInvite, isLiffAvailable } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
 
@@ -25,11 +26,11 @@ const BUDGETS = [
   { id: "4", icon: "฿฿฿฿", label: "Splurge", color: "#E11D48" },
 ];
 
-const GROUP_TYPES = [
-  { id: "friends", icon: Users, label: "Friends", color: "#00B14F" },
-  { id: "partner", icon: Heart, label: "Partner", color: "#E11D48" },
-  { id: "family", icon: Baby, label: "Family", color: "#FFCC02" },
-  { id: "coworkers", icon: Briefcase, label: "Coworkers", color: "#6C2BD9" },
+const GROUP_TYPES: { id: string; icon: typeof Users; label: string; color: string; theme: ColorTheme }[] = [
+  { id: "friends", icon: Users, label: "Friends", color: "#00B14F", theme: "green" },
+  { id: "partner", icon: Heart, label: "Partner", color: "#E11D48", theme: "pink" },
+  { id: "family", icon: Baby, label: "Family", color: "#FFCC02", theme: "yellow" },
+  { id: "coworkers", icon: Briefcase, label: "Coworkers", color: "#6C2BD9", theme: "purple" },
 ];
 
 const RESTRICTIONS = [
@@ -511,12 +512,11 @@ export default function GroupSetup() {
                         : "0 1px 4px rgba(0,0,0,0.03)",
                     }}
                   >
-                    <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
-                      style={{ background: active ? `${g.color}15` : "#f5f5f5" }}
-                    >
-                      <Icon className="w-4.5 h-4.5" style={{ color: active ? g.color : "#999" }} />
-                    </div>
+                    <Icon3D
+                      icon={Icon}
+                      theme={active ? g.theme : "slate"}
+                      size="sm"
+                    />
                     <span className={`text-[11px] font-semibold ${active ? "text-foreground" : "text-muted-foreground"}`}>{g.label}</span>
                   </motion.button>
                 );

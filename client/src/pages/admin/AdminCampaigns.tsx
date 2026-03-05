@@ -21,6 +21,7 @@ import {
   MapPin,
   Target,
 } from "lucide-react";
+import { Icon3D, type ColorTheme } from "@/components/Icon3D";
 
 const statusTabs = ["All", "Draft", "Active", "Paused", "Ended"] as const;
 
@@ -87,35 +88,11 @@ function formatNum(n: number): string {
   return n.toString();
 }
 
-const kpiCards = [
-  {
-    label: "Total Impressions",
-    value: "248K",
-    icon: Eye,
-    iconColor: "text-indigo-500",
-    gradient: "linear-gradient(135deg, hsl(230,50%,92%) 0%, hsl(240,45%,85%) 100%)",
-  },
-  {
-    label: "Total Clicks",
-    value: "12.4K",
-    icon: MousePointerClick,
-    iconColor: "text-cyan-500",
-    gradient: "linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)",
-  },
-  {
-    label: "Avg CTR",
-    value: "5.0%",
-    icon: TrendingUp,
-    iconColor: "text-violet-500",
-    gradient: "linear-gradient(135deg, hsl(260,50%,92%) 0%, hsl(270,45%,85%) 100%)",
-  },
-  {
-    label: "Revenue Generated",
-    value: "฿847K",
-    icon: DollarSign,
-    iconColor: "text-emerald-500",
-    gradient: "linear-gradient(135deg, hsl(155,50%,92%) 0%, hsl(165,45%,85%) 100%)",
-  },
+const kpiCards: { label: string; value: string; icon: typeof Eye; theme: ColorTheme }[] = [
+  { label: "Total Impressions", value: "248K", icon: Eye, theme: "purple" },
+  { label: "Total Clicks", value: "12.4K", icon: MousePointerClick, theme: "teal" },
+  { label: "Avg CTR", value: "5.0%", icon: TrendingUp, theme: "blue" },
+  { label: "Revenue Generated", value: "฿847K", icon: DollarSign, theme: "green" },
 ];
 
 export default function AdminCampaigns() {
@@ -182,12 +159,7 @@ export default function AdminCampaigns() {
             data-testid={`kpi-${kpi.label.toLowerCase().replace(/\s+/g, "-")}`}
           >
             <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center bg-gray-50 dark:bg-muted"
-                style={{ background: kpi.gradient }}
-              >
-                <kpi.icon className={`w-5 h-5 ${kpi.iconColor}`} />
-              </div>
+              <Icon3D icon={kpi.icon} theme={kpi.theme} size="sm" />
               <div>
                 <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
                 <p className="text-xs text-muted-foreground">{kpi.label}</p>

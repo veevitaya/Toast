@@ -19,6 +19,7 @@ import {
   DollarSign, Target, BarChart3, Layers, Calendar, Zap,
   ShoppingCart, TrendingUp,
 } from "lucide-react";
+import { Icon3D } from "@/components/Icon3D";
 
 const positions = [
   { value: "home_top", label: "Home Top" },
@@ -224,9 +225,7 @@ export default function AdminBanners() {
     <div data-testid="admin-banners-page" className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-muted flex items-center justify-center" style={{ background: 'linear-gradient(135deg, hsl(200,50%,92%) 0%, hsl(210,45%,85%) 100%)' }}>
-            <Layers className="w-5 h-5 text-foreground" />
-          </div>
+          <Icon3D icon={Layers} theme="blue" size="sm" />
           <div>
             <h2 className="text-xl font-semibold text-foreground" data-testid="text-banners-title">
               Ad Creative Manager
@@ -602,9 +601,7 @@ export default function AdminBanners() {
         </div>
       ) : banners.length === 0 ? (
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-8 text-center">
-          <div className="w-12 h-12 rounded-xl bg-gray-50 dark:bg-muted flex items-center justify-center mx-auto mb-3">
-            <Layers className="w-6 h-6 text-muted-foreground" />
-          </div>
+          <div className="mx-auto mb-3"><Icon3D icon={Layers} theme="slate" size="lg" /></div>
           <p className="text-muted-foreground" data-testid="text-no-banners">
             No creatives yet
           </p>

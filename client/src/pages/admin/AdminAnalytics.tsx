@@ -30,6 +30,7 @@ import {
   Calendar,
   Smartphone,
 } from "lucide-react";
+import { Icon3D, type ColorTheme } from "@/components/Icon3D";
 import { Button } from "@/components/ui/button";
 
 type DateRange = "7d" | "30d" | "all";
@@ -315,13 +316,13 @@ export default function AdminAnalytics() {
   const eventBreakdown = summary?.eventBreakdown || {};
   const maxEventCount = Math.max(...Object.values(eventBreakdown), 1);
 
-  const summaryKpis = [
-    { label: "Total Events", value: summary?.totalEvents || 0, icon: Activity, gradient: "linear-gradient(135deg, hsl(200,50%,92%) 0%, hsl(210,45%,85%) 100%)", iconColor: "hsl(222, 47%, 35%)" },
-    { label: "Total Swipes", value: summary?.totalSwipes || 0, icon: MousePointer, gradient: "linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)", iconColor: "hsl(189, 95%, 43%)" },
-    { label: "Active Campaigns", value: summary?.activeCampaigns || 0, icon: Target, gradient: "linear-gradient(135deg, hsl(270,50%,92%) 0%, hsl(260,45%,85%) 100%)", iconColor: "hsl(258, 90%, 66%)" },
-    { label: "Restaurants", value: summary?.totalRestaurants || 0, icon: ShoppingBag, gradient: "linear-gradient(135deg, hsl(35,80%,92%) 0%, hsl(40,70%,85%) 100%)", iconColor: "hsl(38, 92%, 50%)" },
-    { label: "Delivery Clicks", value: 3847, icon: ExternalLink, gradient: "linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)", iconColor: "hsl(189, 95%, 43%)" },
-    { label: "Avg Session", value: "4.2min", icon: Timer, gradient: "linear-gradient(135deg, hsl(200,50%,92%) 0%, hsl(210,45%,85%) 100%)", iconColor: "hsl(222, 47%, 35%)" },
+  const summaryKpis: { label: string; value: number | string; icon: typeof Activity; theme: ColorTheme }[] = [
+    { label: "Total Events", value: summary?.totalEvents || 0, icon: Activity, theme: "blue" },
+    { label: "Total Swipes", value: summary?.totalSwipes || 0, icon: MousePointer, theme: "teal" },
+    { label: "Active Campaigns", value: summary?.activeCampaigns || 0, icon: Target, theme: "purple" },
+    { label: "Restaurants", value: summary?.totalRestaurants || 0, icon: ShoppingBag, theme: "orange" },
+    { label: "Delivery Clicks", value: 3847, icon: ExternalLink, theme: "green" },
+    { label: "Avg Session", value: "4.2min", icon: Timer, theme: "slate" },
   ];
 
   const maxDayValue = Math.max(...DAY_PATTERNS.map((d) => d.value));
@@ -330,9 +331,7 @@ export default function AdminAnalytics() {
     <div data-testid="admin-analytics-page" className="space-y-8">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-muted flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(200,50%,92%) 0%, hsl(210,45%,85%) 100%)" }}>
-            <BarChart3 className="w-5 h-5" style={{ color: "hsl(222, 47%, 35%)" }} />
-          </div>
+          <Icon3D icon={BarChart3} theme="teal" size="md" />
           <div>
             <h2 className="text-xl font-semibold text-foreground" data-testid="text-analytics-title">
               Data Intelligence
@@ -367,9 +366,7 @@ export default function AdminAnalytics() {
         {summaryKpis.map((kpi) => (
           <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-border p-4" data-testid={`kpi-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}>
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: kpi.gradient }}>
-                <kpi.icon className="w-3.5 h-3.5" style={{ color: kpi.iconColor }} />
-              </div>
+              <Icon3D icon={kpi.icon} theme={kpi.theme} size="xs" />
               <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">{kpi.label}</span>
             </div>
             <p className="text-2xl font-bold tracking-tight text-foreground" data-testid={`kpi-value-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}>
@@ -391,9 +388,7 @@ export default function AdminAnalytics() {
           data-testid="button-toggle-user-intel"
         >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(230,50%,92%) 0%, hsl(240,45%,85%) 100%)" }}>
-              <Users className="w-4 h-4" style={{ color: "hsl(239, 84%, 67%)" }} />
-            </div>
+            <Icon3D icon={Users} theme="purple" size="xs" />
             <div className="text-left">
               <h3 className="text-[15px] font-semibold text-foreground">User Intelligence</h3>
               <p className="text-xs text-muted-foreground/40">Demographics, behavior cohorts, activity patterns</p>
@@ -1097,9 +1092,7 @@ export default function AdminAnalytics() {
           data-testid="button-toggle-catalog"
         >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(200,50%,92%) 0%, hsl(210,45%,85%) 100%)" }}>
-              <Layers className="w-4 h-4" style={{ color: "hsl(222, 47%, 35%)" }} />
-            </div>
+            <Icon3D icon={Layers} theme="blue" size="xs" />
             <div className="text-left">
               <h3 className="text-[15px] font-semibold text-foreground">Data Insights Catalog</h3>
               <p className="text-xs text-muted-foreground/40">Actionable analytics for partners & restaurant owners</p>

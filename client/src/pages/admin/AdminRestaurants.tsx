@@ -43,6 +43,7 @@ import {
   Square,
   ExternalLink,
 } from "lucide-react";
+import { Icon3D } from "@/components/Icon3D";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Restaurant, RestaurantOwner, RestaurantClaim } from "@shared/schema";
 
@@ -138,9 +139,7 @@ export default function AdminRestaurants() {
     <div data-testid="admin-restaurants-page" className="space-y-5">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gray-50 dark:bg-muted flex items-center justify-center">
-            <Utensils className="w-4 h-4 text-foreground" />
-          </div>
+          <Icon3D icon={Utensils} theme="orange" size="sm" />
           <div className="flex items-center gap-3">
             <button
               onClick={() => setActiveTab("restaurants")}
