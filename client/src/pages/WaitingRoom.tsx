@@ -72,20 +72,23 @@ export default function WaitingRoom() {
   useEffect(() => {
     if (!sessionCreated || !sessionId) return;
 
-    const fetchMembers = async () => {
+    const fetchSession = async () => {
       try {
         const res = await fetch(`/api/group/sessions/${sessionId}`);
         if (res.ok) {
           const data = await res.json();
           setMembers(data.members);
+          if (data.session?.status === "swiping") {
+            navigate(`/group/swipe?session=${sessionId}`);
+          }
         }
       } catch {}
     };
 
-    fetchMembers();
-    const interval = setInterval(fetchMembers, 3000);
+    fetchSession();
+    const interval = setInterval(fetchSession, 2000);
     return () => clearInterval(interval);
-  }, [sessionCreated, sessionId]);
+  }, [sessionCreated, sessionId, navigate]);
 
   const handleInviteMore = async () => {
     await sendGroupInvite(sessionId);

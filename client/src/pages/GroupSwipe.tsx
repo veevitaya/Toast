@@ -5,6 +5,7 @@ import { addSession, updateSession } from "@/lib/sessionStore";
 import { BottomNav } from "@/components/BottomNav";
 import { trackEvent } from "@/lib/analytics";
 import { useLineProfile } from "@/lib/useLineProfile";
+import { Square, X } from "lucide-react";
 
 interface MenuItem {
   id: number;
@@ -28,25 +29,10 @@ interface SessionMember {
   joinedAt: string;
 }
 
-const MENU_ITEMS: MenuItem[] = [
-  { id: 101, name: "Pad Thai", category: "Thai  •  Street food", tags: ["Noodles", "Spicy", "Shrimp", "Budget"], description: "Wok-fried rice noodles with tamarind sauce, crushed peanuts, and fresh lime", priceLevel: 1, rating: "4.8", address: "All over Bangkok", imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600&auto=format&fit=crop&q=60", isNew: true },
-  { id: 102, name: "Korean BBQ", category: "Korean  •  BBQ", tags: ["Grilled", "Meat", "Group", "Popular"], description: "Sizzling grilled meats at the table with banchan sides and ssamjang sauce", priceLevel: 3, rating: "4.4", address: "Sukhumvit, Siam", imageUrl: "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=600&auto=format&fit=crop&q=60" },
-  { id: 103, name: "Tonkotsu Ramen", category: "Japanese  •  Noodles", tags: ["Noodles", "Pork", "Rich broth", "Quick"], description: "Rich 18-hour pork bone broth with thin noodles, chashu, and seasoned egg", priceLevel: 2, rating: "4.6", address: "Thonglor, Silom", imageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&auto=format&fit=crop&q=60" },
-  { id: 104, name: "Margherita Pizza", category: "Italian  •  Pizza", tags: ["Cheesy", "Tomato", "Basil", "Classic"], description: "Wood-fired with San Marzano tomatoes, fresh mozzarella, and basil", priceLevel: 2, rating: "4.6", address: "Ekkamai, Sukhumvit", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=60" },
-  { id: 105, name: "Smash Burger", category: "American  •  Burgers", tags: ["Burger", "Cheesy", "Fries", "Trending"], description: "Double smash patties with aged cheddar, caramelized onions, and secret sauce", priceLevel: 2, rating: "4.2", address: "Ekkamai, Sukhumvit", imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=60", isNew: true },
-  { id: 106, name: "Green Curry", category: "Thai  •  Curry", tags: ["Spicy", "Coconut", "Rice", "Herbal"], description: "Aromatic coconut milk curry with Thai basil, eggplant, and chicken", priceLevel: 1, rating: "4.5", address: "Old Town, Samsen", imageUrl: "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=600&auto=format&fit=crop&q=60" },
-  { id: 107, name: "Sushi Omakase", category: "Japanese  •  Sushi", tags: ["Fresh", "Raw", "Premium", "Authentic"], description: "Chef's choice premium course — seasonal fish flown from Tsukiji market", priceLevel: 4, rating: "4.7", address: "Thonglor, Gaysorn", imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&auto=format&fit=crop&q=60" },
-  { id: 108, name: "Som Tum", category: "Thai  •  Salad", tags: ["Healthy", "Spicy", "Peanuts", "Cheap"], description: "Crunchy green papaya salad with dried shrimp and roasted peanuts", priceLevel: 1, rating: "4.3", address: "All over Bangkok", imageUrl: "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600&auto=format&fit=crop&q=60" },
-  { id: 109, name: "Dim Sum", category: "Chinese  •  Dumplings", tags: ["Dumpling", "Tea time", "Brunch", "Family"], description: "Steamed dumplings, siu mai, and har gow served with jasmine tea", priceLevel: 2, rating: "4.5", address: "Chinatown, CentralWorld", imageUrl: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600&auto=format&fit=crop&q=60" },
-  { id: 110, name: "Tacos al Pastor", category: "Mexican  •  Tacos", tags: ["Taco", "Spicy", "Fresh", "Fun"], description: "Spit-roasted pork with pineapple, cilantro, and house-made salsa", priceLevel: 2, rating: "4.1", address: "Sukhumvit 11", imageUrl: "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=600&auto=format&fit=crop&q=60" },
-  { id: 111, name: "Khao Soi", category: "Thai  •  Northern", tags: ["Curry", "Noodles", "Rich", "Northern"], description: "Rich coconut curry noodles topped with crispy egg noodles", priceLevel: 1, rating: "4.7", address: "Ekkamai, Ari", imageUrl: "https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=600&auto=format&fit=crop&q=60" },
-  { id: 112, name: "Pasta Carbonara", category: "Italian  •  Pasta", tags: ["Pasta", "Bacon", "Creamy", "Classic"], description: "Classic Roman recipe with guanciale, pecorino, and egg yolk", priceLevel: 3, rating: "4.4", address: "Sathorn, Sukhumvit", imageUrl: "https://images.unsplash.com/photo-1612874742237-6526221588e3?w=600&auto=format&fit=crop&q=60" },
-  { id: 113, name: "Eggs Benedict", category: "Brunch  •  Western", tags: ["Eggs", "Bacon", "Brunch", "Coffee"], description: "Poached eggs with hollandaise on toasted brioche — the perfect weekend brunch", priceLevel: 2, rating: "4.7", address: "Thonglor, Phrom Phong", imageUrl: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=600&auto=format&fit=crop&q=60", isNew: true },
-  { id: 114, name: "Souffle Pancakes", category: "Japanese  •  Cafe", tags: ["Fluffy", "Sweet", "Insta", "Japanese"], description: "Jiggly souffle pancakes from Osaka with fresh cream and berries", priceLevel: 2, rating: "4.6", address: "Siam Paragon", imageUrl: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=600&auto=format&fit=crop&q=60" },
-  { id: 115, name: "Smoothie Bowl", category: "Healthy  •  Vegan", tags: ["Berry", "Bowl", "Healthy", "Pretty"], description: "Vibrant acai or pitaya base topped with granola, fresh fruit, and chia seeds", priceLevel: 2, rating: "4.5", address: "Sukhumvit, Thonglor", imageUrl: "https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=600&auto=format&fit=crop&q=60" },
-  { id: 116, name: "Bubble Tea", category: "Taiwanese  •  Drinks", tags: ["Boba", "Drink", "Chewy", "Sweet"], description: "Chewy tapioca pearls in creamy milk tea — customize your sweetness", priceLevel: 1, rating: "4.5", address: "Siam, CentralWorld", imageUrl: "https://images.unsplash.com/photo-1541696490-8744a5dc0228?w=600&auto=format&fit=crop&q=60" },
-  { id: 117, name: "Croissant & Coffee", category: "French  •  Bakery", tags: ["Pastry", "Buttery", "Coffee", "French"], description: "Flaky, buttery croissant with perfectly pulled espresso", priceLevel: 2, rating: "4.7", address: "Sukhumvit, Ekkamai", imageUrl: "https://images.unsplash.com/photo-1530610476181-d83430b64dcd?w=600&auto=format&fit=crop&q=60" },
-];
+interface MatchInfo {
+  menuItemId: number;
+  voters: string[];
+}
 
 function ConfettiExplosion() {
   const colors = ["#FF385C", "#FFD700", "#00A699", "#FC642D", "#7B61FF", "#00D1C1", "#FF6B6B", "#4ECDC4", "#FFE66D", "#A855F7"];
@@ -269,11 +255,22 @@ function SwipeCardGroup({ item, active, behind, onSwipe, onTap, showHint = false
   );
 }
 
+function buildTagsFromCategory(category: string): string[] {
+  const tags: string[] = [];
+  const parts = category.split("•").map(p => p.trim()).filter(Boolean);
+  for (const part of parts) {
+    tags.push(part);
+  }
+  return tags;
+}
+
 export default function GroupSwipe() {
   const [, navigate] = useLocation();
   const { profile } = useLineProfile();
   const sessionCode = new URLSearchParams(window.location.search).get("session") || "";
   const [members, setMembers] = useState<SessionMember[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [matchNotification, setMatchNotification] = useState<string | null>(null);
   const [fullMatch, setFullMatch] = useState(false);
@@ -282,23 +279,82 @@ export default function GroupSwipe() {
   const [superLiked, setSuperLiked] = useState<Set<number>>(new Set());
   const [liked, setLiked] = useState<Set<number>>(new Set());
   const [matchCount, setMatchCount] = useState(0);
+  const [allMatches, setAllMatches] = useState<MenuItem[]>([]);
   const [likedCount, setLikedCount] = useState(0);
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [notifiedPartials, setNotifiedPartials] = useState<Set<number>>(new Set());
+  const [isHost, setIsHost] = useState(false);
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const [sessionEnded, setSessionEnded] = useState(false);
+
+  useEffect(() => {
+    const loadRestaurants = async () => {
+      try {
+        const res = await fetch("/api/restaurants");
+        if (res.ok) {
+          const data = await res.json();
+          const items: MenuItem[] = data.map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            category: r.category || "Restaurant",
+            tags: buildTagsFromCategory(r.category || ""),
+            description: r.description || "",
+            priceLevel: r.priceLevel || 2,
+            rating: r.rating || "4.0",
+            address: r.address || "Bangkok",
+            imageUrl: r.imageUrl || "",
+            isNew: r.isNew || false,
+          }));
+          const shuffled = items.sort(() => Math.random() - 0.5);
+          setMenuItems(shuffled);
+        }
+      } catch (err) {
+        console.error("Failed to load restaurants:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadRestaurants();
+  }, []);
 
   useEffect(() => {
     if (!sessionCode) return;
-    const fetchMembers = async () => {
+    const fetchSession = async () => {
       try {
         const res = await fetch(`/api/group/sessions/${sessionCode}`);
         if (res.ok) {
           const data = await res.json();
           setMembers(data.members);
+          if (profile && data.session?.hostLineUserId === profile.userId) {
+            setIsHost(true);
+          }
+          if (data.session?.status === "completed" && !sessionEnded) {
+            const matchRes = await fetch(`/api/group/sessions/${sessionCode}/matches`);
+            if (matchRes.ok) {
+              const matchData = await matchRes.json();
+              if (matchData.matches && menuItems.length > 0) {
+                const matchedItems = matchData.matches
+                  .filter((m: MatchInfo) => m.voters.length >= data.members.length)
+                  .map((m: MatchInfo) => menuItems.find(item => item.id === m.menuItemId))
+                  .filter(Boolean) as MenuItem[];
+                if (matchedItems.length > 0) {
+                  setAllMatches(prev => {
+                    const existing = new Set(prev.map(p => p.id));
+                    const newItems = matchedItems.filter((i: MenuItem) => !existing.has(i.id));
+                    return [...prev, ...newItems];
+                  });
+                }
+              }
+            }
+            setSessionEnded(true);
+          }
         }
       } catch {}
     };
-    fetchMembers();
-  }, [sessionCode]);
+    fetchSession();
+    const interval = setInterval(fetchSession, 3000);
+    return () => clearInterval(interval);
+  }, [sessionCode, profile, sessionEnded, menuItems]);
 
   useEffect(() => {
     addSession({
@@ -334,7 +390,7 @@ export default function GroupSwipe() {
   }, [sessionCode, profile]);
 
   const handleSwipe = useCallback((id: number, dir: "left" | "right" | "super") => {
-    const item = MENU_ITEMS.find((m) => m.id === id);
+    const item = menuItems.find((m) => m.id === id);
     if (!item) return;
 
     trackEvent(dir === "left" ? "swipe_left" : "swipe_right", {
@@ -358,8 +414,11 @@ export default function GroupSwipe() {
 
       if (matches && matches.length > 0) {
         for (const match of matches) {
-          const matchedMenuItem = MENU_ITEMS.find(m => m.id === match.menuItemId);
+          const matchedMenuItem = menuItems.find(m => m.id === match.menuItemId);
           if (matchedMenuItem && match.voters.length >= memberCount) {
+            if (!allMatches.find(am => am.id === matchedMenuItem.id)) {
+              setAllMatches(prev => [...prev, matchedMenuItem]);
+            }
             setMatchedItem(matchedMenuItem);
             setConfetti(true);
             setFullMatch(true);
@@ -381,7 +440,7 @@ export default function GroupSwipe() {
     setTimeout(() => {
       setCurrentIndex((prev) => prev + 1);
     }, 300);
-  }, [recordSwipe, sessionCode, members]);
+  }, [recordSwipe, sessionCode, members, menuItems, allMatches]);
 
   const checkPartialMatches = useCallback(async (menuItemId: number) => {
     if (!sessionCode || notifiedPartials.has(menuItemId)) return;
@@ -405,31 +464,131 @@ export default function GroupSwipe() {
 
         if (voterNames.length > 0) {
           setNotifiedPartials(prev => new Set(prev).add(menuItemId));
-          const item = MENU_ITEMS.find(m => m.id === menuItemId);
+          const item = menuItems.find(m => m.id === menuItemId);
           if (item) {
             const nameStr = voterNames.join(" and ");
             setMatchNotification(`You and ${nameStr} both liked ${item.name}!`);
-            setMatchCount(c => {
-              const newCount = c + 1;
-              updateSession(sessionCode || "group-1", { matchCount: newCount });
-              return newCount;
-            });
             setTimeout(() => setMatchNotification(null), 3000);
           }
         }
       }
     } catch {}
-  }, [sessionCode, profile, notifiedPartials]);
+  }, [sessionCode, profile, notifiedPartials, menuItems]);
 
   const handleButtonSwipe = (dir: "left" | "right" | "super") => {
-    if (currentIndex < MENU_ITEMS.length) {
-      handleSwipe(MENU_ITEMS[currentIndex].id, dir);
+    if (currentIndex < menuItems.length) {
+      handleSwipe(menuItems[currentIndex].id, dir);
     }
   };
 
   const handleTap = (item: MenuItem) => {
     navigate(`/restaurants?category=${encodeURIComponent(item.name)}`);
   };
+
+  const handleEndSession = async () => {
+    if (!sessionCode || !profile) return;
+    try {
+      await fetch(`/api/group/sessions/${sessionCode}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "completed", lineUserId: profile.userId }),
+      });
+      setSessionEnded(true);
+      setShowEndConfirm(false);
+    } catch (err) {
+      console.error("Failed to end session:", err);
+    }
+  };
+
+  const handleContinueSwiping = () => {
+    setFullMatch(false);
+    setConfetti(false);
+    setMatchedItem(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="w-full h-[100dvh] bg-white flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-gray-300 border-t-foreground animate-spin" />
+      </div>
+    );
+  }
+
+  if (sessionEnded) {
+    return (
+      <div className="w-full h-[100dvh] bg-white flex flex-col overflow-hidden" data-testid="group-summary-page">
+        <div className="flex-shrink-0 px-6 pt-12 pb-4 border-b border-gray-100">
+          <h1 className="text-[22px] font-bold" data-testid="text-summary-title">Session Summary</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {members.length} people swiped · {allMatches.length} match{allMatches.length !== 1 ? "es" : ""}
+          </p>
+          <div className="flex items-center gap-2 mt-3">
+            {members.map((m) => (
+              <div key={m.lineUserId} className="flex items-center gap-1.5 bg-gray-50 rounded-full px-3 py-1.5">
+                {m.pictureUrl ? (
+                  <img src={m.pictureUrl} alt={m.displayName} className="w-5 h-5 rounded-full object-cover" />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                    <span className="text-[8px] font-bold text-amber-600">{m.displayName.charAt(0)}</span>
+                  </div>
+                )}
+                <span className="text-xs font-semibold">{m.lineUserId === profile?.userId ? "You" : m.displayName}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {allMatches.length > 0 ? (
+            <div className="space-y-4">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Group Matches</h2>
+              {allMatches.map((item, idx) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  className="bg-white rounded-2xl overflow-hidden border border-gray-100"
+                  style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}
+                  data-testid={`match-card-${item.id}`}
+                >
+                  <div className="flex">
+                    <img src={item.imageUrl} alt={item.name} className="w-28 h-28 object-cover flex-shrink-0" />
+                    <div className="p-3 flex-1 min-w-0">
+                      <h3 className="font-bold text-[15px] truncate">{item.name}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">{item.category}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs font-medium">★ {item.rating}</span>
+                        <span className="text-xs text-muted-foreground">{"฿".repeat(item.priceLevel)}</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1 truncate">{item.address}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <span className="text-5xl mb-4">🤔</span>
+              <h2 className="text-lg font-semibold mb-2">No matches yet</h2>
+              <p className="text-sm text-muted-foreground">Your group didn't agree on any restaurants this time. Try again with different preferences!</p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex-shrink-0 px-6 py-4 pb-6 border-t border-gray-100 safe-bottom">
+          <button
+            onClick={() => navigate("/")}
+            data-testid="button-home-summary"
+            className="w-full py-4 rounded-2xl bg-foreground text-white font-bold text-[15px] active:scale-[0.97] transition-transform"
+            style={{ boxShadow: "0 8px 25px -5px rgba(0,0,0,0.25)" }}
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (fullMatch && matchedItem) {
     return (
@@ -476,7 +635,7 @@ export default function GroupSwipe() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.3 }}
-          className="flex gap-2.5 mb-7"
+          className="flex flex-wrap justify-center gap-2.5 mb-7"
         >
           {members.map((m, i) => (
             <motion.div
@@ -527,30 +686,32 @@ export default function GroupSwipe() {
           </div>
         </motion.div>
 
-        <motion.button
-          initial={{ y: 16, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.85, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-          onClick={() => {
-            window.location.href = `/restaurants?category=${encodeURIComponent(matchedItem.name)}`;
-          }}
-          data-testid="button-see-restaurants"
-          className="w-full max-w-xs py-4 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-[15px] active:scale-[0.96] transition-transform duration-200"
-          style={{ boxShadow: "var(--shadow-glow-primary)" }}
-        >
-          See Restaurants →
-        </motion.button>
+        <div className="flex flex-col items-center gap-3 w-full max-w-xs">
+          <motion.button
+            initial={{ y: 16, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.85, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            onClick={handleContinueSwiping}
+            data-testid="button-keep-swiping"
+            className="w-full py-4 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-[15px] active:scale-[0.96] transition-transform duration-200"
+            style={{ boxShadow: "var(--shadow-glow-primary)" }}
+          >
+            Keep Swiping
+          </motion.button>
 
-        <motion.button
-          initial={{ y: 12, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.95, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-          onClick={() => navigate("/")}
-          data-testid="button-home-match"
-          className="mt-4 text-sm text-muted-foreground font-semibold hover:text-foreground transition-colors"
-        >
-          Back to home
-        </motion.button>
+          {isHost && (
+            <motion.button
+              initial={{ y: 12, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.95, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+              onClick={handleEndSession}
+              data-testid="button-end-session-match"
+              className="text-sm text-muted-foreground font-semibold hover:text-foreground transition-colors"
+            >
+              End Session ({allMatches.length} match{allMatches.length !== 1 ? "es" : ""})
+            </motion.button>
+          )}
+        </div>
       </div>
     );
   }
@@ -561,7 +722,9 @@ export default function GroupSwipe() {
         <div className="text-left flex items-center gap-2">
           <div>
             <h1 className="font-bold text-[22px] tracking-tight" data-testid="text-group-title">Group Swipe</h1>
-            <p className="text-[11px] text-muted-foreground mt-0.5">Swipe together, eat together</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {members.map(m => m.lineUserId === profile?.userId ? "You" : m.displayName).join(", ")}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -576,13 +739,21 @@ export default function GroupSwipe() {
               )
             ))}
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-muted-foreground"
-            style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
-          >
-            <span>{Math.min(currentIndex + 1, MENU_ITEMS.length)}</span>
-            <span className="text-gray-300">/</span>
-            <span>{MENU_ITEMS.length}</span>
-          </div>
+          {matchCount > 0 && (
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#FFCC02]/15 text-[#2d2000]">
+              {matchCount} match{matchCount !== 1 ? "es" : ""}
+            </div>
+          )}
+          {isHost && (
+            <button
+              onClick={() => setShowEndConfirm(true)}
+              data-testid="button-end-session"
+              className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-gray-200 active:scale-90 transition-transform"
+              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
+            >
+              <Square className="w-3.5 h-3.5 text-red-500" fill="currentColor" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -609,7 +780,7 @@ export default function GroupSwipe() {
       </AnimatePresence>
 
       <div className="flex-1 relative px-5 pb-4">
-        {currentIndex >= MENU_ITEMS.length ? (
+        {currentIndex >= menuItems.length ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <motion.div
               className="relative mb-6"
@@ -621,29 +792,24 @@ export default function GroupSwipe() {
               <span className="absolute -top-2 -right-3 text-2xl inline-block animate-icon-wiggle gpu-accelerated">✨</span>
             </motion.div>
             <h2 className="text-2xl font-semibold mb-2" data-testid="text-all-done">All done!</h2>
-            <p className="text-muted-foreground mb-2 text-sm">Your group liked {likedCount} out of {MENU_ITEMS.length} options</p>
-            <p className="text-muted-foreground mb-8 text-xs">Tap below to explore or start over</p>
-            <div className="flex gap-3">
+            <p className="text-muted-foreground mb-2 text-sm">Your group liked {likedCount} out of {menuItems.length} options</p>
+            <p className="text-muted-foreground mb-4 text-xs">{allMatches.length} group match{allMatches.length !== 1 ? "es" : ""} found</p>
+            {isHost ? (
               <button
-                onClick={() => { setCurrentIndex(0); setLikedCount(0); }}
-                data-testid="button-restart"
-                className="px-6 py-3.5 rounded-full bg-foreground text-white font-bold text-sm active:scale-[0.96] transition-transform duration-200"
-                style={{ boxShadow: "0 8px 25px -5px rgba(0,0,0,0.25)" }}
+                onClick={handleEndSession}
+                data-testid="button-end-done"
+                className="px-8 py-3.5 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-sm active:scale-[0.96] transition-transform duration-200"
+                style={{ boxShadow: "var(--shadow-glow-primary)" }}
               >
-                Start Over
+                See Results ({allMatches.length} match{allMatches.length !== 1 ? "es" : ""})
               </button>
-              <button
-                onClick={() => navigate("/")}
-                data-testid="button-home-done"
-                className="px-6 py-3.5 rounded-full bg-white border-2 border-gray-200 font-bold text-sm active:scale-[0.96] transition-transform duration-200"
-              >
-                Home
-              </button>
-            </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Waiting for the host to end the session...</p>
+            )}
           </div>
         ) : (
           <div className="relative w-full h-full max-w-sm mx-auto">
-            {MENU_ITEMS.map((item, idx) => {
+            {menuItems.map((item, idx) => {
               if (idx < currentIndex || idx > currentIndex + 1) return null;
               return (
                 <SwipeCardGroup
@@ -663,7 +829,7 @@ export default function GroupSwipe() {
       </div>
 
       <div className="px-6 pb-20 flex flex-col gap-3">
-        {currentIndex < MENU_ITEMS.length && (
+        {currentIndex < menuItems.length && (
           <div className="flex justify-center items-center gap-5">
             <button
               onClick={() => handleButtonSwipe("left")}
@@ -716,6 +882,54 @@ export default function GroupSwipe() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {showEndConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 z-[100] flex items-end justify-center"
+            onClick={() => setShowEndConfirm(false)}
+          >
+            <motion.div
+              initial={{ y: 200 }}
+              animate={{ y: 0 }}
+              exit={{ y: 200 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-white rounded-t-3xl w-full max-w-md px-6 py-6 pb-8 safe-bottom"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-10 h-1 rounded-full bg-gray-200 mx-auto mb-5" />
+              <h3 className="text-lg font-bold mb-2">End Session?</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                This will end the swiping for everyone and show the results.
+                {allMatches.length > 0
+                  ? ` You have ${allMatches.length} match${allMatches.length !== 1 ? "es" : ""} so far.`
+                  : " No matches yet."}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowEndConfirm(false)}
+                  className="flex-1 py-3.5 rounded-2xl bg-gray-100 font-bold text-sm active:scale-[0.97] transition-transform"
+                  data-testid="button-cancel-end"
+                >
+                  Keep Swiping
+                </button>
+                <button
+                  onClick={handleEndSession}
+                  className="flex-1 py-3.5 rounded-2xl bg-red-500 text-white font-bold text-sm active:scale-[0.97] transition-transform"
+                  style={{ boxShadow: "0 4px 16px rgba(239,68,68,0.3)" }}
+                  data-testid="button-confirm-end"
+                >
+                  End Session
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <BottomNav />
     </div>
   );
