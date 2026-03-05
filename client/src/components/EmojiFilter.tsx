@@ -1,4 +1,5 @@
 import { useState, useCallback, memo } from "react";
+import { FoodIconFromEmoji, emojiToIconName } from "./FoodIcon";
 
 const EMOJI_ANIMATIONS: Record<string, string> = {
   "💰": "emoji-bounce",
@@ -31,14 +32,12 @@ const EMOJI_ANIMATIONS: Record<string, string> = {
   "📍": "emoji-bounce",
 };
 
-function AnimatedEmoji({ emoji, size = "text-3xl", playing = false }: { emoji: string; size?: string; playing?: boolean }) {
+function AnimatedIcon({ emoji, size = 28, playing = false }: { emoji: string; size?: number; playing?: boolean }) {
   const animClass = playing ? (EMOJI_ANIMATIONS[emoji] || "emoji-bounce") : "";
 
   return (
-    <span
-      className={`${size} inline-block select-none gpu-accelerated ${animClass}`}
-    >
-      {emoji}
+    <span className={`inline-block select-none gpu-accelerated ${animClass}`}>
+      <FoodIconFromEmoji emoji={emoji} size={size} />
     </span>
   );
 }
@@ -75,7 +74,7 @@ export const EmojiFilter = memo(function EmojiFilter({ emoji, label, description
         className={`flex-1 flex items-center gap-3 px-5 py-4 rounded-2xl text-left transition-all duration-200 active:scale-[0.97] gpu-accelerated ${cardBase}`}
         style={{ boxShadow: active ? cardActiveShadow : cardShadow }}
       >
-        <AnimatedEmoji emoji={emoji} size="text-3xl" playing={animating} />
+        <AnimatedIcon emoji={emoji} size={32} playing={animating} />
         <div>
           <span className={`font-semibold text-sm block ${active ? "text-foreground" : ""}`}>{label}</span>
           {description && <span className="text-xs text-muted-foreground">{description}</span>}
@@ -92,7 +91,7 @@ export const EmojiFilter = memo(function EmojiFilter({ emoji, label, description
         className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-left transition-all duration-200 active:scale-[0.97] gpu-accelerated ${cardBase}`}
         style={{ boxShadow: active ? cardActiveShadow : cardShadow }}
       >
-        <AnimatedEmoji emoji={emoji} size="text-3xl" playing={animating} />
+        <AnimatedIcon emoji={emoji} size={32} playing={animating} />
         <div>
           <span className={`font-semibold text-sm ${active ? "text-foreground" : ""}`}>{label}</span>
           {description && <span className="text-xs text-muted-foreground ml-2">{description}</span>}
@@ -108,7 +107,7 @@ export const EmojiFilter = memo(function EmojiFilter({ emoji, label, description
       className={`flex flex-col items-center justify-center px-3 py-4 rounded-2xl text-center transition-all duration-200 min-w-0 active:scale-[0.95] gpu-accelerated ${cardBase}`}
       style={{ boxShadow: active ? cardActiveShadow : cardShadow }}
     >
-      <AnimatedEmoji emoji={emoji} size="text-[28px]" playing={animating} />
+      <AnimatedIcon emoji={emoji} size={28} playing={animating} />
       <span className={`font-semibold text-xs leading-tight mt-1.5 ${active ? "text-foreground" : ""}`}>{label}</span>
     </button>
   );

@@ -13,6 +13,7 @@ import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { useRestaurants, useSuggestions } from "@/hooks/use-restaurants";
 import { useVibeFrequency } from "@/hooks/use-vibe-frequency";
 import { SaveBucketPicker } from "@/components/SaveBucketPicker";
+import { FoodIconFromEmoji } from "@/components/FoodIcon";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { useLineProfile } from "@/lib/useLineProfile";
 import toastLogoPath from "@assets/toast_logo_nobg.png";
@@ -546,7 +547,7 @@ export default function Home() {
                     style={selectedCategory === cat.label ? {} : { boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
                     data-testid={`chip-category-${cat.label.toLowerCase().replace(/\s+/g, "-")}`}
                   >
-                    <span className="text-sm">{cat.emoji}</span>
+                    <FoodIconFromEmoji emoji={cat.emoji} size={18} />
                     {cat.label}
                   </button>
                 ))}
@@ -583,7 +584,7 @@ export default function Home() {
                   <div className="relative h-[110px] w-full">
                     <img src={pin.imageUrl} alt={pin.name} className="w-full h-full object-cover" />
                     <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-0.5 text-[10px] font-bold text-foreground flex items-center gap-1">
-                      <span>{pin.emoji}</span> {pin.category}
+                      <FoodIconFromEmoji emoji={pin.emoji} size={14} /> {pin.category}
                     </div>
                     <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-0.5 text-[10px] font-bold text-foreground">
                       {pin.price}
@@ -940,7 +941,7 @@ export default function Home() {
                       whileTap={{ rotate: -12, scale: 1.2 }}
                       transition={{ type: "spring", stiffness: 400, damping: 15 }}
                     >
-                      <span className="text-[22px] select-none">{vibe.emoji}</span>
+                      <FoodIconFromEmoji emoji={vibe.emoji} size={26} />
                     </motion.div>
                     <span className="text-[11px] font-semibold text-foreground">{vibe.label}</span>
                   </motion.button>
@@ -1197,7 +1198,7 @@ export default function Home() {
                         data-testid={`search-suggestion-${r.id}`}
                       >
                         <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-lg flex-shrink-0" style={{ background: "linear-gradient(135deg, hsl(40,50%,96%) 0%, hsl(35,40%,91%) 100%)" }}>
-                          {r.category?.includes("Thai") ? "🇹🇭" : r.category?.includes("Japan") ? "🇯🇵" : r.category?.includes("Korean") ? "🇰🇷" : r.category?.includes("Italian") || r.category?.includes("Pizza") ? "🍕" : r.category?.includes("Burger") ? "🍔" : r.category?.includes("Ramen") || r.category?.includes("Noodle") ? "🍜" : r.category?.includes("Seafood") ? "🦐" : "🍽️"}
+                          <FoodIconFromEmoji emoji={r.category?.includes("Thai") ? "🍜" : r.category?.includes("Japan") ? "🍣" : r.category?.includes("Korean") ? "🍜" : r.category?.includes("Italian") || r.category?.includes("Pizza") ? "🍕" : r.category?.includes("Burger") ? "🍔" : r.category?.includes("Ramen") || r.category?.includes("Noodle") ? "🍜" : r.category?.includes("Seafood") ? "🍽️" : "🍽️"} size={24} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-foreground truncate">{r.name}</p>
@@ -1256,7 +1257,7 @@ export default function Home() {
                       data-testid={`more-vibe-${vibe.mode}`}
                     >
                       <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ backgroundColor: vibe.bg }}>
-                        <span className="text-[22px] select-none">{vibe.emoji}</span>
+                        <FoodIconFromEmoji emoji={vibe.emoji} size={26} />
                       </div>
                       <span className="text-[11px] font-semibold text-foreground">{vibe.label}</span>
                     </motion.button>
@@ -1277,7 +1278,7 @@ export default function Home() {
                       data-testid={`more-vibe-${vibe.mode}`}
                     >
                       <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ backgroundColor: vibe.bg }}>
-                        <span className="text-[22px] select-none">{vibe.emoji}</span>
+                        <FoodIconFromEmoji emoji={vibe.emoji} size={26} />
                       </div>
                       <span className="text-[11px] font-semibold text-foreground">{vibe.label}</span>
                     </motion.button>
