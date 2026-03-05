@@ -935,13 +935,12 @@ export default function Home() {
                     data-testid={`vibe-${vibe.mode}`}
                   >
                     <motion.div
-                      className="w-11 h-11 rounded-2xl flex items-center justify-center"
-                      style={{ backgroundColor: vibe.bg }}
+                      className="flex items-center justify-center"
                       whileHover={{ rotate: 8, scale: 1.1 }}
                       whileTap={{ rotate: -12, scale: 1.2 }}
                       transition={{ type: "spring", stiffness: 400, damping: 15 }}
                     >
-                      <FoodIconFromEmoji emoji={vibe.emoji} size={26} />
+                      <FoodIconFromEmoji emoji={vibe.emoji} size={38} />
                     </motion.div>
                     <span className="text-[11px] font-semibold text-foreground">{vibe.label}</span>
                   </motion.button>
@@ -1256,8 +1255,8 @@ export default function Home() {
                       className="flex flex-col items-center gap-2 py-4 rounded-2xl bg-gray-50 border border-gray-100/80"
                       data-testid={`more-vibe-${vibe.mode}`}
                     >
-                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ backgroundColor: vibe.bg }}>
-                        <FoodIconFromEmoji emoji={vibe.emoji} size={26} />
+                      <div className="flex items-center justify-center">
+                        <FoodIconFromEmoji emoji={vibe.emoji} size={38} />
                       </div>
                       <span className="text-[11px] font-semibold text-foreground">{vibe.label}</span>
                     </motion.button>
@@ -1277,8 +1276,8 @@ export default function Home() {
                       className="flex flex-col items-center gap-2 py-4 rounded-2xl bg-gray-50 border border-gray-100/80"
                       data-testid={`more-vibe-${vibe.mode}`}
                     >
-                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ backgroundColor: vibe.bg }}>
-                        <FoodIconFromEmoji emoji={vibe.emoji} size={26} />
+                      <div className="flex items-center justify-center">
+                        <FoodIconFromEmoji emoji={vibe.emoji} size={38} />
                       </div>
                       <span className="text-[11px] font-semibold text-foreground">{vibe.label}</span>
                     </motion.button>
