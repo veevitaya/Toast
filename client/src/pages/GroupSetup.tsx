@@ -1,10 +1,10 @@
-import { useState, useRef } from "react";
-import { motion } from "framer-motion";
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
   ArrowLeft, Users, MapPin, Calendar as CalendarIcon,
   Clock, Utensils, Heart, Baby, Briefcase,
-  ChevronRight, Sparkles, UserPlus,
+  ChevronRight, ChevronDown, Sparkles, UserPlus,
 } from "lucide-react";
 import { sendGroupInvite, isLiffAvailable } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
@@ -90,10 +90,22 @@ export default function GroupSetup() {
   const defaultTime = roundToNearest15(now);
   const [selectedHour, setSelectedHour] = useState<number>(defaultTime.hour);
   const [selectedMinute, setSelectedMinute] = useState<number>(defaultTime.minute);
+  const [hourPickerOpen, setHourPickerOpen] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
   const dateScrollRef = useRef<HTMLDivElement>(null);
+  const hourPickerRef = useRef<HTMLDivElement>(null);
   const upcomingDays = getNext14Days();
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (hourPickerRef.current && !hourPickerRef.current.contains(e.target as Node)) {
+        setHourPickerOpen(false);
+      }
+    };
+    if (hourPickerOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [hourPickerOpen]);
 
   const toggleList = (list: string[], item: string, setter: (v: string[]) => void) => {
     if (list.includes(item)) setter(list.filter((i) => i !== item));
@@ -249,25 +261,56 @@ export default function GroupSetup() {
                 <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Time</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="flex-1 bg-white rounded-xl border border-gray-100 overflow-hidden"
-                  style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}
-                >
-                  <select
-                    value={selectedHour}
-                    onChange={(e) => setSelectedHour(Number(e.target.value))}
-                    data-testid="select-hour"
-                    className="w-full px-3 py-2.5 text-[14px] font-semibold text-foreground bg-transparent appearance-none cursor-pointer focus:outline-none"
+                <div ref={hourPickerRef} className="relative flex-1">
+                  <button
+                    onClick={() => setHourPickerOpen(prev => !prev)}
+                    data-testid="button-hour-picker"
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 bg-white rounded-xl border border-gray-100 cursor-pointer transition-all duration-200"
+                    style={{ boxShadow: hourPickerOpen ? "0 2px 10px rgba(0,0,0,0.08)" : "0 1px 3px rgba(0,0,0,0.03)" }}
                   >
-                    {Array.from({ length: 24 }, (_, i) => {
-                      const label = i === 0 ? "12" : i > 12 ? String(i - 12) : String(i);
-                      const period = i >= 12 ? "PM" : "AM";
-                      return (
-                        <option key={i} value={i}>
-                          {label} {period}
-                        </option>
-                      );
-                    })}
-                  </select>
+                    <span className="text-[14px] font-semibold text-foreground">
+                      {(() => { const h = selectedHour === 0 ? 12 : selectedHour > 12 ? selectedHour - 12 : selectedHour; return `${h} ${selectedHour >= 12 ? "PM" : "AM"}`; })()}
+                    </span>
+                    <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/40 transition-transform duration-200 ${hourPickerOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  <AnimatePresence>
+                    {hourPickerOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                        transition={{ type: "spring", damping: 26, stiffness: 300 }}
+                        className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-2xl overflow-hidden border border-gray-100 z-[120]"
+                        style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.06)" }}
+                        data-testid="hour-picker-dropdown"
+                      >
+                        <div className="py-1.5 max-h-[240px] overflow-y-auto">
+                          {Array.from({ length: 24 }, (_, i) => {
+                            const label = i === 0 ? "12" : i > 12 ? String(i - 12) : String(i);
+                            const period = i >= 12 ? "PM" : "AM";
+                            const isActive = selectedHour === i;
+                            return (
+                              <button
+                                key={i}
+                                onClick={() => { setSelectedHour(i); setHourPickerOpen(false); }}
+                                data-testid={`hour-option-${i}`}
+                                className={`w-full flex items-center gap-2.5 px-4 py-2 text-left transition-colors ${
+                                  isActive ? "bg-gray-50" : "hover:bg-gray-50/50"
+                                }`}
+                              >
+                                <span className={`text-[13px] font-semibold flex-1 ${isActive ? "text-foreground" : "text-foreground/70"}`}>
+                                  {label} {period}
+                                </span>
+                                {isActive && (
+                                  <div className="w-1.5 h-1.5 rounded-full bg-[#FFCC02]" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
                 <span className="text-[18px] font-bold text-muted-foreground/30">:</span>
                 <div className="flex gap-1.5">
