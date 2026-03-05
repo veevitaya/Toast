@@ -9,6 +9,11 @@ export interface LineProfile {
   statusMessage?: string;
 }
 
+export interface ShareResult {
+  shared: boolean;
+  method: "liff" | "line-app" | "clipboard";
+}
+
 let initialized = false;
 let initPromise: Promise<void> | null = null;
 let cachedProfile: LineProfile | null = null;
@@ -82,33 +87,51 @@ export async function ensureLoggedIn(): Promise<LineProfile | null> {
   return getProfile();
 }
 
-export async function shareMessage(text: string): Promise<boolean> {
-  if (!initialized) return false;
-  try {
-    if (!liff.isApiAvailable("shareTargetPicker")) {
-      const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(text)}`;
-      window.open(lineUrl, "_blank");
-      return true;
+export async function shareMessage(text: string): Promise<ShareResult> {
+  const ready = await initLiff();
+
+  if (ready && initialized) {
+    try {
+      if (liff.isApiAvailable("shareTargetPicker")) {
+        const result = await liff.shareTargetPicker([
+          { type: "text", text },
+        ]);
+        if (result && "status" in result && result.status === "success") {
+          return { shared: true, method: "liff" };
+        }
+        return { shared: false, method: "liff" };
+      }
+    } catch (err) {
+      console.error("shareTargetPicker failed:", err);
     }
-    await liff.shareTargetPicker([
-      { type: "text", text },
-    ]);
-    return true;
-  } catch (err) {
-    console.error("Failed to share:", err);
-    return false;
+  }
+
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    const lineUrl = `https://line.me/R/share?text=${encodeURIComponent(text)}`;
+    window.location.href = lineUrl;
+    return { shared: true, method: "line-app" };
+  } else {
+    const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.origin)}&text=${encodeURIComponent(text)}`;
+    const popup = window.open(lineUrl, "_blank", "width=500,height=600");
+    if (!popup) {
+      return { shared: false, method: "line-app" };
+    }
+    return { shared: true, method: "line-app" };
   }
 }
 
-export async function sendInvite(mode: string): Promise<boolean> {
+export async function sendInvite(mode: string): Promise<ShareResult> {
   const appUrl = window.location.origin;
   const message = `Join me on Toast!\n\nLet's decide what to eat together. I'm swiping on ${mode} mode right now!\n\n${appUrl}/swipe?mode=${mode}`;
   return shareMessage(message);
 }
 
-export async function sendGroupInvite(sessionId: string): Promise<boolean> {
+export async function sendGroupInvite(sessionId: string): Promise<ShareResult> {
   const appUrl = window.location.origin;
-  const message = `Toast Group Session!\n\nJoin our food swiping session and let's find the perfect meal together!\n\n${appUrl}/group/waiting?session=${sessionId}`;
+  const joinUrl = `${appUrl}/group/waiting?session=${sessionId}`;
+  const message = `Toast Group Session!\n\nJoin our food swiping session and let's find the perfect meal together!\n\nTap to join:\n${joinUrl}`;
   return shareMessage(message);
 }
 

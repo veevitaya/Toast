@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { motion, useMotionValue, useTransform, PanInfo, AnimatePresence, useAnimate } from "framer-motion";
 import { useLocation } from "wouter";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
-import { sendInvite, isLiffAvailable, initLiff } from "@/lib/liff";
+import { sendInvite } from "@/lib/liff";
 import { BottomNav } from "@/components/BottomNav";
 import { MOCK_HOME_CAMPAIGNS, MOCK_RESTAURANT_CAMPAIGNS, getDealLabel as getCampaignDealLabel } from "@/components/CampaignBanner";
 import { Share2 } from "lucide-react";
@@ -689,18 +689,7 @@ export default function SwipePage() {
         <div className="flex items-center gap-2">
           <button
             onClick={async () => {
-              const modeLabel = modeLabels[mode] || "food";
-              const fallback = () => {
-                const text = encodeURIComponent(`🍞 Join me on Toast!\n\nLet's decide what to eat together. I'm swiping ${modeLabel} right now!\n\n${window.location.origin}/swipe?mode=${mode}`);
-                window.open(`https://line.me/R/msg/text/?${text}`, "_blank");
-              };
-              if (isLiffAvailable()) {
-                await initLiff();
-                const sent = await sendInvite(mode);
-                if (!sent) fallback();
-              } else {
-                fallback();
-              }
+              await sendInvite(mode);
             }}
             className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform duration-200 bg-white text-foreground border border-gray-200/80"
             style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}

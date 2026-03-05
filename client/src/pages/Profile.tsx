@@ -294,12 +294,7 @@ export default function Profile() {
   };
 
   const invitePartnerViaLine = async () => {
-    if (liffAvailable) {
-      await sendGroupInvite("partner-link");
-    } else {
-      const text = encodeURIComponent(`Join me on Toast!\n\nLet's link our profiles and decide what to eat together!\n\n${window.location.origin}/profile`);
-      window.open(`https://line.me/R/msg/text/?${text}`, "_blank");
-    }
+    await sendGroupInvite("partner-link");
   };
 
   const displayName = localProfile.displayName || lineProfile?.displayName || "Toast Lover";

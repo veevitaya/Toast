@@ -6,7 +6,7 @@ import {
   Clock, Utensils, Heart, Baby, Briefcase,
   ChevronRight, ChevronDown, Sparkles, UserPlus,
 } from "lucide-react";
-import { sendGroupInvite, isLiffAvailable } from "@/lib/liff";
+import { sendGroupInvite } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
 
 const LOCATIONS = [
@@ -91,7 +91,7 @@ export default function GroupSetup() {
   const [selectedHour, setSelectedHour] = useState<number>(defaultTime.hour);
   const [selectedMinute, setSelectedMinute] = useState<number>(defaultTime.minute);
   const [hourPickerOpen, setHourPickerOpen] = useState(false);
-  const [inviteSent, setInviteSent] = useState(false);
+  const [inviteStatus, setInviteStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
   const dateScrollRef = useRef<HTMLDivElement>(null);
   const hourPickerRef = useRef<HTMLDivElement>(null);
@@ -134,20 +134,21 @@ export default function GroupSetup() {
   };
 
   const handleInvite = async () => {
+    setInviteStatus("sending");
     const sessionId = await getOrCreateSessionId();
-    const appUrl = window.location.origin;
 
-    if (isLiffAvailable()) {
-      await sendGroupInvite(sessionId);
-      setInviteSent(true);
-      navigate(`/group/waiting?session=${sessionId}`);
-    } else {
-      const message = `Join my Toast session! Let's decide what to eat together.\n\n${appUrl}/group/waiting?session=${sessionId}`;
-      const lineShareUrl = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
-      window.open(lineShareUrl, "_blank");
-      setInviteSent(true);
-      navigate(`/group/waiting?session=${sessionId}`);
+    const result = await sendGroupInvite(sessionId);
+
+    if (result.method === "line-app" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      setInviteStatus("sent");
+      setTimeout(() => {
+        navigate(`/group/waiting?session=${sessionId}`);
+      }, 500);
+      return;
     }
+
+    setInviteStatus("sent");
+    navigate(`/group/waiting?session=${sessionId}`);
   };
 
   const completedSteps = [
@@ -530,9 +531,11 @@ export default function GroupSetup() {
                 </div>
                 <div className="flex-1 text-left">
                   <span className="text-[14px] font-bold text-foreground">
-                    {inviteSent ? "Invite Sent!" : "Invite via LINE"}
+                    {inviteStatus === "sending" ? "Opening LINE..." : inviteStatus === "sent" ? "Invite Sent!" : "Invite via LINE"}
                   </span>
-                  <p className="text-[11px] text-muted-foreground">Send to friends or group chat</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {inviteStatus === "sending" ? "Select friends to invite" : "Send to friends or group chat"}
+                  </p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
               </button>
