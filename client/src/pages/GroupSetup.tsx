@@ -46,11 +46,21 @@ const RESTRICTIONS = [
 const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const TIME_PERIODS = [
-  { id: "morning", label: "Morning", hours: [7, 8, 9, 10, 11] },
-  { id: "afternoon", label: "Afternoon", hours: [12, 13, 14, 15, 16] },
-  { id: "evening", label: "Evening", hours: [17, 18, 19, 20, 21] },
-  { id: "latenight", label: "Late", hours: [22, 23, 0, 1, 2] },
+const QUICK_TIMES = [
+  { id: "now", label: "Now", sub: null, hour: null, minute: 0 },
+  { id: "11:30", label: "11:30", sub: "AM", hour: 11, minute: 30 },
+  { id: "12:00", label: "12:00", sub: "PM", hour: 12, minute: 0 },
+  { id: "12:30", label: "12:30", sub: "PM", hour: 12, minute: 30 },
+  { id: "13:00", label: "1:00", sub: "PM", hour: 13, minute: 0 },
+  { id: "18:00", label: "6:00", sub: "PM", hour: 18, minute: 0 },
+  { id: "18:30", label: "6:30", sub: "PM", hour: 18, minute: 30 },
+  { id: "19:00", label: "7:00", sub: "PM", hour: 19, minute: 0 },
+  { id: "19:30", label: "7:30", sub: "PM", hour: 19, minute: 30 },
+  { id: "20:00", label: "8:00", sub: "PM", hour: 20, minute: 0 },
+  { id: "20:30", label: "8:30", sub: "PM", hour: 20, minute: 30 },
+  { id: "21:00", label: "9:00", sub: "PM", hour: 21, minute: 0 },
+  { id: "22:00", label: "10:00", sub: "PM", hour: 22, minute: 0 },
+  { id: "23:00", label: "11:00", sub: "PM", hour: 23, minute: 0 },
 ];
 
 function getNext14Days() {
@@ -70,13 +80,6 @@ function isSameDay(a: Date | null, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-function formatHourLabel(h: number) {
-  if (h === 0) return "12a";
-  if (h < 12) return `${h}a`;
-  if (h === 12) return "12p";
-  return `${h - 12}p`;
-}
-
 export default function GroupSetup() {
   const [, navigate] = useLocation();
   const { profile } = useLineProfile();
@@ -85,13 +88,11 @@ export default function GroupSetup() {
   const [selectedGroupType, setSelectedGroupType] = useState<string>("");
   const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedHour, setSelectedHour] = useState<number | null>(null);
-  const [selectedMinute, setSelectedMinute] = useState<number>(0);
-  const [activePeriod, setActivePeriod] = useState<string>("evening");
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedTimeId, setSelectedTimeId] = useState<string | null>(null);
   const [inviteSent, setInviteSent] = useState(false);
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
   const dateScrollRef = useRef<HTMLDivElement>(null);
+  const timeScrollRef = useRef<HTMLDivElement>(null);
   const upcomingDays = getNext14Days();
 
   const toggleList = (list: string[], item: string, setter: (v: string[]) => void) => {
@@ -139,16 +140,10 @@ export default function GroupSetup() {
     }
   };
 
-  const formatTime = (h: number, m: number) => {
-    const period = h >= 12 ? "PM" : "AM";
-    const displayH = h === 0 ? 12 : h > 12 ? h - 12 : h;
-    return `${displayH}:${m.toString().padStart(2, "0")} ${period}`;
-  };
-
-  const currentPeriodHours = TIME_PERIODS.find(p => p.id === activePeriod)?.hours || [];
+  const selectedTime = QUICK_TIMES.find(t => t.id === selectedTimeId);
 
   const completedSteps = [
-    selectedDate || selectedHour !== null,
+    selectedDate || selectedTimeId,
     selectedLocations.length > 0,
     selectedBudget,
     selectedGroupType,
@@ -192,7 +187,18 @@ export default function GroupSetup() {
             <div className="flex items-center gap-2 mb-3 px-5">
               <CalendarIcon className="w-4 h-4 text-[#FFCC02]" />
               <h2 className="text-[12px] font-bold uppercase tracking-[0.1em] text-foreground">When?</h2>
-              <span className="text-[10px] text-muted-foreground ml-auto">Optional</span>
+              {(selectedDate || selectedTimeId) && (
+                <button
+                  onClick={() => { setSelectedDate(null); setSelectedTimeId(null); }}
+                  className="text-[10px] text-muted-foreground font-semibold ml-auto hover:text-foreground transition-colors"
+                  data-testid="button-clear-datetime"
+                >
+                  Clear
+                </button>
+              )}
+              {!selectedDate && !selectedTimeId && (
+                <span className="text-[10px] text-muted-foreground ml-auto">Optional</span>
+              )}
             </div>
 
             <div
@@ -239,148 +245,74 @@ export default function GroupSetup() {
               })}
             </div>
 
-            <div className="px-5 mt-3">
-              <div
-                onClick={() => setShowTimePicker(!showTimePicker)}
-                role="button"
-                tabIndex={0}
-                data-testid="button-toggle-time"
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 cursor-pointer ${
-                  showTimePicker || selectedHour !== null
-                    ? "bg-white border border-gray-100"
-                    : "bg-white border border-dashed border-gray-200"
-                }`}
-                style={{ boxShadow: selectedHour !== null ? "0 2px 8px rgba(0,0,0,0.04)" : "none" }}
-              >
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
-                  selectedHour !== null ? "bg-[#FFCC02]/10" : "bg-gray-50"
-                }`}>
-                  <Clock className="w-4 h-4" style={{ color: selectedHour !== null ? "#FFCC02" : "#999" }} />
-                </div>
-                <span className={`text-[13px] flex-1 text-left ${
-                  selectedHour !== null ? "font-bold text-foreground" : "font-medium text-muted-foreground"
-                }`}>
-                  {selectedHour !== null ? formatTime(selectedHour, selectedMinute) : "Add a time"}
-                </span>
-                {selectedHour !== null && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setSelectedHour(null); setSelectedMinute(0); setShowTimePicker(false); }}
-                    className="text-[10px] text-muted-foreground bg-gray-100 rounded-full px-2.5 py-1 hover:bg-gray-200 transition-colors font-medium"
-                    data-testid="button-clear-time"
-                  >
-                    Clear
-                  </button>
-                )}
-                <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground/30 transition-transform duration-200 ${showTimePicker ? "rotate-90" : ""}`} />
+            <div className="mt-3 px-5">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Clock className="w-3 h-3 text-muted-foreground/40" />
+                <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Time</span>
               </div>
-
-              <AnimatePresence>
-                {showTimePicker && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ type: "spring", damping: 28, stiffness: 300 }}
-                    className="overflow-hidden"
+            </div>
+            <div
+              ref={timeScrollRef}
+              className="flex gap-1.5 overflow-x-auto hide-scrollbar pl-5 pr-5"
+            >
+              {QUICK_TIMES.map((t) => {
+                const active = selectedTimeId === t.id;
+                return (
+                  <motion.button
+                    key={t.id}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => setSelectedTimeId(active ? null : t.id)}
+                    data-testid={`time-slot-${t.id}`}
+                    className={`flex flex-col items-center flex-shrink-0 px-3.5 py-2 rounded-xl transition-all duration-200 ${
+                      active
+                        ? "bg-foreground text-white"
+                        : "bg-white border border-gray-100"
+                    }`}
+                    style={{
+                      boxShadow: active
+                        ? "0 3px 12px rgba(0,0,0,0.12)"
+                        : "0 1px 2px rgba(0,0,0,0.02)",
+                    }}
                   >
-                    <div className="pt-3">
-                      <div className="flex gap-1 p-1 bg-gray-50 rounded-xl mb-3">
-                        {TIME_PERIODS.map((p) => (
-                          <button
-                            key={p.id}
-                            onClick={() => setActivePeriod(p.id)}
-                            data-testid={`time-period-${p.id}`}
-                            className={`flex-1 py-2 rounded-lg text-[11px] font-semibold transition-all duration-200 ${
-                              activePeriod === p.id
-                                ? "bg-white text-foreground shadow-sm"
-                                : "text-muted-foreground"
-                            }`}
-                          >
-                            {p.label}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div className="grid grid-cols-5 gap-1.5 mb-3">
-                        {currentPeriodHours.map((h) => {
-                          const active = selectedHour === h;
-                          return (
-                            <motion.button
-                              key={h}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => setSelectedHour(active ? null : h)}
-                              data-testid={`time-hour-${h}`}
-                              className={`py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-150 ${
-                                active
-                                  ? "bg-foreground text-white"
-                                  : "bg-white border border-gray-100 text-foreground hover:border-gray-200"
-                              }`}
-                              style={{
-                                boxShadow: active ? "0 3px 10px rgba(0,0,0,0.12)" : "none",
-                              }}
-                            >
-                              {formatHourLabel(h)}
-                            </motion.button>
-                          );
-                        })}
-                      </div>
-
-                      {selectedHour !== null && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -4 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex gap-1.5"
-                        >
-                          {[0, 15, 30, 45].map((m) => {
-                            const active = selectedMinute === m;
-                            return (
-                              <button
-                                key={m}
-                                onClick={() => setSelectedMinute(m)}
-                                data-testid={`time-minute-${m}`}
-                                className={`flex-1 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150 ${
-                                  active
-                                    ? "bg-[#FFCC02] text-foreground"
-                                    : "bg-white border border-gray-100 text-muted-foreground hover:border-gray-200"
-                                }`}
-                                style={{
-                                  boxShadow: active ? "0 2px 8px rgba(255,204,2,0.3)" : "none",
-                                }}
-                              >
-                                :{m.toString().padStart(2, "0")}
-                              </button>
-                            );
-                          })}
-                        </motion.div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    <span className={`text-[13px] font-bold leading-tight ${
+                      active ? "text-white" : "text-foreground"
+                    }`}>
+                      {t.label}
+                    </span>
+                    {t.sub && (
+                      <span className={`text-[9px] font-medium ${
+                        active ? "text-white/50" : "text-muted-foreground/50"
+                      }`}>
+                        {t.sub}
+                      </span>
+                    )}
+                  </motion.button>
+                );
+              })}
             </div>
 
-            {(selectedDate || selectedHour !== null) && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-2.5 mx-5 flex items-center gap-2 bg-white rounded-xl px-3.5 py-2.5 border border-gray-100"
-                style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}
-              >
-                <CalendarIcon className="w-3.5 h-3.5 text-[#FFCC02] flex-shrink-0" />
-                <span className="text-[12px] font-medium text-foreground flex-1">
-                  {selectedDate ? `${DAY_NAMES_SHORT[selectedDate.getDay()]}, ${MONTH_NAMES_SHORT[selectedDate.getMonth()]} ${selectedDate.getDate()}` : ""}
-                  {selectedDate && selectedHour !== null ? " at " : ""}
-                  {selectedHour !== null ? formatTime(selectedHour, selectedMinute) : ""}
-                </span>
-                <button
-                  onClick={() => { setSelectedDate(null); setSelectedHour(null); setSelectedMinute(0); setShowTimePicker(false); }}
-                  className="text-[10px] text-muted-foreground font-semibold hover:text-foreground transition-colors"
-                  data-testid="button-clear-datetime"
+            <AnimatePresence>
+              {(selectedDate || selectedTimeId) && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
                 >
-                  Clear
-                </button>
-              </motion.div>
-            )}
+                  <div className="mt-2.5 mx-5 flex items-center gap-2 bg-white rounded-xl px-3.5 py-2.5 border border-gray-100"
+                    style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}
+                  >
+                    <div className="w-6 h-6 rounded-lg bg-[#FFCC02]/10 flex items-center justify-center flex-shrink-0">
+                      <CalendarIcon className="w-3 h-3 text-[#FFCC02]" />
+                    </div>
+                    <span className="text-[12px] font-semibold text-foreground flex-1" data-testid="text-datetime-summary">
+                      {selectedDate ? `${DAY_NAMES_SHORT[selectedDate.getDay()]}, ${MONTH_NAMES_SHORT[selectedDate.getMonth()]} ${selectedDate.getDate()}` : "Any day"}
+                      {selectedTimeId ? ` · ${selectedTime?.id === "now" ? "Now" : `${selectedTime?.label} ${selectedTime?.sub || ""}`}` : ""}
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
 
