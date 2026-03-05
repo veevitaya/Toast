@@ -1230,58 +1230,58 @@ export default function Home() {
               animate={{ y: "0%" }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[28px] max-h-[70vh]"
+              className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[28px] max-h-[85vh] flex flex-col"
               style={{ boxShadow: "0 -8px 40px rgba(0,0,0,0.12)" }}
               onClick={(e) => e.stopPropagation()}
               data-testid="more-vibes-drawer"
             >
-              <div className="pt-3 pb-2 flex justify-center">
+              <div className="pt-3 pb-2 flex justify-center flex-shrink-0">
                 <div className="w-10 h-[5px] bg-gray-300/60 rounded-full" />
               </div>
-              <div className="px-6 pb-2">
+              <div className="px-6 pb-2 flex-shrink-0">
                 <h2 className="text-lg font-bold text-foreground">All Vibes</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">Pick a mood, we will find the match</p>
               </div>
 
-              <div className="px-6 pb-3">
-                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">Popular</p>
-                <div className="grid grid-cols-4 gap-2.5">
-                  {VIBE_TILES_MAIN.map((vibe) => (
-                    <motion.button
-                      key={vibe.mode}
-                      whileHover={{ scale: 1.06, y: -3 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => { setMoreVibesOpen(false); handleVibeClick(vibe.mode); }}
-                      className="flex flex-col items-center gap-2 py-4 rounded-2xl bg-gray-50 border border-gray-100/80"
-                      data-testid={`more-vibe-${vibe.mode}`}
-                    >
-                      <div className="flex items-center justify-center">
-                        <FoodIconFromEmoji emoji={vibe.emoji} size={38} />
-                      </div>
-                      <span className="text-[11px] font-semibold text-foreground">{vibe.label}</span>
-                    </motion.button>
-                  ))}
+              <div className="overflow-y-auto flex-1 min-h-0">
+                <div className="px-6 pb-3">
+                  <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-2">Popular</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {VIBE_TILES_MAIN.map((vibe) => (
+                      <motion.button
+                        key={vibe.mode}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => { setMoreVibesOpen(false); handleVibeClick(vibe.mode); }}
+                        className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-gray-50 border border-gray-100/80"
+                        data-testid={`more-vibe-${vibe.mode}`}
+                      >
+                        <div className="flex items-center justify-center">
+                          <FoodIconFromEmoji emoji={vibe.emoji} size={32} />
+                        </div>
+                        <span className="text-[10px] font-semibold text-foreground leading-tight">{vibe.label}</span>
+                      </motion.button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="px-6 pb-8">
-                <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">More Vibes</p>
-                <div className="grid grid-cols-4 gap-2.5">
-                  {VIBE_TILES_EXTRA.map((vibe) => (
-                    <motion.button
-                      key={vibe.mode}
-                      whileHover={{ scale: 1.06, y: -3 }}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => { setMoreVibesOpen(false); handleVibeClick(vibe.mode); }}
-                      className="flex flex-col items-center gap-2 py-4 rounded-2xl bg-gray-50 border border-gray-100/80"
-                      data-testid={`more-vibe-${vibe.mode}`}
-                    >
-                      <div className="flex items-center justify-center">
-                        <FoodIconFromEmoji emoji={vibe.emoji} size={38} />
-                      </div>
-                      <span className="text-[11px] font-semibold text-foreground">{vibe.label}</span>
-                    </motion.button>
-                  ))}
+                <div className="px-6 pb-8">
+                  <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-2">More Vibes</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {VIBE_TILES_EXTRA.map((vibe) => (
+                      <motion.button
+                        key={vibe.mode}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => { setMoreVibesOpen(false); handleVibeClick(vibe.mode); }}
+                        className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-gray-50 border border-gray-100/80"
+                        data-testid={`more-vibe-${vibe.mode}`}
+                      >
+                        <div className="flex items-center justify-center">
+                          <FoodIconFromEmoji emoji={vibe.emoji} size={32} />
+                        </div>
+                        <span className="text-[10px] font-semibold text-foreground leading-tight">{vibe.label}</span>
+                      </motion.button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </motion.div>
