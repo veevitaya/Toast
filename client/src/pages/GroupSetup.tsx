@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import {
   ArrowLeft, Users, MapPin, Calendar as CalendarIcon,
@@ -46,22 +46,20 @@ const RESTRICTIONS = [
 const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const QUICK_TIMES = [
-  { id: "now", label: "Now", sub: null, hour: null, minute: 0 },
-  { id: "11:30", label: "11:30", sub: "AM", hour: 11, minute: 30 },
-  { id: "12:00", label: "12:00", sub: "PM", hour: 12, minute: 0 },
-  { id: "12:30", label: "12:30", sub: "PM", hour: 12, minute: 30 },
-  { id: "13:00", label: "1:00", sub: "PM", hour: 13, minute: 0 },
-  { id: "18:00", label: "6:00", sub: "PM", hour: 18, minute: 0 },
-  { id: "18:30", label: "6:30", sub: "PM", hour: 18, minute: 30 },
-  { id: "19:00", label: "7:00", sub: "PM", hour: 19, minute: 0 },
-  { id: "19:30", label: "7:30", sub: "PM", hour: 19, minute: 30 },
-  { id: "20:00", label: "8:00", sub: "PM", hour: 20, minute: 0 },
-  { id: "20:30", label: "8:30", sub: "PM", hour: 20, minute: 30 },
-  { id: "21:00", label: "9:00", sub: "PM", hour: 21, minute: 0 },
-  { id: "22:00", label: "10:00", sub: "PM", hour: 22, minute: 0 },
-  { id: "23:00", label: "11:00", sub: "PM", hour: 23, minute: 0 },
-];
+const MINUTES = [0, 15, 30, 45];
+
+function formatDisplayTime(hour: number, minute: number) {
+  const period = hour >= 12 ? "PM" : "AM";
+  const h = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${h}:${minute.toString().padStart(2, "0")} ${period}`;
+}
+
+function roundToNearest15(date: Date) {
+  const m = date.getMinutes();
+  const rounded = Math.ceil(m / 15) * 15;
+  if (rounded === 60) return { hour: (date.getHours() + 1) % 24, minute: 0 };
+  return { hour: date.getHours(), minute: rounded };
+}
 
 function getNext14Days() {
   const days: Date[] = [];
@@ -88,11 +86,13 @@ export default function GroupSetup() {
   const [selectedGroupType, setSelectedGroupType] = useState<string>("");
   const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTimeId, setSelectedTimeId] = useState<string | null>(null);
+  const now = new Date();
+  const defaultTime = roundToNearest15(now);
+  const [selectedHour, setSelectedHour] = useState<number>(defaultTime.hour);
+  const [selectedMinute, setSelectedMinute] = useState<number>(defaultTime.minute);
   const [inviteSent, setInviteSent] = useState(false);
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
   const dateScrollRef = useRef<HTMLDivElement>(null);
-  const timeScrollRef = useRef<HTMLDivElement>(null);
   const upcomingDays = getNext14Days();
 
   const toggleList = (list: string[], item: string, setter: (v: string[]) => void) => {
@@ -140,10 +140,8 @@ export default function GroupSetup() {
     }
   };
 
-  const selectedTime = QUICK_TIMES.find(t => t.id === selectedTimeId);
-
   const completedSteps = [
-    selectedDate || selectedTimeId,
+    selectedDate,
     selectedLocations.length > 0,
     selectedBudget,
     selectedGroupType,
@@ -187,16 +185,16 @@ export default function GroupSetup() {
             <div className="flex items-center gap-2 mb-3 px-5">
               <CalendarIcon className="w-4 h-4 text-[#FFCC02]" />
               <h2 className="text-[12px] font-bold uppercase tracking-[0.1em] text-foreground">When?</h2>
-              {(selectedDate || selectedTimeId) && (
+              {selectedDate && (
                 <button
-                  onClick={() => { setSelectedDate(null); setSelectedTimeId(null); }}
+                  onClick={() => { setSelectedDate(null); const t = roundToNearest15(new Date()); setSelectedHour(t.hour); setSelectedMinute(t.minute); }}
                   className="text-[10px] text-muted-foreground font-semibold ml-auto hover:text-foreground transition-colors"
                   data-testid="button-clear-datetime"
                 >
                   Clear
                 </button>
               )}
-              {!selectedDate && !selectedTimeId && (
+              {!selectedDate && (
                 <span className="text-[10px] text-muted-foreground ml-auto">Optional</span>
               )}
             </div>
@@ -246,73 +244,70 @@ export default function GroupSetup() {
             </div>
 
             <div className="mt-3 px-5">
-              <div className="flex items-center gap-1.5 mb-2">
+              <div className="flex items-center gap-1.5 mb-2.5">
                 <Clock className="w-3 h-3 text-muted-foreground/40" />
                 <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Time</span>
               </div>
-            </div>
-            <div
-              ref={timeScrollRef}
-              className="flex gap-1.5 overflow-x-auto hide-scrollbar pl-5 pr-5"
-            >
-              {QUICK_TIMES.map((t) => {
-                const active = selectedTimeId === t.id;
-                return (
-                  <motion.button
-                    key={t.id}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => setSelectedTimeId(active ? null : t.id)}
-                    data-testid={`time-slot-${t.id}`}
-                    className={`flex flex-col items-center flex-shrink-0 px-3.5 py-2 rounded-xl transition-all duration-200 ${
-                      active
-                        ? "bg-foreground text-white"
-                        : "bg-white border border-gray-100"
-                    }`}
-                    style={{
-                      boxShadow: active
-                        ? "0 3px 12px rgba(0,0,0,0.12)"
-                        : "0 1px 2px rgba(0,0,0,0.02)",
-                    }}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-white rounded-xl border border-gray-100 overflow-hidden"
+                  style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}
+                >
+                  <select
+                    value={selectedHour}
+                    onChange={(e) => setSelectedHour(Number(e.target.value))}
+                    data-testid="select-hour"
+                    className="w-full px-3 py-2.5 text-[14px] font-semibold text-foreground bg-transparent appearance-none cursor-pointer focus:outline-none"
                   >
-                    <span className={`text-[13px] font-bold leading-tight ${
-                      active ? "text-white" : "text-foreground"
-                    }`}>
-                      {t.label}
-                    </span>
-                    {t.sub && (
-                      <span className={`text-[9px] font-medium ${
-                        active ? "text-white/50" : "text-muted-foreground/50"
-                      }`}>
-                        {t.sub}
-                      </span>
-                    )}
-                  </motion.button>
-                );
-              })}
+                    {Array.from({ length: 24 }, (_, i) => {
+                      const label = i === 0 ? "12" : i > 12 ? String(i - 12) : String(i);
+                      const period = i >= 12 ? "PM" : "AM";
+                      return (
+                        <option key={i} value={i}>
+                          {label} {period}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+                <span className="text-[18px] font-bold text-muted-foreground/30">:</span>
+                <div className="flex gap-1.5">
+                  {MINUTES.map((m) => {
+                    const active = selectedMinute === m;
+                    return (
+                      <motion.button
+                        key={m}
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => setSelectedMinute(m)}
+                        data-testid={`minute-${m}`}
+                        className={`w-[44px] py-2 rounded-xl text-[13px] font-semibold transition-all duration-150 ${
+                          active
+                            ? "bg-foreground text-white"
+                            : "bg-white border border-gray-100 text-muted-foreground"
+                        }`}
+                        style={{
+                          boxShadow: active ? "0 2px 8px rgba(0,0,0,0.1)" : "0 1px 2px rgba(0,0,0,0.02)",
+                        }}
+                      >
+                        :{m.toString().padStart(2, "0")}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
-            <AnimatePresence>
-              {(selectedDate || selectedTimeId) && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-2.5 mx-5 flex items-center gap-2 bg-white rounded-xl px-3.5 py-2.5 border border-gray-100"
-                    style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}
-                  >
-                    <div className="w-6 h-6 rounded-lg bg-[#FFCC02]/10 flex items-center justify-center flex-shrink-0">
-                      <CalendarIcon className="w-3 h-3 text-[#FFCC02]" />
-                    </div>
-                    <span className="text-[12px] font-semibold text-foreground flex-1" data-testid="text-datetime-summary">
-                      {selectedDate ? `${DAY_NAMES_SHORT[selectedDate.getDay()]}, ${MONTH_NAMES_SHORT[selectedDate.getMonth()]} ${selectedDate.getDate()}` : "Any day"}
-                      {selectedTimeId ? ` · ${selectedTime?.id === "now" ? "Now" : `${selectedTime?.label} ${selectedTime?.sub || ""}`}` : ""}
-                    </span>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {selectedDate && (
+              <div className="mt-2.5 mx-5 flex items-center gap-2 bg-white rounded-xl px-3.5 py-2.5 border border-gray-100"
+                style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}
+              >
+                <div className="w-6 h-6 rounded-lg bg-[#FFCC02]/10 flex items-center justify-center flex-shrink-0">
+                  <CalendarIcon className="w-3 h-3 text-[#FFCC02]" />
+                </div>
+                <span className="text-[12px] font-semibold text-foreground flex-1" data-testid="text-datetime-summary">
+                  {`${DAY_NAMES_SHORT[selectedDate.getDay()]}, ${MONTH_NAMES_SHORT[selectedDate.getMonth()]} ${selectedDate.getDate()} · ${formatDisplayTime(selectedHour, selectedMinute)}`}
+                </span>
+              </div>
+            )}
           </motion.div>
         </div>
 
