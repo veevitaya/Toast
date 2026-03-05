@@ -7,6 +7,8 @@ import {
   analyticsEvents,
   adBanners,
   adminUsers,
+  restaurantOwners,
+  restaurantClaims,
   groupSessions,
   groupSessionMembers,
   groupSwipes,
@@ -24,6 +26,10 @@ import {
   type InsertAdBanner,
   type AdminUser,
   type InsertAdminUser,
+  type RestaurantOwner,
+  type InsertRestaurantOwner,
+  type RestaurantClaim,
+  type InsertRestaurantClaim,
   type GroupSession,
   type InsertGroupSession,
   type GroupSessionMember,
@@ -70,7 +76,20 @@ export interface IStorage {
 
   createAdminUser(user: InsertAdminUser): Promise<AdminUser>;
   getAdminUser(username: string): Promise<AdminUser | undefined>;
+  getAdminUserById(id: number): Promise<AdminUser | undefined>;
   getAllAdminUsers(): Promise<AdminUser[]>;
+  updateAdminUser(id: number, updates: Partial<InsertAdminUser>): Promise<AdminUser | undefined>;
+
+  createRestaurantOwner(owner: InsertRestaurantOwner): Promise<RestaurantOwner>;
+  getRestaurantOwnerByEmail(email: string): Promise<RestaurantOwner | undefined>;
+  getRestaurantOwnerById(id: number): Promise<RestaurantOwner | undefined>;
+  getAllRestaurantOwners(): Promise<RestaurantOwner[]>;
+  updateRestaurantOwner(id: number, updates: Partial<InsertRestaurantOwner>): Promise<RestaurantOwner | undefined>;
+
+  createRestaurantClaim(claim: InsertRestaurantClaim): Promise<RestaurantClaim>;
+  getRestaurantClaims(status?: string): Promise<RestaurantClaim[]>;
+  getRestaurantClaimById(id: number): Promise<RestaurantClaim | undefined>;
+  updateRestaurantClaim(id: number, updates: Partial<InsertRestaurantClaim>): Promise<RestaurantClaim | undefined>;
 
   createGroupSession(session: InsertGroupSession): Promise<GroupSession>;
   getGroupSession(sessionCode: string): Promise<GroupSession | undefined>;
@@ -277,8 +296,64 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getAdminUserById(id: number): Promise<AdminUser | undefined> {
+    const [user] = await db.select().from(adminUsers).where(eq(adminUsers.id, id)).limit(1);
+    return user;
+  }
+
   async getAllAdminUsers(): Promise<AdminUser[]> {
-    return await db.select().from(adminUsers);
+    return await db.select().from(adminUsers).orderBy(desc(adminUsers.id));
+  }
+
+  async updateAdminUser(id: number, updates: Partial<InsertAdminUser>): Promise<AdminUser | undefined> {
+    const [updated] = await db.update(adminUsers).set(updates).where(eq(adminUsers.id, id)).returning();
+    return updated;
+  }
+
+  async createRestaurantOwner(owner: InsertRestaurantOwner): Promise<RestaurantOwner> {
+    const [created] = await db.insert(restaurantOwners).values(owner).returning();
+    return created;
+  }
+
+  async getRestaurantOwnerByEmail(email: string): Promise<RestaurantOwner | undefined> {
+    const [owner] = await db.select().from(restaurantOwners).where(eq(restaurantOwners.email, email)).limit(1);
+    return owner;
+  }
+
+  async getRestaurantOwnerById(id: number): Promise<RestaurantOwner | undefined> {
+    const [owner] = await db.select().from(restaurantOwners).where(eq(restaurantOwners.id, id)).limit(1);
+    return owner;
+  }
+
+  async getAllRestaurantOwners(): Promise<RestaurantOwner[]> {
+    return await db.select().from(restaurantOwners).orderBy(desc(restaurantOwners.id));
+  }
+
+  async updateRestaurantOwner(id: number, updates: Partial<InsertRestaurantOwner>): Promise<RestaurantOwner | undefined> {
+    const [updated] = await db.update(restaurantOwners).set(updates).where(eq(restaurantOwners.id, id)).returning();
+    return updated;
+  }
+
+  async createRestaurantClaim(claim: InsertRestaurantClaim): Promise<RestaurantClaim> {
+    const [created] = await db.insert(restaurantClaims).values(claim).returning();
+    return created;
+  }
+
+  async getRestaurantClaims(status?: string): Promise<RestaurantClaim[]> {
+    if (status) {
+      return await db.select().from(restaurantClaims).where(eq(restaurantClaims.status, status)).orderBy(desc(restaurantClaims.id));
+    }
+    return await db.select().from(restaurantClaims).orderBy(desc(restaurantClaims.id));
+  }
+
+  async getRestaurantClaimById(id: number): Promise<RestaurantClaim | undefined> {
+    const [claim] = await db.select().from(restaurantClaims).where(eq(restaurantClaims.id, id)).limit(1);
+    return claim;
+  }
+
+  async updateRestaurantClaim(id: number, updates: Partial<InsertRestaurantClaim>): Promise<RestaurantClaim | undefined> {
+    const [updated] = await db.update(restaurantClaims).set(updates).where(eq(restaurantClaims.id, id)).returning();
+    return updated;
   }
 
   async createGroupSession(session: InsertGroupSession): Promise<GroupSession> {

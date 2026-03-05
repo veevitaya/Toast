@@ -15,9 +15,20 @@ async function seedAdminUser() {
     await storage.createAdminUser({
       username: "admin",
       passwordHash: hashPassword("toast2024"),
-      role: "admin",
+      role: "superadmin",
+      permissions: ["manage_restaurants", "manage_users", "manage_campaigns", "manage_banners", "view_analytics", "manage_claims", "manage_config"],
+      isActive: true,
       createdAt: new Date().toISOString(),
     });
+  } else {
+    const seedAdmin = admins.find((a) => a.username === "admin");
+    if (seedAdmin && (seedAdmin.role !== "superadmin" || !seedAdmin.permissions?.length)) {
+      await storage.updateAdminUser(seedAdmin.id, {
+        role: "superadmin",
+        permissions: ["manage_restaurants", "manage_users", "manage_campaigns", "manage_banners", "view_analytics", "manage_claims", "manage_config"],
+        isActive: true,
+      });
+    }
   }
 }
 
@@ -684,7 +695,6 @@ export async function registerRoutes(
     }
   });
 
-  // Admin auth middleware
   const adminAuth = async (req: any, res: any, next: any) => {
     const authHeader = req.headers["x-admin-token"];
     if (!authHeader) {
@@ -694,7 +704,25 @@ export async function registerRoutes(
       const decoded = Buffer.from(authHeader, "base64").toString();
       const [username] = decoded.split(":");
       const admin = await storage.getAdminUser(username);
-      if (!admin) return res.status(401).json({ message: "Unauthorized" });
+      if (!admin || admin.isActive === false) return res.status(401).json({ message: "Unauthorized" });
+      req.adminUser = admin;
+      next();
+    } catch {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+  };
+
+  const ownerAuth = async (req: any, res: any, next: any) => {
+    const authHeader = req.headers["x-owner-token"];
+    if (!authHeader) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+      const decoded = Buffer.from(authHeader, "base64").toString();
+      const [email] = decoded.split(":");
+      const owner = await storage.getRestaurantOwnerByEmail(email);
+      if (!owner) return res.status(401).json({ message: "Unauthorized" });
+      req.ownerUser = owner;
       next();
     } catch {
       return res.status(401).json({ message: "Unauthorized" });
@@ -754,7 +782,6 @@ export async function registerRoutes(
     }
   });
 
-  // Admin routes
   app.post("/api/admin/login", async (req, res) => {
     try {
       const schema = z.object({
@@ -766,9 +793,266 @@ export async function registerRoutes(
       if (!admin || admin.passwordHash !== hashPassword(input.password)) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
-      res.json({ username: admin.username, role: admin.role, loggedIn: true });
+      if (admin.isActive === false) {
+        return res.status(403).json({ message: "Account disabled" });
+      }
+      res.json({
+        username: admin.username,
+        role: admin.role,
+        permissions: admin.permissions || [],
+        sessionType: "admin",
+        loggedIn: true,
+      });
     } catch (err) {
       if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/owner-login", async (req, res) => {
+    try {
+      const schema = z.object({
+        email: z.string().email(),
+        password: z.string().min(1),
+      });
+      const input = schema.parse(req.body);
+      const owner = await storage.getRestaurantOwnerByEmail(input.email);
+      if (!owner || owner.passwordHash !== hashPassword(input.password)) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      let restaurant = null;
+      if (owner.restaurantId) {
+        restaurant = await storage.getRestaurantById(owner.restaurantId);
+      }
+      res.json({
+        id: owner.id,
+        email: owner.email,
+        displayName: owner.displayName,
+        restaurantId: owner.restaurantId,
+        restaurantName: restaurant?.name || null,
+        isVerified: owner.isVerified,
+        subscriptionTier: owner.subscriptionTier,
+        sessionType: "owner",
+        loggedIn: true,
+      });
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/admin/admin-users", adminAuth, async (_req, res) => {
+    try {
+      const users = await storage.getAllAdminUsers();
+      res.json(users.map(u => ({ ...u, passwordHash: undefined })));
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/admin-users", adminAuth, async (req: any, res) => {
+    try {
+      if (req.adminUser?.role !== "superadmin") {
+        return res.status(403).json({ message: "Only superadmins can create admin users" });
+      }
+      const schema = z.object({
+        username: z.string().min(1),
+        password: z.string().min(4),
+        role: z.enum(["superadmin", "admin", "moderator", "viewer"]),
+        permissions: z.array(z.string()).optional().default([]),
+      });
+      const input = schema.parse(req.body);
+      const existing = await storage.getAdminUser(input.username);
+      if (existing) return res.status(409).json({ message: "Username already exists" });
+      const user = await storage.createAdminUser({
+        username: input.username,
+        passwordHash: hashPassword(input.password),
+        role: input.role,
+        permissions: input.permissions,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+      });
+      res.status(201).json({ ...user, passwordHash: undefined });
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/admin/admin-users/:id", adminAuth, async (req: any, res) => {
+    try {
+      if (req.adminUser?.role !== "superadmin") {
+        return res.status(403).json({ message: "Only superadmins can modify admin users" });
+      }
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const updates: any = {};
+      if (req.body.role) updates.role = req.body.role;
+      if (req.body.permissions) updates.permissions = req.body.permissions;
+      if (typeof req.body.isActive === "boolean") updates.isActive = req.body.isActive;
+      if (req.body.password) updates.passwordHash = hashPassword(req.body.password);
+      const updated = await storage.updateAdminUser(id, updates);
+      if (!updated) return res.status(404).json({ message: "Not found" });
+      res.json({ ...updated, passwordHash: undefined });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/admin/owners", adminAuth, async (_req, res) => {
+    try {
+      const owners = await storage.getAllRestaurantOwners();
+      res.json(owners.map(o => ({ ...o, passwordHash: undefined })));
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/owners", adminAuth, async (req, res) => {
+    try {
+      const schema = z.object({
+        email: z.string().email(),
+        password: z.string().min(4),
+        displayName: z.string().min(1),
+        phone: z.string().optional(),
+        restaurantId: z.number().optional(),
+      });
+      const input = schema.parse(req.body);
+      const existing = await storage.getRestaurantOwnerByEmail(input.email);
+      if (existing) return res.status(409).json({ message: "Email already registered" });
+      const owner = await storage.createRestaurantOwner({
+        email: input.email,
+        passwordHash: hashPassword(input.password),
+        displayName: input.displayName,
+        phone: input.phone || null,
+        restaurantId: input.restaurantId || null,
+        isVerified: false,
+        verificationStatus: "pending",
+        subscriptionTier: "free",
+        createdAt: new Date().toISOString(),
+      });
+      res.status(201).json({ ...owner, passwordHash: undefined });
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/admin/owners/:id", adminAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const updates: any = {};
+      if (typeof req.body.isVerified === "boolean") updates.isVerified = req.body.isVerified;
+      if (req.body.verificationStatus) updates.verificationStatus = req.body.verificationStatus;
+      if (req.body.subscriptionTier) updates.subscriptionTier = req.body.subscriptionTier;
+      if (req.body.subscriptionExpiry) updates.subscriptionExpiry = req.body.subscriptionExpiry;
+      if (req.body.restaurantId !== undefined) updates.restaurantId = req.body.restaurantId;
+      const updated = await storage.updateRestaurantOwner(id, updates);
+      if (!updated) return res.status(404).json({ message: "Not found" });
+      res.json({ ...updated, passwordHash: undefined });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/admin/claims", adminAuth, async (req, res) => {
+    try {
+      const status = req.query.status as string | undefined;
+      const claims = await storage.getRestaurantClaims(status);
+      const enriched = await Promise.all(claims.map(async (c) => {
+        const owner = await storage.getRestaurantOwnerById(c.ownerId);
+        const restaurant = await storage.getRestaurantById(c.restaurantId);
+        return {
+          ...c,
+          ownerName: owner?.displayName || "Unknown",
+          ownerEmail: owner?.email || "",
+          restaurantName: restaurant?.name || "Unknown",
+        };
+      }));
+      res.json(enriched);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/claims", async (req, res) => {
+    try {
+      const schema = z.object({
+        restaurantId: z.number(),
+        ownerId: z.number(),
+        proofDocuments: z.array(z.string()).optional().default([]),
+      });
+      const input = schema.parse(req.body);
+      const claim = await storage.createRestaurantClaim({
+        ...input,
+        status: "pending",
+        submittedAt: new Date().toISOString(),
+      });
+      res.status(201).json(claim);
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/admin/claims/:id", adminAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const claim = await storage.getRestaurantClaimById(id);
+      if (!claim) return res.status(404).json({ message: "Claim not found" });
+      const updates: any = {};
+      if (req.body.status) updates.status = req.body.status;
+      if (req.body.reviewNotes) updates.reviewNotes = req.body.reviewNotes;
+      updates.reviewedBy = req.adminUser?.id;
+      updates.reviewedAt = new Date().toISOString();
+      const updated = await storage.updateRestaurantClaim(id, updates);
+      if (req.body.status === "approved") {
+        await storage.updateRestaurant(claim.restaurantId, {
+          ownerId: claim.ownerId,
+          ownerClaimStatus: "approved",
+        });
+        await storage.updateRestaurantOwner(claim.ownerId, {
+          restaurantId: claim.restaurantId,
+          isVerified: true,
+          verificationStatus: "approved",
+        });
+      }
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/admin/owner/dashboard", ownerAuth, async (req: any, res) => {
+    try {
+      const owner = req.ownerUser;
+      let restaurant = null;
+      if (owner.restaurantId) {
+        restaurant = await storage.getRestaurantById(owner.restaurantId);
+      }
+      const campaigns = owner.restaurantId
+        ? await storage.getCampaignsByOwner(String(owner.id))
+        : [];
+      const claims = await storage.getRestaurantClaims();
+      const myClaims = claims.filter(c => c.ownerId === owner.id);
+      let stats = { views: 0, likes: 0, saves: 0, deliveryTaps: 0 };
+      if (owner.restaurantId) {
+        const events = await storage.getEvents({ restaurantId: owner.restaurantId });
+        stats.views = events.filter(e => e.eventType === "view_detail").length;
+        stats.likes = events.filter(e => e.eventType === "swipe_right").length;
+        stats.saves = events.filter(e => e.eventType === "save").length;
+        stats.deliveryTaps = events.filter(e => e.eventType === "delivery_tap").length;
+      }
+      res.json({
+        owner: { ...owner, passwordHash: undefined },
+        restaurant,
+        campaigns,
+        claims: myClaims,
+        stats,
+      });
+    } catch (err) {
       res.status(500).json({ message: "Internal server error" });
     }
   });

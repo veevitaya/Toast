@@ -11,10 +11,26 @@ import {
   Bell,
   ExternalLink,
   Settings2,
+  Store,
+  ShieldCheck,
 } from "lucide-react";
 import toastLogo from "@assets/toast_logo_nobg.png";
 
-const navItems = [
+interface AdminSession {
+  sessionType: "admin" | "owner";
+  loggedIn: boolean;
+  username?: string;
+  role?: string;
+  permissions?: string[];
+  displayName?: string;
+  email?: string;
+  restaurantId?: number;
+  restaurantName?: string;
+  isVerified?: boolean;
+  subscriptionTier?: string;
+}
+
+const adminNavItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard" },
   { label: "Users", icon: Users, href: "/admin/users" },
   { label: "Restaurants", icon: Utensils, href: "/admin/restaurants" },
@@ -24,14 +40,20 @@ const navItems = [
   { label: "App Config", icon: Settings2, href: "/admin/config" },
 ];
 
-function getPageTitle(path: string): string {
-  const item = navItems.find((n) => path.startsWith(n.href));
+const ownerNavItems = [
+  { label: "My Restaurant", icon: Store, href: "/admin/my-restaurant" },
+  { label: "Campaigns", icon: Megaphone, href: "/admin/campaigns" },
+  { label: "Analytics", icon: BarChart3, href: "/admin/analytics" },
+];
+
+function getPageTitle(path: string, items: typeof adminNavItems): string {
+  const item = items.find((n) => path.startsWith(n.href));
   return item ? item.label : "Admin";
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
-  const [adminUser, setAdminUser] = useState<{ username: string; role: string } | null>(null);
+  const [session, setSession] = useState<AdminSession | null>(null);
 
   useEffect(() => {
     const raw = localStorage.getItem("toast_admin_session");
@@ -40,12 +62,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return;
     }
     try {
-      const session = JSON.parse(raw);
-      if (!session.loggedIn) {
+      const parsed = JSON.parse(raw);
+      if (!parsed.loggedIn) {
         setLocation("/admin/login");
         return;
       }
-      setAdminUser({ username: session.username, role: session.role });
+      setSession(parsed);
     } catch {
       setLocation("/admin/login");
     }
@@ -56,9 +78,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setLocation("/admin/login");
   };
 
-  if (!adminUser) return null;
+  if (!session) return null;
 
-  const pageTitle = getPageTitle(location);
+  const isOwner = session.sessionType === "owner";
+  const navItems = isOwner ? ownerNavItems : adminNavItems;
+  const pageTitle = getPageTitle(location, navItems);
+  const displayName = isOwner ? session.displayName || session.email || "Owner" : session.username || "Admin";
+  const roleLabel = isOwner ? (session.isVerified ? "Verified Owner" : "Owner") : (session.role || "admin");
 
   return (
     <div className="flex h-screen w-full" data-testid="admin-layout">
@@ -80,8 +106,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               style={{ letterSpacing: "1.15em", paddingLeft: "1.15em" }}
             >THINGS</span>
           </div>
-          <span className="bg-[#FFCC02] text-foreground text-[10px] font-semibold rounded-full px-2 py-0.5">
-            Admin
+          <span className={`text-[10px] font-semibold rounded-full px-2 py-0.5 ${
+            isOwner
+              ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+              : "bg-[#FFCC02] text-foreground"
+          }`}>
+            {isOwner ? "Owner" : "Admin"}
           </span>
         </div>
 
@@ -96,7 +126,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       ? "bg-gray-100 dark:bg-muted text-foreground border-l-[3px] border-[#FFCC02]"
                       : "text-muted-foreground hover:text-foreground hover:bg-gray-50 dark:hover:bg-muted"
                   }`}
-                  data-testid={`nav-${item.label.toLowerCase()}`}
+                  data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
                 >
                   <item.icon className={`w-4 h-4 ${active ? "text-[#FFCC02]" : ""}`} />
                   <span>{item.label}</span>
@@ -108,14 +138,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <div className="p-4 border-t border-gray-100 dark:border-border">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-muted text-foreground flex items-center justify-center text-xs font-bold">
-              {adminUser.username.charAt(0).toUpperCase()}
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
+              isOwner
+                ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-600"
+                : "bg-gray-100 dark:bg-muted text-foreground"
+            }`}>
+              {displayName.charAt(0).toUpperCase()}
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-medium text-foreground truncate" data-testid="text-admin-username">
-                {adminUser.username}
+                {displayName}
               </span>
-              <span className="text-xs text-muted-foreground/60 capitalize">{adminUser.role}</span>
+              <span className="text-xs text-muted-foreground/60 capitalize flex items-center gap-1">
+                {isOwner && session.isVerified && <ShieldCheck className="w-3 h-3 text-emerald-500" />}
+                {roleLabel}
+              </span>
             </div>
           </div>
           <button
@@ -151,7 +188,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Bell className="w-4.5 h-4.5" />
             </button>
             <span className="hidden max-md:inline text-sm text-muted-foreground" data-testid="text-admin-username-mobile">
-              {adminUser.username}
+              {displayName}
             </span>
             <button
               onClick={handleLogout}
@@ -173,4 +210,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
     </div>
   );
+}
+
+export function getAdminSession(): AdminSession | null {
+  try {
+    const raw = localStorage.getItem("toast_admin_session");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed.loggedIn ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function getAdminToken(): string {
+  const session = getAdminSession();
+  if (!session) return "";
+  if (session.sessionType === "admin") {
+    return btoa(`${session.username}:`);
+  }
+  return "";
 }

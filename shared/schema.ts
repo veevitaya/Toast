@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -15,6 +15,9 @@ export const restaurants = pgTable("restaurants", {
   address: text("address").notNull(),
   isNew: boolean("is_new").default(false),
   trendingScore: integer("trending_score").default(0),
+  ownerId: integer("owner_id"),
+  ownerClaimStatus: text("owner_claim_status").default("unclaimed"),
+  paymentConnected: boolean("payment_connected").default(false),
 });
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({ id: true });
@@ -106,12 +109,72 @@ export const adminUsers = pgTable("admin_users", {
   username: text("username").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   role: text("role").default("admin"),
+  permissions: text("permissions").array().default([]),
+  isActive: boolean("is_active").default(true),
   createdAt: text("created_at").notNull(),
 });
 
 export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({ id: true });
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
+
+export const ADMIN_ROLES = ["superadmin", "admin", "moderator", "viewer"] as const;
+export type AdminRole = typeof ADMIN_ROLES[number];
+
+export const ADMIN_PERMISSIONS = [
+  "manage_restaurants",
+  "manage_users",
+  "manage_campaigns",
+  "manage_banners",
+  "view_analytics",
+  "manage_claims",
+  "manage_config",
+] as const;
+export type AdminPermission = typeof ADMIN_PERMISSIONS[number];
+
+export const ROLE_DEFAULT_PERMISSIONS: Record<string, string[]> = {
+  superadmin: [...ADMIN_PERMISSIONS],
+  admin: ["manage_restaurants", "manage_campaigns", "manage_banners", "view_analytics", "manage_claims"],
+  moderator: ["manage_restaurants", "view_analytics", "manage_claims"],
+  viewer: ["view_analytics"],
+};
+
+export const restaurantOwners = pgTable("restaurant_owners", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  displayName: text("display_name").notNull(),
+  phone: text("phone"),
+  lineUserId: text("line_user_id"),
+  restaurantId: integer("restaurant_id"),
+  isVerified: boolean("is_verified").default(false),
+  verificationStatus: text("verification_status").default("pending"),
+  paymentMethod: text("payment_method"),
+  paymentDetails: jsonb("payment_details"),
+  subscriptionTier: text("subscription_tier").default("free"),
+  subscriptionExpiry: text("subscription_expiry"),
+  createdAt: text("created_at").notNull(),
+});
+
+export const insertRestaurantOwnerSchema = createInsertSchema(restaurantOwners).omit({ id: true });
+export type RestaurantOwner = typeof restaurantOwners.$inferSelect;
+export type InsertRestaurantOwner = z.infer<typeof insertRestaurantOwnerSchema>;
+
+export const restaurantClaims = pgTable("restaurant_claims", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull(),
+  ownerId: integer("owner_id").notNull(),
+  proofDocuments: text("proof_documents").array().default([]),
+  status: text("status").default("pending"),
+  reviewedBy: integer("reviewed_by"),
+  reviewNotes: text("review_notes"),
+  submittedAt: text("submitted_at").notNull(),
+  reviewedAt: text("reviewed_at"),
+});
+
+export const insertRestaurantClaimSchema = createInsertSchema(restaurantClaims).omit({ id: true });
+export type RestaurantClaim = typeof restaurantClaims.$inferSelect;
+export type InsertRestaurantClaim = z.infer<typeof insertRestaurantClaimSchema>;
 
 export const groupSessions = pgTable("group_sessions", {
   id: serial("id").primaryKey(),

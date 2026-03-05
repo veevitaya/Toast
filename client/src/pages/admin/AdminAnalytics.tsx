@@ -25,6 +25,10 @@ import {
   Sun,
   Moon,
   ChevronDown,
+  Zap,
+  Brain,
+  Calendar,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -208,6 +212,62 @@ const DATA_INSIGHTS_CATALOG = [
   },
 ];
 
+const USER_GENDER_DATA = [
+  { label: "Female", pct: 51, color: "hsl(350, 95%, 73%)" },
+  { label: "Male", pct: 42, color: "hsl(235, 90%, 75%)" },
+  { label: "Other", pct: 7, color: "hsl(260, 90%, 77%)" },
+];
+
+const USER_AGE_DATA = [
+  { label: "18-24", pct: 18 },
+  { label: "25-34", pct: 38 },
+  { label: "35-44", pct: 25 },
+  { label: "45-54", pct: 12 },
+  { label: "55+", pct: 7 },
+];
+
+const USER_TYPE_SEGMENTS = [
+  { label: "Solo Diners", pct: 35, count: 1_247, topCuisine: "Japanese", avgBudget: "฿฿", peakTime: "12-1pm", color: "hsl(239, 84%, 67%)" },
+  { label: "Couples", pct: 22, count: 784, topCuisine: "Italian", avgBudget: "฿฿฿", peakTime: "7-8pm", color: "hsl(189, 95%, 43%)" },
+  { label: "Friends Group", pct: 18, count: 641, topCuisine: "Korean BBQ", avgBudget: "฿฿", peakTime: "6-8pm", color: "hsl(258, 90%, 66%)" },
+  { label: "Families", pct: 15, count: 534, topCuisine: "Thai", avgBudget: "฿฿฿", peakTime: "11am-1pm", color: "hsl(160, 84%, 39%)" },
+  { label: "Coworkers", pct: 10, count: 356, topCuisine: "Buffet", avgBudget: "฿฿", peakTime: "12-1pm", color: "hsl(38, 92%, 50%)" },
+];
+
+const USER_BEHAVIORAL_COHORTS = [
+  { label: "Power Users", freq: "10+/week", pct: 8, sessions: 14.2, swipes: 48, color: "hsl(239, 84%, 67%)" },
+  { label: "Regular", freq: "3-9/week", pct: 32, sessions: 5.4, swipes: 22, color: "hsl(189, 95%, 43%)" },
+  { label: "Casual", freq: "1-2/week", pct: 42, sessions: 1.6, swipes: 8, color: "hsl(258, 90%, 66%)" },
+  { label: "Dormant", freq: "<1/week", pct: 18, sessions: 0.3, swipes: 2, color: "hsl(215, 16%, 47%)" },
+];
+
+const USER_DAY_ACTIVITY = [
+  { day: "Mon", pct: 62 },
+  { day: "Tue", pct: 55 },
+  { day: "Wed", pct: 58 },
+  { day: "Thu", pct: 65 },
+  { day: "Fri", pct: 88 },
+  { day: "Sat", pct: 95 },
+  { day: "Sun", pct: 78 },
+];
+
+const USER_PEAK_HOURS = [
+  { hour: "11am-12pm", pct: 45 },
+  { hour: "12-1pm", pct: 82 },
+  { hour: "1-2pm", pct: 60 },
+  { hour: "5-6pm", pct: 55 },
+  { hour: "6-7pm", pct: 78 },
+  { hour: "7-8pm", pct: 90 },
+  { hour: "8-9pm", pct: 68 },
+];
+
+const USER_AI_INSIGHTS = [
+  "Couples prefer Japanese restaurants 2.3x more than average",
+  "Power users order via Grab 67% of the time",
+  "Friday-Saturday dinner sessions are 40% longer than weekday average",
+  "Solo diners in the 25-34 age group have the highest retention rate at 82%",
+];
+
 function getHeatmapColor(value: number): string {
   const max = 88;
   const intensity = value / max;
@@ -223,6 +283,7 @@ function getHeatmapColor(value: number): string {
 export default function AdminAnalytics() {
   const [dateRange, setDateRange] = useState<DateRange>("7d");
   const [showCatalog, setShowCatalog] = useState(false);
+  const [showUserIntel, setShowUserIntel] = useState(true);
 
   const sinceParam =
     dateRange === "7d"
@@ -320,6 +381,171 @@ export default function AdminAnalytics() {
             </p>
           </div>
         ))}
+      </div>
+
+      {/* User Intelligence Section */}
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border overflow-hidden" data-testid="section-user-intelligence">
+        <button
+          onClick={() => setShowUserIntel(!showUserIntel)}
+          className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-muted transition-colors"
+          data-testid="button-toggle-user-intel"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(230,50%,92%) 0%, hsl(240,45%,85%) 100%)" }}>
+              <Users className="w-4 h-4" style={{ color: "hsl(239, 84%, 67%)" }} />
+            </div>
+            <div className="text-left">
+              <h3 className="text-[15px] font-semibold text-foreground">User Intelligence</h3>
+              <p className="text-xs text-muted-foreground/40">Demographics, behavior cohorts, activity patterns</p>
+            </div>
+          </div>
+          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showUserIntel ? "rotate-180" : ""}`} />
+        </button>
+        {showUserIntel && (
+          <div className="px-6 pb-6 pt-2 space-y-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="section-user-kpis">
+              <UserKpiCard icon={<Users className="w-4 h-4 text-indigo-500" />} label="Total Users" value={(summary?.totalUsers || 0).toLocaleString()} gradient="linear-gradient(135deg, hsl(230,50%,92%) 0%, hsl(240,45%,85%) 100%)" />
+              <UserKpiCard icon={<Activity className="w-4 h-4 text-cyan-500" />} label="Active This Week" value="68%" sub="2,422 users" gradient="linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)" />
+              <UserKpiCard icon={<BarChart3 className="w-4 h-4 text-violet-500" />} label="Avg Sessions/User" value="3.2" sub="per week" gradient="linear-gradient(135deg, hsl(260,50%,92%) 0%, hsl(270,45%,85%) 100%)" />
+              <UserKpiCard icon={<TrendingUp className="w-4 h-4 text-green-500" />} label="Retention Rate" value="74%" sub="+3% vs last month" gradient="linear-gradient(135deg, hsl(145,50%,92%) 0%, hsl(155,45%,85%) 100%)" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="rounded-xl border border-gray-100 dark:border-border p-5" data-testid="section-gender-distribution">
+                <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">Gender Distribution</h4>
+                <div className="space-y-2.5">
+                  {USER_GENDER_DATA.map((g) => (
+                    <div key={g.label} className="flex items-center gap-3">
+                      <span className="w-14 text-xs text-muted-foreground">{g.label}</span>
+                      <div className="flex-1 bg-gray-100 dark:bg-muted rounded-full h-5 overflow-hidden">
+                        <div className="h-full rounded-full flex items-center pl-2.5 text-[10px] font-medium text-white transition-all" style={{ width: `${g.pct}%`, backgroundColor: g.color }} data-testid={`bar-gender-${g.label.toLowerCase()}`}>
+                          {g.pct}%
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-xl border border-gray-100 dark:border-border p-5" data-testid="section-age-demographics">
+                <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">Age Demographics</h4>
+                <div className="space-y-2.5">
+                  {USER_AGE_DATA.map((a) => (
+                    <div key={a.label} className="flex items-center gap-3">
+                      <span className="w-14 text-xs text-muted-foreground">{a.label}</span>
+                      <div className="flex-1 bg-gray-100 dark:bg-muted rounded-full h-5 overflow-hidden">
+                        <div className="h-full rounded-full flex items-center pl-2.5 text-[10px] font-medium text-white transition-all" style={{ width: `${a.pct}%`, background: "linear-gradient(90deg, hsl(222, 47%, 20%), hsl(222, 47%, 35%))" }} data-testid={`bar-age-${a.label}`}>
+                          {a.pct}%
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-100 dark:border-border p-5" data-testid="section-user-type-segments">
+              <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">User Type Segments</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                {USER_TYPE_SEGMENTS.map((seg) => (
+                  <div key={seg.label} className="rounded-lg border border-gray-100 dark:border-border p-3" data-testid={`card-segment-${seg.label.toLowerCase().replace(/\s+/g, "-")}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: seg.color }} />
+                      <span className="text-xs font-medium text-foreground">{seg.label}</span>
+                    </div>
+                    <div className="text-xl font-bold tracking-tight text-foreground mb-1">{seg.count.toLocaleString()}</div>
+                    <div className="w-full bg-gray-100 dark:bg-muted rounded-full h-1.5 mb-2 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${seg.pct}%`, backgroundColor: seg.color }} />
+                    </div>
+                    <div className="space-y-1 text-[11px] text-muted-foreground">
+                      <div className="flex justify-between"><span>Top Cuisine</span><span className="font-medium text-foreground">{seg.topCuisine}</span></div>
+                      <div className="flex justify-between"><span>Avg Budget</span><span className="font-medium text-foreground">{seg.avgBudget}</span></div>
+                      <div className="flex justify-between"><span>Peak Time</span><span className="font-medium text-foreground">{seg.peakTime}</span></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-gray-100 dark:border-border p-5" data-testid="section-behavioral-cohorts">
+              <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">Behavioral Cohorts</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {USER_BEHAVIORAL_COHORTS.map((c) => (
+                  <div key={c.label} className="rounded-lg border border-gray-100 dark:border-border p-3" data-testid={`card-cohort-${c.label.toLowerCase().replace(/\s+/g, "-")}`}>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-xs font-medium text-foreground">{c.label}</span>
+                      <span className="text-[10px] font-medium rounded-full px-2 py-0.5" style={{ backgroundColor: c.color + "18", color: c.color }}>{c.freq}</span>
+                    </div>
+                    <div className="text-xl font-bold tracking-tight text-foreground mb-1">{c.pct}%</div>
+                    <div className="w-full bg-gray-100 dark:bg-muted rounded-full h-1.5 mb-2 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${c.pct * 2}%`, backgroundColor: c.color }} />
+                    </div>
+                    <div className="space-y-1 text-[11px] text-muted-foreground">
+                      <div className="flex justify-between"><span>Avg Sessions</span><span className="font-medium text-foreground">{c.sessions}/wk</span></div>
+                      <div className="flex justify-between"><span>Avg Swipes</span><span className="font-medium text-foreground">{c.swipes}/wk</span></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="rounded-xl border border-gray-100 dark:border-border p-5" data-testid="section-user-day-activity">
+                <div className="flex items-center gap-2 mb-3">
+                  <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+                  <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Day-of-Week Activity</h4>
+                </div>
+                <div className="flex items-end gap-2 h-28">
+                  {USER_DAY_ACTIVITY.map((d) => (
+                    <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
+                      <span className="text-[10px] font-medium text-foreground">{d.pct}%</span>
+                      <div className="w-full bg-gray-100 dark:bg-muted rounded-md overflow-hidden" style={{ height: "80px" }}>
+                        <div className="w-full rounded-md" style={{ height: `${d.pct}%`, background: "linear-gradient(180deg, hsl(222, 47%, 20%), hsl(222, 47%, 35%))", marginTop: `${100 - d.pct}%` }} />
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">{d.day}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-xl border border-gray-100 dark:border-border p-5" data-testid="section-user-peak-hours">
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock className="w-3.5 h-3.5 text-cyan-500" />
+                  <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Peak Hours</h4>
+                </div>
+                <div className="space-y-1.5">
+                  {USER_PEAK_HOURS.map((h) => (
+                    <div key={h.hour} className="flex items-center gap-2">
+                      <span className="w-20 text-[10px] text-muted-foreground">{h.hour}</span>
+                      <div className="flex-1 bg-gray-100 dark:bg-muted rounded-full h-3 overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${h.pct}%`, background: "linear-gradient(90deg, hsl(185, 90%, 45%), hsl(185, 80%, 55%))" }} />
+                      </div>
+                      <span className="w-8 text-right text-[10px] font-medium text-foreground">{h.pct}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-muted dark:to-muted border border-gray-100 dark:border-border p-5" data-testid="section-user-ai-insights">
+              <div className="flex items-center gap-2 mb-3">
+                <Brain className="w-3.5 h-3.5 text-[#FFCC02]" />
+                <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">AI-Generated Insights</h4>
+                <span className="inline-flex items-center text-[10px] font-medium rounded-full px-1.5 py-0.5 bg-[#FFCC02]/15 text-foreground">
+                  <Zap className="w-2.5 h-2.5 mr-0.5 text-[#FFCC02]" />Auto
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {USER_AI_INSIGHTS.map((insight, idx) => (
+                  <div key={idx} className="flex items-start gap-2.5 rounded-lg p-2.5 bg-white dark:bg-card border border-gray-100 dark:border-border" data-testid={`text-user-ai-insight-${idx}`}>
+                    <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: "linear-gradient(135deg, hsl(222, 47%, 20%), hsl(222, 47%, 35%))" }}>
+                      <span className="text-white text-[9px] font-bold">{idx + 1}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{insight}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Restaurant Performance Table */}
@@ -921,6 +1147,21 @@ export default function AdminAnalytics() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function UserKpiCard({ icon, label, value, sub, gradient }: { icon: React.ReactNode; label: string; value: string; sub?: string; gradient: string }) {
+  return (
+    <div className="rounded-xl border border-gray-100 dark:border-border p-4" data-testid={`user-kpi-${label.toLowerCase().replace(/\s+/g, "-")}`}>
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: gradient }}>
+          {icon}
+        </div>
+        <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">{label}</span>
+      </div>
+      <div className="text-xl font-bold tracking-tight text-foreground">{value}</div>
+      {sub && <div className="text-[10px] text-muted-foreground mt-0.5">{sub}</div>}
     </div>
   );
 }

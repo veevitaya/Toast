@@ -26,6 +26,7 @@ import AdminCampaigns from "@/pages/admin/AdminCampaigns";
 import AdminBanners from "@/pages/admin/AdminBanners";
 import AdminAnalytics from "@/pages/admin/AdminAnalytics";
 import AdminConfig from "@/pages/admin/AdminConfig";
+import AdminOwnerDashboard from "@/pages/admin/AdminOwnerDashboard";
 
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
@@ -120,6 +121,9 @@ function Router() {
         </Route>
         <Route path="/admin/config">
           <AdminLayout><AdminConfig /></AdminLayout>
+        </Route>
+        <Route path="/admin/my-restaurant">
+          <AdminLayout><AdminOwnerDashboard /></AdminLayout>
         </Route>
         <Route path="/admin">
           <Redirect to="/admin/dashboard" />
