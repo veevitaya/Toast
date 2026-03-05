@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,14 +37,29 @@ import {
   Mail,
   Phone,
   MessageSquare,
+  MapPin,
+  Building2,
+  SquareCheck,
+  Square,
+  ExternalLink,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Restaurant, RestaurantOwner, RestaurantClaim } from "@shared/schema";
+
+type VerificationChecklistItem = {
+  id: string;
+  label: string;
+  checked: boolean;
+};
 
 type EnrichedClaim = RestaurantClaim & {
   restaurantName: string;
   ownerName: string;
   ownerEmail: string;
+  ownerPhone: string;
+  restaurantAddress: string;
+  restaurantCategory: string;
+  restaurantImageUrl: string;
 };
 
 type TabMode = "restaurants" | "claims";
@@ -82,8 +99,8 @@ export default function AdminRestaurants() {
   });
 
   const reviewClaimMutation = useMutation({
-    mutationFn: ({ id, status, reviewNotes }: { id: number; status: string; reviewNotes?: string }) =>
-      apiRequest("PATCH", `/api/admin/claims/${id}`, { status, reviewNotes }),
+    mutationFn: ({ id, status, reviewNotes, verificationChecklist }: ReviewMutationArgs) =>
+      apiRequest("PATCH", `/api/admin/claims/${id}`, { status, reviewNotes, verificationChecklist }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/claims"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/restaurants"] });
@@ -113,6 +130,7 @@ export default function AdminRestaurants() {
       ownerId: null,
       ownerClaimStatus: "unclaimed",
       paymentConnected: false,
+      googlePlaceId: null,
     });
   };
 
@@ -515,7 +533,21 @@ function ExpandedRowDetails({
   );
 }
 
-type ReviewMutationArgs = { id: number; status: string; reviewNotes?: string };
+type ReviewMutationArgs = { id: number; status: string; reviewNotes?: string; verificationChecklist?: VerificationChecklistItem[] };
+
+function OwnershipTypeBadge({ type }: { type: string | null | undefined }) {
+  const labels: Record<string, string> = {
+    single_location: "Single Location",
+    franchise_owner: "Franchise Owner (All)",
+    franchisee: "Franchisee (Single)",
+  };
+  return (
+    <Badge variant="secondary" className="text-[10px]">
+      <Building2 className="w-3 h-3 mr-1" />
+      {labels[type || ""] || "Single Location"}
+    </Badge>
+  );
+}
 
 function ClaimsQueue({
   claims,
@@ -524,7 +556,7 @@ function ClaimsQueue({
   claims: EnrichedClaim[];
   onReview: { mutate: (args: ReviewMutationArgs) => void; isPending: boolean };
 }) {
-  const [reviewNotes, setReviewNotes] = useState<Record<number, string>>({});
+  const [expandedClaim, setExpandedClaim] = useState<number | null>(null);
 
   const sortedClaims = [...claims].sort((a, b) => {
     const order: Record<string, number> = { pending: 0, approved: 1, rejected: 2 };
@@ -540,104 +572,13 @@ function ClaimsQueue({
         </Card>
       ) : (
         sortedClaims.map((claim) => (
-          <Card key={claim.id} className="p-5" data-testid={`card-claim-${claim.id}`}>
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div className="space-y-2 flex-1 min-w-0">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="font-semibold text-foreground" data-testid={`text-claim-restaurant-${claim.id}`}>
-                    {claim.restaurantName}
-                  </span>
-                  <ClaimStatusBadge status={claim.status || "pending"} />
-                </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-                  <span className="flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5" />
-                    {claim.ownerName}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5" />
-                    {claim.ownerEmail}
-                  </span>
-                  <span className="text-xs text-muted-foreground/60">
-                    Submitted {new Date(claim.submittedAt).toLocaleDateString()}
-                  </span>
-                </div>
-                {claim.proofDocuments && claim.proofDocuments.length > 0 && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">
-                      {claim.proofDocuments.length} proof document(s)
-                    </span>
-                    <div className="flex flex-wrap gap-1">
-                      {claim.proofDocuments.map((doc, i) => (
-                        <a
-                          key={i}
-                          href={doc}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-600 dark:text-blue-400 underline"
-                          data-testid={`link-claim-doc-${claim.id}-${i}`}
-                        >
-                          Doc {i + 1}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {claim.reviewNotes && (
-                  <div className="text-xs text-muted-foreground mt-1 bg-gray-50 dark:bg-muted rounded-lg p-2">
-                    Review notes: {claim.reviewNotes}
-                  </div>
-                )}
-              </div>
-
-              {claim.status === "pending" && (
-                <div className="flex flex-col gap-2 min-w-[200px]">
-                  <Input
-                    placeholder="Review notes (optional)"
-                    value={reviewNotes[claim.id] || ""}
-                    onChange={(e) => setReviewNotes((prev) => ({ ...prev, [claim.id]: e.target.value }))}
-                    className="rounded-xl border-gray-200 dark:border-border text-sm"
-                    data-testid={`input-review-notes-${claim.id}`}
-                  />
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="default"
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs"
-                      onClick={() =>
-                        onReview.mutate({
-                          id: claim.id,
-                          status: "approved",
-                          reviewNotes: reviewNotes[claim.id],
-                        })
-                      }
-                      disabled={onReview.isPending}
-                      data-testid={`button-approve-claim-${claim.id}`}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                      Approve
-                    </Button>
-                    <Button
-                      variant="default"
-                      className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs"
-                      onClick={() =>
-                        onReview.mutate({
-                          id: claim.id,
-                          status: "rejected",
-                          reviewNotes: reviewNotes[claim.id],
-                        })
-                      }
-                      disabled={onReview.isPending}
-                      data-testid={`button-reject-claim-${claim.id}`}
-                    >
-                      <XCircle className="w-3.5 h-3.5 mr-1" />
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </Card>
+          <ClaimReviewCard
+            key={claim.id}
+            claim={claim}
+            isExpanded={expandedClaim === claim.id}
+            onToggle={() => setExpandedClaim(expandedClaim === claim.id ? null : claim.id)}
+            onReview={onReview}
+          />
         ))
       )}
     </div>
@@ -664,8 +605,8 @@ function EditPanel({
   const restaurantClaims = claims.filter((c) => c.restaurantId === restaurant.id);
 
   const reviewClaimMutation = useMutation({
-    mutationFn: ({ id, status, reviewNotes }: { id: number; status: string; reviewNotes?: string }) =>
-      apiRequest("PATCH", `/api/admin/claims/${id}`, { status, reviewNotes }),
+    mutationFn: ({ id, status, reviewNotes, verificationChecklist }: ReviewMutationArgs) =>
+      apiRequest("PATCH", `/api/admin/claims/${id}`, { status, reviewNotes, verificationChecklist }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/claims"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/restaurants"] });
@@ -1000,6 +941,270 @@ function EditPanel({
   );
 }
 
+function ClaimReviewCard({
+  claim,
+  isExpanded,
+  onToggle,
+  onReview,
+}: {
+  claim: EnrichedClaim;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onReview: { mutate: (args: ReviewMutationArgs) => void; isPending: boolean };
+}) {
+  const [reviewNotes, setReviewNotes] = useState("");
+  const existingChecklist = (claim.verificationChecklist as VerificationChecklistItem[] | null) || [];
+  const [checklist, setChecklist] = useState<VerificationChecklistItem[]>(
+    existingChecklist.length > 0 ? existingChecklist : []
+  );
+
+  const checkedCount = checklist.filter((item) => item.checked).length;
+  const totalCount = checklist.length;
+  const verificationScore = totalCount > 0 ? Math.round((checkedCount / totalCount) * 100) : 0;
+
+  const toggleChecklistItem = (id: string) => {
+    setChecklist((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, checked: !item.checked } : item))
+    );
+  };
+
+  const handleReview = (status: string) => {
+    onReview.mutate({
+      id: claim.id,
+      status,
+      reviewNotes: reviewNotes || undefined,
+      verificationChecklist: checklist.length > 0 ? checklist : undefined,
+    });
+  };
+
+  return (
+    <Card className="overflow-visible" data-testid={`card-claim-${claim.id}`}>
+      <div
+        className="flex items-center justify-between gap-4 p-5 cursor-pointer flex-wrap"
+        onClick={onToggle}
+        data-testid={`button-toggle-claim-${claim.id}`}
+      >
+        <div className="flex items-center gap-3 flex-1 min-w-0 flex-wrap">
+          {claim.restaurantImageUrl && (
+            <img
+              src={claim.restaurantImageUrl}
+              alt={claim.restaurantName}
+              className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+              data-testid={`img-claim-restaurant-${claim.id}`}
+            />
+          )}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-foreground text-sm" data-testid={`text-claim-restaurant-${claim.id}`}>
+                {claim.restaurantName}
+              </span>
+              <ClaimStatusBadge status={claim.status || "pending"} />
+              <OwnershipTypeBadge type={claim.ownershipType} />
+            </div>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5 flex-wrap">
+              <span className="flex items-center gap-1">
+                <User className="w-3 h-3" />
+                {claim.ownerName}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {new Date(claim.submittedAt).toLocaleDateString()}
+              </span>
+              {totalCount > 0 && (
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" />
+                  {verificationScore}% verified
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {isExpanded ? (
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          )}
+        </div>
+      </div>
+
+      {isExpanded && (
+        <div className="border-t border-gray-100 dark:border-border p-5 space-y-5" data-testid={`expanded-claim-${claim.id}`}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Utensils className="w-4 h-4 text-muted-foreground" />
+                Restaurant Details
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="font-medium text-foreground" data-testid={`text-claim-detail-name-${claim.id}`}>
+                  {claim.restaurantName}
+                </div>
+                {claim.restaurantAddress && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span data-testid={`text-claim-detail-address-${claim.id}`}>{claim.restaurantAddress}</span>
+                  </div>
+                )}
+                {claim.restaurantCategory && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Utensils className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span data-testid={`text-claim-detail-category-${claim.id}`}>{claim.restaurantCategory}</span>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            <Card className="p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <User className="w-4 h-4 text-muted-foreground" />
+                Owner Details
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="font-medium text-foreground" data-testid={`text-claim-owner-name-${claim.id}`}>
+                  {claim.ownerName}
+                </div>
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span data-testid={`text-claim-owner-email-${claim.id}`}>{claim.ownerEmail}</span>
+                </div>
+                {claim.ownerPhone && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Phone className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span data-testid={`text-claim-owner-phone-${claim.id}`}>{claim.ownerPhone}</span>
+                  </div>
+                )}
+                <div className="mt-1">
+                  <OwnershipTypeBadge type={claim.ownershipType} />
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <FileText className="w-4 h-4 text-muted-foreground" />
+                Submitted Documents
+              </div>
+              {claim.proofDocuments && claim.proofDocuments.length > 0 ? (
+                <div className="space-y-1.5">
+                  {claim.proofDocuments.map((doc, i) => (
+                    <a
+                      key={i}
+                      href={doc}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-3 py-2 rounded-lg transition-colors"
+                      data-testid={`link-claim-doc-${claim.id}-${i}`}
+                    >
+                      <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="truncate flex-1">Document {i + 1}</span>
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground/60">No documents attached</p>
+              )}
+            </Card>
+          </div>
+
+          {totalCount > 0 && (
+            <Card className="p-4 space-y-3" data-testid={`checklist-claim-${claim.id}`}>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <ShieldCheck className="w-4 h-4 text-muted-foreground" />
+                  Verification Checklist
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs font-bold ${
+                    verificationScore >= 80 ? "text-emerald-600 dark:text-emerald-400" :
+                    verificationScore >= 50 ? "text-amber-600 dark:text-amber-400" :
+                    "text-red-600 dark:text-red-400"
+                  }`} data-testid={`text-verification-score-${claim.id}`}>
+                    {verificationScore}% Complete
+                  </span>
+                  <div className="w-24">
+                    <Progress
+                      value={verificationScore}
+                      className="h-1.5"
+                      data-testid={`progress-verification-${claim.id}`}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {checklist.map((item) => (
+                  <button
+                    key={item.id}
+                    className="flex items-center gap-3 w-full text-left py-1.5 px-2 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-muted"
+                    onClick={() => toggleChecklistItem(item.id)}
+                    disabled={claim.status !== "pending"}
+                    data-testid={`checklist-item-${claim.id}-${item.id}`}
+                  >
+                    {item.checked ? (
+                      <SquareCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                    ) : (
+                      <Square className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                    )}
+                    <span className={`text-sm ${item.checked ? "text-foreground" : "text-muted-foreground"}`}>
+                      {item.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {claim.reviewNotes && claim.status !== "pending" && (
+            <div className="text-sm text-muted-foreground bg-gray-50 dark:bg-muted rounded-lg p-3" data-testid={`text-existing-review-notes-${claim.id}`}>
+              <span className="font-medium text-foreground">Review Notes:</span> {claim.reviewNotes}
+            </div>
+          )}
+
+          {claim.status === "pending" && (
+            <Card className="p-4 space-y-3" data-testid={`review-actions-${claim.id}`}>
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                Review Decision
+              </div>
+              <Textarea
+                placeholder="Add review notes or reason for decision..."
+                value={reviewNotes}
+                onChange={(e) => setReviewNotes(e.target.value)}
+                className="rounded-xl border-gray-200 dark:border-border text-sm resize-none"
+                rows={3}
+                data-testid={`input-review-notes-${claim.id}`}
+              />
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="default"
+                  className="flex-1 bg-emerald-600 text-white rounded-xl"
+                  onClick={() => handleReview("approved")}
+                  disabled={onReview.isPending}
+                  data-testid={`button-approve-claim-${claim.id}`}
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-1.5" />
+                  Approve Claim
+                </Button>
+                <Button
+                  variant="default"
+                  className="flex-1 bg-red-500 text-white rounded-xl"
+                  onClick={() => handleReview("rejected")}
+                  disabled={onReview.isPending}
+                  data-testid={`button-reject-claim-${claim.id}`}
+                >
+                  <XCircle className="w-4 h-4 mr-1.5" />
+                  Reject Claim
+                </Button>
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 function ClaimCard({
   claim,
   onReview,
@@ -1021,6 +1226,11 @@ function ClaimCard({
       <div className="text-xs text-muted-foreground">
         Submitted {new Date(claim.submittedAt).toLocaleDateString()}
       </div>
+      {claim.ownershipType && (
+        <div className="mt-1">
+          <OwnershipTypeBadge type={claim.ownershipType} />
+        </div>
+      )}
       {claim.proofDocuments && claim.proofDocuments.length > 0 && (
         <div className="space-y-1">
           <span className="text-xs font-medium text-muted-foreground">Proof Documents:</span>
@@ -1057,7 +1267,7 @@ function ClaimCard({
           <div className="flex items-center gap-2">
             <Button
               variant="default"
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs"
+              className="flex-1 bg-emerald-600 text-white rounded-xl text-xs"
               onClick={() => onReview.mutate({ id: claim.id, status: "approved", reviewNotes: notes })}
               disabled={onReview.isPending}
               data-testid={`button-panel-approve-${claim.id}`}
@@ -1067,7 +1277,7 @@ function ClaimCard({
             </Button>
             <Button
               variant="default"
-              className="flex-1 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs"
+              className="flex-1 bg-red-500 text-white rounded-xl text-xs"
               onClick={() => onReview.mutate({ id: claim.id, status: "rejected", reviewNotes: notes })}
               disabled={onReview.isPending}
               data-testid={`button-panel-reject-${claim.id}`}

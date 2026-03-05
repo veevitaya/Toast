@@ -18,6 +18,7 @@ export const restaurants = pgTable("restaurants", {
   ownerId: integer("owner_id"),
   ownerClaimStatus: text("owner_claim_status").default("unclaimed"),
   paymentConnected: boolean("payment_connected").default(false),
+  googlePlaceId: text("google_place_id"),
 });
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({ id: true });
@@ -168,6 +169,8 @@ export const restaurantClaims = pgTable("restaurant_claims", {
   status: text("status").default("pending"),
   reviewedBy: integer("reviewed_by"),
   reviewNotes: text("review_notes"),
+  ownershipType: text("ownership_type").default("single_location"),
+  verificationChecklist: jsonb("verification_checklist"),
   submittedAt: text("submitted_at").notNull(),
   reviewedAt: text("reviewed_at"),
 });

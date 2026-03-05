@@ -35,6 +35,9 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  Pencil,
+  Building2,
+  TrendingUp,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import toastLogo from "@assets/toast_logo_nobg.png";
@@ -96,6 +99,14 @@ type FetchedPlace = {
   isNew: boolean;
   trendingScore: number;
   selected: boolean;
+  googlePlaceId?: string | null;
+  classification?: {
+    cuisine: string;
+    style: string;
+    ownershipType: "chain" | "franchise" | "independent";
+    confidence: number;
+    reviewCount: number;
+  };
 };
 
 const DEFAULT_FEATURES: FeatureToggle[] = [
@@ -308,6 +319,14 @@ export default function AdminConfig() {
       prev.map((p, i) => (i === index ? { ...p, selected: !p.selected } : p))
     );
   };
+
+  const updatePlace = (index: number, updates: Partial<FetchedPlace>) => {
+    setFetchedPlaces((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, ...updates } : p))
+    );
+  };
+
+  const [expandedPlace, setExpandedPlace] = useState<number | null>(null);
 
   const updateApiStatus = (id: string, status: ApiIntegration["status"]) => {
     setApis((prev) =>
@@ -721,38 +740,189 @@ export default function AdminConfig() {
                             </div>
                           </div>
 
-                          <div className="max-h-[320px] overflow-y-auto space-y-1.5 mb-4 rounded-xl border border-gray-100 dark:border-border p-2">
-                            {fetchedPlaces.map((place, idx) => (
-                              <div
-                                key={idx}
-                                onClick={() => togglePlaceSelection(idx)}
-                                className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
-                                  place.selected
-                                    ? "bg-gray-50 dark:bg-muted ring-1 ring-foreground/10"
-                                    : "bg-white dark:bg-card opacity-50"
-                                }`}
-                                data-testid={`place-row-${idx}`}
-                              >
-                                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                                  place.selected
-                                    ? "bg-foreground border-foreground"
-                                    : "border-gray-300 dark:border-border"
-                                }`}>
-                                  {place.selected && <Check className="w-3 h-3 text-white" />}
+                          <div className="max-h-[480px] overflow-y-auto space-y-1.5 mb-4 rounded-xl border border-gray-100 dark:border-border p-2">
+                            {fetchedPlaces.map((place, idx) => {
+                              const cls = place.classification;
+                              const isExpanded = expandedPlace === idx;
+                              const budgetSymbols = "฿".repeat(place.priceLevel);
+                              const ownershipLabel = cls?.ownershipType === "chain" ? "Chain" : cls?.ownershipType === "franchise" ? "Franchise" : "Independent";
+                              const ownershipColor = cls?.ownershipType === "chain"
+                                ? "bg-orange-100 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400"
+                                : cls?.ownershipType === "franchise"
+                                  ? "bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                                  : "bg-gray-100 dark:bg-muted text-muted-foreground";
+                              const confidenceColor = (cls?.confidence || 0) >= 80
+                                ? "text-green-600 dark:text-green-400"
+                                : (cls?.confidence || 0) >= 50
+                                  ? "text-amber-600 dark:text-amber-400"
+                                  : "text-red-500 dark:text-red-400";
+
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`rounded-xl transition-all ${
+                                    place.selected
+                                      ? "bg-gray-50 dark:bg-muted ring-1 ring-foreground/10"
+                                      : "bg-white dark:bg-card opacity-50"
+                                  }`}
+                                  data-testid={`place-row-${idx}`}
+                                >
+                                  <div
+                                    className="flex items-center gap-3 p-3 cursor-pointer"
+                                    onClick={() => togglePlaceSelection(idx)}
+                                  >
+                                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                                      place.selected
+                                        ? "bg-foreground border-foreground"
+                                        : "border-gray-300 dark:border-border"
+                                    }`}>
+                                      {place.selected && <Check className="w-3 h-3 text-white" />}
+                                    </div>
+                                    <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-muted">
+                                      <img src={place.imageUrl} alt={place.name} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-foreground truncate">{place.name}</p>
+                                      <p className="text-[10px] text-muted-foreground truncate">{place.address}</p>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
+                                      <span className="px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 text-[10px] font-semibold" data-testid={`badge-category-${idx}`}>
+                                        {place.category}
+                                      </span>
+                                      <span className="px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] font-bold" data-testid={`badge-budget-${idx}`}>
+                                        {budgetSymbols}
+                                      </span>
+                                      {cls && (
+                                        <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium ${ownershipColor}`} data-testid={`badge-ownership-${idx}`}>
+                                          {ownershipLabel}
+                                        </span>
+                                      )}
+                                      <span className="text-[10px] text-muted-foreground font-medium" data-testid={`text-rating-${idx}`}>
+                                        {place.rating}
+                                      </span>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setExpandedPlace(isExpanded ? null : idx); }}
+                                        className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-gray-200 dark:hover:bg-muted/80 transition-colors"
+                                        data-testid={`button-expand-${idx}`}
+                                      >
+                                        <Pencil className="w-3 h-3 text-muted-foreground" />
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {cls && (
+                                    <div className="px-3 pb-2 flex items-center gap-3">
+                                      <div className="flex items-center gap-1.5 flex-1">
+                                        <TrendingUp className="w-3 h-3 text-muted-foreground" />
+                                        <div className="flex-1 h-1.5 rounded-full bg-gray-200 dark:bg-border overflow-hidden max-w-[120px]">
+                                          <div
+                                            className="h-full rounded-full transition-all"
+                                            style={{
+                                              width: `${place.trendingScore}%`,
+                                              background: place.trendingScore >= 80
+                                                ? "linear-gradient(90deg, hsl(142,50%,45%), hsl(142,50%,55%))"
+                                                : place.trendingScore >= 50
+                                                  ? "linear-gradient(90deg, hsl(45,90%,50%), hsl(40,90%,55%))"
+                                                  : "linear-gradient(90deg, hsl(0,0%,60%), hsl(0,0%,70%))",
+                                            }}
+                                            data-testid={`bar-trending-${idx}`}
+                                          />
+                                        </div>
+                                        <span className="text-[10px] text-muted-foreground font-mono">{place.trendingScore}</span>
+                                      </div>
+                                      <div className={`flex items-center gap-1 text-[10px] font-medium ${confidenceColor}`} data-testid={`text-confidence-${idx}`}>
+                                        <span>{cls.confidence}%</span>
+                                        <span className="text-muted-foreground/50">conf</span>
+                                      </div>
+                                      {cls.reviewCount > 0 && (
+                                        <span className="text-[10px] text-muted-foreground">
+                                          {cls.reviewCount.toLocaleString()} reviews
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {isExpanded && (
+                                    <div className="px-3 pb-3 border-t border-gray-100 dark:border-border pt-3 space-y-3" data-testid={`edit-panel-${idx}`}>
+                                      <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                          <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest block mb-1">Name</label>
+                                          <input
+                                            type="text"
+                                            value={place.name}
+                                            onChange={(e) => updatePlace(idx, { name: e.target.value })}
+                                            className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-foreground/10"
+                                            data-testid={`input-name-${idx}`}
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest block mb-1">Category</label>
+                                          <input
+                                            type="text"
+                                            value={place.category}
+                                            onChange={(e) => updatePlace(idx, { category: e.target.value })}
+                                            className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-foreground/10"
+                                            data-testid={`input-category-${idx}`}
+                                          />
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest block mb-1">Description</label>
+                                        <input
+                                          type="text"
+                                          value={place.description}
+                                          onChange={(e) => updatePlace(idx, { description: e.target.value })}
+                                          className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-foreground/10"
+                                          data-testid={`input-description-${idx}`}
+                                        />
+                                      </div>
+                                      <div className="grid grid-cols-3 gap-3">
+                                        <div>
+                                          <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest block mb-1">Budget (1-4)</label>
+                                          <select
+                                            value={place.priceLevel}
+                                            onChange={(e) => updatePlace(idx, { priceLevel: Number(e.target.value) })}
+                                            className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-foreground/10"
+                                            data-testid={`select-budget-${idx}`}
+                                          >
+                                            <option value={1}>฿ Budget</option>
+                                            <option value={2}>฿฿ Mid-range</option>
+                                            <option value={3}>฿฿฿ Upscale</option>
+                                            <option value={4}>฿฿฿฿ Fine dining</option>
+                                          </select>
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest block mb-1">Trending</label>
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            max={99}
+                                            value={place.trendingScore}
+                                            onChange={(e) => updatePlace(idx, { trendingScore: Math.min(99, Math.max(0, Number(e.target.value))) })}
+                                            className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-card text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-foreground/10"
+                                            data-testid={`input-trending-${idx}`}
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest block mb-1">New?</label>
+                                          <button
+                                            onClick={() => updatePlace(idx, { isNew: !place.isNew })}
+                                            className={`w-full px-2.5 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
+                                              place.isNew
+                                                ? "bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20 text-green-700 dark:text-green-400"
+                                                : "bg-white dark:bg-card border-gray-200 dark:border-border text-muted-foreground"
+                                            }`}
+                                            data-testid={`toggle-new-${idx}`}
+                                          >
+                                            {place.isNew ? "Yes" : "No"}
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                                <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-muted">
-                                  <img src={place.imageUrl} alt={place.name} className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-foreground truncate">{place.name}</p>
-                                  <p className="text-[10px] text-muted-foreground truncate">{place.address}</p>
-                                </div>
-                                <div className="flex items-center gap-2 text-[10px] text-muted-foreground flex-shrink-0">
-                                  <span className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-muted font-medium">{place.category}</span>
-                                  <span>{place.rating}</span>
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
 
                           <button

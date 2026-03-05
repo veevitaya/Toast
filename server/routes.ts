@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { createHash } from "crypto";
+import { classifyRestaurant, VERIFICATION_CHECKLIST_TEMPLATE } from "./classifier";
 
 function hashPassword(password: string): string {
   return createHash("sha256").update(password).digest("hex");
@@ -967,7 +968,11 @@ export async function registerRoutes(
           ...c,
           ownerName: owner?.displayName || "Unknown",
           ownerEmail: owner?.email || "",
+          ownerPhone: owner?.phone || "",
           restaurantName: restaurant?.name || "Unknown",
+          restaurantAddress: restaurant?.address || "",
+          restaurantCategory: restaurant?.category || "",
+          restaurantImageUrl: restaurant?.imageUrl || "",
         };
       }));
       res.json(enriched);
@@ -982,11 +987,15 @@ export async function registerRoutes(
         restaurantId: z.number(),
         ownerId: z.number(),
         proofDocuments: z.array(z.string()).optional().default([]),
+        ownershipType: z.enum(["single_location", "franchise_owner", "franchisee"]).optional().default("single_location"),
+        notes: z.string().optional(),
       });
       const input = schema.parse(req.body);
       const claim = await storage.createRestaurantClaim({
         ...input,
         status: "pending",
+        verificationChecklist: VERIFICATION_CHECKLIST_TEMPLATE,
+        reviewNotes: input.notes || null,
         submittedAt: new Date().toISOString(),
       });
       res.status(201).json(claim);
@@ -1004,7 +1013,8 @@ export async function registerRoutes(
       if (!claim) return res.status(404).json({ message: "Claim not found" });
       const updates: any = {};
       if (req.body.status) updates.status = req.body.status;
-      if (req.body.reviewNotes) updates.reviewNotes = req.body.reviewNotes;
+      if (req.body.reviewNotes !== undefined) updates.reviewNotes = req.body.reviewNotes;
+      if (req.body.verificationChecklist) updates.verificationChecklist = req.body.verificationChecklist;
       updates.reviewedBy = req.adminUser?.id;
       updates.reviewedAt = new Date().toISOString();
       const updated = await storage.updateRestaurantClaim(id, updates);
@@ -1020,6 +1030,23 @@ export async function registerRoutes(
         });
       }
       res.json(updated);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/admin/owner/search-restaurants", ownerAuth, async (req: any, res) => {
+    try {
+      const query = (req.query.q as string || "").trim().toLowerCase();
+      const all = await storage.getRestaurants();
+      const filtered = query
+        ? all.filter(r =>
+            r.name.toLowerCase().includes(query) ||
+            r.address.toLowerCase().includes(query) ||
+            r.category.toLowerCase().includes(query)
+          )
+        : all;
+      res.json(filtered.slice(0, 20));
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -1172,25 +1199,28 @@ export async function registerRoutes(
           ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${apiKey}`
           : "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=60";
 
-        const types = place.types || [];
-        let category = "Restaurant";
-        if (types.includes("cafe")) category = "Cafe";
-        else if (types.includes("bar")) category = "Bar";
-        else if (types.includes("bakery")) category = "Bakery";
-        else if (types.includes("meal_takeaway")) category = "Takeaway";
+        const classified = classifyRestaurant(place);
 
         return {
           name: place.name,
-          description: place.vicinity || place.formatted_address || "",
+          description: classified.description,
           imageUrl,
           lat: String(place.geometry?.location?.lat || input.lat),
           lng: String(place.geometry?.location?.lng || input.lng),
-          category,
-          priceLevel: place.price_level || 2,
+          category: classified.category,
+          priceLevel: classified.priceLevel,
           rating: String(place.rating || "4.0"),
           address: place.vicinity || place.formatted_address || "Bangkok",
-          isNew: true,
-          trendingScore: Math.floor((place.rating || 4.0) * 20),
+          isNew: classified.isNew,
+          trendingScore: classified.trendingScore,
+          googlePlaceId: place.place_id || null,
+          classification: {
+            cuisine: classified.cuisineDetected,
+            style: classified.styleDetected,
+            ownershipType: classified.ownershipType,
+            confidence: classified.confidence,
+            reviewCount: classified.reviewCount,
+          },
         };
       });
 
@@ -1220,6 +1250,7 @@ export async function registerRoutes(
           address: z.string(),
           isNew: z.boolean().optional(),
           trendingScore: z.number().optional(),
+          googlePlaceId: z.string().optional(),
         })),
         replaceExisting: z.boolean().default(false),
       });
@@ -1229,7 +1260,7 @@ export async function registerRoutes(
         await storage.seedRestaurants(input.restaurants);
       } else {
         for (const r of input.restaurants) {
-          await storage.seedRestaurants([...(await storage.getRestaurants()), r] as any);
+          await storage.addRestaurant(r);
         }
       }
 
