@@ -12,10 +12,12 @@ interface BottomNavProps {
 
 type TabKey = "explore" | "swipe" | "profile";
 
-const tabs: { key: TabKey; label: string; icon: typeof Search; path: string; activeColor: string }[] = [
-  { key: "explore", label: "Explore", icon: Search, path: "/", activeColor: "#2196F3" },
-  { key: "swipe", label: "Swipe", icon: Flame, path: "/swipe", activeColor: "#FF7043" },
-  { key: "profile", label: "Profile", icon: User, path: "/profile", activeColor: "#6C2BD9" },
+const BRAND_COLOR = "#FFCC02";
+
+const tabs: { key: TabKey; label: string; icon: typeof Search; path: string }[] = [
+  { key: "explore", label: "Explore", icon: Search, path: "/" },
+  { key: "swipe", label: "Swipe", icon: Flame, path: "/swipe" },
+  { key: "profile", label: "Profile", icon: User, path: "/profile" },
 ];
 
 function getActiveTab(location: string): TabKey {
@@ -75,13 +77,13 @@ export function BottomNav({ showBack = true, onBack, hidden = false }: BottomNav
                 style={{
                   width: 22,
                   height: 22,
-                  color: isActive ? tab.activeColor : "#9ca3af",
+                  color: isActive ? BRAND_COLOR : "#9ca3af",
                 }}
                 strokeWidth={isActive ? 2.2 : 1.5}
               />
               <span
                 className={`text-[10px] leading-tight transition-colors duration-200 ${isActive ? "font-semibold" : "font-medium"}`}
-                style={{ color: isActive ? tab.activeColor : "#9ca3af" }}
+                style={{ color: isActive ? BRAND_COLOR : "#9ca3af" }}
               >
                 {tab.label}
               </span>
