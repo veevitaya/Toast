@@ -138,17 +138,15 @@ export default function GroupSetup() {
     const appUrl = window.location.origin;
 
     if (isLiffAvailable()) {
-      const shared = await sendGroupInvite(sessionId);
-      if (shared) {
-        setInviteSent(true);
-        setTimeout(() => navigate(`/group/waiting?session=${sessionId}`), 800);
-      }
+      await sendGroupInvite(sessionId);
+      setInviteSent(true);
+      navigate(`/group/waiting?session=${sessionId}`);
     } else {
       const message = `Join my Toast session! Let's decide what to eat together.\n\n${appUrl}/group/waiting?session=${sessionId}`;
       const lineShareUrl = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
-      window.location.href = lineShareUrl;
+      window.open(lineShareUrl, "_blank");
       setInviteSent(true);
-      setTimeout(() => navigate(`/group/waiting?session=${sessionId}`), 2000);
+      navigate(`/group/waiting?session=${sessionId}`);
     }
   };
 
