@@ -22,7 +22,6 @@ import {
   ChevronRight,
   Flame,
 } from "lucide-react";
-import { Icon3D, type ColorTheme } from "@/components/Icon3D";
 
 interface DashboardData {
   totalUsers: number;
@@ -266,7 +265,7 @@ export default function AdminDashboard() {
   const maxRestaurantSwipes = Math.max(...TOP_RESTAURANTS.map((r) => r.swipes));
   const maxGeoOrders = Math.max(...GEO_HOTSPOTS.map((s) => s.orders));
 
-  const kpis: { label: string; value: number; icon: typeof Users; delta: string; deltaUp: boolean; sparkline: number[]; theme: ColorTheme }[] = [
+  const kpis = [
     {
       label: "Total Users",
       value: stats.totalUsers,
@@ -274,7 +273,7 @@ export default function AdminDashboard() {
       delta: "+12%",
       deltaUp: true,
       sparkline: [18, 24, 32, 28, 35, 42, 48],
-      theme: "blue",
+      iconColor: "text-blue-500",
     },
     {
       label: "Restaurants",
@@ -283,7 +282,7 @@ export default function AdminDashboard() {
       delta: "+5",
       deltaUp: true,
       sparkline: [12, 14, 15, 16, 18, 19, 22],
-      theme: "orange",
+      iconColor: "text-orange-500",
     },
     {
       label: "Total Swipes",
@@ -292,7 +291,7 @@ export default function AdminDashboard() {
       delta: "+340",
       deltaUp: true,
       sparkline: [120, 180, 210, 190, 260, 310, 340],
-      theme: "purple",
+      iconColor: "text-purple-500",
     },
     {
       label: "Delivery Clicks",
@@ -301,7 +300,7 @@ export default function AdminDashboard() {
       delta: "+18%",
       deltaUp: true,
       sparkline: [320, 380, 410, 390, 450, 480, 520],
-      theme: "green",
+      iconColor: "text-emerald-500",
     },
     {
       label: "Campaigns",
@@ -310,7 +309,7 @@ export default function AdminDashboard() {
       delta: "active",
       deltaUp: true,
       sparkline: [3, 4, 4, 5, 6, 5, 6],
-      theme: "yellow",
+      iconColor: "text-yellow-500",
     },
   ];
 
@@ -335,7 +334,7 @@ export default function AdminDashboard() {
           >
             <div className="absolute top-0 left-0 w-full h-[2px]" style={{ background: "linear-gradient(to right, hsl(222, 47%, 25%), hsl(222, 47%, 45%))" }} />
             <div className="flex items-start justify-between mb-3">
-              <Icon3D icon={kpi.icon} theme={kpi.theme} size="sm" />
+              <kpi.icon className={`w-5 h-5 ${kpi.iconColor}`} />
               <MiniSparkline data={kpi.sparkline} />
             </div>
             <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">{kpi.label}</p>

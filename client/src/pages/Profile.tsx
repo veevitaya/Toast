@@ -6,7 +6,6 @@ import { sendGroupInvite } from "@/lib/liff";
 import { BottomNav } from "@/components/BottomNav";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { ChevronRight, UserPlus, Unlink, LogIn, LogOut, X, Store, User, Star, TrendingUp, Image, Sparkles, Plus, Check, Crown, Eye, ExternalLink, MapPin, Clock, BarChart3, ArrowUpRight, ArrowDownRight, Utensils, Zap, Calendar, Megaphone, Tag, Percent, Trash2, Send, Users, Target, Search } from "lucide-react";
-import { Icon3D } from "@/components/Icon3D";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { RestaurantResponse } from "@shared/routes";
@@ -1161,7 +1160,7 @@ function OwnerDashboard() {
             className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 transition-colors"
             data-testid="button-photos-section"
           >
-            <Icon3D icon={Image} theme="blue" size="md" />
+            <Image className="w-5 h-5 text-blue-500" />
             <div className="flex-1 text-left">
               <p className="font-bold text-[15px]">Photos</p>
               <p className="text-[11px] text-muted-foreground mt-0.5">Manage your restaurant photos</p>
@@ -1510,7 +1509,7 @@ function OwnerDashboard() {
             className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 transition-colors"
             data-testid="button-analytics-section"
           >
-            <Icon3D icon={BarChart3} theme="purple" size="md" />
+            <BarChart3 className="w-5 h-5 text-purple-500" />
             <div className="flex-1 text-left">
               <p className="font-bold text-[15px]">Full Analytics</p>
               <p className="text-[11px] text-muted-foreground mt-0.5">Detailed insights, menu stats, and peak hours</p>

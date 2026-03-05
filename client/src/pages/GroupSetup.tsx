@@ -6,7 +6,6 @@ import {
   Clock, Utensils, Heart, Baby, Briefcase,
   ChevronRight, ChevronDown, Sparkles, UserPlus,
 } from "lucide-react";
-import { Icon3D, type ColorTheme } from "@/components/Icon3D";
 import { sendGroupInvite, isLiffAvailable } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
 
@@ -26,11 +25,11 @@ const BUDGETS = [
   { id: "4", icon: "฿฿฿฿", label: "Splurge", color: "#E11D48" },
 ];
 
-const GROUP_TYPES: { id: string; icon: typeof Users; label: string; color: string; theme: ColorTheme }[] = [
-  { id: "friends", icon: Users, label: "Friends", color: "#00B14F", theme: "green" },
-  { id: "partner", icon: Heart, label: "Partner", color: "#E11D48", theme: "pink" },
-  { id: "family", icon: Baby, label: "Family", color: "#FFCC02", theme: "yellow" },
-  { id: "coworkers", icon: Briefcase, label: "Coworkers", color: "#6C2BD9", theme: "purple" },
+const GROUP_TYPES = [
+  { id: "friends", icon: Users, label: "Friends", color: "#00B14F" },
+  { id: "partner", icon: Heart, label: "Partner", color: "#E11D48" },
+  { id: "family", icon: Baby, label: "Family", color: "#FFCC02" },
+  { id: "coworkers", icon: Briefcase, label: "Coworkers", color: "#6C2BD9" },
 ];
 
 const RESTRICTIONS = [
@@ -512,11 +511,7 @@ export default function GroupSetup() {
                         : "0 1px 4px rgba(0,0,0,0.03)",
                     }}
                   >
-                    <Icon3D
-                      icon={Icon}
-                      theme={active ? g.theme : "slate"}
-                      size="sm"
-                    />
+                    <Icon className="w-5 h-5 transition-colors" style={{ color: active ? g.color : "#999" }} />
                     <span className={`text-[11px] font-semibold ${active ? "text-foreground" : "text-muted-foreground"}`}>{g.label}</span>
                   </motion.button>
                 );

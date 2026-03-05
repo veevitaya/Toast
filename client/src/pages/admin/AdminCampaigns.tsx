@@ -21,7 +21,6 @@ import {
   MapPin,
   Target,
 } from "lucide-react";
-import { Icon3D, type ColorTheme } from "@/components/Icon3D";
 
 const statusTabs = ["All", "Draft", "Active", "Paused", "Ended"] as const;
 
@@ -88,11 +87,11 @@ function formatNum(n: number): string {
   return n.toString();
 }
 
-const kpiCards: { label: string; value: string; icon: typeof Eye; theme: ColorTheme }[] = [
-  { label: "Total Impressions", value: "248K", icon: Eye, theme: "purple" },
-  { label: "Total Clicks", value: "12.4K", icon: MousePointerClick, theme: "teal" },
-  { label: "Avg CTR", value: "5.0%", icon: TrendingUp, theme: "blue" },
-  { label: "Revenue Generated", value: "฿847K", icon: DollarSign, theme: "green" },
+const kpiCards = [
+  { label: "Total Impressions", value: "248K", icon: Eye, iconColor: "text-purple-500" },
+  { label: "Total Clicks", value: "12.4K", icon: MousePointerClick, iconColor: "text-teal-500" },
+  { label: "Avg CTR", value: "5.0%", icon: TrendingUp, iconColor: "text-blue-500" },
+  { label: "Revenue Generated", value: "฿847K", icon: DollarSign, iconColor: "text-emerald-500" },
 ];
 
 export default function AdminCampaigns() {
@@ -159,7 +158,7 @@ export default function AdminCampaigns() {
             data-testid={`kpi-${kpi.label.toLowerCase().replace(/\s+/g, "-")}`}
           >
             <div className="flex items-center gap-3">
-              <Icon3D icon={kpi.icon} theme={kpi.theme} size="sm" />
+              <kpi.icon className={`w-5 h-5 ${kpi.iconColor}`} />
               <div>
                 <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
                 <p className="text-xs text-muted-foreground">{kpi.label}</p>

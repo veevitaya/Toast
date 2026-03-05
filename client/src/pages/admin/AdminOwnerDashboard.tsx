@@ -34,7 +34,6 @@ import {
   X,
   ChevronRight,
 } from "lucide-react";
-import { Icon3D } from "@/components/Icon3D";
 
 interface OwnerDashboardData {
   owner: {
@@ -209,7 +208,7 @@ export default function AdminOwnerDashboard() {
   return (
     <div data-testid="admin-owner-dashboard" className="space-y-6">
       <div className="flex items-center gap-3">
-        <Icon3D icon={Store} theme="green" size="md" />
+        <Store className="w-5 h-5 text-emerald-500" />
         <div>
           <h2 className="text-xl font-semibold text-foreground" data-testid="text-owner-title">
             My Restaurant

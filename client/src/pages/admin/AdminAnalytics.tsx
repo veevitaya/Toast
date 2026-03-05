@@ -30,7 +30,6 @@ import {
   Calendar,
   Smartphone,
 } from "lucide-react";
-import { Icon3D, type ColorTheme } from "@/components/Icon3D";
 import { Button } from "@/components/ui/button";
 
 type DateRange = "7d" | "30d" | "all";
@@ -316,13 +315,13 @@ export default function AdminAnalytics() {
   const eventBreakdown = summary?.eventBreakdown || {};
   const maxEventCount = Math.max(...Object.values(eventBreakdown), 1);
 
-  const summaryKpis: { label: string; value: number | string; icon: typeof Activity; theme: ColorTheme }[] = [
-    { label: "Total Events", value: summary?.totalEvents || 0, icon: Activity, theme: "blue" },
-    { label: "Total Swipes", value: summary?.totalSwipes || 0, icon: MousePointer, theme: "teal" },
-    { label: "Active Campaigns", value: summary?.activeCampaigns || 0, icon: Target, theme: "purple" },
-    { label: "Restaurants", value: summary?.totalRestaurants || 0, icon: ShoppingBag, theme: "orange" },
-    { label: "Delivery Clicks", value: 3847, icon: ExternalLink, theme: "green" },
-    { label: "Avg Session", value: "4.2min", icon: Timer, theme: "slate" },
+  const summaryKpis = [
+    { label: "Total Events", value: summary?.totalEvents || 0, icon: Activity, iconColor: "text-blue-500" },
+    { label: "Total Swipes", value: summary?.totalSwipes || 0, icon: MousePointer, iconColor: "text-teal-500" },
+    { label: "Active Campaigns", value: summary?.activeCampaigns || 0, icon: Target, iconColor: "text-purple-500" },
+    { label: "Restaurants", value: summary?.totalRestaurants || 0, icon: ShoppingBag, iconColor: "text-orange-500" },
+    { label: "Delivery Clicks", value: 3847, icon: ExternalLink, iconColor: "text-emerald-500" },
+    { label: "Avg Session", value: "4.2min", icon: Timer, iconColor: "text-slate-500" },
   ];
 
   const maxDayValue = Math.max(...DAY_PATTERNS.map((d) => d.value));
@@ -331,7 +330,7 @@ export default function AdminAnalytics() {
     <div data-testid="admin-analytics-page" className="space-y-8">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <Icon3D icon={BarChart3} theme="teal" size="md" />
+          <BarChart3 className="w-5 h-5 text-teal-500" />
           <div>
             <h2 className="text-xl font-semibold text-foreground" data-testid="text-analytics-title">
               Data Intelligence
@@ -366,7 +365,7 @@ export default function AdminAnalytics() {
         {summaryKpis.map((kpi) => (
           <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-border p-4" data-testid={`kpi-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}>
             <div className="flex items-center gap-2 mb-2">
-              <Icon3D icon={kpi.icon} theme={kpi.theme} size="xs" />
+              <kpi.icon className={`w-4 h-4 ${kpi.iconColor}`} />
               <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">{kpi.label}</span>
             </div>
             <p className="text-2xl font-bold tracking-tight text-foreground" data-testid={`kpi-value-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}>
@@ -388,7 +387,7 @@ export default function AdminAnalytics() {
           data-testid="button-toggle-user-intel"
         >
           <div className="flex items-center gap-3">
-            <Icon3D icon={Users} theme="purple" size="xs" />
+            <Users className="w-4 h-4 text-purple-500" />
             <div className="text-left">
               <h3 className="text-[15px] font-semibold text-foreground">User Intelligence</h3>
               <p className="text-xs text-muted-foreground/40">Demographics, behavior cohorts, activity patterns</p>
@@ -1092,7 +1091,7 @@ export default function AdminAnalytics() {
           data-testid="button-toggle-catalog"
         >
           <div className="flex items-center gap-3">
-            <Icon3D icon={Layers} theme="blue" size="xs" />
+            <Layers className="w-4 h-4 text-blue-500" />
             <div className="text-left">
               <h3 className="text-[15px] font-semibold text-foreground">Data Insights Catalog</h3>
               <p className="text-xs text-muted-foreground/40">Actionable analytics for partners & restaurant owners</p>

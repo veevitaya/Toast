@@ -19,7 +19,6 @@ import {
   DollarSign, Target, BarChart3, Layers, Calendar, Zap,
   ShoppingCart, TrendingUp,
 } from "lucide-react";
-import { Icon3D } from "@/components/Icon3D";
 
 const positions = [
   { value: "home_top", label: "Home Top" },
@@ -225,7 +224,7 @@ export default function AdminBanners() {
     <div data-testid="admin-banners-page" className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <Icon3D icon={Layers} theme="blue" size="sm" />
+          <Layers className="w-5 h-5 text-blue-500" />
           <div>
             <h2 className="text-xl font-semibold text-foreground" data-testid="text-banners-title">
               Ad Creative Manager
@@ -601,7 +600,7 @@ export default function AdminBanners() {
         </div>
       ) : banners.length === 0 ? (
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-8 text-center">
-          <div className="mx-auto mb-3"><Icon3D icon={Layers} theme="slate" size="lg" /></div>
+          <Layers className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
           <p className="text-muted-foreground" data-testid="text-no-banners">
             No creatives yet
           </p>

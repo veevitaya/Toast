@@ -5,7 +5,6 @@ import {
   Search, X, MapPin, ArrowRight, ChevronDown,
   Sparkles, SlidersHorizontal, Users, Navigation, Grid3X3,
 } from "lucide-react";
-import { Icon3D } from "@/components/Icon3D";
 import { BottomNav } from "@/components/BottomNav";
 import { SessionBar } from "@/components/SessionBar";
 import { RestaurantRow } from "@/components/RestaurantRow";
@@ -819,7 +818,7 @@ export default function Home() {
           <div className="px-6 pt-4 pb-2">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Icon3D icon={Sparkles} theme="yellow" size="xs" />
+                <Sparkles className="w-4 h-4 text-[#FFCC02]" />
                 <h2 className="text-[11px] font-bold text-foreground uppercase tracking-[0.12em]" data-testid="text-toast-decides">Toast Decides</h2>
               </div>
               <button onClick={() => navigate("/toast-picks")} className="text-xs font-medium text-muted-foreground" data-testid="link-why-this">
@@ -963,7 +962,7 @@ export default function Home() {
                   whileTap={{ rotate: -12, scale: 1.2 }}
                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
                 >
-                  <Icon3D icon={Grid3X3} theme="slate" size="lg" />
+                  <Grid3X3 className="w-6 h-6 text-muted-foreground" />
                 </motion.div>
                 <span className="text-[11px] font-semibold text-foreground">More</span>
               </motion.button>

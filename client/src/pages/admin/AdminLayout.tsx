@@ -14,7 +14,6 @@ import {
   Store,
   ShieldCheck,
 } from "lucide-react";
-import { Icon3D, type ColorTheme } from "@/components/Icon3D";
 import toastLogo from "@assets/toast_logo_nobg.png";
 
 interface AdminSession {
@@ -31,20 +30,20 @@ interface AdminSession {
   subscriptionTier?: string;
 }
 
-const adminNavItems: { label: string; icon: typeof LayoutDashboard; href: string; theme: ColorTheme }[] = [
-  { label: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard", theme: "blue" },
-  { label: "Users", icon: Users, href: "/admin/users", theme: "purple" },
-  { label: "Restaurants", icon: Utensils, href: "/admin/restaurants", theme: "orange" },
-  { label: "Campaigns", icon: Megaphone, href: "/admin/campaigns", theme: "yellow" },
-  { label: "Banners", icon: ImageIcon, href: "/admin/banners", theme: "pink" },
-  { label: "Analytics", icon: BarChart3, href: "/admin/analytics", theme: "teal" },
-  { label: "App Config", icon: Settings2, href: "/admin/config", theme: "slate" },
+const adminNavItems: { label: string; icon: typeof LayoutDashboard; href: string; activeColor: string }[] = [
+  { label: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard", activeColor: "text-blue-600" },
+  { label: "Users", icon: Users, href: "/admin/users", activeColor: "text-purple-600" },
+  { label: "Restaurants", icon: Utensils, href: "/admin/restaurants", activeColor: "text-orange-600" },
+  { label: "Campaigns", icon: Megaphone, href: "/admin/campaigns", activeColor: "text-yellow-600" },
+  { label: "Banners", icon: ImageIcon, href: "/admin/banners", activeColor: "text-pink-600" },
+  { label: "Analytics", icon: BarChart3, href: "/admin/analytics", activeColor: "text-teal-600" },
+  { label: "App Config", icon: Settings2, href: "/admin/config", activeColor: "text-slate-600" },
 ];
 
-const ownerNavItems: { label: string; icon: typeof LayoutDashboard; href: string; theme: ColorTheme }[] = [
-  { label: "My Restaurant", icon: Store, href: "/admin/my-restaurant", theme: "green" },
-  { label: "Campaigns", icon: Megaphone, href: "/admin/campaigns", theme: "yellow" },
-  { label: "Analytics", icon: BarChart3, href: "/admin/analytics", theme: "teal" },
+const ownerNavItems: { label: string; icon: typeof LayoutDashboard; href: string; activeColor: string }[] = [
+  { label: "My Restaurant", icon: Store, href: "/admin/my-restaurant", activeColor: "text-emerald-600" },
+  { label: "Campaigns", icon: Megaphone, href: "/admin/campaigns", activeColor: "text-yellow-600" },
+  { label: "Analytics", icon: BarChart3, href: "/admin/analytics", activeColor: "text-teal-600" },
 ];
 
 function getPageTitle(path: string, items: typeof adminNavItems): string {
@@ -129,11 +128,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   }`}
                   data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
                 >
-                  <Icon3D
-                    icon={item.icon}
-                    theme={active ? item.theme : "slate"}
-                    size="xs"
-                  />
+                  <item.icon className={`w-[18px] h-[18px] ${active ? item.activeColor : "text-muted-foreground"}`} strokeWidth={active ? 2 : 1.5} />
                   <span>{item.label}</span>
                 </div>
               </Link>
