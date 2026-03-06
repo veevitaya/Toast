@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
-import { initLiff, getProfile, isLoggedIn, login, logout, isLiffAvailable, isInLiff } from "@/lib/liff";
+import { initLiff, getProfile, isLoggedIn, login, logout, isLiffAvailable, isInLiff, syncProfileToServer } from "@/lib/liff";
 import type { LineProfile } from "@/lib/liff";
 
 const STORAGE_KEY = "toast_line_profile";
@@ -42,7 +42,10 @@ export function useLineProfile() {
       if (ready && isLoggedIn()) {
         setLoading(true);
         getProfile().then((p) => {
-          if (p) setProfile(p);
+          if (p) {
+            setProfile(p);
+            syncProfileToServer(p);
+          }
           setLoading(false);
         });
       }

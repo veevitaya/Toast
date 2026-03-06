@@ -48,19 +48,19 @@ const FILTER_OPTIONS = {
 };
 
 const RESTAURANT_PINS = [
-  { id: 201, name: "Thipsamai", emoji: "🍜", category: "Thai", lat: 13.7520, lng: 100.5050, rating: "4.9", price: "฿", imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600&auto=format&fit=crop&q=60", description: "Famous pad thai since 1966" },
-  { id: 251, name: "Sushi Masato", emoji: "🍣", category: "Sushi", lat: 13.7320, lng: 100.5783, rating: "4.9", price: "฿฿฿", imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&auto=format&fit=crop&q=60", description: "Intimate 8-seat omakase counter" },
-  { id: 261, name: "Daniel Thaiger", emoji: "🍔", category: "Burgers", lat: 13.7380, lng: 100.5680, rating: "4.5", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=60", description: "Bangkok's OG food truck burger" },
-  { id: 231, name: "Peppina", emoji: "🍕", category: "Pizza", lat: 13.7310, lng: 100.5690, rating: "4.8", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=60", description: "Neapolitan pizza, wood-fired" },
-  { id: 241, name: "Krua Apsorn", emoji: "🍛", category: "Thai", lat: 13.7620, lng: 100.5100, rating: "4.8", price: "฿", imageUrl: "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=600&auto=format&fit=crop&q=60", description: "Royal recipe green curry" },
-  { id: 244, name: "Jay Fai", emoji: "🔥", category: "Thai", lat: 13.7560, lng: 100.5018, rating: "4.9", price: "฿฿฿", imageUrl: "https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=600&auto=format&fit=crop&q=60", description: "Michelin-starred street food" },
-  { id: 301, name: "Tep Bar", emoji: "🍸", category: "Bars", lat: 13.7280, lng: 100.5130, rating: "4.7", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=60", description: "Thai heritage cocktails & live music" },
-  { id: 311, name: "Roots Coffee", emoji: "☕", category: "Cafe", lat: 13.7466, lng: 100.5393, rating: "4.7", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&auto=format&fit=crop&q=60", description: "Specialty pour-over coffee" },
-  { id: 321, name: "After You", emoji: "🍰", category: "Desserts", lat: 13.7320, lng: 100.5783, rating: "4.5", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=600&auto=format&fit=crop&q=60", description: "Famous kakigori & honey toast" },
-  { id: 282, name: "Din Tai Fung", emoji: "🥟", category: "Chinese", lat: 13.7466, lng: 100.5393, rating: "4.7", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=600&auto=format&fit=crop&q=60", description: "World-famous xiao long bao" },
-  { id: 411, name: "Roast", emoji: "🍳", category: "Breakfast", lat: 13.7320, lng: 100.5783, rating: "4.7", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=600&auto=format&fit=crop&q=60", description: "Bangkok's premier brunch spot" },
-  { id: 461, name: "KOI Th\u00e9", emoji: "🧋", category: "Bubble Tea", lat: 13.7454, lng: 100.5340, rating: "4.5", price: "฿", imageUrl: "https://images.unsplash.com/photo-1541696490-8744a5dc0228?w=600&auto=format&fit=crop&q=60", description: "Taiwan's golden bubble milk tea" },
-  { id: 441, name: "Holey Bakery", emoji: "🥐", category: "Bakery", lat: 13.7310, lng: 100.5690, rating: "4.7", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1530610476181-d83430b64dcd?w=600&auto=format&fit=crop&q=60", description: "Award-winning French bakery" },
+  { id: 201, name: "Thipsamai", emoji: "🍜", category: "Thai", lat: 13.7520, lng: 100.5050, rating: "4.9", price: "฿", imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600&auto=format&fit=crop&q=60", description: "Famous pad thai since 1966", address: "Maha Chai Rd" },
+  { id: 251, name: "Sushi Masato", emoji: "🍣", category: "Sushi", lat: 13.7320, lng: 100.5783, rating: "4.9", price: "฿฿฿", imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&auto=format&fit=crop&q=60", description: "Intimate 8-seat omakase counter", address: "Phrom Phong" },
+  { id: 261, name: "Daniel Thaiger", emoji: "🍔", category: "Burgers", lat: 13.7380, lng: 100.5680, rating: "4.5", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=60", description: "Bangkok's OG food truck burger", address: "Sukhumvit 38" },
+  { id: 231, name: "Peppina", emoji: "🍕", category: "Pizza", lat: 13.7310, lng: 100.5690, rating: "4.8", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=60", description: "Neapolitan pizza, wood-fired", address: "Sukhumvit 33" },
+  { id: 241, name: "Krua Apsorn", emoji: "🍛", category: "Thai", lat: 13.7620, lng: 100.5100, rating: "4.8", price: "฿", imageUrl: "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=600&auto=format&fit=crop&q=60", description: "Royal recipe green curry", address: "Samsen Rd" },
+  { id: 244, name: "Jay Fai", emoji: "🔥", category: "Thai", lat: 13.7560, lng: 100.5018, rating: "4.9", price: "฿฿฿", imageUrl: "https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=600&auto=format&fit=crop&q=60", description: "Michelin-starred street food", address: "Maha Chai Rd" },
+  { id: 301, name: "Tep Bar", emoji: "🍸", category: "Bars", lat: 13.7280, lng: 100.5130, rating: "4.7", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=60", description: "Thai heritage cocktails & live music", address: "Charoen Krung Soi 32" },
+  { id: 311, name: "Roots Coffee", emoji: "☕", category: "Cafe", lat: 13.7466, lng: 100.5393, rating: "4.7", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&auto=format&fit=crop&q=60", description: "Specialty pour-over coffee", address: "Ari" },
+  { id: 321, name: "After You", emoji: "🍰", category: "Desserts", lat: 13.7320, lng: 100.5783, rating: "4.5", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=600&auto=format&fit=crop&q=60", description: "Famous kakigori & honey toast", address: "Thonglor" },
+  { id: 282, name: "Din Tai Fung", emoji: "🥟", category: "Chinese", lat: 13.7466, lng: 100.5393, rating: "4.7", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=600&auto=format&fit=crop&q=60", description: "World-famous xiao long bao", address: "Central World" },
+  { id: 411, name: "Roast", emoji: "🍳", category: "Breakfast", lat: 13.7320, lng: 100.5783, rating: "4.7", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=600&auto=format&fit=crop&q=60", description: "Bangkok's premier brunch spot", address: "The Commons, Thonglor" },
+  { id: 461, name: "KOI Th\u00e9", emoji: "🧋", category: "Bubble Tea", lat: 13.7454, lng: 100.5340, rating: "4.5", price: "฿", imageUrl: "https://images.unsplash.com/photo-1541696490-8744a5dc0228?w=600&auto=format&fit=crop&q=60", description: "Taiwan's golden bubble milk tea", address: "Siam Paragon" },
+  { id: 441, name: "Holey Bakery", emoji: "🥐", category: "Bakery", lat: 13.7310, lng: 100.5690, rating: "4.7", price: "฿฿", imageUrl: "https://images.unsplash.com/photo-1530610476181-d83430b64dcd?w=600&auto=format&fit=crop&q=60", description: "Award-winning French bakery", address: "Sukhumvit 49" },
 ];
 
 const ALL_SEARCHABLE = [
@@ -565,7 +565,7 @@ export default function Home() {
             exit={{ opacity: 0, y: 30 }}
             transition={{ type: "spring", damping: 24, stiffness: 260 }}
             className="absolute left-0 right-0 z-30"
-            style={{ bottom: "210px" }}
+            style={{ bottom: "250px" }}
             data-testid="map-restaurant-cards"
           >
             <div
@@ -577,11 +577,11 @@ export default function Home() {
                   key={pin.id}
                   whileTap={{ scale: 0.96 }}
                   onClick={() => navigate(`/restaurant/${pin.id}`)}
-                  className="flex-shrink-0 w-[260px] snap-start bg-white rounded-2xl overflow-hidden border border-gray-100"
+                  className="flex-shrink-0 w-[300px] snap-start bg-white rounded-2xl overflow-hidden border border-gray-100"
                   style={{ boxShadow: "0 6px 24px -4px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.04)" }}
                   data-testid={`map-card-${pin.id}`}
                 >
-                  <div className="relative h-[110px] w-full">
+                  <div className="relative h-[130px] w-full">
                     <img src={pin.imageUrl} alt={pin.name} className="w-full h-full object-cover" />
                     <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-0.5 text-[10px] font-bold text-foreground flex items-center gap-1">
                       <FoodIconFromEmoji emoji={pin.emoji} size={14} /> {pin.category}
@@ -590,12 +590,13 @@ export default function Home() {
                       {pin.price}
                     </div>
                   </div>
-                  <div className="px-3.5 py-2.5">
+                  <div className="px-3.5 py-3 text-left">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-bold text-foreground truncate">{pin.name}</p>
+                      <p className="text-sm font-bold text-foreground truncate text-left">{pin.name}</p>
                       <span className="text-xs font-semibold text-muted-foreground ml-2 flex-shrink-0">{pin.rating}</span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{pin.description}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 text-left truncate">{pin.description}</p>
+                    <p className="text-[10px] text-muted-foreground/70 mt-0.5 text-left truncate">{pin.address}</p>
                   </div>
                 </motion.button>
               ))}
@@ -605,7 +606,7 @@ export default function Home() {
       </AnimatePresence>
 
       <motion.div
-        animate={{ bottom: drawerOpen ? "0px" : "0px", height: drawerOpen ? "82%" : "200px" }}
+        animate={{ bottom: drawerOpen ? "0px" : "0px", height: drawerOpen ? "82%" : "240px" }}
         transition={{ type: "spring", damping: 26, stiffness: 240, mass: 1 }}
         className="absolute left-0 right-0 rounded-t-[28px] z-50 flex flex-col gpu-accelerated"
         style={{

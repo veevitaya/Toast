@@ -1,6 +1,8 @@
 import liff from "@line/liff";
 
 const LIFF_ID = import.meta.env.VITE_LIFF_ID || "";
+const LINE_OA_LIFF_ID = import.meta.env.VITE_LINE_OA_LIFF_ID || "";
+const LINE_OA_CHANNEL_ID = import.meta.env.VITE_LINE_OA_CHANNEL_ID || "";
 
 export interface LineProfile {
   userId: string;
@@ -20,6 +22,18 @@ let cachedProfile: LineProfile | null = null;
 
 export function isLiffAvailable(): boolean {
   return !!LIFF_ID;
+}
+
+export function isLineOAAvailable(): boolean {
+  return !!LINE_OA_LIFF_ID;
+}
+
+export function getLineOAChannelId(): string {
+  return LINE_OA_CHANNEL_ID;
+}
+
+export function getLineOALiffId(): string {
+  return LINE_OA_LIFF_ID;
 }
 
 export async function initLiff(): Promise<boolean> {
@@ -129,8 +143,11 @@ export async function sendInvite(mode: string): Promise<ShareResult> {
 }
 
 export async function sendGroupInvite(sessionId: string): Promise<ShareResult> {
-  const appUrl = window.location.origin;
-  const joinUrl = `${appUrl}/group/waiting?session=${sessionId}`;
+  const oaLiffId = LINE_OA_LIFF_ID;
+  const joinUrl = oaLiffId
+    ? `https://liff.line.me/${oaLiffId}/group/waiting?session=${sessionId}`
+    : `${window.location.origin}/group/waiting?session=${sessionId}`;
+
   const message = `Toast Group Session!\n\nJoin our food swiping session and let's find the perfect meal together!\n\nTap to join:\n${joinUrl}`;
   return shareMessage(message);
 }
@@ -143,4 +160,25 @@ export function isInLiff(): boolean {
 export function getAccessToken(): string | null {
   if (!initialized) return null;
   return liff.getAccessToken();
+}
+
+export async function getAccessTokenAsync(): Promise<string | null> {
+  const ready = await initLiff();
+  if (!ready) return null;
+  return liff.getAccessToken();
+}
+
+export async function syncProfileToServer(profile: LineProfile): Promise<void> {
+  try {
+    const response = await fetch("/api/line/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(profile),
+    });
+    if (!response.ok) {
+      console.error("Failed to sync LINE profile to server:", response.status);
+    }
+  } catch (err) {
+    console.error("Failed to sync LINE profile:", err);
+  }
 }
