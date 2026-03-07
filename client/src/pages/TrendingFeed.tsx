@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, PanInfo } from "framer-motion";
 import { useLocation } from "wouter";
-import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Users } from "lucide-react";
+import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { shareMessage } from "@/lib/liff";
 import { useToast } from "@/hooks/use-toast";
@@ -441,8 +441,8 @@ function FeedCard({
           className="flex flex-col items-center gap-1"
           data-testid={`button-invite-swipe-${post.id}`}
         >
-          <div className="w-11 h-11 rounded-full bg-[#00C300]/90 flex items-center justify-center backdrop-blur-md">
-            <Users className="w-5 h-5 text-white" />
+          <div className="w-11 h-11 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-md">
+            <Layers className="w-5 h-5 text-white" />
           </div>
           <span className="text-white text-[11px] font-medium">Swipe</span>
         </button>
