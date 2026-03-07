@@ -649,23 +649,23 @@ export default function Home() {
                   <div className="grid grid-cols-2 gap-2.5">
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate("/solo/quiz"); }}
-                      className="flex items-center gap-2.5 rounded-2xl bg-gray-50 px-3.5 py-3 text-left"
+                      className="flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4 text-left"
                       data-testid="button-solo-collapsed"
                     >
-                      <img src={toastCharPath} alt="" className="w-[36px] h-[36px] object-contain" />
+                      <img src={toastCharPath} alt="" className="w-[38px] h-[38px] object-contain flex-shrink-0" />
                       <div>
-                        <p className="text-[14px] font-bold text-foreground leading-tight">Solo</p>
+                        <p className="text-[15px] font-bold text-foreground leading-tight">Solo</p>
                         <p className="text-[11px] text-muted-foreground mt-0.5">Just for you</p>
                       </div>
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate("/group/setup"); }}
-                      className="flex items-center gap-2.5 rounded-2xl bg-gray-50 px-3.5 py-3 text-left"
+                      className="flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4 text-left"
                       data-testid="button-group-collapsed"
                     >
-                      <img src={toastWafflePath} alt="" className="w-[40px] h-[36px] object-contain" />
+                      <img src={toastWafflePath} alt="" className="w-[42px] h-[38px] object-contain flex-shrink-0" />
                       <div>
-                        <p className="text-[14px] font-bold text-foreground leading-tight">Group</p>
+                        <p className="text-[15px] font-bold text-foreground leading-tight">Group</p>
                         <p className="text-[11px] text-muted-foreground mt-0.5">With friends</p>
                       </div>
                     </button>
@@ -749,21 +749,12 @@ export default function Home() {
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/solo/quiz")}
                 data-testid="button-solo"
-                className="relative overflow-hidden rounded-[20px] text-left bg-white border border-gray-100"
-                style={{
-                  boxShadow: "0 4px 20px -4px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03)",
-                }}
+                className="flex items-center gap-4 rounded-[20px] bg-gray-50 px-5 py-5 text-left"
               >
-                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-[20px]" style={{ background: "linear-gradient(90deg, #FFCC02, #FFB300)" }} />
-                <img
-                  src={toastCharPath}
-                  alt=""
-                  className="absolute -right-2 -bottom-3 w-[90px] h-[90px] object-contain pointer-events-none select-none z-10"
-                />
-                <div className="relative pt-5 px-5 pb-5">
-                  <p className="text-[24px] font-bold text-foreground leading-tight">
-                    Solo
-                  </p>
+                <img src={toastCharPath} alt="" className="w-[48px] h-[48px] object-contain flex-shrink-0" />
+                <div>
+                  <p className="text-[22px] font-bold text-foreground leading-tight">Solo</p>
+                  <p className="text-[13px] text-muted-foreground mt-1">Just for you</p>
                 </div>
               </motion.button>
 
@@ -775,26 +766,12 @@ export default function Home() {
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/group/setup")}
                 data-testid="button-group"
-                className="relative overflow-hidden rounded-[20px] text-left bg-white border border-gray-100"
-                style={{
-                  boxShadow: "0 4px 20px -4px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03)",
-                }}
+                className="flex items-center gap-4 rounded-[20px] bg-gray-50 px-5 py-5 text-left"
               >
-                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-[20px]" style={{ background: "linear-gradient(90deg, #00B14F, #00C300)" }} />
-                <img
-                  src={toastCharPath}
-                  alt=""
-                  className="absolute right-[48px] -bottom-2 w-[62px] h-[62px] object-contain pointer-events-none select-none z-10"
-                />
-                <img
-                  src={waffleCharPath}
-                  alt=""
-                  className="absolute -right-3 -bottom-3 w-[78px] h-[78px] object-contain pointer-events-none select-none z-10"
-                />
-                <div className="relative pt-5 px-5 pb-5">
-                  <p className="text-[24px] font-bold text-foreground leading-tight">
-                    Group
-                  </p>
+                <img src={toastWafflePath} alt="" className="w-[56px] h-[48px] object-contain flex-shrink-0" />
+                <div>
+                  <p className="text-[22px] font-bold text-foreground leading-tight">Group</p>
+                  <p className="text-[13px] text-muted-foreground mt-1">With friends</p>
                 </div>
               </motion.button>
             </div>
