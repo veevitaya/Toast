@@ -660,7 +660,7 @@ export default function Home() {
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate("/group/setup"); }}
-                      className="flex items-center justify-center gap-1 rounded-2xl bg-white pl-1 pr-4 h-[72px] border border-gray-100"
+                      className="flex items-center justify-center gap-1 rounded-2xl bg-white px-3 h-[72px] border border-gray-100"
                       data-testid="button-group-collapsed"
                     >
                       <img src={toastWafflePath} alt="" className="w-[80px] h-[64px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
@@ -763,7 +763,7 @@ export default function Home() {
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/group/setup")}
                 data-testid="button-group"
-                className="flex items-center rounded-[20px] bg-white pl-1 pr-6 h-[100px] border border-gray-100"
+                className="flex items-center justify-center rounded-[20px] bg-white px-4 h-[100px] border border-gray-100"
               >
                 <img src={toastWafflePath} alt="" className="w-[110px] h-[88px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
                 <div className="min-w-0">
