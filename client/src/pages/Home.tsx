@@ -655,7 +655,7 @@ export default function Home() {
                       <img src={toastCharPath} alt="" className="w-[52px] h-[52px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
                       <div className="min-w-0">
                         <p className="text-[14px] font-bold text-foreground leading-tight">Solo</p>
-                        <p className="text-[10px] text-muted-foreground">Just for you</p>
+                        <p className="text-[10px] text-muted-foreground whitespace-nowrap">Just for you</p>
                       </div>
                     </button>
                     <button
@@ -663,7 +663,7 @@ export default function Home() {
                       className="flex items-center justify-center gap-1 rounded-2xl bg-gray-50 px-2 h-[72px]"
                       data-testid="button-group-collapsed"
                     >
-                      <img src={toastWafflePath} alt="" className="w-[80px] h-[64px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
+                      <img src={toastWafflePath} alt="" className="w-[80px] h-[64px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply", filter: "brightness(1.1)" }} />
                       <div className="min-w-0">
                         <p className="text-[14px] font-bold text-foreground leading-tight">Group</p>
                         <p className="text-[10px] text-muted-foreground whitespace-nowrap">With friends</p>
@@ -751,7 +751,7 @@ export default function Home() {
                 <img src={toastCharPath} alt="" className="w-[80px] h-[80px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
                 <div className="ml-2 min-w-0">
                   <p className="text-[20px] font-bold text-foreground leading-tight">Solo</p>
-                  <p className="text-[12px] text-muted-foreground mt-0.5">Just for you</p>
+                  <p className="text-[12px] text-muted-foreground mt-0.5 whitespace-nowrap">Just for you</p>
                 </div>
               </motion.button>
 
@@ -765,7 +765,7 @@ export default function Home() {
                 data-testid="button-group"
                 className="flex items-center rounded-[20px] bg-gray-50 pl-1 pr-4 h-[100px]"
               >
-                <img src={toastWafflePath} alt="" className="w-[110px] h-[88px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
+                <img src={toastWafflePath} alt="" className="w-[110px] h-[88px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply", filter: "brightness(1.1)" }} />
                 <div className="min-w-0">
                   <p className="text-[20px] font-bold text-foreground leading-tight">Group</p>
                   <p className="text-[12px] text-muted-foreground mt-0.5 whitespace-nowrap">With friends</p>
