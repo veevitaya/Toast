@@ -18,6 +18,8 @@ import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { useLineProfile } from "@/lib/useLineProfile";
 import toastLogoPath from "@assets/toast_logo_nobg.png";
 import mascotPath from "@assets/toast_mascot_nobg.png";
+import toastCharPath from "@assets/Toast_Character_1772896745366.jpg";
+import waffleCharPath from "@assets/Waffle_Character_1772896745367.jpg";
 
 const FILTER_OPTIONS = {
   sortBy: [
@@ -647,25 +649,51 @@ export default function Home() {
                   <div className="grid grid-cols-2 gap-2.5">
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate("/solo/quiz"); }}
-                      className="relative overflow-hidden bg-white rounded-xl px-4 py-3 border border-gray-100 text-left"
-                      style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                      className="relative overflow-hidden rounded-2xl text-left h-[72px]"
+                      style={{
+                        background: "linear-gradient(135deg, #FFF8E1 0%, #FFECB3 50%, #FFE082 100%)",
+                        boxShadow: "0 2px 12px rgba(255,204,2,0.15), 0 1px 3px rgba(0,0,0,0.04)",
+                      }}
                       data-testid="button-solo-collapsed"
                     >
-                      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "#FFCC02" }} />
-                      <span className="absolute top-0 right-2 text-[32px] font-bold select-none pointer-events-none" style={{ color: "rgba(0,0,0,0.04)" }}>1</span>
-                      <p className="text-sm font-bold text-foreground leading-tight">Solo</p>
-                      <p className="text-[10px] text-muted-foreground">Just you</p>
+                      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #FFCC02, #FFB300)" }} />
+                      <img
+                        src={toastCharPath}
+                        alt=""
+                        className="absolute -right-1 -bottom-1 w-[56px] h-[56px] object-contain pointer-events-none select-none"
+                        style={{ mixBlendMode: "multiply", opacity: 0.85 }}
+                      />
+                      <div className="relative z-10 px-3.5 py-2.5">
+                        <p className="text-[15px] font-bold text-amber-900 leading-tight">Solo</p>
+                        <p className="text-[10px] text-amber-700/70 mt-0.5">Just you</p>
+                      </div>
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate("/group/setup"); }}
-                      className="relative overflow-hidden bg-white rounded-xl px-4 py-3 border border-gray-100 text-left"
-                      style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                      className="relative overflow-hidden rounded-2xl text-left h-[72px]"
+                      style={{
+                        background: "linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 50%, #A5D6A7 100%)",
+                        boxShadow: "0 2px 12px rgba(0,177,79,0.12), 0 1px 3px rgba(0,0,0,0.04)",
+                      }}
                       data-testid="button-group-collapsed"
                     >
-                      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "#00B14F" }} />
-                      <span className="absolute top-0 right-2 text-[32px] font-bold select-none pointer-events-none" style={{ color: "rgba(0,0,0,0.04)" }}>2+</span>
-                      <p className="text-sm font-bold text-foreground leading-tight">Group</p>
-                      <p className="text-[10px] text-muted-foreground">With others</p>
+                      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, #00B14F, #00C300)" }} />
+                      <img
+                        src={toastCharPath}
+                        alt=""
+                        className="absolute right-8 -bottom-0.5 w-[40px] h-[40px] object-contain pointer-events-none select-none"
+                        style={{ mixBlendMode: "multiply", opacity: 0.8 }}
+                      />
+                      <img
+                        src={waffleCharPath}
+                        alt=""
+                        className="absolute -right-1 -bottom-1 w-[50px] h-[50px] object-contain pointer-events-none select-none"
+                        style={{ mixBlendMode: "multiply", opacity: 0.8 }}
+                      />
+                      <div className="relative z-10 px-3.5 py-2.5">
+                        <p className="text-[15px] font-bold text-green-900 leading-tight">Group</p>
+                        <p className="text-[10px] text-green-700/70 mt-0.5">With others</p>
+                      </div>
                     </button>
                   </div>
                 </div>
@@ -747,30 +775,31 @@ export default function Home() {
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/solo/quiz")}
                 data-testid="button-solo"
-                className="relative overflow-hidden rounded-[20px] text-left bg-white border border-gray-100"
+                className="relative overflow-hidden rounded-[20px] text-left"
                 style={{
-                  boxShadow: "0 4px 20px -4px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.9)",
+                  background: "linear-gradient(145deg, #FFF9E6 0%, #FFECB3 40%, #FFE082 100%)",
+                  boxShadow: "0 4px 20px -4px rgba(255,204,2,0.2), 0 1px 4px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.6)",
                 }}
               >
-                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-[20px]" style={{ background: "linear-gradient(90deg, #FFCC02, hsl(40, 75%, 68%))" }} />
-                <div className="relative pt-5 px-5 pb-5">
-                  <span
-                    className="absolute top-2 left-4 text-[72px] font-bold leading-none select-none pointer-events-none"
-                    style={{ color: "rgba(0,0,0,0.04)" }}
-                  >
-                    1
-                  </span>
-                  <div className="relative z-10 pt-12">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/70 flex items-center gap-1.5 mb-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#FFCC02]" /> Just you
-                    </p>
-                    <p
-                      className="text-[24px] font-bold text-foreground leading-tight"
-                    >
-                      Solo
-                    </p>
-                    <p className="text-[13px] text-muted-foreground mt-2 leading-snug">Two options face off until one wins</p>
-                  </div>
+                <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-[20px]" style={{ background: "linear-gradient(90deg, #FFCC02, #FFB300)" }} />
+                <div
+                  className="absolute -bottom-2 -right-2 w-[100px] h-[100px] rounded-full pointer-events-none"
+                  style={{ background: "radial-gradient(circle, rgba(255,204,2,0.12) 0%, transparent 70%)" }}
+                />
+                <img
+                  src={toastCharPath}
+                  alt=""
+                  className="absolute -right-2 -bottom-3 w-[90px] h-[90px] object-contain pointer-events-none select-none"
+                  style={{ mixBlendMode: "multiply", opacity: 0.9 }}
+                />
+                <div className="relative z-10 pt-5 px-5 pb-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-amber-700/60 flex items-center gap-1.5 mb-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FFCC02]" /> Just you
+                  </p>
+                  <p className="text-[24px] font-bold text-amber-900 leading-tight">
+                    Solo
+                  </p>
+                  <p className="text-[12px] text-amber-800/60 mt-1.5 leading-snug max-w-[100px]">Two options face off until one wins</p>
                 </div>
               </motion.button>
 
@@ -782,35 +811,42 @@ export default function Home() {
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/group/setup")}
                 data-testid="button-group"
-                className="relative overflow-hidden rounded-[20px] text-left bg-white border border-gray-100"
+                className="relative overflow-hidden rounded-[20px] text-left"
                 style={{
-                  boxShadow: "0 4px 20px -4px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.9)",
+                  background: "linear-gradient(145deg, #F1F8E9 0%, #C8E6C9 40%, #A5D6A7 100%)",
+                  boxShadow: "0 4px 20px -4px rgba(0,177,79,0.15), 0 1px 4px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.6)",
                 }}
               >
                 <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-[20px]" style={{ background: "linear-gradient(90deg, #00B14F, #00C300)" }} />
-                <div className="relative pt-5 px-5 pb-5">
-                  <span
-                    className="absolute top-2 left-4 text-[72px] font-bold leading-none select-none pointer-events-none"
-                    style={{ color: "rgba(0,0,0,0.04)" }}
-                  >
-                    2+
+                <div
+                  className="absolute -bottom-2 -right-2 w-[100px] h-[100px] rounded-full pointer-events-none"
+                  style={{ background: "radial-gradient(circle, rgba(0,177,79,0.1) 0%, transparent 70%)" }}
+                />
+                <img
+                  src={toastCharPath}
+                  alt=""
+                  className="absolute right-[48px] -bottom-2 w-[62px] h-[62px] object-contain pointer-events-none select-none"
+                  style={{ mixBlendMode: "multiply", opacity: 0.85 }}
+                />
+                <img
+                  src={waffleCharPath}
+                  alt=""
+                  className="absolute -right-3 -bottom-3 w-[78px] h-[78px] object-contain pointer-events-none select-none"
+                  style={{ mixBlendMode: "multiply", opacity: 0.85 }}
+                />
+                <div className="absolute top-4 right-4 z-20">
+                  <span className="text-[9px] font-semibold bg-white/60 backdrop-blur-sm text-green-700 rounded-full px-2 py-0.5 flex items-center gap-1 border border-green-200/50">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> 4 live
                   </span>
-                  <div className="absolute top-4 right-4">
-                    <span className="text-[10px] font-semibold bg-emerald-50 text-emerald-600 rounded-full px-2 py-0.5 flex items-center gap-1 border border-emerald-100">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> 4 live
-                    </span>
-                  </div>
-                  <div className="relative z-10 pt-12">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/70 flex items-center gap-1.5 mb-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> With others
-                    </p>
-                    <p
-                      className="text-[24px] font-bold text-foreground leading-tight"
-                    >
-                      Group
-                    </p>
-                    <p className="text-[13px] text-muted-foreground mt-2 leading-snug">Everyone swipes, the match wins</p>
-                  </div>
+                </div>
+                <div className="relative z-10 pt-5 px-5 pb-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-green-700/60 flex items-center gap-1.5 mb-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> With others
+                  </p>
+                  <p className="text-[24px] font-bold text-green-900 leading-tight">
+                    Group
+                  </p>
+                  <p className="text-[12px] text-green-800/60 mt-1.5 leading-snug max-w-[100px]">Everyone swipes, the match wins</p>
                 </div>
               </motion.button>
             </div>
