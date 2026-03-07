@@ -1,13 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, PanInfo } from "framer-motion";
 import { useLocation } from "wouter";
-import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp } from "lucide-react";
+import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Users } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { shareMessage } from "@/lib/liff";
 import { useToast } from "@/hooks/use-toast";
 
 interface TrendingPost {
   id: number;
+  restaurantId: number;
   restaurantName: string;
   category: string;
   description: string;
@@ -25,6 +26,7 @@ interface TrendingPost {
 const TRENDING_POSTS: TrendingPost[] = [
   {
     id: 1,
+    restaurantId: 201,
     restaurantName: "Thipsamai",
     category: "Thai · Street Food",
     description: "The legendary Pad Thai since 1966. Their signature wrapped-in-egg version is unbeatable — crispy edges, perfectly balanced tamarind sauce, and the freshest river prawns.",
@@ -43,6 +45,7 @@ const TRENDING_POSTS: TrendingPost[] = [
   },
   {
     id: 2,
+    restaurantId: 373,
     restaurantName: "Gaggan Anand",
     category: "Progressive Indian · Fine Dining",
     description: "25-course progressive Indian by the legendary Chef Gaggan. Asia's #1 restaurant — a mind-bending culinary journey you'll never forget.",
@@ -61,6 +64,7 @@ const TRENDING_POSTS: TrendingPost[] = [
   },
   {
     id: 3,
+    restaurantId: 244,
     restaurantName: "Jay Fai",
     category: "Thai · Michelin Street Food",
     description: "The goggle-wearing street food queen. Her legendary crab omelette and drunken noodles earned a Michelin star — the only street food vendor in Thailand.",
@@ -79,6 +83,7 @@ const TRENDING_POSTS: TrendingPost[] = [
   },
   {
     id: 4,
+    restaurantId: 251,
     restaurantName: "Sushi Masato",
     category: "Japanese · Omakase",
     description: "Intimate 8-seat counter with fish flown daily from Tsukiji market. Chef Masato's precision and passion make this Bangkok's finest omakase.",
@@ -97,6 +102,7 @@ const TRENDING_POSTS: TrendingPost[] = [
   },
   {
     id: 5,
+    restaurantId: 231,
     restaurantName: "Peppina",
     category: "Italian · Neapolitan Pizza",
     description: "True Neapolitan pizza fired at 485°C for exactly 90 seconds. San Marzano tomatoes, Campania mozzarella — imported ingredients, authentic taste.",
@@ -115,6 +121,7 @@ const TRENDING_POSTS: TrendingPost[] = [
   },
   {
     id: 6,
+    restaurantId: 341,
     restaurantName: "P'Aor Tom Yum",
     category: "Thai · Soup",
     description: "The creamy tom yum goong that broke the internet. Massive river prawns swimming in a rich, spicy coconut broth — worth every minute of the queue.",
@@ -133,6 +140,7 @@ const TRENDING_POSTS: TrendingPost[] = [
   },
   {
     id: 7,
+    restaurantId: 604,
     restaurantName: "Vesper",
     category: "Cocktail Bar · Fine Drinks",
     description: "Consistently ranked in Asia's 50 Best Bars. Elegant cocktails infused with Thai ingredients — lemongrass martinis and kaffir lime gimlets.",
@@ -151,6 +159,7 @@ const TRENDING_POSTS: TrendingPost[] = [
   },
   {
     id: 8,
+    restaurantId: 261,
     restaurantName: "Daniel Thaiger",
     category: "American · Burger",
     description: "Bangkok's OG food truck revolution. Dry-aged Aussie beef smash burgers with their legendary tiger sauce — started on the street, now an institution.",
@@ -169,6 +178,7 @@ const TRENDING_POSTS: TrendingPost[] = [
   },
   {
     id: 9,
+    restaurantId: 602,
     restaurantName: "Teens of Thailand",
     category: "Speakeasy · Gin Bar",
     description: "Asia's 50 Best Bars. A tiny Chinatown speakeasy that redefined Bangkok's cocktail scene with gin-forward craft cocktails in a shophouse setting.",
@@ -187,6 +197,7 @@ const TRENDING_POSTS: TrendingPost[] = [
   },
   {
     id: 10,
+    restaurantId: 241,
     restaurantName: "Krua Apsorn",
     category: "Thai · Royal Cuisine",
     description: "Royal recipe green curry awarded Michelin Bib Gourmand. The crab meat yellow curry and stir-fried crab are legendary — fit for royalty.",
@@ -205,6 +216,7 @@ const TRENDING_POSTS: TrendingPost[] = [
   },
   {
     id: 11,
+    restaurantId: 222,
     restaurantName: "Bankara Ramen",
     category: "Japanese · Ramen",
     description: "Rich 18-hour pork bone broth with their secret back-fat topping. Authentic Ikebukuro-style tonkotsu that stands up to the best in Tokyo.",
@@ -222,6 +234,7 @@ const TRENDING_POSTS: TrendingPost[] = [
   },
   {
     id: 12,
+    restaurantId: 601,
     restaurantName: "Tropic City",
     category: "Tiki · Cocktail Bar",
     description: "Award-winning tiki bar serving tropical cocktails, rum flights, and Pacific Island vibes. Charoen Krung's coolest hidden gem.",
@@ -270,50 +283,93 @@ function PriceIndicator({ level }: { level: number }) {
   );
 }
 
-function MediaCarousel({ items, isActive }: { items: TrendingPost["mediaItems"]; isActive: boolean }) {
+function MediaCarousel({ items, isActive, onTap }: { items: TrendingPost["mediaItems"]; isActive: boolean; onTap: () => void }) {
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [direction, setDirection] = useState(0);
+  const isDragging = useRef(false);
+  const dragX = useMotionValue(0);
+
+  useEffect(() => {
+    if (isActive) setCurrentIdx(0);
+  }, [isActive]);
+
+  const handleDragStart = () => {
+    isDragging.current = true;
+  };
+
+  const handleDragEnd = (_: any, info: PanInfo) => {
+    const threshold = 50;
+    if (info.offset.x < -threshold && currentIdx < items.length - 1) {
+      setDirection(1);
+      setCurrentIdx(currentIdx + 1);
+    } else if (info.offset.x > threshold && currentIdx > 0) {
+      setDirection(-1);
+      setCurrentIdx(currentIdx - 1);
+    }
+    setTimeout(() => { isDragging.current = false; }, 50);
+  };
+
+  const handleTap = (e: React.MouseEvent) => {
+    if (isDragging.current) return;
+    if (items.length <= 1) {
+      onTap();
+      return;
+    }
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const third = rect.width / 3;
+    if (x < third && currentIdx > 0) {
+      setDirection(-1);
+      setCurrentIdx(currentIdx - 1);
+    } else if (x > third * 2 && currentIdx < items.length - 1) {
+      setDirection(1);
+      setCurrentIdx(currentIdx + 1);
+    } else {
+      onTap();
+    }
+  };
+
+  const slideVariants = {
+    enter: (dir: number) => ({ x: dir > 0 ? "100%" : "-100%", opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir: number) => ({ x: dir > 0 ? "-100%" : "100%", opacity: 0 }),
+  };
 
   return (
-    <div className="absolute inset-0 bg-black">
-      <AnimatePresence mode="wait">
+    <div className="absolute inset-0 bg-black overflow-hidden" onClick={handleTap} data-testid="media-carousel">
+      <AnimatePresence mode="wait" custom={direction}>
         <motion.img
           key={currentIdx}
           src={items[currentIdx].url}
           alt=""
           className="w-full h-full object-cover"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+          custom={direction}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.25, ease: "easeInOut" }}
+          drag={items.length > 1 ? "x" : false}
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.2}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          style={{ x: dragX, touchAction: "pan-y" }}
         />
       </AnimatePresence>
 
       {items.length > 1 && (
-        <>
-          <div className="absolute top-4 left-0 right-0 flex justify-center gap-1.5 z-10">
-            {items.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentIdx(idx)}
-                className={`h-[3px] rounded-full transition-all duration-300 ${
-                  idx === currentIdx ? "w-6 bg-white" : "w-3 bg-white/40"
-                }`}
-                data-testid={`media-dot-${idx}`}
-              />
-            ))}
-          </div>
-
-          <button
-            className="absolute left-0 top-0 bottom-0 w-1/3 z-[5]"
-            onClick={() => setCurrentIdx(Math.max(0, currentIdx - 1))}
-            data-testid="media-prev"
-          />
-          <button
-            className="absolute right-0 top-0 bottom-0 w-1/3 z-[5]"
-            onClick={() => setCurrentIdx(Math.min(items.length - 1, currentIdx + 1))}
-            data-testid="media-next"
-          />
-        </>
+        <div className="absolute top-4 left-0 right-0 flex justify-center gap-1.5 z-10 pointer-events-none">
+          {items.map((_, idx) => (
+            <div
+              key={idx}
+              className={`h-[3px] rounded-full transition-all duration-300 ${
+                idx === currentIdx ? "w-6 bg-white" : "w-3 bg-white/40"
+              }`}
+              data-testid={`media-dot-${idx}`}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
@@ -327,6 +383,8 @@ function FeedCard({
   onSave,
   onLike,
   onShare,
+  onNavigate,
+  onInviteSwipe,
 }: {
   post: TrendingPost;
   isActive: boolean;
@@ -335,14 +393,16 @@ function FeedCard({
   onSave: () => void;
   onLike: () => void;
   onShare: () => void;
+  onNavigate: () => void;
+  onInviteSwipe: () => void;
 }) {
   return (
     <div className="relative w-full h-full snap-start snap-always" data-testid={`feed-card-${post.id}`}>
-      <MediaCarousel items={post.mediaItems} isActive={isActive} />
+      <MediaCarousel items={post.mediaItems} isActive={isActive} onTap={onNavigate} />
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
 
-      <div className="absolute right-3 bottom-[140px] flex flex-col items-center gap-5 z-10">
+      <div className="absolute right-3 bottom-[160px] flex flex-col items-center gap-5 z-10">
         <button
           onClick={onLike}
           className="flex flex-col items-center gap-1"
@@ -374,6 +434,17 @@ function FeedCard({
             <Share2 className="w-5 h-5 text-white" />
           </div>
           <span className="text-white text-[11px] font-medium">Share</span>
+        </button>
+
+        <button
+          onClick={onInviteSwipe}
+          className="flex flex-col items-center gap-1"
+          data-testid={`button-invite-swipe-${post.id}`}
+        >
+          <div className="w-11 h-11 rounded-full bg-[#00C300]/90 flex items-center justify-center backdrop-blur-md">
+            <Users className="w-5 h-5 text-white" />
+          </div>
+          <span className="text-white text-[11px] font-medium">Swipe</span>
         </button>
       </div>
 
@@ -497,6 +568,26 @@ export default function TrendingFeed() {
     }
   }, [toast]);
 
+  const handleNavigate = useCallback((post: TrendingPost) => {
+    navigate(`/restaurant/${post.restaurantId}`);
+  }, [navigate]);
+
+  const handleInviteSwipe = useCallback(async (post: TrendingPost) => {
+    const appUrl = window.location.origin;
+    const swipeUrl = `${appUrl}/group/swipe?source=trending&restaurantId=${post.restaurantId}`;
+    const message = `Let's decide where to eat!\n\n${post.restaurantName} is trending — swipe together?\n\nJoin here:\n${swipeUrl}`;
+    try {
+      await shareMessage(message);
+    } catch {
+      try {
+        await navigator.clipboard.writeText(swipeUrl);
+        toast({ title: "Invite link copied!", description: "Share with friends to swipe together" });
+      } catch {
+        toast({ title: "Invite to Swipe", description: swipeUrl });
+      }
+    }
+  }, [toast]);
+
   return (
     <div className="fixed inset-0 bg-black" data-testid="trending-feed-page">
       <div className="absolute top-0 left-0 right-0 z-20 pt-[env(safe-area-inset-top)]">
@@ -531,6 +622,8 @@ export default function TrendingFeed() {
               onSave={() => handleSave(post.id)}
               onLike={() => handleLike(post.id)}
               onShare={() => handleShare(post)}
+              onNavigate={() => handleNavigate(post)}
+              onInviteSwipe={() => handleInviteSwipe(post)}
             />
           </div>
         ))}
