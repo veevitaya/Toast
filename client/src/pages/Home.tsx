@@ -721,7 +721,7 @@ export default function Home() {
                 transition={{ delay: 0.2, type: "spring", stiffness: 260, damping: 20 }}
                 src={toastLogoPath}
                 alt="Toast"
-                className="h-12 w-auto flex-shrink-0 mt-1"
+                className="h-12 w-auto flex-shrink-0 mt-[30px]"
                 data-testid="img-hero-logo"
               />
             </div>
