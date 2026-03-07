@@ -663,8 +663,8 @@ export default function Home() {
                       className="flex items-center rounded-2xl bg-gray-50 pl-1 pr-3 h-[72px]"
                       data-testid="button-group-collapsed"
                     >
-                      <img src={toastWafflePath} alt="" className="w-[68px] h-[56px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
-                      <div className="ml-0.5 min-w-0">
+                      <img src={toastWafflePath} alt="" className="w-[76px] h-[62px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
+                      <div className="min-w-0">
                         <p className="text-[14px] font-bold text-foreground leading-tight">Group</p>
                         <p className="text-[10px] text-muted-foreground">With friends</p>
                       </div>
@@ -677,10 +677,7 @@ export default function Home() {
         </div>
 
         <div className="flex-1 overflow-y-auto hide-scrollbar pb-24 relative" style={{ overscrollBehavior: "contain" }}>
-          <div className="px-6 pt-1 pb-1 flex items-center justify-between">
-            <img src={toastLogoPath} alt="Toast" className="h-9 w-auto" data-testid="img-home-logo" />
-          </div>
-          <div className="px-6 pt-1 pb-3">
+          <div className="px-6 pt-2 pb-3">
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -722,10 +719,10 @@ export default function Home() {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2, type: "spring", stiffness: 260, damping: 20 }}
-                src={mascotPath}
-                alt="Toast mascot"
-                className="w-20 h-20 object-contain flex-shrink-0"
-                data-testid="img-hero-mascot"
+                src={toastLogoPath}
+                alt="Toast"
+                className="h-10 w-auto flex-shrink-0"
+                data-testid="img-hero-logo"
               />
             </div>
           </div>
@@ -766,10 +763,10 @@ export default function Home() {
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/group/setup")}
                 data-testid="button-group"
-                className="flex items-center rounded-[20px] bg-gray-50 pl-2 pr-5 h-[100px]"
+                className="flex items-center rounded-[20px] bg-gray-50 pl-1 pr-4 h-[100px]"
               >
-                <img src={toastWafflePath} alt="" className="w-[100px] h-[80px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
-                <div className="ml-1 min-w-0">
+                <img src={toastWafflePath} alt="" className="w-[110px] h-[88px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
+                <div className="min-w-0">
                   <p className="text-[20px] font-bold text-foreground leading-tight">Group</p>
                   <p className="text-[12px] text-muted-foreground mt-0.5">With friends</p>
                 </div>
@@ -800,12 +797,9 @@ export default function Home() {
             >
               <div className="absolute top-0 left-0 right-0 h-1" style={{ background: "linear-gradient(90deg, #FFCC02, hsl(45, 90%, 65%))" }} />
               <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <img src={mascotPath} alt="" className="w-10 h-10 object-contain" />
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 rounded-full px-2.5 py-1 flex items-center gap-1.5 border border-emerald-100">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Just for you
-                  </span>
-                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 rounded-full px-2.5 py-1 flex items-center gap-1.5 border border-emerald-100">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Just for you
+                </span>
                 <motion.button
                   whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.9 }}
