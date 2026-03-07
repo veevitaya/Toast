@@ -1711,6 +1711,10 @@ export async function registerRoutes(
         hostLineUserId: z.string().min(1),
         hostDisplayName: z.string().min(1),
         hostPictureUrl: z.string().optional(),
+        sessionType: z.string().optional(),
+        sourceData: z.string().optional(),
+        latitude: z.string().optional(),
+        longitude: z.string().optional(),
       });
       const input = schema.parse(req.body);
 
@@ -1723,6 +1727,8 @@ export async function registerRoutes(
         sessionCode: input.sessionCode,
         hostLineUserId: input.hostLineUserId,
         status: "waiting",
+        sessionType: input.sessionType || "regular",
+        sourceData: input.sourceData || null,
         createdAt: new Date().toISOString(),
       });
 
@@ -1731,6 +1737,8 @@ export async function registerRoutes(
         lineUserId: input.hostLineUserId,
         displayName: input.hostDisplayName,
         pictureUrl: input.hostPictureUrl || null,
+        latitude: input.latitude || null,
+        longitude: input.longitude || null,
         joinedAt: new Date().toISOString(),
       });
 
@@ -1750,6 +1758,8 @@ export async function registerRoutes(
         lineUserId: z.string().min(1),
         displayName: z.string().min(1),
         pictureUrl: z.string().optional(),
+        latitude: z.string().optional(),
+        longitude: z.string().optional(),
       });
       const input = schema.parse(req.body);
 
@@ -1769,6 +1779,8 @@ export async function registerRoutes(
         lineUserId: input.lineUserId,
         displayName: input.displayName,
         pictureUrl: input.pictureUrl || null,
+        latitude: input.latitude || null,
+        longitude: input.longitude || null,
         joinedAt: new Date().toISOString(),
       });
 
@@ -1878,5 +1890,125 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/group/sessions/:code/location", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const schema = z.object({
+        lineUserId: z.string().min(1),
+        latitude: z.string().min(1),
+        longitude: z.string().min(1),
+      });
+      const input = schema.parse(req.body);
+      await storage.updateMemberLocation(code, input.lineUserId, input.latitude, input.longitude);
+      res.json({ success: true });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/group/sessions/:code/trending-restaurants", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const session = await storage.getGroupSession(code);
+      if (!session) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      const members = await storage.getGroupMembers(code);
+      const locatedMembers = members.filter(m => m.latitude && m.longitude);
+
+      let centerLat = 13.7563;
+      let centerLng = 100.5018;
+
+      if (locatedMembers.length > 0) {
+        centerLat = locatedMembers.reduce((sum, m) => sum + parseFloat(m.latitude!), 0) / locatedMembers.length;
+        centerLng = locatedMembers.reduce((sum, m) => sum + parseFloat(m.longitude!), 0) / locatedMembers.length;
+      }
+
+      const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+      if (apiKey) {
+        try {
+          const radius = locatedMembers.length > 1
+            ? Math.max(1500, calculateMaxDistance(locatedMembers) * 1000)
+            : 3000;
+
+          const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${centerLat},${centerLng}&radius=${Math.min(radius, 10000)}&type=restaurant&key=${apiKey}&language=th`;
+          const placesRes = await fetch(url);
+          if (placesRes.ok) {
+            const placesData = await placesRes.json();
+            if (placesData.results && placesData.results.length > 0) {
+              const restaurants = placesData.results.slice(0, 30).map((place: any, idx: number) => {
+                let imageUrl = "";
+                if (place.photos && place.photos.length > 0) {
+                  imageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${place.photos[0].photo_reference}&key=${apiKey}`;
+                }
+                return {
+                  id: 10000 + idx,
+                  name: place.name,
+                  category: (place.types || []).filter((t: string) => !["point_of_interest", "establishment", "food"].includes(t)).slice(0, 3).join(" • ") || "Restaurant",
+                  description: place.vicinity || "",
+                  priceLevel: place.price_level || 2,
+                  rating: (place.rating || 4.0).toString(),
+                  address: place.vicinity || "",
+                  imageUrl,
+                  isNew: place.business_status === "OPERATIONAL",
+                  lat: place.geometry?.location?.lat?.toString() || centerLat.toString(),
+                  lng: place.geometry?.location?.lng?.toString() || centerLng.toString(),
+                  googlePlaceId: place.place_id || null,
+                };
+              });
+              return res.json({ restaurants, center: { lat: centerLat, lng: centerLng }, source: "google_places" });
+            }
+          }
+        } catch (err) {
+          console.error("Google Places API error:", err);
+        }
+      }
+
+      const allRestaurants = await storage.getRestaurants();
+      const withDistance = allRestaurants.map(r => {
+        const rLat = parseFloat(r.lat) || 13.7563;
+        const rLng = parseFloat(r.lng) || 100.5018;
+        const dist = haversineDistance(centerLat, centerLng, rLat, rLng);
+        return { ...r, distance: dist };
+      });
+      withDistance.sort((a, b) => {
+        const scoreA = (a.trendingScore || 0) * 2 - a.distance;
+        const scoreB = (b.trendingScore || 0) * 2 - b.distance;
+        return scoreB - scoreA;
+      });
+
+      res.json({ restaurants: withDistance.slice(0, 30), center: { lat: centerLat, lng: centerLng }, source: "database" });
+    } catch (err) {
+      console.error("Trending restaurants error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   return httpServer;
+}
+
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function calculateMaxDistance(members: { latitude: string | null; longitude: string | null }[]): number {
+  let maxDist = 0;
+  for (let i = 0; i < members.length; i++) {
+    for (let j = i + 1; j < members.length; j++) {
+      const d = haversineDistance(
+        parseFloat(members[i].latitude!), parseFloat(members[i].longitude!),
+        parseFloat(members[j].latitude!), parseFloat(members[j].longitude!)
+      );
+      if (d > maxDist) maxDist = d;
+    }
+  }
+  return maxDist;
 }

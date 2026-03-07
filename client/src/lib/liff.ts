@@ -136,6 +136,48 @@ export async function shareMessage(text: string): Promise<ShareResult> {
   }
 }
 
+export async function shareMessageNoRedirect(text: string): Promise<ShareResult> {
+  const ready = await initLiff();
+
+  if (ready && initialized) {
+    try {
+      if (liff.isApiAvailable("shareTargetPicker")) {
+        const result = await liff.shareTargetPicker([
+          { type: "text", text },
+        ]);
+        if (result && "status" in result && result.status === "success") {
+          return { shared: true, method: "liff" };
+        }
+        return { shared: false, method: "liff" };
+      }
+    } catch (err) {
+      console.error("shareTargetPicker failed:", err);
+    }
+  }
+
+  const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.origin)}&text=${encodeURIComponent(text)}`;
+  const popup = window.open(lineUrl, "_blank", "width=500,height=600");
+  if (!popup) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return { shared: true, method: "clipboard" };
+    } catch {
+      return { shared: false, method: "clipboard" };
+    }
+  }
+  return { shared: true, method: "line-app" };
+}
+
+export async function sendGroupInviteNoRedirect(sessionId: string): Promise<ShareResult> {
+  const oaLiffId = LINE_OA_LIFF_ID;
+  const joinUrl = oaLiffId
+    ? `https://liff.line.me/${oaLiffId}/group/waiting?session=${sessionId}`
+    : `${window.location.origin}/group/waiting?session=${sessionId}`;
+
+  const message = `Toast Group Session!\n\nJoin our food swiping session and let's find the perfect meal together!\n\nTap to join:\n${joinUrl}`;
+  return shareMessageNoRedirect(message);
+}
+
 export async function sendInvite(mode: string): Promise<ShareResult> {
   const appUrl = window.location.origin;
   const message = `Join me on Toast!\n\nLet's decide what to eat together. I'm swiping on ${mode} mode right now!\n\n${appUrl}/swipe?mode=${mode}`;

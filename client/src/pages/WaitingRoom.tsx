@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
+import { TrendingUp } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import mascotImg from "@assets/toast_mascot_nobg.png";
 import { shareMessage, sendGroupInvite } from "@/lib/liff";
@@ -16,18 +17,40 @@ interface SessionMember {
   joinedAt: string;
 }
 
+interface SessionData {
+  sessionCode: string;
+  hostLineUserId: string;
+  status: string;
+  sessionType: string | null;
+  sourceData: string | null;
+}
+
 export default function WaitingRoom() {
   const [, navigate] = useLocation();
   const { profile, loading: profileLoading } = useLineProfile();
   const [members, setMembers] = useState<SessionMember[]>([]);
   const [nudgedMembers, setNudgedMembers] = useState<Set<string>>(new Set());
   const [sessionCreated, setSessionCreated] = useState(false);
+  const [sessionInfo, setSessionInfo] = useState<SessionData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const sessionId = new URLSearchParams(window.location.search).get("session") || "";
 
+  const getUserLocation = useCallback(async (): Promise<{ latitude: string; longitude: string } | null> => {
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000, maximumAge: 60000 });
+      });
+      return { latitude: pos.coords.latitude.toString(), longitude: pos.coords.longitude.toString() };
+    } catch {
+      return null;
+    }
+  }, []);
+
   const createOrJoinSession = useCallback(async () => {
     if (!profile || !sessionId) return;
+
+    const loc = await getUserLocation();
 
     try {
       const createRes = await fetch("/api/group/sessions", {
@@ -38,6 +61,8 @@ export default function WaitingRoom() {
           hostLineUserId: profile.userId,
           hostDisplayName: profile.displayName,
           hostPictureUrl: profile.pictureUrl || "",
+          latitude: loc?.latitude,
+          longitude: loc?.longitude,
         }),
       });
 
@@ -51,17 +76,31 @@ export default function WaitingRoom() {
             lineUserId: profile.userId,
             displayName: profile.displayName,
             pictureUrl: profile.pictureUrl || "",
+            latitude: loc?.latitude,
+            longitude: loc?.longitude,
           }),
         });
         if (joinRes.ok) {
           setSessionCreated(true);
         }
       }
+
+      if (loc && sessionId) {
+        fetch(`/api/group/sessions/${sessionId}/location`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lineUserId: profile.userId,
+            latitude: loc.latitude,
+            longitude: loc.longitude,
+          }),
+        }).catch(() => {});
+      }
     } catch (err) {
       console.error("Session create/join failed:", err);
       setError("Failed to connect to session");
     }
-  }, [profile, sessionId]);
+  }, [profile, sessionId, getUserLocation]);
 
   useEffect(() => {
     if (!profileLoading && profile && sessionId) {
@@ -78,6 +117,7 @@ export default function WaitingRoom() {
         if (res.ok) {
           const data = await res.json();
           setMembers(data.members);
+          if (data.session) setSessionInfo(data.session);
           if (data.session?.status === "swiping") {
             navigate(`/group/swipe?session=${sessionId}`);
           }
@@ -161,6 +201,19 @@ export default function WaitingRoom() {
           <img src={mascotImg} alt="Toast mascot" className="h-12 w-12 object-contain animate-soft-bob gpu-accelerated" draggable={false} />
         </div>
       </motion.div>
+
+      {sessionInfo?.sessionType === "trending" && (
+        <motion.div
+          initial={{ y: 16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.1, duration: 0.3 }}
+          className="flex items-center gap-1.5 bg-amber-50 text-amber-800 px-3 py-1.5 rounded-full mb-3"
+          data-testid="badge-trending-session"
+        >
+          <TrendingUp className="w-3.5 h-3.5" />
+          <span className="text-[12px] font-semibold">Trending Swipe Session</span>
+        </motion.div>
+      )}
 
       <motion.h1
         initial={{ y: 16, opacity: 0 }}

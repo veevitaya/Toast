@@ -184,6 +184,8 @@ export const groupSessions = pgTable("group_sessions", {
   sessionCode: text("session_code").notNull().unique(),
   hostLineUserId: text("host_line_user_id").notNull(),
   status: text("status").default("waiting"),
+  sessionType: text("session_type").default("regular"),
+  sourceData: text("source_data"),
   createdAt: text("created_at").notNull(),
 });
 
@@ -197,6 +199,8 @@ export const groupSessionMembers = pgTable("group_session_members", {
   lineUserId: text("line_user_id").notNull(),
   displayName: text("display_name").notNull(),
   pictureUrl: text("picture_url"),
+  latitude: text("latitude"),
+  longitude: text("longitude"),
   joinedAt: text("joined_at").notNull(),
 });
 

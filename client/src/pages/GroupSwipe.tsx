@@ -290,24 +290,43 @@ export default function GroupSwipe() {
   useEffect(() => {
     const loadRestaurants = async () => {
       try {
-        const res = await fetch("/api/restaurants");
-        if (res.ok) {
-          const data = await res.json();
-          const items: MenuItem[] = data.map((r: any) => ({
-            id: r.id,
-            name: r.name,
-            category: r.category || "Restaurant",
-            tags: buildTagsFromCategory(r.category || ""),
-            description: r.description || "",
-            priceLevel: r.priceLevel || 2,
-            rating: r.rating || "4.0",
-            address: r.address || "Bangkok",
-            imageUrl: r.imageUrl || "",
-            isNew: r.isNew || false,
-          }));
-          const shuffled = items.sort(() => Math.random() - 0.5);
-          setMenuItems(shuffled);
+        let data: any[] = [];
+
+        if (sessionCode) {
+          const sessionRes = await fetch(`/api/group/sessions/${sessionCode}`);
+          if (sessionRes.ok) {
+            const sessionData = await sessionRes.json();
+            if (sessionData.session?.sessionType === "trending") {
+              const trendingRes = await fetch(`/api/group/sessions/${sessionCode}/trending-restaurants`);
+              if (trendingRes.ok) {
+                const trendingData = await trendingRes.json();
+                data = trendingData.restaurants || [];
+              }
+            }
+          }
         }
+
+        if (data.length === 0) {
+          const res = await fetch("/api/restaurants");
+          if (res.ok) {
+            data = await res.json();
+          }
+        }
+
+        const items: MenuItem[] = data.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          category: r.category || "Restaurant",
+          tags: buildTagsFromCategory(r.category || ""),
+          description: r.description || "",
+          priceLevel: r.priceLevel || r.price_level || 2,
+          rating: r.rating || "4.0",
+          address: r.address || "Bangkok",
+          imageUrl: r.imageUrl || r.image_url || "",
+          isNew: r.isNew || r.is_new || false,
+        }));
+        const shuffled = items.sort(() => Math.random() - 0.5);
+        setMenuItems(shuffled);
       } catch (err) {
         console.error("Failed to load restaurants:", err);
       } finally {
@@ -315,7 +334,7 @@ export default function GroupSwipe() {
       }
     };
     loadRestaurants();
-  }, []);
+  }, [sessionCode]);
 
   useEffect(() => {
     if (!sessionCode) return;

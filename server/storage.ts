@@ -98,6 +98,7 @@ export interface IStorage {
   addGroupMember(member: InsertGroupSessionMember): Promise<GroupSessionMember>;
   getGroupMembers(sessionCode: string): Promise<GroupSessionMember[]>;
   isGroupMember(sessionCode: string, lineUserId: string): Promise<boolean>;
+  updateMemberLocation(sessionCode: string, lineUserId: string, latitude: string, longitude: string): Promise<void>;
   recordGroupSwipe(swipe: InsertGroupSwipe): Promise<GroupSwipe>;
   getGroupSwipes(sessionCode: string): Promise<GroupSwipe[]>;
   getGroupMatches(sessionCode: string): Promise<{ menuItemId: number; voters: string[] }[]>;
@@ -390,6 +391,12 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(groupSessionMembers.sessionCode, sessionCode), eq(groupSessionMembers.lineUserId, lineUserId)))
       .limit(1);
     return !!member;
+  }
+
+  async updateMemberLocation(sessionCode: string, lineUserId: string, latitude: string, longitude: string): Promise<void> {
+    await db.update(groupSessionMembers)
+      .set({ latitude, longitude })
+      .where(and(eq(groupSessionMembers.sessionCode, sessionCode), eq(groupSessionMembers.lineUserId, lineUserId)));
   }
 
   async recordGroupSwipe(swipe: InsertGroupSwipe): Promise<GroupSwipe> {

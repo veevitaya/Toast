@@ -3,7 +3,8 @@ import { motion, AnimatePresence, useMotionValue, PanInfo } from "framer-motion"
 import { useLocation } from "wouter";
 import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
-import { shareMessage } from "@/lib/liff";
+import { shareMessage, sendGroupInviteNoRedirect } from "@/lib/liff";
+import { useLineProfile } from "@/lib/useLineProfile";
 import { useToast } from "@/hooks/use-toast";
 
 interface TrendingPost {
@@ -484,9 +485,11 @@ function FeedCard({
 export default function TrendingFeed() {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
+  const { profile } = useLineProfile();
   const containerRef = useRef<HTMLDivElement>(null);
   const [savedPosts, setSavedPosts] = useState<Set<number>>(new Set(getSavedPosts()));
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
+  const [creatingSession, setCreatingSession] = useState(false);
 
   const deepLinkId = new URLSearchParams(window.location.search).get("id");
 
@@ -543,20 +546,77 @@ export default function TrendingFeed() {
   }, [navigate]);
 
   const handleInviteSwipe = useCallback(async (post: TrendingPost) => {
-    const appUrl = window.location.origin;
-    const swipeUrl = `${appUrl}/group/swipe?source=trending&restaurantId=${post.restaurantId}`;
-    const message = `Let's decide where to eat!\n\n${post.restaurantName} is trending — swipe together?\n\nJoin here:\n${swipeUrl}`;
+    if (creatingSession) return;
+    setCreatingSession(true);
+
     try {
-      await shareMessage(message);
-    } catch {
-      try {
-        await navigator.clipboard.writeText(swipeUrl);
-        toast({ title: "Invite link copied!", description: "Share with friends to swipe together" });
-      } catch {
-        toast({ title: "Invite to Swipe", description: swipeUrl });
+      const sessionCode = `t${Date.now().toString(36)}${Math.random().toString(36).substring(2, 6)}`;
+
+      const userId = profile?.userId || `guest_${Math.random().toString(36).substring(2, 8)}`;
+      const displayName = profile?.displayName || "Guest";
+      const pictureUrl = profile?.pictureUrl || "";
+
+      let latitude: string | undefined;
+      let longitude: string | undefined;
+      if (navigator.geolocation) {
+        try {
+          const pos = await Promise.race([
+            new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000, maximumAge: 60000 });
+            }),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 3500)),
+          ]);
+          latitude = pos.coords.latitude.toString();
+          longitude = pos.coords.longitude.toString();
+        } catch {}
       }
+
+      const sourceData = JSON.stringify({
+        source: "trending",
+        restaurantId: post.restaurantId,
+        restaurantName: post.restaurantName,
+      });
+
+      const createRes = await fetch("/api/group/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionCode,
+          hostLineUserId: userId,
+          hostDisplayName: displayName,
+          hostPictureUrl: pictureUrl,
+          sessionType: "trending",
+          sourceData,
+          latitude,
+          longitude,
+        }),
+      });
+
+      if (!createRes.ok) {
+        throw new Error("Failed to create session");
+      }
+
+      try {
+        const shareResult = await sendGroupInviteNoRedirect(sessionCode);
+        toast({
+          title: "Session created!",
+          description: shareResult.shared ? "Invite sent — heading to waiting room" : "Heading to waiting room",
+        });
+      } catch {
+        toast({
+          title: "Session created!",
+          description: "Invite your friends from the waiting room",
+        });
+      }
+
+      navigate(`/group/waiting?session=${sessionCode}`);
+    } catch (err) {
+      console.error("Failed to create trending session:", err);
+      toast({ title: "Something went wrong", description: "Could not create swipe session" });
+    } finally {
+      setCreatingSession(false);
     }
-  }, [toast]);
+  }, [toast, navigate, profile, creatingSession]);
 
   return (
     <div className="fixed inset-0 bg-white" data-testid="trending-feed-page">
