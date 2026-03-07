@@ -664,7 +664,7 @@ export default function Home() {
                       data-testid="button-group-collapsed"
                     >
                       <div className="flex items-center gap-1 px-2">
-                        <img src={toastWafflePath} alt="" className="w-[64px] h-[52px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
+                        <img src={toastWafflePath} alt="" className="w-[80px] h-[64px] object-contain flex-shrink-0 -my-2 -ml-1" style={{ mixBlendMode: "multiply" }} />
                         <div>
                           <p className="text-[14px] font-bold text-foreground leading-tight">Group</p>
                           <p className="text-[10px] text-muted-foreground whitespace-nowrap">With friends</p>
@@ -768,7 +768,7 @@ export default function Home() {
                 className="flex items-center justify-center rounded-[20px] bg-white h-[100px] border border-gray-100 overflow-hidden"
               >
                 <div className="flex items-center gap-1 px-3">
-                  <img src={toastWafflePath} alt="" className="w-[88px] h-[72px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
+                  <img src={toastWafflePath} alt="" className="w-[110px] h-[88px] object-contain flex-shrink-0 -my-3 -ml-2" style={{ mixBlendMode: "multiply" }} />
                   <div>
                     <p className="text-[20px] font-bold text-foreground leading-tight">Group</p>
                     <p className="text-[12px] text-muted-foreground mt-0.5 whitespace-nowrap">With friends</p>
