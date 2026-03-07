@@ -652,7 +652,7 @@ export default function Home() {
                       className="flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4 text-left"
                       data-testid="button-solo-collapsed"
                     >
-                      <img src={toastCharPath} alt="" className="w-[38px] h-[38px] object-contain flex-shrink-0" />
+                      <img src={toastCharPath} alt="" className="w-[38px] h-[38px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
                       <div>
                         <p className="text-[15px] font-bold text-foreground leading-tight">Solo</p>
                         <p className="text-[11px] text-muted-foreground mt-0.5">Just for you</p>
@@ -663,7 +663,7 @@ export default function Home() {
                       className="flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-4 text-left"
                       data-testid="button-group-collapsed"
                     >
-                      <img src={toastWafflePath} alt="" className="w-[42px] h-[38px] object-contain flex-shrink-0" />
+                      <img src={toastWafflePath} alt="" className="w-[50px] h-[44px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
                       <div>
                         <p className="text-[15px] font-bold text-foreground leading-tight">Group</p>
                         <p className="text-[11px] text-muted-foreground mt-0.5">With friends</p>
@@ -751,7 +751,7 @@ export default function Home() {
                 data-testid="button-solo"
                 className="flex items-center gap-4 rounded-[20px] bg-gray-50 px-5 py-5 text-left"
               >
-                <img src={toastCharPath} alt="" className="w-[48px] h-[48px] object-contain flex-shrink-0" />
+                <img src={toastCharPath} alt="" className="w-[48px] h-[48px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
                 <div>
                   <p className="text-[22px] font-bold text-foreground leading-tight">Solo</p>
                   <p className="text-[13px] text-muted-foreground mt-1">Just for you</p>
@@ -768,7 +768,7 @@ export default function Home() {
                 data-testid="button-group"
                 className="flex items-center gap-4 rounded-[20px] bg-gray-50 px-5 py-5 text-left"
               >
-                <img src={toastWafflePath} alt="" className="w-[56px] h-[48px] object-contain flex-shrink-0" />
+                <img src={toastWafflePath} alt="" className="w-[72px] h-[56px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
                 <div>
                   <p className="text-[22px] font-bold text-foreground leading-tight">Group</p>
                   <p className="text-[13px] text-muted-foreground mt-1">With friends</p>
