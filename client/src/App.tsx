@@ -13,6 +13,7 @@ import GroupSetup from "@/pages/GroupSetup";
 import WaitingRoom from "@/pages/WaitingRoom";
 import GroupSwipe from "@/pages/GroupSwipe";
 import SwipePage from "@/pages/SwipePage";
+import TrendingFeed from "@/pages/TrendingFeed";
 import RestaurantDetail from "@/pages/RestaurantDetail";
 import Profile from "@/pages/Profile";
 import ToastPicks from "@/pages/ToastPicks";
@@ -88,6 +89,9 @@ function Router() {
         </Route>
         <Route path="/group/swipe">
           <AnimatedPage><GroupSwipe /></AnimatedPage>
+        </Route>
+        <Route path="/trending">
+          <TrendingFeed />
         </Route>
         <Route path="/swipe">
           <AnimatedPage><SwipePage /></AnimatedPage>
