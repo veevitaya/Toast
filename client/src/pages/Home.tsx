@@ -649,24 +649,24 @@ export default function Home() {
                   <div className="grid grid-cols-2 gap-2.5">
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate("/solo/quiz"); }}
-                      className="flex items-center rounded-2xl bg-gray-50 pl-2 pr-3 h-[72px]"
+                      className="flex items-center justify-center gap-2 rounded-2xl bg-gray-50 px-3 h-[72px]"
                       data-testid="button-solo-collapsed"
                     >
-                      <img src={toastCharPath} alt="" className="w-[56px] h-[56px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
-                      <div className="ml-1 min-w-0">
+                      <img src={toastCharPath} alt="" className="w-[52px] h-[52px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
+                      <div className="min-w-0">
                         <p className="text-[14px] font-bold text-foreground leading-tight">Solo</p>
                         <p className="text-[10px] text-muted-foreground">Just for you</p>
                       </div>
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate("/group/setup"); }}
-                      className="flex items-center rounded-2xl bg-gray-50 pl-1 pr-3 h-[72px]"
+                      className="flex items-center justify-center gap-1 rounded-2xl bg-gray-50 px-2 h-[72px]"
                       data-testid="button-group-collapsed"
                     >
-                      <img src={toastWafflePath} alt="" className="w-[76px] h-[62px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
+                      <img src={toastWafflePath} alt="" className="w-[80px] h-[64px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
                       <div className="min-w-0">
                         <p className="text-[14px] font-bold text-foreground leading-tight">Group</p>
-                        <p className="text-[10px] text-muted-foreground">With friends</p>
+                        <p className="text-[10px] text-muted-foreground whitespace-nowrap">With friends</p>
                       </div>
                     </button>
                   </div>
@@ -768,7 +768,7 @@ export default function Home() {
                 <img src={toastWafflePath} alt="" className="w-[110px] h-[88px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
                 <div className="min-w-0">
                   <p className="text-[20px] font-bold text-foreground leading-tight">Group</p>
-                  <p className="text-[12px] text-muted-foreground mt-0.5">With friends</p>
+                  <p className="text-[12px] text-muted-foreground mt-0.5 whitespace-nowrap">With friends</p>
                 </div>
               </motion.button>
             </div>
