@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, PanInfo } from "framer-motion";
 import { useLocation } from "wouter";
-import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers, ChevronRight } from "lucide-react";
+import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { shareMessage } from "@/lib/liff";
 import { useToast } from "@/hooks/use-toast";
@@ -305,26 +305,6 @@ function ImageCarousel({ items, onTap }: { items: TrendingPost["mediaItems"]; on
     setTimeout(() => { isDragging.current = false; }, 50);
   };
 
-  const handleTap = (e: React.MouseEvent) => {
-    if (isDragging.current) return;
-    if (items.length <= 1) {
-      onTap();
-      return;
-    }
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const third = rect.width / 3;
-    if (x < third && currentIdx > 0) {
-      setDirection(-1);
-      setCurrentIdx(currentIdx - 1);
-    } else if (x > third * 2 && currentIdx < items.length - 1) {
-      setDirection(1);
-      setCurrentIdx(currentIdx + 1);
-    } else {
-      onTap();
-    }
-  };
-
   const slideVariants = {
     enter: (dir: number) => ({ x: dir > 0 ? "100%" : "-100%", opacity: 0 }),
     center: { x: 0, opacity: 1 },
@@ -333,9 +313,8 @@ function ImageCarousel({ items, onTap }: { items: TrendingPost["mediaItems"]; on
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-2xl bg-gray-100"
+      className="relative w-full overflow-hidden rounded-2xl bg-gray-100 cursor-pointer"
       style={{ aspectRatio: "4/5" }}
-      onClick={handleTap}
       data-testid="media-carousel"
     >
       <AnimatePresence mode="wait" custom={direction}>
@@ -355,6 +334,7 @@ function ImageCarousel({ items, onTap }: { items: TrendingPost["mediaItems"]; on
           dragElastic={0.2}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
+          onTap={() => { if (!isDragging.current) onTap(); }}
           style={{ x: dragX, touchAction: "pan-y" }}
         />
       </AnimatePresence>
@@ -426,13 +406,11 @@ function FeedCard({
         </div>
       </div>
 
-      <div className="pt-3 px-1">
+      <button onClick={onNavigate} className="block w-full text-left pt-3 px-1 cursor-pointer" data-testid={`link-restaurant-${post.id}`}>
         <div className="flex items-start justify-between gap-2 mb-0.5">
-          <button onClick={onNavigate} className="text-left flex-1 min-w-0" data-testid={`link-restaurant-${post.id}`}>
-            <h3 className="text-[16px] font-semibold text-gray-900 leading-tight" data-testid={`text-restaurant-name-${post.id}`}>
-              {post.restaurantName}
-            </h3>
-          </button>
+          <h3 className="text-[16px] font-semibold text-gray-900 leading-tight flex-1 min-w-0" data-testid={`text-restaurant-name-${post.id}`}>
+            {post.restaurantName}
+          </h3>
           <div className="flex items-center gap-0.5 shrink-0 pt-0.5" data-testid={`text-rating-${post.id}`}>
             <Star className="w-3.5 h-3.5 text-gray-900 fill-gray-900" />
             <span className="text-[14px] font-medium text-gray-900">{post.rating}</span>
@@ -462,52 +440,42 @@ function FeedCard({
             </span>
           ))}
         </div>
+      </button>
 
-        <div className="flex items-center gap-2 mt-3">
-          <button
-            onClick={onSave}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium ${
-              isSaved
-                ? "bg-gray-900 text-white"
-                : "bg-gray-100 text-gray-700"
-            }`}
-            aria-label={isSaved ? "Remove from saved" : "Save restaurant"}
-            data-testid={`button-save-${post.id}`}
-          >
-            <Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-white" : ""}`} />
-            {isSaved ? "Saved" : "Save"}
-          </button>
+      <div className="flex items-center gap-2.5 mt-3 px-1">
+        <button
+          onClick={onSave}
+          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[13px] font-semibold border transition-colors ${
+            isSaved
+              ? "bg-gray-900 text-white border-gray-900"
+              : "bg-white text-gray-800 border-gray-300"
+          }`}
+          aria-label={isSaved ? "Remove from saved" : "Save restaurant"}
+          data-testid={`button-save-${post.id}`}
+        >
+          <Bookmark className={`w-4 h-4 ${isSaved ? "fill-white" : ""}`} />
+          {isSaved ? "Saved" : "Save"}
+        </button>
 
-          <button
-            onClick={onShare}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gray-100 text-gray-700 text-[13px] font-medium"
-            aria-label="Share restaurant"
-            data-testid={`button-share-${post.id}`}
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            Share
-          </button>
+        <button
+          onClick={onShare}
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white text-gray-800 text-[13px] font-semibold border border-gray-300"
+          aria-label="Share restaurant"
+          data-testid={`button-share-${post.id}`}
+        >
+          <Share2 className="w-4 h-4" />
+          Share
+        </button>
 
-          <button
-            onClick={onInviteSwipe}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gray-100 text-gray-700 text-[13px] font-medium"
-            aria-label="Invite friends to swipe"
-            data-testid={`button-invite-swipe-${post.id}`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            Swipe
-          </button>
-
-          <button
-            onClick={onNavigate}
-            className="ml-auto flex items-center gap-0.5 text-gray-500 text-[13px] font-medium"
-            aria-label="View restaurant details"
-            data-testid={`button-details-${post.id}`}
-          >
-            Details
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
+        <button
+          onClick={onInviteSwipe}
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white text-gray-800 text-[13px] font-semibold border border-gray-300"
+          aria-label="Invite friends to swipe"
+          data-testid={`button-invite-swipe-${post.id}`}
+        >
+          <Layers className="w-4 h-4" />
+          Swipe
+        </button>
       </div>
     </div>
   );
