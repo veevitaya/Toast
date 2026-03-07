@@ -19,7 +19,7 @@ import { useLineProfile } from "@/lib/useLineProfile";
 import toastLogoPath from "@assets/toast_logo_nobg.png";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import toastCharPath from "@assets/IMG_9345_1772899599160.png";
-import toastWafflePath from "@assets/IMG_9670_1772899543775.jpeg";
+import toastWafflePath from "@assets/IMG_9677_1772904144672.jpeg";
 
 const FILTER_OPTIONS = {
   sortBy: [
