@@ -688,7 +688,7 @@ export default function Home() {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               {getContextLine()}
             </motion.p>
-            <div className="flex items-end justify-between gap-3">
+            <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
                 <motion.h1
                   initial={{ opacity: 0, y: 8 }}
@@ -721,7 +721,7 @@ export default function Home() {
                 transition={{ delay: 0.2, type: "spring", stiffness: 260, damping: 20 }}
                 src={toastLogoPath}
                 alt="Toast"
-                className="h-12 w-auto flex-shrink-0 -mt-2"
+                className="h-12 w-auto flex-shrink-0 mt-1"
                 data-testid="img-hero-logo"
               />
             </div>
