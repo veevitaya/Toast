@@ -696,7 +696,7 @@ export default function Home() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.15, type: "spring", stiffness: 300, damping: 25 }}
-                  className="text-[26px] font-bold text-foreground leading-[1.15] tracking-tight line-clamp-2"
+                  className="text-[22px] font-bold text-foreground leading-[1.15] tracking-tight"
                   data-testid="text-greeting"
                 >
                   Hey there,<br />{getGreeting()}
