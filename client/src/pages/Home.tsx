@@ -18,8 +18,8 @@ import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { useLineProfile } from "@/lib/useLineProfile";
 import toastLogoPath from "@assets/toast_logo_nobg.png";
 import mascotPath from "@assets/toast_mascot_nobg.png";
-import toastCharPath from "@assets/Toast_Character_1772896745366.jpg";
-import waffleCharPath from "@assets/Waffle_Character_1772896745367.jpg";
+import toastCharPath from "@assets/IMG_9345_1772899599160.png";
+import toastWafflePath from "@assets/IMG_9670_1772899543775.jpeg";
 
 const FILTER_OPTIONS = {
   sortBy: [
@@ -649,39 +649,24 @@ export default function Home() {
                   <div className="grid grid-cols-2 gap-2.5">
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate("/solo/quiz"); }}
-                      className="relative overflow-hidden rounded-2xl text-left h-[72px] bg-white border border-gray-100"
-                      style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                      className="flex items-center gap-2.5 rounded-2xl bg-gray-50 px-3.5 py-3 text-left"
                       data-testid="button-solo-collapsed"
                     >
-                      <div className="absolute top-0 left-0 right-0 h-[2.5px] rounded-t-2xl" style={{ background: "linear-gradient(90deg, #FFCC02, #FFB300)" }} />
-                      <img
-                        src={toastCharPath}
-                        alt=""
-                        className="absolute -right-1 -bottom-1 w-[56px] h-[56px] object-contain pointer-events-none select-none z-10"
-                      />
-                      <div className="relative px-3.5 py-2.5">
-                        <p className="text-[15px] font-bold text-foreground leading-tight">Solo</p>
+                      <img src={toastCharPath} alt="" className="w-[36px] h-[36px] object-contain" />
+                      <div>
+                        <p className="text-[14px] font-bold text-foreground leading-tight">Solo</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">Just for you</p>
                       </div>
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate("/group/setup"); }}
-                      className="relative overflow-hidden rounded-2xl text-left h-[72px] bg-white border border-gray-100"
-                      style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                      className="flex items-center gap-2.5 rounded-2xl bg-gray-50 px-3.5 py-3 text-left"
                       data-testid="button-group-collapsed"
                     >
-                      <div className="absolute top-0 left-0 right-0 h-[2.5px] rounded-t-2xl" style={{ background: "linear-gradient(90deg, #00B14F, #00C300)" }} />
-                      <img
-                        src={toastCharPath}
-                        alt=""
-                        className="absolute right-8 -bottom-0.5 w-[40px] h-[40px] object-contain pointer-events-none select-none z-10"
-                      />
-                      <img
-                        src={waffleCharPath}
-                        alt=""
-                        className="absolute -right-1 -bottom-1 w-[50px] h-[50px] object-contain pointer-events-none select-none z-10"
-                      />
-                      <div className="relative px-3.5 py-2.5">
-                        <p className="text-[15px] font-bold text-foreground leading-tight">Group</p>
+                      <img src={toastWafflePath} alt="" className="w-[40px] h-[36px] object-contain" />
+                      <div>
+                        <p className="text-[14px] font-bold text-foreground leading-tight">Group</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">With friends</p>
                       </div>
                     </button>
                   </div>
