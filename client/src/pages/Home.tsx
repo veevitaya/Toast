@@ -19,7 +19,7 @@ import { useLineProfile } from "@/lib/useLineProfile";
 import toastLogoPath from "@assets/toast_logo_nobg.png";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import toastCharPath from "@assets/IMG_9345_1772899599160.png";
-import toastWafflePath from "@assets/toast_waffle_transparent.png";
+import toastWafflePath from "@assets/IMG_9670_1772899543775.jpeg";
 
 const FILTER_OPTIONS = {
   sortBy: [
@@ -663,7 +663,7 @@ export default function Home() {
                       className="flex items-center justify-center gap-1 rounded-2xl bg-white px-2 h-[72px] border border-gray-100"
                       data-testid="button-group-collapsed"
                     >
-                      <img src={toastWafflePath} alt="" className="w-[80px] h-[64px] object-contain flex-shrink-0" />
+                      <img src={toastWafflePath} alt="" className="w-[80px] h-[64px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
                       <div className="min-w-0">
                         <p className="text-[14px] font-bold text-foreground leading-tight">Group</p>
                         <p className="text-[10px] text-muted-foreground whitespace-nowrap">With friends</p>
@@ -765,7 +765,7 @@ export default function Home() {
                 data-testid="button-group"
                 className="flex items-center rounded-[20px] bg-white pl-1 pr-4 h-[100px] border border-gray-100"
               >
-                <img src={toastWafflePath} alt="" className="w-[110px] h-[88px] object-contain flex-shrink-0" />
+                <img src={toastWafflePath} alt="" className="w-[110px] h-[88px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
                 <div className="min-w-0">
                   <p className="text-[20px] font-bold text-foreground leading-tight">Group</p>
                   <p className="text-[12px] text-muted-foreground mt-0.5 whitespace-nowrap">With friends</p>
