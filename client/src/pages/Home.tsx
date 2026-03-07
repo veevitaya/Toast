@@ -649,7 +649,7 @@ export default function Home() {
                   <div className="grid grid-cols-2 gap-2.5">
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate("/solo/quiz"); }}
-                      className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 h-[72px] border border-gray-100"
+                      className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 h-[72px] border border-gray-100 shadow-md"
                       data-testid="button-solo-collapsed"
                     >
                       <img src={toastCharPath} alt="" className="w-[52px] h-[52px] object-contain flex-shrink-0" />
@@ -660,7 +660,7 @@ export default function Home() {
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate("/group/setup"); }}
-                      className="flex items-center justify-center rounded-2xl bg-white h-[72px] border border-gray-100 overflow-hidden"
+                      className="flex items-center justify-center rounded-2xl bg-white h-[72px] border border-gray-100 shadow-md overflow-hidden"
                       data-testid="button-group-collapsed"
                     >
                       <div className="flex items-center gap-1 px-1">
@@ -748,7 +748,7 @@ export default function Home() {
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/solo/quiz")}
                 data-testid="button-solo"
-                className="flex items-center rounded-[20px] bg-white pl-3 pr-5 h-[100px] border border-gray-100"
+                className="flex items-center rounded-[20px] bg-white pl-3 pr-5 h-[100px] border border-gray-100 shadow-md"
               >
                 <img src={toastCharPath} alt="" className="w-[80px] h-[80px] object-contain flex-shrink-0" />
                 <div className="ml-2 min-w-0">
@@ -765,7 +765,7 @@ export default function Home() {
                 whileTap={{ scale: 0.97 }}
                 onClick={() => navigate("/group/setup")}
                 data-testid="button-group"
-                className="flex items-center justify-center rounded-[20px] bg-white h-[100px] border border-gray-100 overflow-hidden"
+                className="flex items-center justify-center rounded-[20px] bg-white h-[100px] border border-gray-100 shadow-md overflow-hidden"
               >
                 <div className="flex items-center gap-1 px-2">
                   <img src={toastWafflePath} alt="" className="w-[110px] h-[88px] object-contain flex-shrink-0 -my-3 -ml-3" style={{ mixBlendMode: "multiply" }} />
