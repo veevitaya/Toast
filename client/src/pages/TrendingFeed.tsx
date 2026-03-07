@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, PanInfo } from "framer-motion";
 import { useLocation } from "wouter";
-import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers } from "lucide-react";
+import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers, ChevronRight } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { shareMessage } from "@/lib/liff";
 import { useToast } from "@/hooks/use-toast";
@@ -38,7 +38,7 @@ const TRENDING_POSTS: TrendingPost[] = [
       { type: "image", url: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=800&auto=format&fit=crop&q=80" },
       { type: "image", url: "https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?w=800&auto=format&fit=crop&q=80" },
     ],
-    tags: ["🔥 Iconic", "🍜 Pad Thai", "📸 Must Visit"],
+    tags: ["Iconic", "Pad Thai", "Must Visit"],
     trendingRank: 1,
     reviewCount: 12847,
     isNew: false,
@@ -57,7 +57,7 @@ const TRENDING_POSTS: TrendingPost[] = [
       { type: "image", url: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&auto=format&fit=crop&q=80" },
       { type: "image", url: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop&q=80" },
     ],
-    tags: ["✨ Asia's Best", "🍽️ 25 Courses", "🌟 Fine Dining"],
+    tags: ["Asia's Best", "25 Courses", "Fine Dining"],
     trendingRank: 2,
     reviewCount: 8234,
     isNew: false,
@@ -76,7 +76,7 @@ const TRENDING_POSTS: TrendingPost[] = [
       { type: "image", url: "https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=800&auto=format&fit=crop&q=80" },
       { type: "image", url: "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=800&auto=format&fit=crop&q=80" },
     ],
-    tags: ["⭐ Michelin", "🦀 Crab Omelette", "🔥 Legend"],
+    tags: ["Michelin", "Crab Omelette", "Legend"],
     trendingRank: 3,
     reviewCount: 15623,
     isNew: false,
@@ -95,7 +95,7 @@ const TRENDING_POSTS: TrendingPost[] = [
       { type: "image", url: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800&auto=format&fit=crop&q=80" },
       { type: "image", url: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&auto=format&fit=crop&q=80" },
     ],
-    tags: ["🍣 Omakase", "✨ Premium", "🎌 8 Seats"],
+    tags: ["Omakase", "Premium", "8 Seats"],
     trendingRank: 4,
     reviewCount: 3421,
     isNew: false,
@@ -114,7 +114,7 @@ const TRENDING_POSTS: TrendingPost[] = [
       { type: "image", url: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&auto=format&fit=crop&q=80" },
       { type: "image", url: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&auto=format&fit=crop&q=80" },
     ],
-    tags: ["🍕 Neapolitan", "🔥 Wood-fired", "🇮🇹 Authentic"],
+    tags: ["Neapolitan", "Wood-fired", "Authentic"],
     trendingRank: 5,
     reviewCount: 6782,
     isNew: true,
@@ -133,7 +133,7 @@ const TRENDING_POSTS: TrendingPost[] = [
       { type: "image", url: "https://images.unsplash.com/photo-1548943487-a2e4e43b4853?w=800&auto=format&fit=crop&q=80" },
       { type: "image", url: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&auto=format&fit=crop&q=80" },
     ],
-    tags: ["🦐 Giant Prawns", "🌶️ Spicy", "🔥 Viral"],
+    tags: ["Giant Prawns", "Spicy", "Viral"],
     trendingRank: 6,
     reviewCount: 9456,
     isNew: false,
@@ -152,7 +152,7 @@ const TRENDING_POSTS: TrendingPost[] = [
       { type: "image", url: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=800&auto=format&fit=crop&q=80" },
       { type: "image", url: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800&auto=format&fit=crop&q=80" },
     ],
-    tags: ["🏆 Asia's 50 Best", "🍸 Craft", "🌃 Upscale"],
+    tags: ["Asia's 50 Best", "Craft", "Upscale"],
     trendingRank: 7,
     reviewCount: 4231,
     isNew: false,
@@ -171,7 +171,7 @@ const TRENDING_POSTS: TrendingPost[] = [
       { type: "image", url: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&auto=format&fit=crop&q=80" },
       { type: "image", url: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&auto=format&fit=crop&q=80" },
     ],
-    tags: ["🍔 Smash Burger", "🚚 Food Truck", "🤤 Juicy"],
+    tags: ["Smash Burger", "Food Truck", "Juicy"],
     trendingRank: 8,
     reviewCount: 7891,
     isNew: false,
@@ -190,7 +190,7 @@ const TRENDING_POSTS: TrendingPost[] = [
       { type: "image", url: "https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=800&auto=format&fit=crop&q=80" },
       { type: "image", url: "https://images.unsplash.com/photo-1536935338788-846bb9981813?w=800&auto=format&fit=crop&q=80" },
     ],
-    tags: ["🍸 Craft Gin", "🚪 Speakeasy", "🌿 Botanical"],
+    tags: ["Craft Gin", "Speakeasy", "Botanical"],
     trendingRank: 9,
     reviewCount: 5123,
     isNew: true,
@@ -209,7 +209,7 @@ const TRENDING_POSTS: TrendingPost[] = [
       { type: "image", url: "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=800&auto=format&fit=crop&q=80" },
       { type: "image", url: "https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?w=800&auto=format&fit=crop&q=80" },
     ],
-    tags: ["👑 Royal Recipe", "⭐ Bib Gourmand", "🌶️ Curry"],
+    tags: ["Royal Recipe", "Bib Gourmand", "Curry"],
     trendingRank: 10,
     reviewCount: 11234,
     isNew: false,
@@ -228,7 +228,7 @@ const TRENDING_POSTS: TrendingPost[] = [
       { type: "image", url: "https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=800&auto=format&fit=crop&q=80" },
       { type: "image", url: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&auto=format&fit=crop&q=80" },
     ],
-    tags: ["🍜 Tonkotsu", "🍖 Rich", "🇯🇵 Authentic"],
+    tags: ["Tonkotsu", "Rich", "Authentic"],
     reviewCount: 6543,
     isNew: false,
   },
@@ -246,7 +246,7 @@ const TRENDING_POSTS: TrendingPost[] = [
       { type: "image", url: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800&auto=format&fit=crop&q=80" },
       { type: "image", url: "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=800&auto=format&fit=crop&q=80" },
     ],
-    tags: ["🍹 Tiki", "🌴 Tropical", "🌙 Late Night"],
+    tags: ["Tiki", "Tropical", "Late Night"],
     reviewCount: 3876,
     isNew: true,
   },
@@ -276,22 +276,18 @@ function toggleSavedPost(id: number): boolean {
 
 function PriceIndicator({ level }: { level: number }) {
   return (
-    <span className="text-white/90 text-[13px]">
-      {"฿".repeat(level)}
-      <span className="text-white/30">{"฿".repeat(4 - level)}</span>
+    <span className="text-[13px]">
+      <span className="text-gray-800">{"฿".repeat(level)}</span>
+      <span className="text-gray-300">{"฿".repeat(4 - level)}</span>
     </span>
   );
 }
 
-function MediaCarousel({ items, isActive, onTap }: { items: TrendingPost["mediaItems"]; isActive: boolean; onTap: () => void }) {
+function ImageCarousel({ items, onTap }: { items: TrendingPost["mediaItems"]; onTap: () => void }) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [direction, setDirection] = useState(0);
   const isDragging = useRef(false);
   const dragX = useMotionValue(0);
-
-  useEffect(() => {
-    if (isActive) setCurrentIdx(0);
-  }, [isActive]);
 
   const handleDragStart = () => {
     isDragging.current = true;
@@ -336,13 +332,18 @@ function MediaCarousel({ items, isActive, onTap }: { items: TrendingPost["mediaI
   };
 
   return (
-    <div className="absolute inset-0 bg-black overflow-hidden" onClick={handleTap} data-testid="media-carousel">
+    <div
+      className="relative w-full overflow-hidden rounded-2xl bg-gray-100"
+      style={{ aspectRatio: "4/5" }}
+      onClick={handleTap}
+      data-testid="media-carousel"
+    >
       <AnimatePresence mode="wait" custom={direction}>
         <motion.img
           key={currentIdx}
           src={items[currentIdx].url}
           alt=""
-          className="w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover"
           custom={direction}
           variants={slideVariants}
           initial="enter"
@@ -359,12 +360,14 @@ function MediaCarousel({ items, isActive, onTap }: { items: TrendingPost["mediaI
       </AnimatePresence>
 
       {items.length > 1 && (
-        <div className="absolute top-4 left-0 right-0 flex justify-center gap-1.5 z-10 pointer-events-none">
+        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-[5px] z-10 pointer-events-none">
           {items.map((_, idx) => (
             <div
               key={idx}
-              className={`h-[3px] rounded-full transition-all duration-300 ${
-                idx === currentIdx ? "w-6 bg-white" : "w-3 bg-white/40"
+              className={`rounded-full transition-all duration-300 ${
+                idx === currentIdx
+                  ? "w-[7px] h-[7px] bg-white shadow-sm"
+                  : "w-[6px] h-[6px] bg-white/50"
               }`}
               data-testid={`media-dot-${idx}`}
             />
@@ -377,7 +380,6 @@ function MediaCarousel({ items, isActive, onTap }: { items: TrendingPost["mediaI
 
 function FeedCard({
   post,
-  isActive,
   isSaved,
   isLiked,
   onSave,
@@ -387,7 +389,6 @@ function FeedCard({
   onInviteSwipe,
 }: {
   post: TrendingPost;
-  isActive: boolean;
   isSaved: boolean;
   isLiked: boolean;
   onSave: () => void;
@@ -397,104 +398,116 @@ function FeedCard({
   onInviteSwipe: () => void;
 }) {
   return (
-    <div className="relative w-full h-full snap-start snap-always" data-testid={`feed-card-${post.id}`}>
-      <MediaCarousel items={post.mediaItems} isActive={isActive} onTap={onNavigate} />
+    <div className="pb-6" data-testid={`feed-card-${post.id}`}>
+      <div className="relative">
+        <ImageCarousel items={post.mediaItems} onTap={onNavigate} />
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
-
-      <div className="absolute right-3 bottom-[160px] flex flex-col items-center gap-5 z-10">
         <button
-          onClick={onLike}
-          className="flex flex-col items-center gap-1"
+          onClick={(e) => { e.stopPropagation(); onLike(); }}
+          className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm"
+          aria-label={isLiked ? "Unlike" : "Like"}
           data-testid={`button-like-${post.id}`}
         >
-          <div className={`w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-md ${isLiked ? "bg-red-500/90" : "bg-white/15"}`}>
-            <Heart className={`w-5 h-5 ${isLiked ? "text-white fill-white" : "text-white"}`} />
-          </div>
-          <span className="text-white text-[11px] font-medium">{isLiked ? "Liked" : "Like"}</span>
+          <Heart className={`w-[18px] h-[18px] ${isLiked ? "text-red-500 fill-red-500" : "text-gray-700"}`} />
         </button>
 
-        <button
-          onClick={onSave}
-          className="flex flex-col items-center gap-1"
-          data-testid={`button-save-${post.id}`}
-        >
-          <div className={`w-11 h-11 rounded-full flex items-center justify-center backdrop-blur-md ${isSaved ? "bg-[#FFCC02]/90" : "bg-white/15"}`}>
-            <Bookmark className={`w-5 h-5 ${isSaved ? "text-black fill-black" : "text-white"}`} />
-          </div>
-          <span className="text-white text-[11px] font-medium">{isSaved ? "Saved" : "Save"}</span>
-        </button>
-
-        <button
-          onClick={onShare}
-          className="flex flex-col items-center gap-1"
-          data-testid={`button-share-${post.id}`}
-        >
-          <div className="w-11 h-11 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-md">
-            <Share2 className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-white text-[11px] font-medium">Share</span>
-        </button>
-
-        <button
-          onClick={onInviteSwipe}
-          className="flex flex-col items-center gap-1"
-          data-testid={`button-invite-swipe-${post.id}`}
-        >
-          <div className="w-11 h-11 rounded-full bg-white/15 flex items-center justify-center backdrop-blur-md">
-            <Layers className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-white text-[11px] font-medium">Swipe</span>
-        </button>
-      </div>
-
-      <div className="absolute bottom-[70px] left-0 right-16 px-4 z-10">
-        <div className="flex items-center gap-2 mb-2">
-          {post.trendingRank && (
-            <div className="flex items-center gap-1 bg-[#FFCC02] text-black px-2 py-0.5 rounded-full" data-testid={`badge-trending-rank-${post.id}`}>
+        <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
+          {post.trendingRank && post.trendingRank <= 3 && (
+            <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm text-gray-900 px-2.5 py-1 rounded-full shadow-sm" data-testid={`badge-trending-rank-${post.id}`}>
               <TrendingUp className="w-3 h-3" />
-              <span className="text-[11px] font-bold">#{post.trendingRank}</span>
+              <span className="text-[11px] font-semibold">#{post.trendingRank} Trending</span>
             </div>
           )}
           {post.isNew && (
-            <div className="bg-[#00B14F] text-white px-2 py-0.5 rounded-full" data-testid={`badge-new-${post.id}`}>
-              <span className="text-[11px] font-bold">NEW</span>
+            <div className="bg-gray-900 text-white px-2.5 py-1 rounded-full" data-testid={`badge-new-${post.id}`}>
+              <span className="text-[11px] font-semibold">New</span>
             </div>
           )}
-          <div className="flex items-center gap-1" data-testid={`text-rating-${post.id}`}>
-            <Star className="w-3.5 h-3.5 text-[#FFCC02] fill-[#FFCC02]" />
-            <span className="text-white text-[13px] font-semibold">{post.rating}</span>
-            <span className="text-white/50 text-[11px]">({post.reviewCount.toLocaleString()})</span>
+        </div>
+      </div>
+
+      <div className="pt-3 px-1">
+        <div className="flex items-start justify-between gap-2 mb-0.5">
+          <button onClick={onNavigate} className="text-left flex-1 min-w-0" data-testid={`link-restaurant-${post.id}`}>
+            <h3 className="text-[16px] font-semibold text-gray-900 leading-tight" data-testid={`text-restaurant-name-${post.id}`}>
+              {post.restaurantName}
+            </h3>
+          </button>
+          <div className="flex items-center gap-0.5 shrink-0 pt-0.5" data-testid={`text-rating-${post.id}`}>
+            <Star className="w-3.5 h-3.5 text-gray-900 fill-gray-900" />
+            <span className="text-[14px] font-medium text-gray-900">{post.rating}</span>
+            <span className="text-gray-400 text-[13px]">({post.reviewCount.toLocaleString()})</span>
           </div>
         </div>
 
-        <h2 className="text-[22px] font-bold text-white leading-tight mb-0.5" data-testid={`text-restaurant-name-${post.id}`}>
-          {post.restaurantName}
-        </h2>
-        <p className="text-white/70 text-[13px] mb-1.5" data-testid={`text-category-${post.id}`}>{post.category} · <PriceIndicator level={post.priceLevel} /></p>
+        <p className="text-gray-500 text-[14px] leading-snug" data-testid={`text-category-${post.id}`}>
+          {post.category} · <PriceIndicator level={post.priceLevel} />
+        </p>
 
-        <p className="text-white/85 text-[13px] leading-[1.4] mb-2 line-clamp-2" data-testid={`text-description-${post.id}`}>
+        <div className="flex items-center gap-1 text-gray-400 text-[13px] mt-0.5" data-testid={`text-location-${post.id}`}>
+          <MapPin className="w-3 h-3" />
+          <span>{post.address}</span>
+          <span>·</span>
+          <span>{post.distance}</span>
+        </div>
+
+        <p className="text-gray-600 text-[14px] leading-relaxed mt-2 line-clamp-2" data-testid={`text-description-${post.id}`}>
           {post.description}
         </p>
 
-        <div className="flex items-center gap-1.5 mb-2 flex-wrap" data-testid={`tags-${post.id}`}>
+        <div className="flex items-center gap-1.5 mt-2.5 flex-wrap" data-testid={`tags-${post.id}`}>
           {post.tags.map((tag, idx) => (
-            <span key={tag} className="text-[11px] bg-white/15 text-white/90 px-2 py-0.5 rounded-full backdrop-blur-sm" data-testid={`tag-${post.id}-${idx}`}>
+            <span key={tag} className="text-[12px] text-gray-600 bg-gray-100 px-2.5 py-1 rounded-full font-medium" data-testid={`tag-${post.id}-${idx}`}>
               {tag}
             </span>
           ))}
         </div>
 
-        <div className="flex items-center gap-1 text-white/60 text-[12px]" data-testid={`text-location-${post.id}`}>
-          <MapPin className="w-3.5 h-3.5" />
-          <span>{post.address}</span>
-          <span className="mx-1">·</span>
-          <span>{post.distance}</span>
-        </div>
-      </div>
+        <div className="flex items-center gap-2 mt-3">
+          <button
+            onClick={onSave}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium ${
+              isSaved
+                ? "bg-gray-900 text-white"
+                : "bg-gray-100 text-gray-700"
+            }`}
+            aria-label={isSaved ? "Remove from saved" : "Save restaurant"}
+            data-testid={`button-save-${post.id}`}
+          >
+            <Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-white" : ""}`} />
+            {isSaved ? "Saved" : "Save"}
+          </button>
 
-      <div className="absolute bottom-[70px] left-0 right-0 px-4 z-[5] pointer-events-none">
-        <div className="h-px bg-white/10 mt-3" />
+          <button
+            onClick={onShare}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gray-100 text-gray-700 text-[13px] font-medium"
+            aria-label="Share restaurant"
+            data-testid={`button-share-${post.id}`}
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            Share
+          </button>
+
+          <button
+            onClick={onInviteSwipe}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-gray-100 text-gray-700 text-[13px] font-medium"
+            aria-label="Invite friends to swipe"
+            data-testid={`button-invite-swipe-${post.id}`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            Swipe
+          </button>
+
+          <button
+            onClick={onNavigate}
+            className="ml-auto flex items-center gap-0.5 text-gray-500 text-[13px] font-medium"
+            aria-label="View restaurant details"
+            data-testid={`button-details-${post.id}`}
+          >
+            Details
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -504,7 +517,6 @@ export default function TrendingFeed() {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
   const [savedPosts, setSavedPosts] = useState<Set<number>>(new Set(getSavedPosts()));
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
 
@@ -512,22 +524,12 @@ export default function TrendingFeed() {
 
   useEffect(() => {
     if (deepLinkId && containerRef.current) {
-      const targetIdx = TRENDING_POSTS.findIndex((p) => p.id === parseInt(deepLinkId));
-      if (targetIdx >= 0) {
-        const cardHeight = window.innerHeight;
-        containerRef.current.scrollTo({ top: targetIdx * cardHeight, behavior: "instant" });
-        setActiveIndex(targetIdx);
+      const targetEl = document.querySelector(`[data-testid="feed-card-${deepLinkId}"]`);
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: "instant" });
       }
     }
   }, [deepLinkId]);
-
-  const handleScroll = useCallback(() => {
-    if (!containerRef.current) return;
-    const scrollTop = containerRef.current.scrollTop;
-    const cardHeight = window.innerHeight;
-    const idx = Math.round(scrollTop / cardHeight);
-    setActiveIndex(idx);
-  }, []);
 
   const handleSave = useCallback((postId: number) => {
     const nowSaved = toggleSavedPost(postId);
@@ -555,7 +557,7 @@ export default function TrendingFeed() {
   const handleShare = useCallback(async (post: TrendingPost) => {
     const appUrl = window.location.origin;
     const shareUrl = `${appUrl}/trending?id=${post.id}`;
-    const message = `🔥 Trending on Toast!\n\n${post.restaurantName} — ${post.category}\n⭐ ${post.rating} · ${post.address}\n\n"${post.description.slice(0, 100)}..."\n\nCheck it out:\n${shareUrl}`;
+    const message = `Trending on Toast!\n\n${post.restaurantName} — ${post.category}\n${post.rating} · ${post.address}\n\n"${post.description.slice(0, 100)}..."\n\nCheck it out:\n${shareUrl}`;
     try {
       await shareMessage(message);
     } catch {
@@ -589,34 +591,29 @@ export default function TrendingFeed() {
   }, [toast]);
 
   return (
-    <div className="fixed inset-0 bg-black" data-testid="trending-feed-page">
-      <div className="absolute top-0 left-0 right-0 z-20 pt-[env(safe-area-inset-top)]">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-[#FFCC02]" />
-            <h1 className="text-white text-[18px] font-bold">Trending</h1>
+    <div className="fixed inset-0 bg-white" data-testid="trending-feed-page">
+      <div className="absolute top-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-md border-b border-gray-100 pt-[env(safe-area-inset-top)]">
+        <div className="flex items-center justify-between px-5 py-3">
+          <div>
+            <h1 className="text-[20px] font-bold text-gray-900 leading-tight">Trending</h1>
+            <p className="text-gray-400 text-[13px] mt-0.5" data-testid="text-trending-location">Bangkok · Near you</p>
           </div>
-          <div className="text-white/50 text-[12px]" data-testid="text-trending-location">
-            Bangkok · Near you
+          <div className="flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded-full">
+            <TrendingUp className="w-3.5 h-3.5 text-gray-600" />
+            <span className="text-[12px] font-medium text-gray-600">This week</span>
           </div>
         </div>
       </div>
 
       <div
         ref={containerRef}
-        className="h-full overflow-y-scroll snap-y snap-mandatory hide-scrollbar"
-        onScroll={handleScroll}
-        style={{ scrollSnapType: "y mandatory" }}
+        className="h-full overflow-y-auto pt-[88px] pb-24 px-5 hide-scrollbar"
       >
-        {TRENDING_POSTS.map((post, idx) => (
-          <div
-            key={post.id}
-            className="w-full"
-            style={{ height: "100vh", scrollSnapAlign: "start" }}
-          >
+        <div className="divide-y divide-gray-100">
+          {TRENDING_POSTS.map((post) => (
             <FeedCard
+              key={post.id}
               post={post}
-              isActive={idx === activeIndex}
               isSaved={savedPosts.has(post.id)}
               isLiked={likedPosts.has(post.id)}
               onSave={() => handleSave(post.id)}
@@ -625,8 +622,8 @@ export default function TrendingFeed() {
               onNavigate={() => handleNavigate(post)}
               onInviteSwipe={() => handleInviteSwipe(post)}
             />
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 z-30">
