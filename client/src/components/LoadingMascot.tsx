@@ -1,15 +1,13 @@
-import mascotImg from "@assets/toast_mascot_nobg.png";
+import mascotImg from "@assets/IMG_9683_1772911610867.jpeg";
 
 export function LoadingMascot({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
-  const imgSize = size === "sm" ? "h-12 w-12" : size === "lg" ? "h-24 w-24" : "h-16 w-16";
-  const hourglassSize = size === "sm" ? "text-lg" : size === "lg" ? "text-3xl" : "text-2xl";
+  const imgSize = size === "sm" ? "h-14 w-14" : size === "lg" ? "h-28 w-28" : "h-20 w-20";
 
   return (
-    <div className="flex items-center gap-2">
-      <span className={`${hourglassSize} inline-block animate-spin-slow gpu-accelerated`}>⏳</span>
+    <div className="flex items-center justify-center">
       <img
         src={mascotImg}
-        alt="Toast mascot"
+        alt="Toast mascot waiting"
         className={`${imgSize} object-contain animate-soft-bob gpu-accelerated`}
         draggable={false}
       />
