@@ -275,13 +275,45 @@ function toggleSavedPost(id: number): boolean {
   }
 }
 
-function PriceIndicator({ level }: { level: number }) {
+function PriceIndicator({ level, isDark }: { level: number; isDark: boolean }) {
   return (
     <span className="text-[13px]">
-      <span className="text-white">{"฿".repeat(level)}</span>
-      <span className="text-white/40">{"฿".repeat(4 - level)}</span>
+      <span className={isDark ? "text-white" : "text-gray-900"}>{"฿".repeat(level)}</span>
+      <span className={isDark ? "text-white/40" : "text-gray-400"}>{"฿".repeat(4 - level)}</span>
     </span>
   );
+}
+
+function useImageBrightness(url: string) {
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        const size = 50;
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, img.height * 0.5, img.width, img.height * 0.5, 0, 0, size, size);
+        const data = ctx.getImageData(0, 0, size, size).data;
+        let total = 0;
+        let count = 0;
+        for (let i = 0; i < data.length; i += 16) {
+          total += (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+          count++;
+        }
+        const avg = total / count;
+        setIsDark(avg < 140);
+      } catch {}
+    };
+    img.src = url;
+  }, [url]);
+
+  return isDark;
 }
 
 function FullScreenSlide({
@@ -307,6 +339,26 @@ function FullScreenSlide({
   const [direction, setDirection] = useState(0);
   const isDragging = useRef(false);
   const dragX = useMotionValue(0);
+  const isDark = useImageBrightness(post.mediaItems[currentIdx].url);
+
+  const txt = isDark ? "text-white" : "text-gray-900";
+  const txtSub = isDark ? "text-white/90" : "text-gray-700";
+  const txtMuted = isDark ? "text-white/60" : "text-gray-500";
+  const txtFaint = isDark ? "text-white/50" : "text-gray-400";
+  const txtDot = isDark ? "text-white/40" : "text-gray-300";
+  const btnBg = isDark ? "bg-black/30 backdrop-blur-md" : "bg-white/50 backdrop-blur-md";
+  const btnIcon = isDark ? "text-white" : "text-gray-900";
+  const btnLabel = isDark ? "text-white" : "text-gray-700";
+  const tagStyle = isDark
+    ? "text-white/90 bg-white/15 backdrop-blur-sm"
+    : "text-gray-800 bg-black/10 backdrop-blur-sm";
+  const dotActive = isDark ? "bg-white" : "bg-gray-900";
+  const dotInactive = isDark ? "bg-white/35" : "bg-gray-900/30";
+  const badgeBg = isDark ? "bg-black/40 backdrop-blur-md" : "bg-white/60 backdrop-blur-md";
+  const badgeTxt = isDark ? "text-white" : "text-gray-900";
+  const gradient = isDark
+    ? "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0) 100%)"
+    : "linear-gradient(to top, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.5) 40%, rgba(255,255,255,0) 100%)";
 
   const handleDragStart = () => {
     isDragging.current = true;
@@ -365,11 +417,7 @@ function FullScreenSlide({
           {post.mediaItems.map((_, idx) => (
             <div
               key={idx}
-              className={`rounded-full transition-all duration-300 ${
-                idx === currentIdx
-                  ? "w-6 h-[3px] bg-white"
-                  : "w-6 h-[3px] bg-white/35"
-              }`}
+              className={`rounded-full transition-all duration-300 w-6 h-[3px] ${idx === currentIdx ? dotActive : dotInactive}`}
               data-testid={`media-dot-${idx}`}
             />
           ))}
@@ -378,7 +426,7 @@ function FullScreenSlide({
 
       <div className="absolute top-[calc(env(safe-area-inset-top,0px)+12px)] left-4 z-20 flex items-center gap-1.5">
         {post.trendingRank && post.trendingRank <= 5 && (
-          <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md text-white px-2.5 py-1 rounded-full" data-testid={`badge-trending-rank-${post.id}`}>
+          <div className={`flex items-center gap-1 ${badgeBg} ${badgeTxt} px-2.5 py-1 rounded-full`} data-testid={`badge-trending-rank-${post.id}`}>
             <TrendingUp className="w-3 h-3" />
             <span className="text-[11px] font-semibold">#{post.trendingRank}</span>
           </div>
@@ -397,10 +445,10 @@ function FullScreenSlide({
           aria-label={isLiked ? "Unlike" : "Like"}
           data-testid={`button-like-${post.id}`}
         >
-          <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center">
-            <Heart className={`w-[22px] h-[22px] ${isLiked ? "text-red-500 fill-red-500" : "text-white"}`} />
+          <div className={`w-11 h-11 rounded-full ${btnBg} flex items-center justify-center`}>
+            <Heart className={`w-[22px] h-[22px] ${isLiked ? "text-red-500 fill-red-500" : btnIcon}`} />
           </div>
-          <span className="text-white text-[10px] font-medium drop-shadow-md">{isLiked ? "Liked" : "Like"}</span>
+          <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>{isLiked ? "Liked" : "Like"}</span>
         </button>
 
         <button
@@ -409,10 +457,10 @@ function FullScreenSlide({
           aria-label={isSaved ? "Remove from saved" : "Save"}
           data-testid={`button-save-${post.id}`}
         >
-          <div className={`w-11 h-11 rounded-full flex items-center justify-center ${isSaved ? "bg-white" : "bg-black/30 backdrop-blur-md"}`}>
-            <Bookmark className={`w-[22px] h-[22px] ${isSaved ? "text-gray-900 fill-gray-900" : "text-white"}`} />
+          <div className={`w-11 h-11 rounded-full flex items-center justify-center ${isSaved ? (isDark ? "bg-white" : "bg-gray-900") : btnBg}`}>
+            <Bookmark className={`w-[22px] h-[22px] ${isSaved ? (isDark ? "text-gray-900 fill-gray-900" : "text-white fill-white") : btnIcon}`} />
           </div>
-          <span className="text-white text-[10px] font-medium drop-shadow-md">{isSaved ? "Saved" : "Save"}</span>
+          <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>{isSaved ? "Saved" : "Save"}</span>
         </button>
 
         <button
@@ -421,10 +469,10 @@ function FullScreenSlide({
           aria-label="Share"
           data-testid={`button-share-${post.id}`}
         >
-          <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center">
-            <Share2 className="w-[22px] h-[22px] text-white" />
+          <div className={`w-11 h-11 rounded-full ${btnBg} flex items-center justify-center`}>
+            <Share2 className={`w-[22px] h-[22px] ${btnIcon}`} />
           </div>
-          <span className="text-white text-[10px] font-medium drop-shadow-md">Share</span>
+          <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>Share</span>
         </button>
 
         <button
@@ -433,15 +481,15 @@ function FullScreenSlide({
           aria-label="Invite friends to swipe"
           data-testid={`button-invite-swipe-${post.id}`}
         >
-          <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center">
-            <Layers className="w-[22px] h-[22px] text-white" />
+          <div className={`w-11 h-11 rounded-full ${btnBg} flex items-center justify-center`}>
+            <Layers className={`w-[22px] h-[22px] ${btnIcon}`} />
           </div>
-          <span className="text-white text-[10px] font-medium drop-shadow-md">Swipe</span>
+          <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>Swipe</span>
         </button>
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none" style={{ height: "55%" }}>
-        <div className="w-full h-full" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0) 100%)" }} />
+        <div className="w-full h-full" style={{ background: gradient }} />
       </div>
 
       <button
@@ -452,29 +500,29 @@ function FullScreenSlide({
       >
         <div className="flex items-center gap-2 mb-2 flex-wrap">
           {post.tags.map((tag, idx) => (
-            <span key={tag} className="text-[11px] text-white/90 bg-white/15 backdrop-blur-sm px-2.5 py-0.5 rounded-full font-medium" data-testid={`tag-${post.id}-${idx}`}>
+            <span key={tag} className={`text-[11px] ${tagStyle} px-2.5 py-0.5 rounded-full font-medium`} data-testid={`tag-${post.id}-${idx}`}>
               {tag}
             </span>
           ))}
         </div>
 
-        <h3 className="text-[26px] font-bold text-white leading-tight tracking-tight mb-1" data-testid={`text-restaurant-name-${post.id}`}>
+        <h3 className={`text-[26px] font-bold ${txt} leading-tight tracking-tight mb-1`} data-testid={`text-restaurant-name-${post.id}`}>
           {post.restaurantName}
         </h3>
 
         <div className="flex items-center gap-2 mb-1.5">
-          <span className="text-white/90 text-[14px] font-medium" data-testid={`text-category-${post.id}`}>{post.category}</span>
-          <span className="text-white/40">·</span>
-          <PriceIndicator level={post.priceLevel} />
-          <span className="text-white/40">·</span>
+          <span className={`${txtSub} text-[14px] font-medium`} data-testid={`text-category-${post.id}`}>{post.category}</span>
+          <span className={txtDot}>·</span>
+          <PriceIndicator level={post.priceLevel} isDark={isDark} />
+          <span className={txtDot}>·</span>
           <div className="flex items-center gap-0.5" data-testid={`text-rating-${post.id}`}>
             <Star className="w-3.5 h-3.5 text-[#FFCC02] fill-[#FFCC02]" />
-            <span className="text-white text-[14px] font-semibold">{post.rating}</span>
-            <span className="text-white/50 text-[12px]">({post.reviewCount.toLocaleString()})</span>
+            <span className={`${txt} text-[14px] font-semibold`}>{post.rating}</span>
+            <span className={`${txtFaint} text-[12px]`}>({post.reviewCount.toLocaleString()})</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-1 text-white/60 text-[13px] mb-1" data-testid={`text-location-${post.id}`}>
+        <div className={`flex items-center gap-1 ${txtMuted} text-[13px] mb-1`} data-testid={`text-location-${post.id}`}>
           <MapPin className="w-3 h-3" />
           <span>{post.address}</span>
           <span>·</span>
