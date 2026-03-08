@@ -247,6 +247,7 @@ export default function Home() {
   const [moreVibesOpen, setMoreVibesOpen] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [currentLocationName, setCurrentLocationName] = useState("Current");
+  const [actualGpsLocation, setActualGpsLocation] = useState<[number, number]>([DEFAULT_LAT, DEFAULT_LNG]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -270,6 +271,17 @@ export default function Home() {
       setSearchOpen(true);
       setTimeout(() => inputRef.current?.focus(), 300);
       window.history.replaceState({}, "", "/");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setActualGpsLocation([pos.coords.latitude, pos.coords.longitude]);
+        },
+        () => {}
+      );
     }
   }, []);
 
@@ -354,7 +366,7 @@ export default function Home() {
           selectedPinId={null}
           onPinSelect={(id) => navigate(`/restaurant/${id}`)}
           filteredCategory={selectedCategory}
-          userLocation={[userLocation.lat, userLocation.lng]}
+          userLocation={actualGpsLocation}
         />
       </div>
 
@@ -472,6 +484,7 @@ export default function Home() {
                         navigator.geolocation.getCurrentPosition(
                           (pos) => {
                             setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                            setActualGpsLocation([pos.coords.latitude, pos.coords.longitude]);
                           },
                           () => {}
                         );
