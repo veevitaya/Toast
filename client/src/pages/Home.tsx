@@ -243,6 +243,7 @@ export default function Home() {
 
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showMapCards, setShowMapCards] = useState(false);
   const [moreVibesOpen, setMoreVibesOpen] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [currentLocationName, setCurrentLocationName] = useState("Sukhumvit");
@@ -375,7 +376,7 @@ export default function Home() {
               className="flex items-center gap-1 flex-shrink-0 px-2 py-1 rounded-full bg-gray-50 border border-gray-100"
               data-testid="button-map-location"
             >
-              <MapPin className="w-3 h-3 text-[#FFCC02]" />
+              <MapPin className="w-3 h-3 text-[#E53935]" />
               <span className="text-[11px] font-medium text-foreground max-w-[70px] truncate">{currentLocationName}</span>
               <ChevronDown className={`w-2.5 h-2.5 text-muted-foreground transition-transform ${locationPickerOpen ? "rotate-180" : ""}`} />
             </button>
@@ -469,6 +470,7 @@ export default function Home() {
                             setCurrentLocationName("Current Location");
                             setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
                             setLocationPickerOpen(false);
+                            setDrawerOpen(false);
                           },
                           () => { setLocationPickerOpen(false); }
                         );
@@ -496,16 +498,17 @@ export default function Home() {
                         setCurrentLocationName(loc.name);
                         setUserLocation({ lat: loc.lat, lng: loc.lng });
                         setLocationPickerOpen(false);
+                        setDrawerOpen(false);
                       }}
                       className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left ${
                         currentLocationName === loc.name ? "bg-gray-50" : ""
                       }`}
                       data-testid={`location-option-${loc.name.toLowerCase().replace(/\s+/g, "-")}`}
                     >
-                      <MapPin className={`w-3.5 h-3.5 flex-shrink-0 ${currentLocationName === loc.name ? "text-[#FFCC02]" : "text-muted-foreground/40"}`} />
+                      <MapPin className={`w-3.5 h-3.5 flex-shrink-0 ${currentLocationName === loc.name ? "text-[#E53935]" : "text-muted-foreground/40"}`} />
                       <span className={`text-sm font-medium ${currentLocationName === loc.name ? "text-foreground" : "text-muted-foreground"}`}>{loc.name}</span>
                       {currentLocationName === loc.name && (
-                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#FFCC02]" />
+                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#E53935]" />
                       )}
                     </button>
                   ))}
@@ -526,7 +529,7 @@ export default function Home() {
             >
               <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1" data-testid="map-category-chips">
                 <button
-                  onClick={() => setSelectedCategory(null)}
+                  onClick={() => { setSelectedCategory(null); setShowMapCards(false); }}
                   className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
                     selectedCategory === null
                       ? "bg-foreground text-white shadow-md"
@@ -540,7 +543,7 @@ export default function Home() {
                 {MAP_CATEGORIES.map(cat => (
                   <button
                     key={cat.label}
-                    onClick={() => setSelectedCategory(selectedCategory === cat.label ? null : cat.label)}
+                    onClick={() => { const newCat = selectedCategory === cat.label ? null : cat.label; setSelectedCategory(newCat); setShowMapCards(newCat !== null); }}
                     className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold transition-all ${
                       selectedCategory === cat.label
                         ? "bg-foreground text-white shadow-md"
@@ -560,7 +563,7 @@ export default function Home() {
       </div>
 
       <AnimatePresence>
-        {!drawerOpen && (
+        {!drawerOpen && showMapCards && selectedCategory && filteredMapCards.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -570,6 +573,16 @@ export default function Home() {
             style={{ bottom: "250px" }}
             data-testid="map-restaurant-cards"
           >
+            <div className="flex justify-end px-4 mb-2">
+              <button
+                onClick={() => setShowMapCards(false)}
+                className="w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200/60 flex items-center justify-center"
+                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
+                data-testid="button-close-map-cards"
+              >
+                <X className="w-4 h-4 text-foreground/70" />
+              </button>
+            </div>
             <div
               ref={scrollContainerRef}
               className="flex gap-3 overflow-x-auto hide-scrollbar pb-2 snap-x snap-mandatory px-4"

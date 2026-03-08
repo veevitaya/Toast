@@ -175,12 +175,12 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
           background: hsl(222, 47%, 11%);
         }
         .leaflet-container {
-          background: #E8F4EC !important;
+          background: #B8E6C8 !important;
           z-index: 0 !important;
           isolation: isolate;
         }
         .leaflet-tile {
-          filter: saturate(0.7) contrast(0.92) brightness(1.08) hue-rotate(15deg) sepia(0.08);
+          filter: saturate(2.2) contrast(0.82) brightness(1.12) hue-rotate(30deg);
         }
         .pin-drunk-sway {
           animation: pin-sway 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
