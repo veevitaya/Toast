@@ -152,16 +152,16 @@ const VIBE_TILES_EXTRA = [
 ];
 
 const BANGKOK_LOCATIONS = [
-  { name: "Sukhumvit", lat: 13.7420, lng: 100.5400 },
-  { name: "Silom", lat: 13.7285, lng: 100.5310 },
-  { name: "Siam", lat: 13.7454, lng: 100.5341 },
-  { name: "Thonglor", lat: 13.7320, lng: 100.5783 },
-  { name: "Ekkamai", lat: 13.7310, lng: 100.5690 },
   { name: "Ari", lat: 13.7710, lng: 100.5450 },
   { name: "Chinatown", lat: 13.7410, lng: 100.5100 },
+  { name: "Ekkamai", lat: 13.7310, lng: 100.5690 },
   { name: "Old Town", lat: 13.7560, lng: 100.5018 },
-  { name: "Sathorn", lat: 13.7220, lng: 100.5290 },
   { name: "Riverside", lat: 13.7230, lng: 100.5130 },
+  { name: "Sathorn", lat: 13.7220, lng: 100.5290 },
+  { name: "Siam", lat: 13.7454, lng: 100.5341 },
+  { name: "Silom", lat: 13.7285, lng: 100.5310 },
+  { name: "Sukhumvit", lat: 13.7420, lng: 100.5400 },
+  { name: "Thonglor", lat: 13.7320, lng: 100.5783 },
 ];
 
 interface PersonalizedRec {
@@ -246,7 +246,7 @@ export default function Home() {
   const [showMapCards, setShowMapCards] = useState(false);
   const [moreVibesOpen, setMoreVibesOpen] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
-  const [currentLocationName, setCurrentLocationName] = useState("Sukhumvit");
+  const [currentLocationName, setCurrentLocationName] = useState("Current Location");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
