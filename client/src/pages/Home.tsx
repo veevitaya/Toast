@@ -27,7 +27,7 @@ const FILTER_OPTIONS = {
     { value: "distance", label: "Nearest" },
     { value: "price_low", label: "Price: Low" },
     { value: "price_high", label: "Price: High" },
-    { value: "trending", label: "Trending" },
+    { value: "trending", label: "Popular" },
   ],
   priceRange: [
     { value: "1", label: "฿" },
@@ -131,7 +131,7 @@ const DEFAULT_LAT = 13.7420;
 const DEFAULT_LNG = 100.5400;
 
 const VIBE_TILES_MAIN = [
-  { mode: "trending", label: "Trending", emoji: "🔥", bg: "hsl(45, 55%, 94%)" },
+  { mode: "trending", label: "Popular", emoji: "🔥", bg: "hsl(45, 55%, 94%)" },
   { mode: "hot", label: "Spicy", emoji: "🌶️", bg: "hsl(15, 65%, 94%)" },
   { mode: "drinks", label: "Drinks", emoji: "🍸", bg: "hsl(280, 40%, 95%)" },
   { mode: "cheap", label: "Budget", emoji: "💰", bg: "hsl(160, 40%, 94%)" },

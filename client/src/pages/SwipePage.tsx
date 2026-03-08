@@ -528,7 +528,7 @@ export default function SwipePage() {
     all: "Swipe Mode",
     cheap: "Budget Eats",
     nearby: "Near BTS",
-    trending: "Trending Now",
+    trending: "Popular Now",
     hot: "Hot Right Now",
     late: "Late Night",
     outdoor: "Outdoor Dining",
