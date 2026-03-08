@@ -246,7 +246,7 @@ export default function Home() {
   const [showMapCards, setShowMapCards] = useState(false);
   const [moreVibesOpen, setMoreVibesOpen] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
-  const [currentLocationName, setCurrentLocationName] = useState("Current Location");
+  const [currentLocationName, setCurrentLocationName] = useState("Current");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -464,28 +464,28 @@ export default function Home() {
                 <div className="py-2 max-h-[280px] overflow-y-auto">
                   <button
                     onClick={() => {
+                      setCurrentLocationName("Current");
+                      setLocationPickerOpen(false);
+                      setDrawerOpen(false);
                       if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
                           (pos) => {
-                            setCurrentLocationName("Current Location");
                             setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-                            setLocationPickerOpen(false);
-                            setDrawerOpen(false);
                           },
-                          () => { setLocationPickerOpen(false); }
+                          () => {}
                         );
                       }
                     }}
                     className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-left ${
-                      currentLocationName === "Current Location" ? "bg-gray-50" : ""
+                      currentLocationName === "Current" ? "bg-gray-50" : ""
                     }`}
                     data-testid="location-option-current"
                   >
                     <div className="w-5 h-5 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                       <Navigation className="w-3 h-3 text-blue-500" />
                     </div>
-                    <span className={`text-sm font-medium ${currentLocationName === "Current Location" ? "text-foreground" : "text-blue-500"}`}>Current Location</span>
-                    {currentLocationName === "Current Location" && (
+                    <span className={`text-sm font-medium ${currentLocationName === "Current" ? "text-foreground" : "text-blue-500"}`}>Current</span>
+                    {currentLocationName === "Current" && (
                       <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500" />
                     )}
                   </button>
