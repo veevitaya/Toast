@@ -294,22 +294,27 @@ function analyzeImageBrightness(
   img.onload = () => {
     try {
       const canvas = document.createElement("canvas");
-      const size = 50;
+      const size = 100;
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
-      const sy = region === "top" ? 0 : img.height * 0.5;
-      const sh = region === "top" ? img.height * 0.2 : img.height * 0.5;
+      const sy = region === "top" ? 0 : img.height * 0.6;
+      const sh = region === "top" ? img.height * 0.15 : img.height * 0.4;
       ctx.drawImage(img, 0, sy, img.width, sh, 0, 0, size, size);
       const data = ctx.getImageData(0, 0, size, size).data;
-      let total = 0;
-      let count = 0;
-      for (let i = 0; i < data.length; i += 16) {
-        total += (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
-        count++;
+      let totalLum = 0;
+      let darkPixels = 0;
+      const pixelCount = size * size;
+      for (let i = 0; i < data.length; i += 4) {
+        const lum = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+        totalLum += lum;
+        if (lum < 128) darkPixels++;
       }
-      callback((total / count) < 140);
+      const avgLum = totalLum / pixelCount;
+      const darkRatio = darkPixels / pixelCount;
+      const isDark = avgLum < 120 || darkRatio > 0.55;
+      callback(isDark);
     } catch {}
   };
   img.src = url;
