@@ -407,7 +407,7 @@ function FullScreenSlide({
   return (
     <div
       className="relative w-full flex-shrink-0 snap-start snap-always overflow-hidden"
-      style={{ height: "calc(100dvh - 52px)" }}
+      style={{ height: "calc(100dvh - 52px)", touchAction: "pan-y" }}
       data-testid={`feed-card-${post.id}`}
     >
       <div className="absolute inset-0 bg-gray-900">
@@ -435,7 +435,7 @@ function FullScreenSlide({
       </div>
 
       {post.mediaItems.length > 1 && (
-        <div className="absolute top-[calc(env(safe-area-inset-top,0px)+56px)] left-0 right-0 flex justify-center gap-1.5 z-20 pointer-events-none">
+        <div className="absolute left-0 right-0 flex justify-center gap-1.5 z-20 pointer-events-none" style={{ top: "calc(env(safe-area-inset-top, 0px) + 56px)" }}>
           {post.mediaItems.map((_, idx) => (
             <div
               key={idx}
@@ -446,7 +446,7 @@ function FullScreenSlide({
         </div>
       )}
 
-      <div className="absolute top-[calc(env(safe-area-inset-top,0px)+12px)] left-4 z-20 flex items-center gap-1.5">
+      <div className="absolute left-4 z-20 flex items-center gap-1.5" style={{ top: "calc(env(safe-area-inset-top, 0px) + 56px)" }}>
         {post.trendingRank && post.trendingRank <= 5 && (
           <div className={`flex items-center gap-1 ${badgeBg} ${badgeTxt} px-2.5 py-1 rounded-full`} data-testid={`badge-trending-rank-${post.id}`}>
             <TrendingUp className="w-3 h-3" />
@@ -460,7 +460,7 @@ function FullScreenSlide({
         )}
       </div>
 
-      <div className="absolute right-3 flex flex-col items-center gap-4 z-20" style={{ bottom: "calc(200px + env(safe-area-inset-bottom, 0px))" }}>
+      <div className="absolute right-3 z-20 flex flex-col items-center gap-4" style={{ bottom: "170px" }}>
         <button
           onClick={(e) => { e.stopPropagation(); onLike(); }}
           className="flex flex-col items-center gap-0.5"
@@ -510,14 +510,14 @@ function FullScreenSlide({
         </button>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none" style={{ height: "55%" }}>
+      <div className="absolute left-0 right-0 bottom-0 z-10 pointer-events-none" style={{ height: "50%" }}>
         <div className="w-full h-full" style={{ background: gradient }} />
       </div>
 
       <button
         onClick={onNavigate}
-        className="absolute bottom-0 left-0 right-16 z-20 text-left px-5 cursor-pointer"
-        style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))" }}
+        className="absolute left-0 right-16 z-20 text-left px-5 cursor-pointer"
+        style={{ bottom: "12px" }}
         data-testid={`link-restaurant-${post.id}`}
       >
         <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -528,23 +528,23 @@ function FullScreenSlide({
           ))}
         </div>
 
-        <h3 className={`text-[26px] font-bold ${txt} leading-tight tracking-tight mb-1`} data-testid={`text-restaurant-name-${post.id}`}>
+        <h3 className={`text-[24px] font-bold ${txt} leading-tight tracking-tight mb-1`} data-testid={`text-restaurant-name-${post.id}`}>
           {post.restaurantName}
         </h3>
 
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className={`${txtSub} text-[14px] font-medium`} data-testid={`text-category-${post.id}`}>{post.category}</span>
+        <div className="flex items-center gap-2 mb-1">
+          <span className={`${txtSub} text-[13px] font-medium`} data-testid={`text-category-${post.id}`}>{post.category}</span>
           <span className={txtDot}>·</span>
           <PriceIndicator level={post.priceLevel} isDark={isDark} />
           <span className={txtDot}>·</span>
           <div className="flex items-center gap-0.5" data-testid={`text-rating-${post.id}`}>
             <Star className="w-3.5 h-3.5 text-[#FFCC02] fill-[#FFCC02]" />
-            <span className={`${txt} text-[14px] font-semibold`}>{post.rating}</span>
+            <span className={`${txt} text-[13px] font-semibold`}>{post.rating}</span>
             <span className={`${txtFaint} text-[12px]`}>({post.reviewCount.toLocaleString()})</span>
           </div>
         </div>
 
-        <div className={`flex items-center gap-1 ${txtMuted} text-[13px] mb-1`} data-testid={`text-location-${post.id}`}>
+        <div className={`flex items-center gap-1 ${txtMuted} text-[12px]`} data-testid={`text-location-${post.id}`}>
           <MapPin className="w-3 h-3" />
           <span>{post.address}</span>
           <span>·</span>
@@ -728,7 +728,7 @@ export default function TrendingFeed() {
   }, [toast, navigate, profile, creatingSession]);
 
   return (
-    <div className="fixed inset-0 bg-black" data-testid="trending-feed-page">
+    <div className="fixed inset-0 bg-black flex flex-col" data-testid="trending-feed-page">
       <div className={`absolute top-0 left-0 right-0 z-30 backdrop-blur-md pt-[env(safe-area-inset-top)] border-b transition-colors duration-300 ${headerIsDark ? "bg-white/20 border-white/15" : "bg-black/10 border-black/10"}`}>
         <div className="flex items-center justify-between px-5 py-3">
           <div className="flex items-center gap-2">
@@ -744,8 +744,8 @@ export default function TrendingFeed() {
 
       <div
         ref={containerRef}
-        className="w-full h-full overflow-y-auto snap-y snap-mandatory hide-scrollbar"
-        style={{ scrollBehavior: "smooth" }}
+        className="w-full overflow-y-auto snap-y snap-mandatory hide-scrollbar"
+        style={{ scrollBehavior: "smooth", height: "calc(100dvh - 52px)", overscrollBehavior: "contain" }}
       >
         {TRENDING_POSTS.map((post, index) => (
           <FullScreenSlide
