@@ -159,7 +159,7 @@ export default function WaitingRoom() {
 
   if (profileLoading) {
     return (
-      <div className="w-full h-[100dvh] bg-white flex items-center justify-center">
+      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-gray-300 border-t-foreground animate-spin" />
       </div>
     );
@@ -167,7 +167,7 @@ export default function WaitingRoom() {
 
   if (!sessionId) {
     return (
-      <div className="w-full h-[100dvh] bg-white flex flex-col items-center justify-center px-6">
+      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6">
         <p className="text-muted-foreground text-center mb-4">No session ID found. Start a new group from the home page.</p>
         <button
           onClick={() => navigate("/group")}
@@ -182,7 +182,7 @@ export default function WaitingRoom() {
   }
 
   return (
-    <div className="w-full h-[100dvh] bg-white flex flex-col items-center justify-center px-6 pb-20 relative overflow-hidden" data-testid="waiting-room-page">
+    <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6 pb-20 relative overflow-hidden" data-testid="waiting-room-page">
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[15%] left-[10%] w-32 h-32 bg-amber-50/40 rounded-full blur-3xl" />
         <div className="absolute bottom-[20%] right-[15%] w-40 h-40 bg-amber-50/40 rounded-full blur-3xl" />

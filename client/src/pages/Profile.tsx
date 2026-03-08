@@ -301,7 +301,7 @@ export default function Profile() {
   const pictureUrl = localProfile.pictureUrl || lineProfile?.pictureUrl || "";
 
   return (
-    <div className="w-full min-h-[100dvh] bg-white dark:bg-background" data-testid="profile-page">
+    <div className="w-full min-h-[100dvh] bg-[#FCFCFC] dark:bg-background" data-testid="profile-page">
       <div className="px-6 pt-14 pb-6">
         <div className="flex items-center justify-between mb-8">
           <p

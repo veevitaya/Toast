@@ -523,7 +523,7 @@ export default function SoloResults() {
   };
 
   return (
-    <div className="w-full min-h-[100dvh] bg-white flex flex-col items-center pt-10 px-6 pb-32" data-testid="solo-results-page">
+    <div className="w-full min-h-[100dvh] bg-[#FCFCFC] flex flex-col items-center pt-10 px-6 pb-32" data-testid="solo-results-page">
       {hasFilters > 0 && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -628,7 +628,7 @@ export default function SoloResults() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-white dark:bg-background flex flex-col"
+            className="fixed inset-0 z-[100] bg-[#FCFCFC] dark:bg-background flex flex-col"
             data-testid="decide-for-me-screen"
           >
             <button

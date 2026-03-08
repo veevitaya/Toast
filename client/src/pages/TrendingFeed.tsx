@@ -619,7 +619,7 @@ export default function TrendingFeed() {
   }, [toast, navigate, profile, creatingSession]);
 
   return (
-    <div className="fixed inset-0 bg-white" data-testid="trending-feed-page">
+    <div className="fixed inset-0 bg-[#FCFCFC]" data-testid="trending-feed-page">
       <div className="absolute top-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-md border-b border-gray-100 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center justify-between px-5 py-3">
           <div>

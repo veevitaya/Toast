@@ -159,7 +159,7 @@ export default function GroupSetup() {
   ].filter(Boolean).length;
 
   return (
-    <div className="w-full h-[100dvh] bg-[#F7F7F7] flex flex-col overflow-hidden" data-testid="group-setup-page">
+    <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col overflow-hidden" data-testid="group-setup-page">
       <div className="flex-shrink-0 bg-white border-b border-gray-100/60 z-40">
         <div className="flex items-center gap-3 px-5 pt-12 pb-3">
           <button

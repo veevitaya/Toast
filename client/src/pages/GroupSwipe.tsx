@@ -527,7 +527,7 @@ export default function GroupSwipe() {
 
   if (loading) {
     return (
-      <div className="w-full h-[100dvh] bg-white flex items-center justify-center">
+      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-gray-300 border-t-foreground animate-spin" />
       </div>
     );
@@ -535,7 +535,7 @@ export default function GroupSwipe() {
 
   if (sessionEnded) {
     return (
-      <div className="w-full h-[100dvh] bg-white flex flex-col overflow-hidden" data-testid="group-summary-page">
+      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col overflow-hidden" data-testid="group-summary-page">
         <div className="flex-shrink-0 px-6 pt-12 pb-4 border-b border-gray-100">
           <h1 className="text-[22px] font-bold" data-testid="text-summary-title">Session Summary</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -611,7 +611,7 @@ export default function GroupSwipe() {
 
   if (fullMatch && matchedItem) {
     return (
-      <div className="w-full h-[100dvh] bg-white flex flex-col items-center justify-center px-6 relative overflow-hidden" data-testid="group-match-page">
+      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6 relative overflow-hidden" data-testid="group-match-page">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[20%] left-[5%] w-48 h-48 bg-amber-50/50 rounded-full blur-3xl" />
           <div className="absolute bottom-[15%] right-[10%] w-56 h-56 bg-amber-50/50 rounded-full blur-3xl" />
