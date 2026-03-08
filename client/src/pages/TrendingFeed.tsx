@@ -293,7 +293,6 @@ function FullScreenSlide({
   onShare,
   onNavigate,
   onInviteSwipe,
-  isActive,
 }: {
   post: TrendingPost;
   isSaved: boolean;
@@ -303,7 +302,6 @@ function FullScreenSlide({
   onShare: () => void;
   onNavigate: () => void;
   onInviteSwipe: () => void;
-  isActive: boolean;
 }) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [direction, setDirection] = useState(0);
@@ -495,7 +493,6 @@ export default function TrendingFeed() {
   const [savedPosts, setSavedPosts] = useState<Set<number>>(new Set(getSavedPosts()));
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [creatingSession, setCreatingSession] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
 
   const deepLinkId = new URLSearchParams(window.location.search).get("id");
 
@@ -507,20 +504,6 @@ export default function TrendingFeed() {
       }
     }
   }, [deepLinkId]);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const slideHeight = container.clientHeight;
-      const index = Math.round(container.scrollTop / slideHeight);
-      setActiveIndex(index);
-    };
-
-    container.addEventListener("scroll", handleScroll, { passive: true });
-    return () => container.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const handleSave = useCallback((postId: number) => {
     const nowSaved = toggleSavedPost(postId);
@@ -643,18 +626,15 @@ export default function TrendingFeed() {
 
   return (
     <div className="fixed inset-0 bg-black" data-testid="trending-feed-page">
-      <div className="absolute top-0 left-0 right-0 z-30 bg-black/20 backdrop-blur-md pt-[env(safe-area-inset-top)] border-b border-white/10">
+      <div className="absolute top-0 left-0 right-0 z-30 bg-white/20 backdrop-blur-md pt-[env(safe-area-inset-top)] border-b border-white/15">
         <div className="flex items-center justify-between px-5 py-3">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-[#FFCC02] flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-gray-900" />
-            </div>
+            <TrendingUp className="w-5 h-5 text-[#FFCC02] drop-shadow-md" />
             <h1 className="text-[20px] font-bold text-white leading-tight drop-shadow-md">Trending</h1>
           </div>
-          <div className="flex items-center gap-1 bg-white/15 backdrop-blur-md rounded-full px-2.5 py-1">
-            <span className="text-white/90 text-[12px] font-medium">{activeIndex + 1}</span>
-            <span className="text-white/40 text-[12px]">/</span>
-            <span className="text-white/60 text-[12px]">{TRENDING_POSTS.length}</span>
+          <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md rounded-full px-2.5 py-1">
+            <MapPin className="w-3 h-3 text-white/80" />
+            <span className="text-white/90 text-[12px] font-medium">Bangkok</span>
           </div>
         </div>
       </div>
@@ -675,7 +655,6 @@ export default function TrendingFeed() {
             onShare={() => handleShare(post)}
             onNavigate={() => handleNavigate(post)}
             onInviteSwipe={() => handleInviteSwipe(post)}
-            isActive={index === activeIndex}
           />
         ))}
       </div>
