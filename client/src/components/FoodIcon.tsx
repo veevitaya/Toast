@@ -1,4 +1,4 @@
-import { memo, useId, useEffect } from "react";
+import { memo, useId, useEffect, useState, useCallback, useRef } from "react";
 
 type IconName =
   | "fire" | "chili" | "cocktail" | "money" | "salad" | "umbrella"
@@ -11,7 +11,6 @@ interface FoodIconProps {
   name: IconName;
   size?: number;
   className?: string;
-  animate?: boolean;
 }
 
 type AnimType = "flicker" | "pulse" | "wobble" | "sway" | "float" | "bounce" | "wave" | "twinkle" | "jiggle";
@@ -22,7 +21,7 @@ const ANIM_MAP: Record<IconName, AnimType> = {
   cocktail: "wobble",
   money: "jiggle",
   salad: "sway",
-  umbrella: "float",
+  umbrella: "wobble",
   hearts: "pulse",
   scooter: "bounce",
   moon: "float",
@@ -53,64 +52,81 @@ function injectAnimStyles() {
   const style = document.createElement("style");
   style.textContent = `
     @keyframes fi-flicker {
-      0%, 100% { transform: scaleX(1) scaleY(1) rotate(0deg); }
-      15% { transform: scaleX(0.92) scaleY(1.06) rotate(-2deg); }
-      30% { transform: scaleX(1.05) scaleY(0.95) rotate(1.5deg); }
-      45% { transform: scaleX(0.95) scaleY(1.04) rotate(-1deg); }
-      60% { transform: scaleX(1.03) scaleY(0.97) rotate(2deg); }
-      75% { transform: scaleX(0.97) scaleY(1.03) rotate(-1.5deg); }
-      90% { transform: scaleX(1.02) scaleY(0.98) rotate(0.5deg); }
+      0% { transform: scaleX(1) scaleY(1) rotate(0deg); }
+      15% { transform: scaleX(0.88) scaleY(1.08) rotate(-3deg); }
+      30% { transform: scaleX(1.08) scaleY(0.92) rotate(2deg); }
+      45% { transform: scaleX(0.92) scaleY(1.06) rotate(-2deg); }
+      60% { transform: scaleX(1.05) scaleY(0.95) rotate(3deg); }
+      75% { transform: scaleX(0.94) scaleY(1.04) rotate(-1.5deg); }
+      90% { transform: scaleX(1.02) scaleY(0.98) rotate(1deg); }
+      100% { transform: scaleX(1) scaleY(1) rotate(0deg); }
     }
     @keyframes fi-pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
+      0% { transform: scale(1); }
+      30% { transform: scale(1.18); }
+      60% { transform: scale(0.95); }
+      100% { transform: scale(1); }
     }
     @keyframes fi-wobble {
-      0%, 100% { transform: rotate(0deg); }
-      25% { transform: rotate(-4deg); }
-      75% { transform: rotate(4deg); }
+      0% { transform: rotate(0deg); }
+      20% { transform: rotate(-6deg); }
+      40% { transform: rotate(5deg); }
+      60% { transform: rotate(-4deg); }
+      80% { transform: rotate(3deg); }
+      100% { transform: rotate(0deg); }
     }
     @keyframes fi-sway {
-      0%, 100% { transform: rotate(0deg) translateX(0); }
-      33% { transform: rotate(-3deg) translateX(-1px); }
-      66% { transform: rotate(3deg) translateX(1px); }
+      0% { transform: rotate(0deg) translateX(0); }
+      25% { transform: rotate(-5deg) translateX(-2px); }
+      50% { transform: rotate(4deg) translateX(2px); }
+      75% { transform: rotate(-3deg) translateX(-1px); }
+      100% { transform: rotate(0deg) translateX(0); }
     }
     @keyframes fi-float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-3px); }
+      0% { transform: translateY(0); }
+      30% { transform: translateY(-4px); }
+      60% { transform: translateY(1px); }
+      100% { transform: translateY(0); }
     }
     @keyframes fi-bounce {
-      0%, 100% { transform: translateY(0) scaleY(1); }
-      40% { transform: translateY(-3px) scaleY(1.02); }
-      60% { transform: translateY(0) scaleY(0.97); }
+      0% { transform: translateY(0) scaleY(1); }
+      25% { transform: translateY(-5px) scaleY(1.04); }
+      50% { transform: translateY(0) scaleY(0.94); }
+      75% { transform: translateY(-2px) scaleY(1.02); }
+      100% { transform: translateY(0) scaleY(1); }
     }
     @keyframes fi-wave {
-      0%, 100% { transform: rotate(0deg); }
-      20% { transform: rotate(3deg); }
-      40% { transform: rotate(-2deg); }
-      60% { transform: rotate(3deg); }
-      80% { transform: rotate(-1deg); }
+      0% { transform: rotate(0deg); }
+      15% { transform: rotate(5deg); }
+      30% { transform: rotate(-4deg); }
+      50% { transform: rotate(5deg); }
+      70% { transform: rotate(-3deg); }
+      100% { transform: rotate(0deg); }
     }
     @keyframes fi-twinkle {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.8; transform: scale(0.96); }
+      0% { opacity: 1; transform: scale(1); }
+      40% { opacity: 0.7; transform: scale(0.92); }
+      70% { opacity: 1; transform: scale(1.05); }
+      100% { opacity: 1; transform: scale(1); }
     }
     @keyframes fi-jiggle {
-      0%, 100% { transform: rotate(0deg); }
-      20% { transform: rotate(-2deg); }
-      40% { transform: rotate(3deg); }
-      60% { transform: rotate(-3deg); }
-      80% { transform: rotate(2deg); }
+      0% { transform: rotate(0deg); }
+      15% { transform: rotate(-4deg); }
+      30% { transform: rotate(5deg); }
+      45% { transform: rotate(-5deg); }
+      60% { transform: rotate(4deg); }
+      75% { transform: rotate(-2deg); }
+      100% { transform: rotate(0deg); }
     }
-    .fi-flicker { animation: fi-flicker 0.8s ease-in-out infinite; transform-origin: center bottom; }
-    .fi-pulse { animation: fi-pulse 1.5s ease-in-out infinite; transform-origin: center center; }
-    .fi-wobble { animation: fi-wobble 1.8s ease-in-out infinite; transform-origin: center bottom; }
-    .fi-sway { animation: fi-sway 2s ease-in-out infinite; transform-origin: center bottom; }
-    .fi-float { animation: fi-float 2.5s ease-in-out infinite; transform-origin: center center; }
-    .fi-bounce { animation: fi-bounce 1.2s ease-in-out infinite; transform-origin: center bottom; }
-    .fi-wave { animation: fi-wave 1.5s ease-in-out infinite; transform-origin: left center; }
-    .fi-twinkle { animation: fi-twinkle 2s ease-in-out infinite; transform-origin: center center; }
-    .fi-jiggle { animation: fi-jiggle 0.6s ease-in-out infinite; transform-origin: center center; }
+    .fi-tap-flicker { animation: fi-flicker 0.5s ease-in-out forwards; transform-origin: center bottom; }
+    .fi-tap-pulse { animation: fi-pulse 0.45s ease-in-out forwards; transform-origin: center center; }
+    .fi-tap-wobble { animation: fi-wobble 0.5s ease-in-out forwards; transform-origin: center bottom; }
+    .fi-tap-sway { animation: fi-sway 0.5s ease-in-out forwards; transform-origin: center bottom; }
+    .fi-tap-float { animation: fi-float 0.5s ease-in-out forwards; transform-origin: center center; }
+    .fi-tap-bounce { animation: fi-bounce 0.45s ease-in-out forwards; transform-origin: center bottom; }
+    .fi-tap-wave { animation: fi-wave 0.5s ease-in-out forwards; transform-origin: left center; }
+    .fi-tap-twinkle { animation: fi-twinkle 0.45s ease-in-out forwards; transform-origin: center center; }
+    .fi-tap-jiggle { animation: fi-jiggle 0.4s ease-in-out forwards; transform-origin: center center; }
   `;
   document.head.appendChild(style);
 }
@@ -118,19 +134,21 @@ function injectAnimStyles() {
 const icons: Record<IconName, (s: number, u: string) => JSX.Element> = {
   fire: (s) => (
     <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
-      <path d="M32 2C28 14 14 24 14 40c0 12 8 20 18 20s18-8 18-20C50 24 36 14 32 2z" fill="#FBC02D" />
-      <path d="M42 16c4 10 8 18 8 24c0 12-8 20-18 20c-6 0-12-4-15-10c2 4 7 6 12 6c10 0 18-8 18-20c0-6-2-12-5-20z" fill="#F9A825" />
-      <path d="M32 28c-2 6-8 12-8 20c0 5 3.5 9 8 9s8-4 8-9c0-8-6-14-8-20z" fill="#FF6F00" />
-      <path d="M32 38c-1 3-4 6-4 10c0 3 1.8 5 4 5s4-2 4-5c0-4-3-7-4-10z" fill="#E53935" />
+      <path d="M32 4c8 12 20 20 20 34c0 14-9 24-20 24S12 52 12 38C12 24 24 16 32 4z" fill="#FBC02D" />
+      <path d="M44 18c5 8 8 16 8 20c0 14-9 24-20 24c-7 0-13-4-16-10c3 4 8 7 14 7c11 0 20-10 20-24c0-4-2-10-6-17z" fill="#F9A825" />
+      <path d="M32 30c-3 5-10 10-10 18c0 7 4.5 12 10 12s10-5 10-12c0-8-7-13-10-18z" fill="#FF8F00" />
+      <path d="M32 42c-1.5 3-5 6-5 10c0 4 2.2 6 5 6s5-2 5-6c0-4-3.5-7-5-10z" fill="#E53935" />
+      <path d="M29 46c0 2 1.3 3.5 3 3.5s3-1.5 3-3.5" fill="#B71C1C" opacity="0.4" />
     </svg>
   ),
   chili: (s) => (
     <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
-      <path d="M30 8c0-3 2-5 5-4c3 1 4 4 2 7l-3 3" fill="#4CAF50" />
-      <path d="M34 4c0-2 2-3 4-2s3 4 1 6" fill="#66BB6A" />
-      <path d="M22 56c-2-6-2-14 0-24c2-12 7-22 14-28c4-3 7 0 5 5c-3 10-5 18-6 28c-1 8-2 14-5 18c-2 4-6 4-8 1z" fill="#F44336" />
-      <path d="M26 56c-1-5-1-12 0-20c2-12 6-20 12-26" fill="#EF5350" opacity="0.5" />
-      <ellipse cx="30" cy="30" rx="3.5" ry="10" fill="#FF8A80" opacity="0.3" />
+      <path d="M32 12c0 0-1-6 2-8c1.5-1 3 0 3 2s-2 5-2 5" fill="#26A69A" />
+      <ellipse cx="33" cy="12" rx="3" ry="2.5" fill="#26A69A" />
+      <path d="M30 14c-6 6-14 16-16 28c-1 6 1 10 4 12c4 2 8 0 10-4c4-8 6-16 8-24c1-4 0-8-2-10c-1-1-2-2-4-2z" fill="#F44336" />
+      <path d="M30 14c-6 6-14 16-16 28c-1 6 1 10 4 12c4 2 8 0 10-4c4-8 6-16 8-24c1-4 0-8-2-10c-1-1-2-2-4-2z" fill="#EF5350" />
+      <path d="M28 20c-4 6-10 14-12 24c-1 4 0 7 2 8" fill="#E53935" opacity="0.4" />
+      <ellipse cx="26" cy="34" rx="4" ry="8" fill="#FF8A80" opacity="0.25" transform="rotate(-15 26 34)" />
     </svg>
   ),
   cocktail: (s) => (
@@ -170,10 +188,17 @@ const icons: Record<IconName, (s: number, u: string) => JSX.Element> = {
   ),
   umbrella: (s) => (
     <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
-      <path d="M6 34c0-16 11.6-28 26-28s26 12 26 28H6z" fill="#FF7043" />
-      <path d="M32 6c14.4 0 26 12 26 28h-26V6z" fill="#FF8A65" opacity="0.5" />
-      <rect x="30" y="34" width="4" height="24" rx="2" fill="#8D6E63" />
-      <path d="M28 58c0-2.5 2-4.5 4.5-4.5S37 55.5 37 58" fill="#6D4C41" />
+      <path d="M4 34c0-16 12.5-28 28-28s28 12 28 28H4z" fill="#42A5F5" />
+      <path d="M18 6c6 2 11 8 14 14l14-14c-4-4-10-6-14-6c-6 0-10 2-14 6z" fill="#42A5F5" />
+      <path d="M32 6c-6 0-14 4-20 12l20 16V6z" fill="#64B5F6" opacity="0.3" />
+      <path d="M14 26c2-8 8-16 18-20v28L14 26z" fill="#FDD835" />
+      <path d="M32 6v28l18-8c2-6 0-12-4-16C42 6 38 4 32 6z" fill="#F48FB1" />
+      <path d="M32 6c0 0-2 0-6 2c4-1 8 0 12 2C36 6 34 6 32 6z" fill="#FDD835" />
+      <path d="M4 34h56" fill="none" />
+      <ellipse cx="32" cy="34" rx="28" ry="2.5" fill="#1E88E5" opacity="0.15" />
+      <rect x="30" y="34" width="4" height="26" rx="2" fill="#E0E0E0" />
+      <rect x="26" y="58" width="12" height="4" rx="2" fill="#BDBDBD" />
+      <rect x="28" y="56" width="8" height="4" rx="2" fill="#E0E0E0" />
     </svg>
   ),
   hearts: (s) => (
@@ -191,7 +216,6 @@ const icons: Record<IconName, (s: number, u: string) => JSX.Element> = {
       <circle cx="50" cy="50" r="10" fill="#546E7A" />
       <circle cx="50" cy="50" r="6" fill="#90A4AE" />
       <circle cx="50" cy="50" r="2" fill="#CFD8DC" />
-      <path d="M14 42h14l5-22h16" fill="none" />
       <path d="M14 42h14l5-22h16v6H38l-4 16H14z" fill="#FF7043" />
       <path d="M14 38h10l4-14h14v4H32l-3 10H14z" fill="#FF8A65" opacity="0.5" />
       <rect x="45" y="12" width="7" height="16" rx="3.5" fill="#FFAB91" />
@@ -271,11 +295,9 @@ const icons: Record<IconName, (s: number, u: string) => JSX.Element> = {
       <circle cx="14" cy="16" r="9" fill="#FFB74D" />
       <circle cx="14" cy="14" r="9" fill="#FFCC80" />
       <path d="M4 56V32c0-5 4-9 10-9s10 4 10 9v24z" fill="#42A5F5" />
-
       <circle cx="50" cy="16" r="9" fill="#FFB74D" />
       <circle cx="50" cy="14" r="9" fill="#FFCC80" />
       <path d="M40 56V32c0-5 4-9 10-9s10 4 10 9v24z" fill="#F06292" />
-
       <circle cx="32" cy="24" r="7" fill="#FFB74D" />
       <circle cx="32" cy="22" r="7" fill="#FFCC80" />
       <path d="M24 58V38c0-4 3.5-7 8-7s8 3 8 7v20z" fill="#66BB6A" />
@@ -299,13 +321,11 @@ const icons: Record<IconName, (s: number, u: string) => JSX.Element> = {
     <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
       <rect x="2" y="46" width="60" height="8" rx="4" fill="#8D6E63" />
       <rect x="2" y="44" width="60" height="6" rx="3" fill="#A1887F" />
-
       <ellipse cx="20" cy="42" rx="14" ry="8" fill="#263238" />
       <ellipse cx="20" cy="36" rx="14" ry="8" fill="#37474F" />
       <ellipse cx="20" cy="35" rx="11" ry="6" fill="white" />
       <ellipse cx="20" cy="34" rx="8.5" ry="5" fill="#FFCCBC" />
       <ellipse cx="20" cy="33" rx="6" ry="3.5" fill="#E53935" />
-
       <ellipse cx="46" cy="40" rx="12" ry="7" fill="#263238" />
       <ellipse cx="46" cy="35" rx="12" ry="7" fill="#37474F" />
       <ellipse cx="46" cy="34" rx="9" ry="5" fill="white" />
@@ -509,32 +529,35 @@ export function emojiToIconName(emoji: string): IconName | null {
   return EMOJI_TO_ICON[emoji] || null;
 }
 
-export const FoodIcon = memo(function FoodIcon({ name, size = 32, className = "", animate = true }: FoodIconProps) {
+export function getAnimClass(name: IconName): string {
+  return `fi-tap-${ANIM_MAP[name]}`;
+}
+
+export const FoodIcon = memo(function FoodIcon({ name, size = 32, className = "" }: FoodIconProps) {
   const uid = useId().replace(/:/g, "");
   const renderIcon = icons[name];
 
   useEffect(() => {
-    if (animate) injectAnimStyles();
-  }, [animate]);
+    injectAnimStyles();
+  }, []);
 
   if (!renderIcon) return null;
 
-  const animClass = animate ? `fi-${ANIM_MAP[name]}` : "";
-
   return (
     <span
-      className={`inline-flex items-center justify-center select-none ${animClass} ${className}`}
+      className={`inline-flex items-center justify-center select-none ${className}`}
       style={{ width: size, height: size }}
+      data-anim-class={`fi-tap-${ANIM_MAP[name]}`}
     >
       {renderIcon(size, uid)}
     </span>
   );
 });
 
-export function FoodIconFromEmoji({ emoji, size = 32, className = "", animate = true }: { emoji: string; size?: number; className?: string; animate?: boolean }) {
+export function FoodIconFromEmoji({ emoji, size = 32, className = "" }: { emoji: string; size?: number; className?: string }) {
   const iconName = emojiToIconName(emoji);
   if (iconName) {
-    return <FoodIcon name={iconName} size={size} className={className} animate={animate} />;
+    return <FoodIcon name={iconName} size={size} className={className} />;
   }
   return <span className={`text-[${size * 0.7}px] select-none ${className}`}>{emoji}</span>;
 }

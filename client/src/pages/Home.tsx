@@ -13,7 +13,7 @@ import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { useRestaurants, useSuggestions } from "@/hooks/use-restaurants";
 import { useVibeFrequency } from "@/hooks/use-vibe-frequency";
 import { SaveBucketPicker } from "@/components/SaveBucketPicker";
-import { FoodIconFromEmoji, FoodIcon } from "@/components/FoodIcon";
+import { FoodIconFromEmoji, FoodIcon, emojiToIconName, getAnimClass } from "@/components/FoodIcon";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { useLineProfile } from "@/lib/useLineProfile";
 import toastLogoPath from "@assets/toast_logo_nobg.png";
@@ -372,6 +372,37 @@ export default function Home() {
     const qs = p.toString();
     navigate(`/solo/results${qs ? `?${qs}` : ""}`);
   }, [navigate, recordVibe]);
+
+  const vibeClickPending = useRef(false);
+  const handleVibeClickAnimated = useCallback((mode: string, emoji: string, buttonEl: HTMLElement | null) => {
+    if (vibeClickPending.current) return;
+    vibeClickPending.current = true;
+    if (buttonEl) {
+      const iconName = emojiToIconName(emoji);
+      if (iconName) {
+        const iconSpan = buttonEl.querySelector("span[data-anim-class]") as HTMLElement | null;
+        if (iconSpan) {
+          const animClass = getAnimClass(iconName);
+          iconSpan.classList.add(animClass);
+          const onEnd = () => {
+            iconSpan.removeEventListener("animationend", onEnd);
+            iconSpan.classList.remove(animClass);
+            handleVibeClick(mode);
+          };
+          iconSpan.addEventListener("animationend", onEnd);
+          setTimeout(() => {
+            iconSpan.removeEventListener("animationend", onEnd);
+            iconSpan.classList.remove(animClass);
+            vibeClickPending.current = false;
+            handleVibeClick(mode);
+          }, 600);
+          return;
+        }
+      }
+    }
+    handleVibeClick(mode);
+    vibeClickPending.current = false;
+  }, [handleVibeClick]);
 
   const topMatch = personalizedRecs.length > 0 ? personalizedRecs[0] : FALLBACK_RECOMMENDATIONS[0];
 
@@ -935,7 +966,7 @@ export default function Home() {
                     transition={{ delay: 0.35 + idx * 0.04, type: "spring", stiffness: 320, damping: 22 }}
                     whileHover={{ scale: 1.06, y: -3 }}
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => handleVibeClick(vibe.mode)}
+                    onClick={(e) => handleVibeClickAnimated(vibe.mode, vibe.emoji, e.currentTarget)}
                     className="flex flex-col items-center gap-2 py-4 rounded-2xl bg-white border border-gray-100/80"
                     style={{ boxShadow: "0 2px 12px -3px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.02)" }}
                     data-testid={`vibe-${vibe.mode}`}
@@ -1305,7 +1336,7 @@ export default function Home() {
                       <motion.button
                         key={vibe.mode}
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => { setMoreVibesOpen(false); handleVibeClick(vibe.mode); }}
+                        onClick={(e) => { setMoreVibesOpen(false); handleVibeClickAnimated(vibe.mode, vibe.emoji, e.currentTarget); }}
                         className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-gray-50 border border-gray-100/80"
                         data-testid={`more-vibe-${vibe.mode}`}
                       >
@@ -1325,7 +1356,7 @@ export default function Home() {
                       <motion.button
                         key={vibe.mode}
                         whileTap={{ scale: 0.9 }}
-                        onClick={() => { setMoreVibesOpen(false); handleVibeClick(vibe.mode); }}
+                        onClick={(e) => { setMoreVibesOpen(false); handleVibeClickAnimated(vibe.mode, vibe.emoji, e.currentTarget); }}
                         className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-gray-50 border border-gray-100/80"
                         data-testid={`more-vibe-${vibe.mode}`}
                       >
