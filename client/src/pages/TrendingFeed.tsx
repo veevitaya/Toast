@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, PanInfo } from "framer-motion";
 import { useLocation } from "wouter";
-import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers, ChevronUp } from "lucide-react";
+import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { shareMessage, sendGroupInviteNoRedirect } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
@@ -476,20 +476,11 @@ function FullScreenSlide({
           </div>
         </div>
 
-        <div className="flex items-center gap-1 text-white/60 text-[13px] mb-2.5" data-testid={`text-location-${post.id}`}>
+        <div className="flex items-center gap-1 text-white/60 text-[13px] mb-1" data-testid={`text-location-${post.id}`}>
           <MapPin className="w-3 h-3" />
           <span>{post.address}</span>
           <span>·</span>
           <span>{post.distance}</span>
-        </div>
-
-        <p className="text-white/80 text-[14px] leading-relaxed line-clamp-2 mb-3 pr-2" data-testid={`text-description-${post.id}`}>
-          {post.description}
-        </p>
-
-        <div className="flex items-center gap-1 text-white/40 text-[11px] font-medium pb-1">
-          <ChevronUp className="w-3 h-3" />
-          <span>Tap for details</span>
         </div>
       </button>
     </div>
@@ -652,15 +643,18 @@ export default function TrendingFeed() {
 
   return (
     <div className="fixed inset-0 bg-black" data-testid="trending-feed-page">
-      <div className="absolute top-0 left-0 right-0 z-30 pt-[env(safe-area-inset-top)]">
+      <div className="absolute top-0 left-0 right-0 z-30 bg-black/20 backdrop-blur-md pt-[env(safe-area-inset-top)] border-b border-white/10">
         <div className="flex items-center justify-between px-5 py-3">
-          <div>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-[#FFCC02] flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-gray-900" />
+            </div>
             <h1 className="text-[20px] font-bold text-white leading-tight drop-shadow-md">Trending</h1>
           </div>
-          <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2.5 py-1">
-            <span className="text-white/80 text-[12px] font-medium">{activeIndex + 1}</span>
+          <div className="flex items-center gap-1 bg-white/15 backdrop-blur-md rounded-full px-2.5 py-1">
+            <span className="text-white/90 text-[12px] font-medium">{activeIndex + 1}</span>
             <span className="text-white/40 text-[12px]">/</span>
-            <span className="text-white/50 text-[12px]">{TRENDING_POSTS.length}</span>
+            <span className="text-white/60 text-[12px]">{TRENDING_POSTS.length}</span>
           </div>
         </div>
       </div>
