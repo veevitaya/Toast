@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, PanInfo } from "framer-motion";
 import { useLocation } from "wouter";
-import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers } from "lucide-react";
+import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers, ChevronUp } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { shareMessage, sendGroupInviteNoRedirect } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
@@ -278,13 +278,33 @@ function toggleSavedPost(id: number): boolean {
 function PriceIndicator({ level }: { level: number }) {
   return (
     <span className="text-[13px]">
-      <span className="text-gray-800">{"฿".repeat(level)}</span>
-      <span className="text-gray-300">{"฿".repeat(4 - level)}</span>
+      <span className="text-white">{"฿".repeat(level)}</span>
+      <span className="text-white/40">{"฿".repeat(4 - level)}</span>
     </span>
   );
 }
 
-function ImageCarousel({ items, onTap }: { items: TrendingPost["mediaItems"]; onTap: () => void }) {
+function FullScreenSlide({
+  post,
+  isSaved,
+  isLiked,
+  onSave,
+  onLike,
+  onShare,
+  onNavigate,
+  onInviteSwipe,
+  isActive,
+}: {
+  post: TrendingPost;
+  isSaved: boolean;
+  isLiked: boolean;
+  onSave: () => void;
+  onLike: () => void;
+  onShare: () => void;
+  onNavigate: () => void;
+  onInviteSwipe: () => void;
+  isActive: boolean;
+}) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [direction, setDirection] = useState(0);
   const isDragging = useRef(false);
@@ -296,7 +316,7 @@ function ImageCarousel({ items, onTap }: { items: TrendingPost["mediaItems"]; on
 
   const handleDragEnd = (_: any, info: PanInfo) => {
     const threshold = 50;
-    if (info.offset.x < -threshold && currentIdx < items.length - 1) {
+    if (info.offset.x < -threshold && currentIdx < post.mediaItems.length - 1) {
       setDirection(1);
       setCurrentIdx(currentIdx + 1);
     } else if (info.offset.x > threshold && currentIdx > 0) {
@@ -314,170 +334,164 @@ function ImageCarousel({ items, onTap }: { items: TrendingPost["mediaItems"]; on
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-2xl bg-gray-100 cursor-pointer"
-      style={{ aspectRatio: "4/5" }}
-      data-testid="media-carousel"
+      className="relative w-full flex-shrink-0 snap-start snap-always overflow-hidden"
+      style={{ height: "calc(100dvh - 52px)" }}
+      data-testid={`feed-card-${post.id}`}
     >
-      <AnimatePresence mode="wait" custom={direction}>
-        <motion.img
-          key={currentIdx}
-          src={items[currentIdx].url}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-          custom={direction}
-          variants={slideVariants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{ duration: 0.25, ease: "easeInOut" }}
-          drag={items.length > 1 ? "x" : false}
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.2}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onTap={() => { if (!isDragging.current) onTap(); }}
-          style={{ x: dragX, touchAction: "pan-y" }}
-        />
-      </AnimatePresence>
+      <div className="absolute inset-0 bg-gray-900">
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.img
+            key={currentIdx}
+            src={post.mediaItems[currentIdx].url}
+            alt={post.restaurantName}
+            className="absolute inset-0 w-full h-full object-cover"
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            drag={post.mediaItems.length > 1 ? "x" : false}
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.2}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onTap={() => { if (!isDragging.current) onNavigate(); }}
+            style={{ x: dragX, touchAction: "pan-y" }}
+          />
+        </AnimatePresence>
+      </div>
 
-      {items.length > 1 && (
-        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-[5px] z-10 pointer-events-none">
-          {items.map((_, idx) => (
+      {post.mediaItems.length > 1 && (
+        <div className="absolute top-[calc(env(safe-area-inset-top,0px)+56px)] left-0 right-0 flex justify-center gap-1.5 z-20 pointer-events-none">
+          {post.mediaItems.map((_, idx) => (
             <div
               key={idx}
               className={`rounded-full transition-all duration-300 ${
                 idx === currentIdx
-                  ? "w-[7px] h-[7px] bg-white shadow-sm"
-                  : "w-[6px] h-[6px] bg-white/50"
+                  ? "w-6 h-[3px] bg-white"
+                  : "w-6 h-[3px] bg-white/35"
               }`}
               data-testid={`media-dot-${idx}`}
             />
           ))}
         </div>
       )}
-    </div>
-  );
-}
 
-function FeedCard({
-  post,
-  isSaved,
-  isLiked,
-  onSave,
-  onLike,
-  onShare,
-  onNavigate,
-  onInviteSwipe,
-}: {
-  post: TrendingPost;
-  isSaved: boolean;
-  isLiked: boolean;
-  onSave: () => void;
-  onLike: () => void;
-  onShare: () => void;
-  onNavigate: () => void;
-  onInviteSwipe: () => void;
-}) {
-  return (
-    <div className="pb-6" data-testid={`feed-card-${post.id}`}>
-      <div className="relative">
-        <ImageCarousel items={post.mediaItems} onTap={onNavigate} />
+      <div className="absolute top-[calc(env(safe-area-inset-top,0px)+12px)] left-4 z-20 flex items-center gap-1.5">
+        {post.trendingRank && post.trendingRank <= 5 && (
+          <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md text-white px-2.5 py-1 rounded-full" data-testid={`badge-trending-rank-${post.id}`}>
+            <TrendingUp className="w-3 h-3" />
+            <span className="text-[11px] font-semibold">#{post.trendingRank}</span>
+          </div>
+        )}
+        {post.isNew && (
+          <div className="bg-[#FFCC02] text-gray-900 px-2.5 py-1 rounded-full" data-testid={`badge-new-${post.id}`}>
+            <span className="text-[11px] font-bold">New</span>
+          </div>
+        )}
+      </div>
 
+      <div className="absolute right-3 flex flex-col items-center gap-4 z-20" style={{ bottom: "calc(200px + env(safe-area-inset-bottom, 0px))" }}>
         <button
           onClick={(e) => { e.stopPropagation(); onLike(); }}
-          className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm"
+          className="flex flex-col items-center gap-0.5"
           aria-label={isLiked ? "Unlike" : "Like"}
           data-testid={`button-like-${post.id}`}
         >
-          <Heart className={`w-[18px] h-[18px] ${isLiked ? "text-red-500 fill-red-500" : "text-gray-700"}`} />
+          <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center">
+            <Heart className={`w-[22px] h-[22px] ${isLiked ? "text-red-500 fill-red-500" : "text-white"}`} />
+          </div>
+          <span className="text-white text-[10px] font-medium drop-shadow-md">{isLiked ? "Liked" : "Like"}</span>
         </button>
 
-        <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
-          {post.trendingRank && post.trendingRank <= 3 && (
-            <div className="flex items-center gap-1 bg-white/90 backdrop-blur-sm text-gray-900 px-2.5 py-1 rounded-full shadow-sm" data-testid={`badge-trending-rank-${post.id}`}>
-              <TrendingUp className="w-3 h-3" />
-              <span className="text-[11px] font-semibold">#{post.trendingRank} Trending</span>
-            </div>
-          )}
-          {post.isNew && (
-            <div className="bg-gray-900 text-white px-2.5 py-1 rounded-full" data-testid={`badge-new-${post.id}`}>
-              <span className="text-[11px] font-semibold">New</span>
-            </div>
-          )}
-        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); onSave(); }}
+          className="flex flex-col items-center gap-0.5"
+          aria-label={isSaved ? "Remove from saved" : "Save"}
+          data-testid={`button-save-${post.id}`}
+        >
+          <div className={`w-11 h-11 rounded-full flex items-center justify-center ${isSaved ? "bg-white" : "bg-black/30 backdrop-blur-md"}`}>
+            <Bookmark className={`w-[22px] h-[22px] ${isSaved ? "text-gray-900 fill-gray-900" : "text-white"}`} />
+          </div>
+          <span className="text-white text-[10px] font-medium drop-shadow-md">{isSaved ? "Saved" : "Save"}</span>
+        </button>
+
+        <button
+          onClick={(e) => { e.stopPropagation(); onShare(); }}
+          className="flex flex-col items-center gap-0.5"
+          aria-label="Share"
+          data-testid={`button-share-${post.id}`}
+        >
+          <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center">
+            <Share2 className="w-[22px] h-[22px] text-white" />
+          </div>
+          <span className="text-white text-[10px] font-medium drop-shadow-md">Share</span>
+        </button>
+
+        <button
+          onClick={(e) => { e.stopPropagation(); onInviteSwipe(); }}
+          className="flex flex-col items-center gap-0.5"
+          aria-label="Invite friends to swipe"
+          data-testid={`button-invite-swipe-${post.id}`}
+        >
+          <div className="w-11 h-11 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center">
+            <Layers className="w-[22px] h-[22px] text-white" />
+          </div>
+          <span className="text-white text-[10px] font-medium drop-shadow-md">Swipe</span>
+        </button>
       </div>
 
-      <button onClick={onNavigate} className="block w-full text-left pt-3 px-1 cursor-pointer" data-testid={`link-restaurant-${post.id}`}>
-        <div className="flex items-start justify-between gap-2 mb-0.5">
-          <h3 className="text-[16px] font-semibold text-gray-900 leading-tight flex-1 min-w-0" data-testid={`text-restaurant-name-${post.id}`}>
-            {post.restaurantName}
-          </h3>
-          <div className="flex items-center gap-0.5 shrink-0 pt-0.5" data-testid={`text-rating-${post.id}`}>
-            <Star className="w-3.5 h-3.5 text-gray-900 fill-gray-900" />
-            <span className="text-[14px] font-medium text-gray-900">{post.rating}</span>
-            <span className="text-gray-400 text-[13px]">({post.reviewCount.toLocaleString()})</span>
+      <div className="absolute bottom-0 left-0 right-0 z-10 pointer-events-none" style={{ height: "55%" }}>
+        <div className="w-full h-full" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0) 100%)" }} />
+      </div>
+
+      <button
+        onClick={onNavigate}
+        className="absolute bottom-0 left-0 right-16 z-20 text-left px-5 cursor-pointer"
+        style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))" }}
+        data-testid={`link-restaurant-${post.id}`}
+      >
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          {post.tags.map((tag, idx) => (
+            <span key={tag} className="text-[11px] text-white/90 bg-white/15 backdrop-blur-sm px-2.5 py-0.5 rounded-full font-medium" data-testid={`tag-${post.id}-${idx}`}>
+              {tag}
+            </span>
+          ))}
+        </div>
+
+        <h3 className="text-[26px] font-bold text-white leading-tight tracking-tight mb-1" data-testid={`text-restaurant-name-${post.id}`}>
+          {post.restaurantName}
+        </h3>
+
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-white/90 text-[14px] font-medium" data-testid={`text-category-${post.id}`}>{post.category}</span>
+          <span className="text-white/40">·</span>
+          <PriceIndicator level={post.priceLevel} />
+          <span className="text-white/40">·</span>
+          <div className="flex items-center gap-0.5" data-testid={`text-rating-${post.id}`}>
+            <Star className="w-3.5 h-3.5 text-[#FFCC02] fill-[#FFCC02]" />
+            <span className="text-white text-[14px] font-semibold">{post.rating}</span>
+            <span className="text-white/50 text-[12px]">({post.reviewCount.toLocaleString()})</span>
           </div>
         </div>
 
-        <p className="text-gray-500 text-[14px] leading-snug" data-testid={`text-category-${post.id}`}>
-          {post.category} · <PriceIndicator level={post.priceLevel} />
-        </p>
-
-        <div className="flex items-center gap-1 text-gray-400 text-[13px] mt-0.5" data-testid={`text-location-${post.id}`}>
+        <div className="flex items-center gap-1 text-white/60 text-[13px] mb-2.5" data-testid={`text-location-${post.id}`}>
           <MapPin className="w-3 h-3" />
           <span>{post.address}</span>
           <span>·</span>
           <span>{post.distance}</span>
         </div>
 
-        <p className="text-gray-600 text-[14px] leading-relaxed mt-2 line-clamp-2" data-testid={`text-description-${post.id}`}>
+        <p className="text-white/80 text-[14px] leading-relaxed line-clamp-2 mb-3 pr-2" data-testid={`text-description-${post.id}`}>
           {post.description}
         </p>
 
-        <div className="flex items-center gap-1.5 mt-2.5 flex-wrap" data-testid={`tags-${post.id}`}>
-          {post.tags.map((tag, idx) => (
-            <span key={tag} className="text-[12px] text-gray-600 bg-gray-100 px-2.5 py-1 rounded-full font-medium" data-testid={`tag-${post.id}-${idx}`}>
-              {tag}
-            </span>
-          ))}
+        <div className="flex items-center gap-1 text-white/40 text-[11px] font-medium pb-1">
+          <ChevronUp className="w-3 h-3" />
+          <span>Tap for details</span>
         </div>
       </button>
-
-      <div className="flex items-center gap-2.5 mt-3 px-1">
-        <button
-          onClick={onSave}
-          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full text-[13px] font-semibold border transition-colors ${
-            isSaved
-              ? "bg-gray-900 text-white border-gray-900"
-              : "bg-white text-gray-800 border-gray-300"
-          }`}
-          aria-label={isSaved ? "Remove from saved" : "Save restaurant"}
-          data-testid={`button-save-${post.id}`}
-        >
-          <Bookmark className={`w-4 h-4 ${isSaved ? "fill-white" : ""}`} />
-          {isSaved ? "Saved" : "Save"}
-        </button>
-
-        <button
-          onClick={onShare}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white text-gray-800 text-[13px] font-semibold border border-gray-300"
-          aria-label="Share restaurant"
-          data-testid={`button-share-${post.id}`}
-        >
-          <Share2 className="w-4 h-4" />
-          Share
-        </button>
-
-        <button
-          onClick={onInviteSwipe}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white text-gray-800 text-[13px] font-semibold border border-gray-300"
-          aria-label="Invite friends to swipe"
-          data-testid={`button-invite-swipe-${post.id}`}
-        >
-          <Layers className="w-4 h-4" />
-          Swipe
-        </button>
-      </div>
     </div>
   );
 }
@@ -490,6 +504,7 @@ export default function TrendingFeed() {
   const [savedPosts, setSavedPosts] = useState<Set<number>>(new Set(getSavedPosts()));
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [creatingSession, setCreatingSession] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const deepLinkId = new URLSearchParams(window.location.search).get("id");
 
@@ -501,6 +516,20 @@ export default function TrendingFeed() {
       }
     }
   }, [deepLinkId]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const slideHeight = container.clientHeight;
+      const index = Math.round(container.scrollTop / slideHeight);
+      setActiveIndex(index);
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleSave = useCallback((postId: number) => {
     const nowSaved = toggleSavedPost(postId);
@@ -605,58 +634,59 @@ export default function TrendingFeed() {
       } catch {
         toast({
           title: "Session created!",
-          description: "Invite your friends from the waiting room",
+          description: "Heading to waiting room",
         });
       }
 
-      navigate(`/group/waiting?session=${sessionCode}`);
+      navigate(`/waiting-room?session=${sessionCode}`);
     } catch (err) {
-      console.error("Failed to create trending session:", err);
-      toast({ title: "Something went wrong", description: "Could not create swipe session" });
+      toast({
+        title: "Couldn't create session",
+        description: "Please try again",
+        variant: "destructive",
+      });
     } finally {
       setCreatingSession(false);
     }
   }, [toast, navigate, profile, creatingSession]);
 
   return (
-    <div className="fixed inset-0 bg-[#FCFCFC]" data-testid="trending-feed-page">
-      <div className="absolute top-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-md border-b border-gray-100 pt-[env(safe-area-inset-top)]">
+    <div className="fixed inset-0 bg-black" data-testid="trending-feed-page">
+      <div className="absolute top-0 left-0 right-0 z-30 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center justify-between px-5 py-3">
           <div>
-            <h1 className="text-[20px] font-bold text-gray-900 leading-tight">Trending</h1>
-            <p className="text-gray-400 text-[13px] mt-0.5" data-testid="text-trending-location">Bangkok · Near you</p>
+            <h1 className="text-[20px] font-bold text-white leading-tight drop-shadow-md">Trending</h1>
           </div>
-          <div className="flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded-full">
-            <TrendingUp className="w-3.5 h-3.5 text-gray-600" />
-            <span className="text-[12px] font-medium text-gray-600">This week</span>
+          <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md rounded-full px-2.5 py-1">
+            <span className="text-white/80 text-[12px] font-medium">{activeIndex + 1}</span>
+            <span className="text-white/40 text-[12px]">/</span>
+            <span className="text-white/50 text-[12px]">{TRENDING_POSTS.length}</span>
           </div>
         </div>
       </div>
 
       <div
         ref={containerRef}
-        className="h-full overflow-y-auto pt-[88px] pb-24 px-5 hide-scrollbar"
+        className="w-full h-full overflow-y-auto snap-y snap-mandatory hide-scrollbar"
+        style={{ scrollBehavior: "smooth" }}
       >
-        <div className="divide-y divide-gray-100">
-          {TRENDING_POSTS.map((post) => (
-            <FeedCard
-              key={post.id}
-              post={post}
-              isSaved={savedPosts.has(post.id)}
-              isLiked={likedPosts.has(post.id)}
-              onSave={() => handleSave(post.id)}
-              onLike={() => handleLike(post.id)}
-              onShare={() => handleShare(post)}
-              onNavigate={() => handleNavigate(post)}
-              onInviteSwipe={() => handleInviteSwipe(post)}
-            />
-          ))}
-        </div>
+        {TRENDING_POSTS.map((post, index) => (
+          <FullScreenSlide
+            key={post.id}
+            post={post}
+            isSaved={savedPosts.has(post.id)}
+            isLiked={likedPosts.has(post.id)}
+            onSave={() => handleSave(post.id)}
+            onLike={() => handleLike(post.id)}
+            onShare={() => handleShare(post)}
+            onNavigate={() => handleNavigate(post)}
+            onInviteSwipe={() => handleInviteSwipe(post)}
+            isActive={index === activeIndex}
+          />
+        ))}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 z-30">
-        <BottomNav showBack={false} />
-      </div>
+      <BottomNav />
     </div>
   );
 }
