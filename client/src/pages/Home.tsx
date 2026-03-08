@@ -298,6 +298,23 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const locationSearchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return BANGKOK_LOCATIONS.filter(loc => loc.name.toLowerCase().includes(q));
+  }, [searchQuery]);
+
+  const getRestaurantsNearLocation = useCallback((lat: number, lng: number) => {
+    return ALL_SEARCHABLE
+      .filter(r => {
+        const pin = RESTAURANT_PINS.find(p => p.id === r.id);
+        if (!pin) return false;
+        const dist = Math.sqrt((pin.lat - lat) ** 2 + (pin.lng - lng) ** 2);
+        return dist < 0.015;
+      })
+      .slice(0, 8);
+  }, []);
+
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
@@ -305,10 +322,12 @@ export default function Home() {
     const categoryMatches: typeof ALL_SEARCHABLE = [];
     const menuMatches: typeof ALL_SEARCHABLE = [];
     const seen = new Set<number>();
+    const addressMatches: typeof ALL_SEARCHABLE = [];
     for (const r of ALL_SEARCHABLE) { if (r.name.toLowerCase().includes(q)) { nameMatches.push(r); seen.add(r.id); } }
     for (const r of ALL_SEARCHABLE) { if (seen.has(r.id)) continue; if (r.category.toLowerCase().includes(q)) { categoryMatches.push(r); seen.add(r.id); } }
+    for (const r of ALL_SEARCHABLE) { if (seen.has(r.id)) continue; if (r.address.toLowerCase().includes(q)) { addressMatches.push(r); seen.add(r.id); } }
     for (const r of ALL_SEARCHABLE) { if (seen.has(r.id)) continue; if (r.menus.some(m => m.includes(q))) { menuMatches.push(r); seen.add(r.id); } }
-    return [...nameMatches.slice(0, 5), ...categoryMatches.slice(0, 4), ...menuMatches.slice(0, 6)].slice(0, 10);
+    return [...nameMatches.slice(0, 5), ...categoryMatches.slice(0, 4), ...addressMatches.slice(0, 4), ...menuMatches.slice(0, 5)].slice(0, 12);
   }, [searchQuery]);
 
   const mapCenter = useMemo<[number, number]>(() => [userLocation.lat, userLocation.lng], [userLocation]);
@@ -1022,7 +1041,7 @@ export default function Home() {
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="What are you craving?"
+                  placeholder="Search food, restaurants, or areas..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-transparent border-none outline-none text-foreground font-medium w-full placeholder:text-muted-foreground text-sm"
@@ -1119,8 +1138,8 @@ export default function Home() {
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-sm font-bold text-foreground">
-                      {searchResults.length > 0
-                        ? `${searchResults.length} results for "${searchQuery}"`
+                      {(searchResults.length + locationSearchResults.length) > 0
+                        ? `${searchResults.length + locationSearchResults.length} results for "${searchQuery}"`
                         : `No results for "${searchQuery}"`
                       }
                     </p>
@@ -1132,34 +1151,82 @@ export default function Home() {
                       Clear
                     </button>
                   </div>
-                  {searchResults.length > 0 ? (
-                    <div className="space-y-2">
-                      {searchResults.map((r, idx) => {
-                        const isNameMatch = r.name.toLowerCase().includes(searchQuery.toLowerCase());
-                        return (
-                          <button
-                            key={`${r.id}-${idx}`}
-                            onClick={() => { setSearchOpen(false); navigate(`/restaurant/${r.id}`); }}
-                            className="w-full flex items-center gap-3 px-4 py-3 bg-white rounded-2xl border border-gray-100/80 hover:bg-gray-50 active:scale-[0.97] transition-all duration-150 text-left"
-                            style={{ boxShadow: "0 2px 8px -2px rgba(0,0,0,0.06)" }}
-                            data-testid={`drawer-search-result-${r.id}`}
-                          >
-                            <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-lg flex-shrink-0">
-                              {isNameMatch ? "📍" : "🏷️"}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-foreground truncate">{r.name}</p>
-                              <p className="text-[11px] text-muted-foreground truncate">★ {r.rating} · {r.category} · {r.address}</p>
-                            </div>
-                            {!isNameMatch && (
-                              <span className="text-[9px] text-muted-foreground/60 bg-gray-100 px-2 py-0.5 rounded-full flex-shrink-0">Similar</span>
-                            )}
-                            <span className="text-muted-foreground/40 text-xs">&#8250;</span>
-                          </button>
-                        );
-                      })}
+
+                  {locationSearchResults.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Locations</p>
+                      <div className="space-y-2">
+                        {locationSearchResults.map((loc) => {
+                          const nearby = getRestaurantsNearLocation(loc.lat, loc.lng);
+                          return (
+                            <button
+                              key={loc.name}
+                              onClick={() => {
+                                setCurrentLocationName(loc.name);
+                                setUserLocation({ lat: loc.lat, lng: loc.lng });
+                                setSearchOpen(false);
+                                setSearchQuery("");
+                                setDrawerOpen(false);
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-3 bg-white rounded-2xl border border-gray-100/80 hover:bg-gray-50 active:scale-[0.97] transition-all duration-150 text-left"
+                              style={{ boxShadow: "0 2px 8px -2px rgba(0,0,0,0.06)" }}
+                              data-testid={`search-location-${loc.name.toLowerCase()}`}
+                            >
+                              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
+                                <MapPin className="w-5 h-5 text-[#E53935]" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-foreground">{loc.name}</p>
+                                <p className="text-[11px] text-muted-foreground truncate">
+                                  {nearby.length > 0
+                                    ? `${nearby.length} restaurants nearby · ${nearby.slice(0, 2).map(r => r.name).join(", ")}...`
+                                    : "Bangkok area"
+                                  }
+                                </p>
+                              </div>
+                              <span className="text-muted-foreground/40 text-xs">&#8250;</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  ) : (
+                  )}
+
+                  {searchResults.length > 0 && (
+                    <>
+                      {locationSearchResults.length > 0 && (
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Restaurants</p>
+                      )}
+                      <div className="space-y-2">
+                        {searchResults.map((r, idx) => {
+                          const isNameMatch = r.name.toLowerCase().includes(searchQuery.toLowerCase());
+                          return (
+                            <button
+                              key={`${r.id}-${idx}`}
+                              onClick={() => { setSearchOpen(false); navigate(`/restaurant/${r.id}`); }}
+                              className="w-full flex items-center gap-3 px-4 py-3 bg-white rounded-2xl border border-gray-100/80 hover:bg-gray-50 active:scale-[0.97] transition-all duration-150 text-left"
+                              style={{ boxShadow: "0 2px 8px -2px rgba(0,0,0,0.06)" }}
+                              data-testid={`drawer-search-result-${r.id}`}
+                            >
+                              <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-lg flex-shrink-0">
+                                {isNameMatch ? "📍" : "🏷️"}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-foreground truncate">{r.name}</p>
+                                <p className="text-[11px] text-muted-foreground truncate">★ {r.rating} · {r.category} · {r.address}</p>
+                              </div>
+                              {!isNameMatch && (
+                                <span className="text-[9px] text-muted-foreground/60 bg-gray-100 px-2 py-0.5 rounded-full flex-shrink-0">Similar</span>
+                              )}
+                              <span className="text-muted-foreground/40 text-xs">&#8250;</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  {searchResults.length === 0 && locationSearchResults.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-12 gap-3">
                       <span className="text-4xl">🔍</span>
                       <p className="text-sm text-muted-foreground">Try a different search term</p>
