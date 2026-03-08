@@ -313,7 +313,7 @@ function analyzeImageBrightness(
       }
       const avgLum = totalLum / pixelCount;
       const darkRatio = darkPixels / pixelCount;
-      const isDark = avgLum < 120 || darkRatio > 0.55;
+      const isDark = avgLum < 160 || darkRatio > 0.4;
       callback(isDark);
     } catch {}
   };
