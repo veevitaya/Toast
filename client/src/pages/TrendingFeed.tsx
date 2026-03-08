@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, PanInfo } from "framer-motion";
 import { useLocation } from "wouter";
 import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers } from "lucide-react";
@@ -493,6 +493,7 @@ export default function TrendingFeed() {
   const [savedPosts, setSavedPosts] = useState<Set<number>>(new Set(getSavedPosts()));
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [creatingSession, setCreatingSession] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const deepLinkId = new URLSearchParams(window.location.search).get("id");
 
@@ -504,6 +505,36 @@ export default function TrendingFeed() {
       }
     }
   }, [deepLinkId]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const handleScroll = () => {
+      const idx = Math.round(container.scrollTop / container.clientHeight);
+      setActiveIndex(idx);
+    };
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const activeDistrict = useMemo(() => {
+    const post = TRENDING_POSTS[activeIndex];
+    if (!post) return "Bangkok";
+    const addr = post.address.toLowerCase();
+    if (addr.includes("samran rat") || addr.includes("maha chai")) return "Phra Nakhon";
+    if (addr.includes("langsuan")) return "Pathum Wan";
+    if (addr.includes("thonglor") || addr.includes("sukhumvit 55")) return "Thonglor";
+    if (addr.includes("phrom phong")) return "Phrom Phong";
+    if (addr.includes("ekkamai")) return "Ekkamai";
+    if (addr.includes("sukhumvit")) return "Sukhumvit";
+    if (addr.includes("silom") || addr.includes("convent")) return "Silom";
+    if (addr.includes("charoen krung")) return "Charoen Krung";
+    if (addr.includes("chinatown") || addr.includes("nana")) return "Chinatown";
+    if (addr.includes("samsen")) return "Dusit";
+    if (addr.includes("phetchaburi")) return "Ratchathewi";
+    if (addr.includes("ari")) return "Ari";
+    return "Bangkok";
+  }, [activeIndex]);
 
   const handleSave = useCallback((postId: number) => {
     const nowSaved = toggleSavedPost(postId);
@@ -634,7 +665,7 @@ export default function TrendingFeed() {
           </div>
           <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md rounded-full px-2.5 py-1">
             <MapPin className="w-3 h-3 text-white/80" />
-            <span className="text-white/90 text-[12px] font-medium">Bangkok</span>
+            <span className="text-white/90 text-[12px] font-medium">{activeDistrict}</span>
           </div>
         </div>
       </div>
