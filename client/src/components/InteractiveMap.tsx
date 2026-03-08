@@ -40,7 +40,7 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
       minZoom: 11,
     });
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/voyager/{z}/{x}/{y}{r}.png", {
       maxZoom: 19,
       subdomains: "abcd",
     }).addTo(map);
@@ -175,12 +175,12 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
           background: hsl(222, 47%, 11%);
         }
         .leaflet-container {
-          background: #D8E2F0 !important;
+          background: #C8E6D0 !important;
           z-index: 0 !important;
           isolation: isolate;
         }
         .leaflet-tile {
-          filter: saturate(1.1) contrast(0.94) brightness(1.02) hue-rotate(-5deg);
+          filter: saturate(1.6) contrast(0.88) brightness(1.06) hue-rotate(25deg);
         }
         .pin-drunk-sway {
           animation: pin-sway 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;

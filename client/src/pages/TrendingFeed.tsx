@@ -460,7 +460,7 @@ function FullScreenSlide({
         )}
       </div>
 
-      <div className="absolute right-3 z-20 flex flex-col items-center gap-4" style={{ bottom: "220px" }}>
+      <div className="absolute right-3 z-20 flex flex-col items-center gap-4" style={{ bottom: "210px" }}>
         <button
           onClick={(e) => { e.stopPropagation(); onLike(); }}
           className="flex flex-col items-center gap-0.5"
@@ -517,7 +517,7 @@ function FullScreenSlide({
       <button
         onClick={onNavigate}
         className="absolute left-0 right-16 z-20 text-left px-5 cursor-pointer"
-        style={{ bottom: "64px" }}
+        style={{ bottom: "56px" }}
         data-testid={`link-restaurant-${post.id}`}
       >
         <div className="flex items-center gap-2 mb-2 flex-wrap">
