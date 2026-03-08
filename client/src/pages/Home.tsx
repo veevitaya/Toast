@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
   Search, X, MapPin, ArrowRight, ChevronDown,
-  Sparkles, SlidersHorizontal, Users, Navigation, Grid3X3,
+  Sparkles, SlidersHorizontal, Users, Navigation,
 } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { SessionBar } from "@/components/SessionBar";
@@ -13,7 +13,7 @@ import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { useRestaurants, useSuggestions } from "@/hooks/use-restaurants";
 import { useVibeFrequency } from "@/hooks/use-vibe-frequency";
 import { SaveBucketPicker } from "@/components/SaveBucketPicker";
-import { FoodIconFromEmoji } from "@/components/FoodIcon";
+import { FoodIconFromEmoji, FoodIcon } from "@/components/FoodIcon";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { useLineProfile } from "@/lib/useLineProfile";
 import toastLogoPath from "@assets/toast_logo_nobg.png";
@@ -968,7 +968,7 @@ export default function Home() {
                   whileTap={{ rotate: -12, scale: 1.2 }}
                   transition={{ type: "spring", stiffness: 400, damping: 15 }}
                 >
-                  <Grid3X3 className="w-6 h-6 text-muted-foreground" />
+                  <FoodIcon name="more" size={38} />
                 </motion.div>
                 <span className="text-[11px] font-semibold text-foreground">More</span>
               </motion.button>
