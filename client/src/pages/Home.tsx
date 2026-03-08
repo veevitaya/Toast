@@ -354,6 +354,7 @@ export default function Home() {
           selectedPinId={null}
           onPinSelect={(id) => navigate(`/restaurant/${id}`)}
           filteredCategory={selectedCategory}
+          userLocation={[userLocation.lat, userLocation.lng]}
         />
       </div>
 
