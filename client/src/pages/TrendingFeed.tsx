@@ -284,35 +284,46 @@ function PriceIndicator({ level, isDark }: { level: number; isDark: boolean }) {
   );
 }
 
+function analyzeImageBrightness(
+  url: string,
+  region: "top" | "bottom",
+  callback: (isDark: boolean) => void
+) {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    try {
+      const canvas = document.createElement("canvas");
+      const size = 50;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const sy = region === "top" ? 0 : img.height * 0.5;
+      const sh = region === "top" ? img.height * 0.2 : img.height * 0.5;
+      ctx.drawImage(img, 0, sy, img.width, sh, 0, 0, size, size);
+      const data = ctx.getImageData(0, 0, size, size).data;
+      let total = 0;
+      let count = 0;
+      for (let i = 0; i < data.length; i += 16) {
+        total += (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+        count++;
+      }
+      callback((total / count) < 140);
+    } catch {}
+  };
+  img.src = url;
+}
+
 function useImageBrightness(url: string) {
   const [isDark, setIsDark] = useState(true);
+  useEffect(() => { analyzeImageBrightness(url, "bottom", setIsDark); }, [url]);
+  return isDark;
+}
 
-  useEffect(() => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      try {
-        const canvas = document.createElement("canvas");
-        const size = 50;
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        ctx.drawImage(img, 0, img.height * 0.5, img.width, img.height * 0.5, 0, 0, size, size);
-        const data = ctx.getImageData(0, 0, size, size).data;
-        let total = 0;
-        let count = 0;
-        for (let i = 0; i < data.length; i += 16) {
-          total += (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
-          count++;
-        }
-        const avg = total / count;
-        setIsDark(avg < 140);
-      } catch {}
-    };
-    img.src = url;
-  }, [url]);
-
+function useImageTopBrightness(url: string) {
+  const [isDark, setIsDark] = useState(true);
+  useEffect(() => { analyzeImageBrightness(url, "top", setIsDark); }, [url]);
   return isDark;
 }
 
@@ -325,6 +336,7 @@ function FullScreenSlide({
   onShare,
   onNavigate,
   onInviteSwipe,
+  onHeaderBrightness,
 }: {
   post: TrendingPost;
   isSaved: boolean;
@@ -334,12 +346,17 @@ function FullScreenSlide({
   onShare: () => void;
   onNavigate: () => void;
   onInviteSwipe: () => void;
+  onHeaderBrightness?: (isDark: boolean) => void;
 }) {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [direction, setDirection] = useState(0);
   const isDragging = useRef(false);
   const dragX = useMotionValue(0);
   const isDark = useImageBrightness(post.mediaItems[currentIdx].url);
+  const isTopDark = useImageTopBrightness(post.mediaItems[currentIdx].url);
+  const onHeaderBrightnessRef = useRef(onHeaderBrightness);
+  onHeaderBrightnessRef.current = onHeaderBrightness;
+  useEffect(() => { onHeaderBrightnessRef.current?.(isTopDark); }, [isTopDark]);
 
   const txt = isDark ? "text-white" : "text-gray-900";
   const txtSub = isDark ? "text-white/90" : "text-gray-700";
@@ -542,6 +559,8 @@ export default function TrendingFeed() {
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [creatingSession, setCreatingSession] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [headerBrightness, setHeaderBrightness] = useState<Record<number, boolean>>({});
+  const headerIsDark = headerBrightness[activeIndex] ?? true;
 
   const deepLinkId = new URLSearchParams(window.location.search).get("id");
 
@@ -705,15 +724,15 @@ export default function TrendingFeed() {
 
   return (
     <div className="fixed inset-0 bg-black" data-testid="trending-feed-page">
-      <div className="absolute top-0 left-0 right-0 z-30 bg-white/20 backdrop-blur-md pt-[env(safe-area-inset-top)] border-b border-white/15">
+      <div className={`absolute top-0 left-0 right-0 z-30 backdrop-blur-md pt-[env(safe-area-inset-top)] border-b transition-colors duration-300 ${headerIsDark ? "bg-white/20 border-white/15" : "bg-black/10 border-black/10"}`}>
         <div className="flex items-center justify-between px-5 py-3">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-[#FFCC02] drop-shadow-md" />
-            <h1 className="text-[20px] font-bold text-white leading-tight drop-shadow-md">Trending</h1>
+            <TrendingUp className={`w-5 h-5 text-[#FFCC02] ${headerIsDark ? "drop-shadow-md" : ""}`} />
+            <h1 className={`text-[20px] font-bold leading-tight transition-colors duration-300 ${headerIsDark ? "text-white drop-shadow-md" : "text-gray-900"}`}>Trending</h1>
           </div>
-          <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-md rounded-full px-2.5 py-1">
-            <MapPin className="w-3 h-3 text-white/80" />
-            <span className="text-white/90 text-[12px] font-medium">{activeDistrict}</span>
+          <div className={`flex items-center gap-1.5 backdrop-blur-md rounded-full px-2.5 py-1 transition-colors duration-300 ${headerIsDark ? "bg-white/15" : "bg-black/8"}`}>
+            <MapPin className={`w-3 h-3 transition-colors duration-300 ${headerIsDark ? "text-white/80" : "text-[#E53935]"}`} />
+            <span className={`text-[12px] font-medium transition-colors duration-300 ${headerIsDark ? "text-white/90" : "text-gray-800"}`}>{activeDistrict}</span>
           </div>
         </div>
       </div>
@@ -734,6 +753,7 @@ export default function TrendingFeed() {
             onShare={() => handleShare(post)}
             onNavigate={() => handleNavigate(post)}
             onInviteSwipe={() => handleInviteSwipe(post)}
+            onHeaderBrightness={(dark) => setHeaderBrightness(prev => prev[index] === dark ? prev : { ...prev, [index]: dark })}
           />
         ))}
       </div>
