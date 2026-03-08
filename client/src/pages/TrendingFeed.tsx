@@ -460,7 +460,7 @@ function FullScreenSlide({
         )}
       </div>
 
-      <div className="absolute right-3 z-20 flex flex-col items-center gap-4" style={{ bottom: "170px" }}>
+      <div className="absolute right-3 z-20 flex flex-col items-center gap-4" style={{ bottom: "220px" }}>
         <button
           onClick={(e) => { e.stopPropagation(); onLike(); }}
           className="flex flex-col items-center gap-0.5"
@@ -517,7 +517,7 @@ function FullScreenSlide({
       <button
         onClick={onNavigate}
         className="absolute left-0 right-16 z-20 text-left px-5 cursor-pointer"
-        style={{ bottom: "12px" }}
+        style={{ bottom: "64px" }}
         data-testid={`link-restaurant-${post.id}`}
       >
         <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -736,7 +736,7 @@ export default function TrendingFeed() {
             <h1 className={`text-[20px] font-bold leading-tight transition-colors duration-300 ${headerIsDark ? "text-white drop-shadow-md" : "text-gray-900"}`}>Trending</h1>
           </div>
           <div className={`flex items-center gap-1.5 backdrop-blur-md rounded-full px-2.5 py-1 transition-colors duration-300 ${headerIsDark ? "bg-white/15" : "bg-black/8"}`}>
-            <MapPin className={`w-3 h-3 transition-colors duration-300 ${headerIsDark ? "text-white/80" : "text-[#E53935]"}`} />
+            <MapPin className="w-3 h-3 text-[#E53935]" />
             <span className={`text-[12px] font-medium transition-colors duration-300 ${headerIsDark ? "text-white/90" : "text-gray-800"}`}>{activeDistrict}</span>
           </div>
         </div>
