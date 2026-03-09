@@ -76,12 +76,23 @@ export async function initLiffOA(): Promise<boolean> {
   return initialized;
 }
 
+const PRODUCTION_DOMAIN = "https://letstoast.app";
+
+function getRedirectUri(): string {
+  const currentUrl = new URL(window.location.href);
+  if (currentUrl.hostname === "letstoast.app" || currentUrl.hostname.endsWith(".letstoast.app")) {
+    return currentUrl.href;
+  }
+  const productionUrl = new URL(currentUrl.pathname + currentUrl.search, PRODUCTION_DOMAIN);
+  return productionUrl.href;
+}
+
 export async function ensureLineLogin(): Promise<LineProfile | null> {
   const ready = await initLiffOA();
   if (!ready) return null;
 
   if (!liff.isLoggedIn()) {
-    liff.login({ redirectUri: window.location.href });
+    liff.login({ redirectUri: getRedirectUri() });
     return null;
   }
 
@@ -99,7 +110,7 @@ export function isLoggedIn(): boolean {
 
 export function login(): void {
   if (!initialized) return;
-  liff.login();
+  liff.login({ redirectUri: getRedirectUri() });
 }
 
 export function logout(): void {
