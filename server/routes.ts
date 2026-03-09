@@ -34,6 +34,35 @@ async function seedAdminUser() {
   }
 }
 
+async function seedOwnerUser() {
+  const restaurants = await storage.getRestaurants();
+  const jayFai = restaurants.find(r => r.name === "Jay Fai");
+  if (!jayFai) return;
+
+  let owner = await storage.getRestaurantOwnerByEmail("owner@toastbkk.com");
+  if (!owner) {
+    owner = await storage.createRestaurantOwner({
+      email: "owner@toastbkk.com",
+      passwordHash: hashPassword("owner2024"),
+      displayName: "Somchai Rattanakorn",
+      phone: "+66 89-123-4567",
+      restaurantId: jayFai.id,
+      isVerified: true,
+      verificationStatus: "approved",
+      subscriptionTier: "premium",
+      createdAt: "2026-01-15T10:00:00Z",
+    });
+  }
+
+  if (owner && owner.restaurantId !== jayFai.id) {
+    await storage.updateRestaurantOwner(owner.id, { restaurantId: jayFai.id });
+  }
+
+  if (owner && (!jayFai.ownerId || jayFai.ownerId !== owner.id)) {
+    await storage.updateRestaurant(jayFai.id, { ownerId: owner.id, ownerClaimStatus: "verified" });
+  }
+}
+
 async function seedDatabase() {
   const existing = await storage.getRestaurants();
   if (existing.length < 40) {
@@ -644,8 +673,8 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  seedDatabase().catch(console.error);
   seedAdminUser().catch(console.error);
+  seedDatabase().then(() => seedOwnerUser()).catch(console.error);
 
   app.get("/api/restaurants/suggestions", async (req, res) => {
     try {
@@ -1462,18 +1491,19 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/admin/claims", async (req, res) => {
+  app.post("/api/admin/claims", ownerAuth, async (req: any, res) => {
     try {
       const schema = z.object({
         restaurantId: z.number(),
-        ownerId: z.number(),
         proofDocuments: z.array(z.string()).optional().default([]),
         ownershipType: z.enum(["single_location", "franchise_owner", "franchisee"]).optional().default("single_location"),
         notes: z.string().optional(),
       });
       const input = schema.parse(req.body);
+      const ownerId = req.ownerUser.id;
       const claim = await storage.createRestaurantClaim({
         ...input,
+        ownerId,
         status: "pending",
         verificationChecklist: VERIFICATION_CHECKLIST_TEMPLATE,
         reviewNotes: input.notes || null,
@@ -1551,7 +1581,7 @@ export async function registerRoutes(
         stats.views = events.filter(e => e.eventType === "view_detail").length;
         stats.likes = events.filter(e => e.eventType === "swipe_right").length;
         stats.saves = events.filter(e => e.eventType === "save").length;
-        stats.deliveryTaps = events.filter(e => e.eventType === "delivery_tap").length;
+        stats.deliveryTaps = events.filter(e => e.eventType === "delivery_click" || e.eventType === "delivery_tap").length;
       }
       res.json({
         owner: { ...owner, passwordHash: undefined },
