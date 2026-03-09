@@ -376,7 +376,7 @@ function FullScreenSlide({
     : "text-gray-800 bg-black/10 backdrop-blur-sm";
   const dotActive = isDark ? "bg-white" : "bg-gray-900";
   const dotInactive = isDark ? "bg-white/35" : "bg-gray-900/30";
-  const badgeBg = isDark ? "bg-[#FFCC02]/20 backdrop-blur-md border border-[#FFCC02]/30" : "bg-[#FFCC02]/15 backdrop-blur-md border border-[#FFCC02]/25";
+  const badgeBg = isDark ? "bg-black/30 backdrop-blur-md border border-white/15" : "bg-white/70 backdrop-blur-md border border-black/10";
   const badgeTxt = isDark ? "text-white" : "text-gray-900";
   const gradient = isDark
     ? "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0) 100%)"
@@ -449,7 +449,7 @@ function FullScreenSlide({
       <div className="absolute left-4 z-20 flex items-center gap-1.5" style={{ top: "calc(env(safe-area-inset-top, 0px) + 56px)" }}>
         {post.trendingRank && post.trendingRank <= 5 && (
           <div className={`flex items-center gap-1 ${badgeBg} ${badgeTxt} px-2.5 py-1 rounded-full`} data-testid={`badge-trending-rank-${post.id}`}>
-            <TrendingUp className="w-3 h-3 text-[#FFCC02]" />
+            <TrendingUp className="w-3 h-3" />
             <span className="text-[11px] font-semibold">#{post.trendingRank}</span>
           </div>
         )}
