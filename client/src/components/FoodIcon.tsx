@@ -149,12 +149,12 @@ const icons: Record<IconName, (s: number, u: string) => JSX.Element> = {
   ),
   chili: (s) => (
     <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
-      <path d="M33 10c0-3 1-6 3-7c1.5-0.8 3 0.5 2.5 3c-0.3 1.5-1.5 3-2.5 4" fill="#009688" />
-      <ellipse cx="34" cy="12" rx="4" ry="3" fill="#26A69A" />
-      <path d="M34 15c-2 2-6 8-10 18c-4 10-6 18-5 22c1 4 4 6 7 5c4-1 7-6 9-14c2-8 4-16 5-22c0.5-3-0.5-6-2-8c-1-1-2.5-2-4-1z" fill="#F44336" />
-      <path d="M34 15c-2 2-6 8-10 18c-4 10-6 18-5 22c1 4 4 6 7 5c4-1 7-6 9-14c2-8 4-16 5-22c0.5-3-0.5-6-2-8c-1-1-2.5-2-4-1z" fill="#EF5350" />
-      <path d="M32 20c-3 6-6 14-8 22c-1 4-0.5 7 1 8" fill="none" stroke="#D32F2F" strokeWidth="1.5" opacity="0.4" />
-      <ellipse cx="28" cy="36" rx="3" ry="8" fill="#FF8A80" opacity="0.25" transform="rotate(-20 28 36)" />
+      <path d="M30 14c0 0-1-4 0-7c0.5-1.5 1.5-2.5 2-2.5" stroke="#2E9E8F" strokeWidth="3" strokeLinecap="round" fill="none" />
+      <ellipse cx="30" cy="14" rx="4" ry="3" fill="#2E9E8F" />
+      <path d="M26 16c-6 4-12 12-16 24c-2 6-1 10 2 12c4 2 8-1 14-8c8-10 16-18 22-22c3-2 3-5 1-7c-3-2-6-1-10 1c-3 1-6 0-8 0c-2 0-4 0-5 0z" fill="#EF4836" />
+      <path d="M26 16c-6 4-12 12-16 24c-2 6-1 10 2 12c4 2 8-1 14-8c8-10 16-18 22-22c3-2 3-5 1-7c-3-2-6-1-10 1c-3 1-6 0-8 0c-2 0-4 0-5 0z" fill="#E8432A" />
+      <path d="M24 18c-5 4-10 11-14 22c-1.5 5-0.5 8 1.5 9.5c3 1.5 6.5-0.5 12-7c7-9 14-17 20-20" fill="#EF4836" />
+      <path d="M22 22c-4 5-7 12-10 20" stroke="#D43A2A" strokeWidth="1.2" opacity="0.3" fill="none" strokeLinecap="round" />
     </svg>
   ),
   cocktail: (s) => (
