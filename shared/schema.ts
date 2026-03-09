@@ -19,6 +19,9 @@ export const restaurants = pgTable("restaurants", {
   ownerClaimStatus: text("owner_claim_status").default("unclaimed"),
   paymentConnected: boolean("payment_connected").default(false),
   googlePlaceId: text("google_place_id"),
+  vibes: text("vibes").array().default([]),
+  district: text("district"),
+  operatingHours: text("operating_hours"),
 });
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({ id: true });

@@ -27,7 +27,7 @@ const statusTabs = ["All", "Draft", "Active", "Paused", "Ended"] as const;
 function statusPill(status: string | null) {
   switch (status) {
     case "active":
-      return "bg-foreground text-white";
+      return "bg-[#00B14F]/10 text-[#00B14F]";
     case "draft":
       return "bg-gray-100 text-muted-foreground";
     case "paused":
@@ -42,15 +42,15 @@ function statusPill(status: string | null) {
 function getAdType(dealType: string | null): { label: string; className: string } {
   switch (dealType) {
     case "discount":
-      return { label: "Swipe Card", className: "bg-gray-100 dark:bg-muted text-indigo-600 dark:text-indigo-400" };
+      return { label: "Swipe Card", className: "bg-gray-100 text-indigo-600" };
     case "bundle":
-      return { label: "Banner", className: "bg-gray-100 dark:bg-muted text-cyan-600 dark:text-cyan-400" };
+      return { label: "Banner", className: "bg-gray-100 text-cyan-600" };
     case "freeItem":
-      return { label: "Sponsored", className: "bg-gray-100 dark:bg-muted text-violet-600 dark:text-violet-400" };
+      return { label: "Sponsored", className: "bg-gray-100 text-violet-600" };
     case "specialMenu":
-      return { label: "Push", className: "bg-gray-100 dark:bg-muted text-orange-600 dark:text-orange-400" };
+      return { label: "Push", className: "bg-gray-100 text-orange-600" };
     default:
-      return { label: "Swipe Card", className: "bg-gray-100 dark:bg-muted text-indigo-600 dark:text-indigo-400" };
+      return { label: "Swipe Card", className: "bg-gray-100 text-indigo-600" };
   }
 }
 
@@ -131,10 +131,10 @@ export default function AdminCampaigns() {
     <div data-testid="admin-campaigns-page" className="space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
-          <h2 className="text-xl font-semibold text-foreground" data-testid="text-campaigns-title">
+          <h2 className="text-xl font-semibold text-gray-800" data-testid="text-campaigns-title">
             Ad Platform Manager
           </h2>
-          <span className="bg-foreground text-white text-xs font-medium rounded-full px-3 py-0.5">
+          <span className="bg-[#FFCC02] text-gray-900 text-xs font-medium rounded-full px-3 py-0.5">
             {campaigns.length}
           </span>
         </div>
@@ -144,7 +144,7 @@ export default function AdminCampaigns() {
             placeholder="Search campaigns..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 w-64 rounded-xl border-gray-200 dark:border-border focus:ring-foreground/20 focus:border-foreground"
+            className="pl-9 w-64 rounded-xl border-gray-100 focus:ring-[#FFCC02]/30 focus:border-[#FFCC02]"
             data-testid="input-search-campaigns"
           />
         </div>
@@ -154,13 +154,15 @@ export default function AdminCampaigns() {
         {kpiCards.map((kpi) => (
           <div
             key={kpi.label}
-            className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6"
+            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
             data-testid={`kpi-${kpi.label.toLowerCase().replace(/\s+/g, "-")}`}
           >
             <div className="flex items-center gap-3">
-              <kpi.icon className={`w-5 h-5 ${kpi.iconColor}`} />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${kpi.iconBg}`}>
+                  <kpi.icon className={`w-5 h-5 ${kpi.iconColor}`} />
+                </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
+                <p className="text-2xl font-bold text-gray-800">{kpi.value}</p>
                 <p className="text-xs text-muted-foreground">{kpi.label}</p>
               </div>
             </div>
@@ -168,14 +170,14 @@ export default function AdminCampaigns() {
         ))}
       </div>
 
-      <div className="bg-gray-100 dark:bg-muted rounded-xl p-1 inline-flex gap-1 flex-wrap">
+      <div className="bg-gray-100 rounded-xl p-1 inline-flex gap-1 flex-wrap">
         {statusTabs.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${
               activeTab === tab
-                ? "bg-white dark:bg-card text-foreground shadow-sm"
+                ? "bg-white text-gray-800 shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
             data-testid={`tab-${tab.toLowerCase()}`}
@@ -192,7 +194,7 @@ export default function AdminCampaigns() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-8 text-center">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
           <p className="text-muted-foreground" data-testid="text-no-campaigns">
             No campaigns found
           </p>
@@ -207,14 +209,14 @@ export default function AdminCampaigns() {
             return (
               <div
                 key={campaign.id}
-                className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6"
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
                 data-testid={`card-campaign-${campaign.id}`}
               >
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div className="flex-1 min-w-0 space-y-3">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
-                        className="font-semibold text-base text-foreground"
+                        className="font-semibold text-base text-gray-800"
                         data-testid={`text-campaign-title-${campaign.id}`}
                       >
                         {campaign.title}
@@ -232,7 +234,7 @@ export default function AdminCampaigns() {
                         {adType.label}
                       </span>
                       <span
-                        className="inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium border border-gray-200 dark:border-border text-muted-foreground"
+                        className="inline-flex items-center rounded-full px-3 py-0.5 text-xs font-medium border border-gray-100 text-muted-foreground"
                         data-testid={`badge-deal-${campaign.id}`}
                       >
                         {campaign.dealType}
@@ -257,17 +259,17 @@ export default function AdminCampaigns() {
                       <div className="flex items-center gap-1.5">
                         <Eye className="w-3.5 h-3.5 text-indigo-500" />
                         <span className="text-muted-foreground">Impressions</span>
-                        <span className="font-semibold text-foreground">{formatNum(metrics.impressions)}</span>
+                        <span className="font-semibold text-gray-800">{formatNum(metrics.impressions)}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <MousePointerClick className="w-3.5 h-3.5 text-cyan-500" />
                         <span className="text-muted-foreground">Clicks</span>
-                        <span className="font-semibold text-foreground">{formatNum(metrics.clicks)}</span>
+                        <span className="font-semibold text-gray-800">{formatNum(metrics.clicks)}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
                         <span className="text-muted-foreground">CTR</span>
-                        <span className="font-semibold text-foreground">{metrics.ctr}%</span>
+                        <span className="font-semibold text-gray-800">{metrics.ctr}%</span>
                       </div>
                     </div>
 
@@ -279,12 +281,12 @@ export default function AdminCampaigns() {
                         </span>
                         <span className="text-muted-foreground">{metrics.spentPct}%</span>
                       </div>
-                      <div className="w-full h-1.5 bg-gray-100 dark:bg-muted rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full"
                           style={{
                             width: `${metrics.spentPct}%`,
-                            background: metrics.spentPct > 80 ? "hsl(350, 89%, 60%)" : "linear-gradient(90deg, hsl(222, 47%, 20%), hsl(222, 47%, 35%))",
+                            background: metrics.spentPct > 80 ? "hsl(350, 89%, 60%)" : "#FFCC02",
                           }}
                         />
                       </div>
@@ -309,7 +311,7 @@ export default function AdminCampaigns() {
                         campaign.targetGroups.map((group, idx) => (
                           <span
                             key={idx}
-                            className="bg-gray-100 dark:bg-muted text-foreground rounded-full text-xs px-3 py-1 font-medium"
+                            className="bg-gray-100 text-foreground rounded-full text-xs px-3 py-1 font-medium"
                             data-testid={`pill-target-${campaign.id}-${idx}`}
                           >
                             {group}
@@ -317,14 +319,14 @@ export default function AdminCampaigns() {
                         ))
                       }
                       <span
-                        className="bg-gray-100 dark:bg-muted text-foreground rounded-full text-xs px-3 py-1 font-medium flex items-center gap-1"
+                        className="bg-gray-100 text-foreground rounded-full text-xs px-3 py-1 font-medium flex items-center gap-1"
                         data-testid={`pill-age-${campaign.id}`}
                       >
                         <Target className="w-3 h-3" />
                         Age 25-44
                       </span>
                       <span
-                        className="bg-gray-100 dark:bg-muted text-foreground rounded-full text-xs px-3 py-1 font-medium flex items-center gap-1"
+                        className="bg-gray-100 text-foreground rounded-full text-xs px-3 py-1 font-medium flex items-center gap-1"
                         data-testid={`pill-location-${campaign.id}`}
                       >
                         <MapPin className="w-3 h-3" />
@@ -336,7 +338,7 @@ export default function AdminCampaigns() {
                   <div className="flex items-center gap-2 flex-wrap">
                     {campaign.status === "draft" && (
                       <button
-                        className="inline-flex items-center gap-1 bg-foreground hover:bg-foreground/90 text-white text-sm font-medium rounded-xl px-4 py-1.5 transition-colors disabled:opacity-50"
+                        className="inline-flex items-center gap-1 bg-[#00B14F] hover:bg-[#00B14F]/90 text-white text-sm font-medium rounded-xl px-4 py-1.5 transition-colors disabled:opacity-50"
                         onClick={() =>
                           updateMutation.mutate({
                             id: campaign.id,
@@ -352,7 +354,7 @@ export default function AdminCampaigns() {
                     )}
                     {campaign.status === "active" && (
                       <button
-                        className="inline-flex items-center gap-1 border border-gray-200 dark:border-border text-muted-foreground hover:text-foreground hover:bg-gray-50 dark:hover:bg-muted text-sm font-medium rounded-xl px-4 py-1.5 transition-colors disabled:opacity-50"
+                        className="inline-flex items-center gap-1 border border-gray-100 text-muted-foreground hover:text-foreground hover:bg-gray-50 text-sm font-medium rounded-xl px-4 py-1.5 transition-colors disabled:opacity-50"
                         onClick={() =>
                           updateMutation.mutate({
                             id: campaign.id,
@@ -368,7 +370,7 @@ export default function AdminCampaigns() {
                     )}
                     {campaign.status === "paused" && (
                       <button
-                        className="inline-flex items-center gap-1 border border-gray-200 dark:border-border text-muted-foreground hover:text-foreground hover:bg-gray-50 dark:hover:bg-muted text-sm font-medium rounded-xl px-4 py-1.5 transition-colors disabled:opacity-50"
+                        className="inline-flex items-center gap-1 border border-gray-100 text-muted-foreground hover:text-foreground hover:bg-gray-50 text-sm font-medium rounded-xl px-4 py-1.5 transition-colors disabled:opacity-50"
                         onClick={() =>
                           updateMutation.mutate({
                             id: campaign.id,
@@ -384,7 +386,7 @@ export default function AdminCampaigns() {
                     )}
                     {(campaign.status === "active" || campaign.status === "paused") && (
                       <button
-                        className="inline-flex items-center gap-1 border border-gray-200 dark:border-border text-muted-foreground hover:text-foreground hover:bg-gray-50 dark:hover:bg-muted text-sm font-medium rounded-xl px-4 py-1.5 transition-colors disabled:opacity-50"
+                        className="inline-flex items-center gap-1 border border-gray-100 text-muted-foreground hover:text-foreground hover:bg-gray-50 text-sm font-medium rounded-xl px-4 py-1.5 transition-colors disabled:opacity-50"
                         onClick={() =>
                           updateMutation.mutate({
                             id: campaign.id,

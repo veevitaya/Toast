@@ -42,9 +42,12 @@ import {
   SquareCheck,
   Square,
   ExternalLink,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Restaurant, RestaurantOwner, RestaurantClaim } from "@shared/schema";
+import { VIBE_TAGS, VIBE_LABELS, VIBE_EMOJI, BANGKOK_DISTRICTS } from "@shared/vibeConfig";
 
 type VerificationChecklistItem = {
   id: string;
@@ -90,6 +93,13 @@ export default function AdminRestaurants() {
 
   const pendingClaims = claims.filter((c) => c.status === "pending");
 
+  const bulkAutoAssignMutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/admin/restaurants/auto-assign-vibes"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/restaurants"] });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/admin/restaurants/${id}`),
     onSuccess: () => {
@@ -131,6 +141,9 @@ export default function AdminRestaurants() {
       ownerClaimStatus: "unclaimed",
       paymentConnected: false,
       googlePlaceId: null,
+      vibes: [],
+      district: null,
+      operatingHours: null,
     });
   };
 
@@ -180,7 +193,7 @@ export default function AdminRestaurants() {
                 placeholder="Search by name..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 rounded-xl border-gray-200 dark:border-border focus-visible:ring-foreground/20"
+                className="pl-9 rounded-xl border-gray-100 focus-visible:ring-foreground/20"
                 data-testid="input-search-restaurants"
               />
             </div>
@@ -192,22 +205,37 @@ export default function AdminRestaurants() {
               <Plus className="w-4 h-4" />
               Add New
             </button>
+            <button
+              onClick={() => bulkAutoAssignMutation.mutate()}
+              disabled={bulkAutoAssignMutation.isPending}
+              data-testid="button-auto-assign-all"
+              className="inline-flex items-center gap-1.5 bg-[#FFCC02]/20 border border-[#FFCC02]/40 text-gray-800 rounded-xl px-5 py-2 text-sm font-medium transition-colors hover:bg-[#FFCC02]/30 disabled:opacity-50"
+            >
+              {bulkAutoAssignMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              {bulkAutoAssignMutation.isPending ? "Assigning..." : "Auto-Assign All"}
+            </button>
           </div>
         )}
       </div>
 
       {activeTab === "restaurants" ? (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border overflow-hidden" data-testid="table-restaurants">
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden" data-testid="table-restaurants">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-border bg-gray-50 dark:bg-muted">
+                <tr className="border-b border-gray-100 bg-gray-50">
                   <th className="w-8"></th>
                   <th className="text-left px-4 py-3 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Image</th>
                   <th className="text-left px-4 py-3 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Name</th>
                   <th className="text-left px-4 py-3 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Category</th>
                   <th className="text-left px-4 py-3 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Price</th>
                   <th className="text-left px-4 py-3 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Rating</th>
+                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Vibes</th>
+                  <th className="text-left px-4 py-3 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">District</th>
                   <th className="text-left px-4 py-3 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Owner</th>
                   <th className="text-left px-4 py-3 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Claim</th>
                   <th className="text-left px-4 py-3 text-[10px] uppercase tracking-widest font-bold text-muted-foreground/60">Payment</th>
@@ -217,13 +245,13 @@ export default function AdminRestaurants() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={10} className="text-center py-8 text-muted-foreground">
+                    <td colSpan={12} className="text-center py-8 text-muted-foreground">
                       Loading restaurants...
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="text-center py-8 text-muted-foreground">
+                    <td colSpan={12} className="text-center py-8 text-muted-foreground">
                       No restaurants found
                     </td>
                   </tr>
@@ -235,7 +263,7 @@ export default function AdminRestaurants() {
                       <>
                         <tr
                           key={r.id}
-                          className="border-b border-gray-100 dark:border-border transition-colors hover:bg-gray-50 dark:hover:bg-muted cursor-pointer"
+                          className="border-b border-gray-100 transition-colors hover:bg-gray-50 cursor-pointer"
                           data-testid={`row-restaurant-${r.id}`}
                           onClick={() => setExpandedRow(isExpanded ? null : r.id)}
                         >
@@ -272,6 +300,18 @@ export default function AdminRestaurants() {
                               {r.rating}
                             </span>
                           </td>
+                          <td className="px-4 py-3" data-testid={`text-restaurant-vibes-${r.id}`}>
+                            {(r.vibes && r.vibes.length > 0) ? (
+                              <Badge variant="secondary" className="bg-[#FFCC02]/20 border border-[#FFCC02]/40 text-gray-800 text-[10px]">
+                                {r.vibes.length} vibes
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground/50 text-xs">None</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground text-sm" data-testid={`text-restaurant-district-${r.id}`}>
+                            {r.district || <span className="text-muted-foreground/50 text-xs">—</span>}
+                          </td>
                           <td className="px-4 py-3" data-testid={`text-restaurant-owner-${r.id}`}>
                             {owner ? (
                               <span className="flex items-center gap-1.5 text-sm text-foreground">
@@ -288,7 +328,7 @@ export default function AdminRestaurants() {
                           </td>
                           <td className="px-4 py-3" data-testid={`text-restaurant-payment-${r.id}`}>
                             {r.paymentConnected ? (
-                              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
+                              <span className="flex items-center gap-1 text-emerald-600 text-xs font-medium">
                                 <CreditCard className="w-3.5 h-3.5" />
                                 Connected
                               </span>
@@ -321,8 +361,8 @@ export default function AdminRestaurants() {
                           </td>
                         </tr>
                         {isExpanded && (
-                          <tr key={`expanded-${r.id}`} className="border-b border-gray-100 dark:border-border">
-                            <td colSpan={10} className="px-6 py-4 bg-gray-50/50 dark:bg-muted/50">
+                          <tr key={`expanded-${r.id}`} className="border-b border-gray-100">
+                            <td colSpan={12} className="px-6 py-4 bg-gray-50/50">
                               <ExpandedRowDetails restaurant={r} owner={owner} claims={claims} />
                             </td>
                           </tr>
@@ -380,21 +420,21 @@ function ClaimStatusBadge({ status }: { status: string }) {
   switch (status) {
     case "approved":
       return (
-        <Badge variant="secondary" className="bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[10px]">
+        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 text-[10px]">
           <CheckCircle2 className="w-3 h-3 mr-1" />
           Approved
         </Badge>
       );
     case "pending":
       return (
-        <Badge variant="secondary" className="bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[10px]">
+        <Badge variant="secondary" className="bg-amber-100 text-amber-700 text-[10px]">
           <Clock className="w-3 h-3 mr-1" />
           Pending
         </Badge>
       );
     case "rejected":
       return (
-        <Badge variant="secondary" className="bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-400 text-[10px]">
+        <Badge variant="secondary" className="bg-red-100 text-red-700 text-[10px]">
           <XCircle className="w-3 h-3 mr-1" />
           Rejected
         </Badge>
@@ -462,7 +502,7 @@ function ExpandedRowDetails({
           {restaurantClaims.length > 0 ? (
             <div className="space-y-1.5 mt-2">
               {restaurantClaims.map((c) => (
-                <div key={c.id} className="text-xs text-muted-foreground border border-gray-100 dark:border-border rounded-lg p-2">
+                <div key={c.id} className="text-xs text-muted-foreground border border-gray-100 rounded-lg p-2">
                   <div className="flex items-center justify-between gap-2">
                     <span>Claim #{c.id} by {c.ownerName}</span>
                     <ClaimStatusBadge status={c.status || "pending"} />
@@ -490,7 +530,7 @@ function ExpandedRowDetails({
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Payment Connected</span>
             {restaurant.paymentConnected ? (
-              <Badge variant="secondary" className="bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[10px]">
+              <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 text-[10px]">
                 Yes
               </Badge>
             ) : (
@@ -503,9 +543,9 @@ function ExpandedRowDetails({
                 <span className="text-muted-foreground">Subscription</span>
                 <Badge variant="secondary" className={`text-[10px] capitalize ${
                   owner.subscriptionTier === "premium"
-                    ? "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                    ? "bg-amber-100 text-amber-700"
                     : owner.subscriptionTier === "pro"
-                    ? "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400"
+                    ? "bg-blue-100 text-blue-700"
                     : ""
                 }`}>
                   {owner.subscriptionTier || "free"}
@@ -621,8 +661,30 @@ function EditPanel({
     },
   });
 
-  const update = (field: keyof Restaurant, value: string | number | boolean | null) => {
+  const autoAssignVibesMutation = useMutation({
+    mutationFn: () => apiRequest("POST", `/api/admin/restaurants/${restaurant.id}/auto-assign-vibes`),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/admin/restaurants"] });
+      const updatedRestaurants = queryClient.getQueryData<Restaurant[]>(["/api/admin/restaurants"]);
+      const updated = updatedRestaurants?.find((r) => r.id === restaurant.id);
+      if (updated) {
+        setForm((prev) => ({ ...prev, vibes: updated.vibes || [], district: updated.district, operatingHours: updated.operatingHours }));
+      }
+    },
+  });
+
+  const update = (field: keyof Restaurant, value: string | number | boolean | null | string[]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleVibe = (vibe: string) => {
+    setForm((prev) => {
+      const current = prev.vibes || [];
+      const next = current.includes(vibe)
+        ? current.filter((v) => v !== vibe)
+        : [...current, vibe];
+      return { ...prev, vibes: next };
+    });
   };
 
   const handleSave = () => {
@@ -645,9 +707,9 @@ function EditPanel({
       data-testid="panel-edit-restaurant"
     >
       <div className="fixed inset-0 bg-black/20" onClick={onClose} />
-      <div className="relative ml-auto w-[460px] h-full bg-white dark:bg-card rounded-l-2xl shadow-xl overflow-y-auto">
+      <div className="relative ml-auto w-[460px] h-full bg-white rounded-l-2xl shadow-xl overflow-y-auto">
         <div className="h-1 rounded-tl-2xl" style={{ background: "linear-gradient(90deg, hsl(222, 47%, 20%), hsl(222, 47%, 35%))" }} />
-        <div className="sticky top-0 z-10 bg-white dark:bg-card border-b border-gray-100 dark:border-border">
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between gap-4 px-6 py-4">
             <h2 className="font-semibold text-foreground text-[15px]" data-testid="text-panel-title">
               {isNew ? "Add Restaurant" : "Edit Restaurant"}
@@ -665,7 +727,7 @@ function EditPanel({
                   className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
                     activeSection === s.key
                       ? "bg-foreground text-white"
-                      : "text-muted-foreground hover:text-foreground hover:bg-gray-50 dark:hover:bg-muted"
+                      : "text-muted-foreground hover:text-foreground hover:bg-gray-50"
                   }`}
                   data-testid={`button-section-${s.key}`}
                 >
@@ -683,7 +745,7 @@ function EditPanel({
                 <Input
                   value={form.name}
                   onChange={(e) => update("name", e.target.value)}
-                  className="rounded-xl border-gray-200 dark:border-border focus-visible:ring-foreground/20"
+                  className="rounded-xl border-gray-100 focus-visible:ring-foreground/20"
                   data-testid="input-edit-name"
                 />
               </Field>
@@ -691,7 +753,7 @@ function EditPanel({
                 <Input
                   value={form.description}
                   onChange={(e) => update("description", e.target.value)}
-                  className="rounded-xl border-gray-200 dark:border-border focus-visible:ring-foreground/20"
+                  className="rounded-xl border-gray-100 focus-visible:ring-foreground/20"
                   data-testid="input-edit-description"
                 />
               </Field>
@@ -699,7 +761,7 @@ function EditPanel({
                 <Input
                   value={form.imageUrl}
                   onChange={(e) => update("imageUrl", e.target.value)}
-                  className="rounded-xl border-gray-200 dark:border-border focus-visible:ring-foreground/20"
+                  className="rounded-xl border-gray-100 focus-visible:ring-foreground/20"
                   data-testid="input-edit-imageUrl"
                 />
               </Field>
@@ -708,7 +770,7 @@ function EditPanel({
                   <Input
                     value={form.lat}
                     onChange={(e) => update("lat", e.target.value)}
-                    className="rounded-xl border-gray-200 dark:border-border focus-visible:ring-foreground/20"
+                    className="rounded-xl border-gray-100 focus-visible:ring-foreground/20"
                     data-testid="input-edit-lat"
                   />
                 </Field>
@@ -716,7 +778,7 @@ function EditPanel({
                   <Input
                     value={form.lng}
                     onChange={(e) => update("lng", e.target.value)}
-                    className="rounded-xl border-gray-200 dark:border-border focus-visible:ring-foreground/20"
+                    className="rounded-xl border-gray-100 focus-visible:ring-foreground/20"
                     data-testid="input-edit-lng"
                   />
                 </Field>
@@ -725,7 +787,7 @@ function EditPanel({
                 <Input
                   value={form.category}
                   onChange={(e) => update("category", e.target.value)}
-                  className="rounded-xl border-gray-200 dark:border-border focus-visible:ring-foreground/20"
+                  className="rounded-xl border-gray-100 focus-visible:ring-foreground/20"
                   data-testid="input-edit-category"
                 />
               </Field>
@@ -737,7 +799,7 @@ function EditPanel({
                     max={4}
                     value={form.priceLevel}
                     onChange={(e) => update("priceLevel", parseInt(e.target.value) || 1)}
-                    className="rounded-xl border-gray-200 dark:border-border focus-visible:ring-foreground/20"
+                    className="rounded-xl border-gray-100 focus-visible:ring-foreground/20"
                     data-testid="input-edit-priceLevel"
                   />
                 </Field>
@@ -745,7 +807,7 @@ function EditPanel({
                   <Input
                     value={form.rating}
                     onChange={(e) => update("rating", e.target.value)}
-                    className="rounded-xl border-gray-200 dark:border-border focus-visible:ring-foreground/20"
+                    className="rounded-xl border-gray-100 focus-visible:ring-foreground/20"
                     data-testid="input-edit-rating"
                   />
                 </Field>
@@ -754,7 +816,7 @@ function EditPanel({
                 <Input
                   value={form.address}
                   onChange={(e) => update("address", e.target.value)}
-                  className="rounded-xl border-gray-200 dark:border-border focus-visible:ring-foreground/20"
+                  className="rounded-xl border-gray-100 focus-visible:ring-foreground/20"
                   data-testid="input-edit-address"
                 />
               </Field>
@@ -764,7 +826,7 @@ function EditPanel({
                     type="number"
                     value={form.trendingScore ?? 0}
                     onChange={(e) => update("trendingScore", parseInt(e.target.value) || 0)}
-                    className="rounded-xl border-gray-200 dark:border-border focus-visible:ring-foreground/20"
+                    className="rounded-xl border-gray-100 focus-visible:ring-foreground/20"
                     data-testid="input-edit-trendingScore"
                   />
                 </Field>
@@ -774,12 +836,78 @@ function EditPanel({
                       type="checkbox"
                       checked={!!form.isNew}
                       onChange={(e) => update("isNew", e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-200 text-foreground focus:ring-foreground/20"
+                      className="w-4 h-4 rounded border-gray-100 text-foreground focus:ring-foreground/20"
                       data-testid="input-edit-isNew"
                     />
                     <span className="text-sm text-foreground">{form.isNew ? "Yes" : "No"}</span>
                   </div>
                 </Field>
+              </div>
+
+              <Field label="District">
+                <select
+                  value={form.district || ""}
+                  onChange={(e) => update("district", e.target.value || null)}
+                  className="w-full rounded-xl border border-gray-100 bg-white px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20"
+                  data-testid="select-edit-district"
+                >
+                  <option value="">Select district...</option>
+                  {BANGKOK_DISTRICTS.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Operating Hours">
+                <Input
+                  value={form.operatingHours || ""}
+                  onChange={(e) => update("operatingHours", e.target.value || null)}
+                  placeholder="e.g. 09:00-22:00"
+                  className="rounded-xl border-gray-100 focus-visible:ring-foreground/20"
+                  data-testid="input-edit-operatingHours"
+                />
+              </Field>
+
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Vibes</Label>
+                  {!isNew && (
+                    <button
+                      onClick={() => autoAssignVibesMutation.mutate()}
+                      disabled={autoAssignVibesMutation.isPending}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-100 rounded-lg px-2.5 py-1 transition-colors hover:bg-gray-100 disabled:opacity-50"
+                      data-testid="button-auto-assign-vibes"
+                    >
+                      {autoAssignVibesMutation.isPending ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3 h-3" />
+                      )}
+                      Auto-Assign
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5" data-testid="vibes-picker">
+                  {VIBE_TAGS.map((vibe) => {
+                    const isActive = (form.vibes || []).includes(vibe);
+                    return (
+                      <button
+                        key={vibe}
+                        type="button"
+                        onClick={() => toggleVibe(vibe)}
+                        className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-3 py-1.5 border transition-colors ${
+                          isActive
+                            ? "bg-[#FFCC02]/20 border-[#FFCC02]/40 text-gray-800"
+                            : "bg-gray-50 border-gray-100 text-gray-400 hover:bg-gray-100"
+                        }`}
+                        data-testid={`button-vibe-${vibe}`}
+                      >
+                        <span>{VIBE_EMOJI[vibe]}</span>
+                        <span>{VIBE_LABELS[vibe]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="pt-3">
@@ -804,14 +932,14 @@ function EditPanel({
               {owner ? (
                 <Card className="p-4 space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-muted flex items-center justify-center text-sm font-bold text-foreground">
+                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-foreground">
                       {owner.displayName.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-foreground" data-testid="text-panel-owner-name">{owner.displayName}</span>
                         {owner.isVerified && (
-                          <Badge variant="secondary" className="bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[10px]">
+                          <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 text-[10px]">
                             <ShieldCheck className="w-3 h-3 mr-1" />
                             Verified
                           </Badge>
@@ -820,7 +948,7 @@ function EditPanel({
                       <span className="text-xs text-muted-foreground capitalize">{owner.verificationStatus}</span>
                     </div>
                   </div>
-                  <div className="space-y-2 text-sm border-t border-gray-100 dark:border-border pt-3">
+                  <div className="space-y-2 text-sm border-t border-gray-100 pt-3">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Mail className="w-3.5 h-3.5" />
                       <span data-testid="text-panel-owner-email">{owner.email}</span>
@@ -885,7 +1013,7 @@ function EditPanel({
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Payment Connected</span>
                   {restaurant.paymentConnected ? (
-                    <Badge variant="secondary" className="bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[10px]">
+                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 text-[10px]">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
                       Connected
                     </Badge>
@@ -898,14 +1026,14 @@ function EditPanel({
                 </div>
                 {owner && (
                   <>
-                    <div className="border-t border-gray-100 dark:border-border pt-3 space-y-2">
+                    <div className="border-t border-gray-100 pt-3 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">Subscription Tier</span>
                         <Badge variant="secondary" className={`text-[10px] capitalize ${
                           owner.subscriptionTier === "premium"
-                            ? "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                            ? "bg-amber-100 text-amber-700"
                             : owner.subscriptionTier === "pro"
-                            ? "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-400"
+                            ? "bg-blue-100 text-blue-700"
                             : ""
                         }`} data-testid="text-subscription-tier">
                           {owner.subscriptionTier || "free"}
@@ -1027,7 +1155,7 @@ function ClaimReviewCard({
       </div>
 
       {isExpanded && (
-        <div className="border-t border-gray-100 dark:border-border p-5 space-y-5" data-testid={`expanded-claim-${claim.id}`}>
+        <div className="border-t border-gray-100 p-5 space-y-5" data-testid={`expanded-claim-${claim.id}`}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="p-4 space-y-3">
               <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -1091,7 +1219,7 @@ function ClaimReviewCard({
                       href={doc}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-3 py-2 rounded-lg transition-colors"
+                      className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-lg transition-colors"
                       data-testid={`link-claim-doc-${claim.id}-${i}`}
                     >
                       <FileText className="w-3.5 h-3.5 flex-shrink-0" />
@@ -1115,9 +1243,9 @@ function ClaimReviewCard({
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`text-xs font-bold ${
-                    verificationScore >= 80 ? "text-emerald-600 dark:text-emerald-400" :
-                    verificationScore >= 50 ? "text-amber-600 dark:text-amber-400" :
-                    "text-red-600 dark:text-red-400"
+                    verificationScore >= 80 ? "text-emerald-600" :
+                    verificationScore >= 50 ? "text-amber-600" :
+                    "text-red-600"
                   }`} data-testid={`text-verification-score-${claim.id}`}>
                     {verificationScore}% Complete
                   </span>
@@ -1134,7 +1262,7 @@ function ClaimReviewCard({
                 {checklist.map((item) => (
                   <button
                     key={item.id}
-                    className="flex items-center gap-3 w-full text-left py-1.5 px-2 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-muted"
+                    className="flex items-center gap-3 w-full text-left py-1.5 px-2 rounded-lg transition-colors hover:bg-gray-50"
                     onClick={() => toggleChecklistItem(item.id)}
                     disabled={claim.status !== "pending"}
                     data-testid={`checklist-item-${claim.id}-${item.id}`}
@@ -1154,7 +1282,7 @@ function ClaimReviewCard({
           )}
 
           {claim.reviewNotes && claim.status !== "pending" && (
-            <div className="text-sm text-muted-foreground bg-gray-50 dark:bg-muted rounded-lg p-3" data-testid={`text-existing-review-notes-${claim.id}`}>
+            <div className="text-sm text-muted-foreground bg-gray-50 rounded-lg p-3" data-testid={`text-existing-review-notes-${claim.id}`}>
               <span className="font-medium text-foreground">Review Notes:</span> {claim.reviewNotes}
             </div>
           )}
@@ -1169,7 +1297,7 @@ function ClaimReviewCard({
                 placeholder="Add review notes or reason for decision..."
                 value={reviewNotes}
                 onChange={(e) => setReviewNotes(e.target.value)}
-                className="rounded-xl border-gray-200 dark:border-border text-sm resize-none"
+                className="rounded-xl border-gray-100 text-sm resize-none"
                 rows={3}
                 data-testid={`input-review-notes-${claim.id}`}
               />
@@ -1239,7 +1367,7 @@ function ClaimCard({
                 href={doc}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-blue-600 dark:text-blue-400 underline bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-lg"
+                className="text-xs text-blue-600 underline bg-blue-50 px-2 py-1 rounded-lg"
                 data-testid={`link-panel-claim-doc-${claim.id}-${i}`}
               >
                 Document {i + 1}
@@ -1249,17 +1377,17 @@ function ClaimCard({
         </div>
       )}
       {claim.reviewNotes && (
-        <div className="text-xs text-muted-foreground bg-gray-50 dark:bg-muted rounded-lg p-2">
+        <div className="text-xs text-muted-foreground bg-gray-50 rounded-lg p-2">
           Review notes: {claim.reviewNotes}
         </div>
       )}
       {claim.status === "pending" && (
-        <div className="space-y-2 border-t border-gray-100 dark:border-border pt-3">
+        <div className="space-y-2 border-t border-gray-100 pt-3">
           <Input
             placeholder="Review notes (optional)"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="rounded-xl border-gray-200 dark:border-border text-sm"
+            className="rounded-xl border-gray-100 text-sm"
             data-testid={`input-panel-review-notes-${claim.id}`}
           />
           <div className="flex items-center gap-2">

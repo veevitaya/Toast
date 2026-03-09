@@ -63,17 +63,17 @@ export default function AdminLogin() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-background"
+      className="min-h-screen flex items-center justify-center p-4 bg-gray-50"
       data-testid="admin-login-page"
     >
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/6 w-72 h-72 rounded-full bg-gray-200 dark:bg-muted blur-[100px] opacity-60" />
-        <div className="absolute bottom-1/3 right-1/4 w-64 h-64 rounded-full bg-gray-200 dark:bg-muted blur-[100px] opacity-50" />
-        <div className="absolute top-1/2 right-1/6 w-56 h-56 rounded-full bg-gray-100 dark:bg-muted blur-[100px] opacity-40" />
+        <div className="absolute top-1/4 left-1/6 w-72 h-72 rounded-full bg-gray-200 blur-[100px] opacity-60" />
+        <div className="absolute bottom-1/3 right-1/4 w-64 h-64 rounded-full bg-gray-200 blur-[100px] opacity-50" />
+        <div className="absolute top-1/2 right-1/6 w-56 h-56 rounded-full bg-gray-100 blur-[100px] opacity-40" />
       </div>
 
       <div className="w-full max-w-sm relative z-10">
-        <div className="bg-white dark:bg-card border border-gray-100 dark:border-border rounded-3xl p-8 shadow-[0_8px_40px_rgba(30,41,59,0.06)]">
+        <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
           <div className="flex flex-col items-center gap-6">
             <div className="flex flex-col items-center gap-1">
               <img
@@ -91,13 +91,13 @@ export default function AdminLogin() {
               </span>
             </div>
 
-            <div className="w-full flex bg-gray-100 dark:bg-muted rounded-xl p-1">
+            <div className="w-full flex bg-gray-100 rounded-xl p-1">
               <button
                 type="button"
                 onClick={() => { setMode("admin"); setError(""); }}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all ${
                   mode === "admin"
-                    ? "bg-white dark:bg-card text-foreground shadow-sm"
+                    ? "bg-white text-gray-800 shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
                 data-testid="tab-admin-login"
@@ -110,7 +110,7 @@ export default function AdminLogin() {
                 onClick={() => { setMode("owner"); setError(""); }}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all ${
                   mode === "owner"
-                    ? "bg-white dark:bg-card text-foreground shadow-sm"
+                    ? "bg-white text-gray-800 shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
                 data-testid="tab-owner-login"
@@ -145,7 +145,7 @@ export default function AdminLogin() {
                       placeholder="Enter username"
                       data-testid="input-username"
                       required
-                      className="pl-10 rounded-xl border-gray-200 dark:border-border focus-visible:ring-foreground/20 focus-visible:border-foreground"
+                      className="pl-10 rounded-xl border-gray-100 focus-visible:ring-[#FFCC02]/30 focus-visible:border-[#FFCC02]"
                     />
                   </div>
                 </div>
@@ -164,7 +164,7 @@ export default function AdminLogin() {
                       placeholder="Enter email"
                       data-testid="input-email"
                       required
-                      className="pl-10 rounded-xl border-gray-200 dark:border-border focus-visible:ring-foreground/20 focus-visible:border-foreground"
+                      className="pl-10 rounded-xl border-gray-100 focus-visible:ring-[#FFCC02]/30 focus-visible:border-[#FFCC02]"
                     />
                   </div>
                 </div>
@@ -184,7 +184,7 @@ export default function AdminLogin() {
                     placeholder="Enter password"
                     data-testid="input-password"
                     required
-                    className="pl-10 rounded-xl border-gray-200 dark:border-border focus-visible:ring-foreground/20 focus-visible:border-foreground"
+                    className="pl-10 rounded-xl border-gray-100 focus-visible:ring-[#FFCC02]/30 focus-visible:border-[#FFCC02]"
                   />
                 </div>
               </div>
@@ -198,7 +198,7 @@ export default function AdminLogin() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full text-sm font-semibold transition-all disabled:opacity-50 disabled:pointer-events-none bg-foreground hover:bg-foreground/90 text-white rounded-xl px-8 py-3 mt-2 shadow-md shadow-foreground/10"
+                className="w-full text-sm font-semibold transition-all disabled:opacity-50 disabled:pointer-events-none bg-[#FFCC02] hover:bg-[#FFCC02]/90 text-gray-900 rounded-xl px-8 py-3 mt-2 shadow-md shadow-[#FFCC02]/10"
                 data-testid="button-login"
               >
                 {loading ? "Signing in..." : "Sign In"}

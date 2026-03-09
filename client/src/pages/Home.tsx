@@ -16,6 +16,7 @@ import { SaveBucketPicker } from "@/components/SaveBucketPicker";
 import { FoodIconFromEmoji, FoodIcon, emojiToIconName, getAnimClass } from "@/components/FoodIcon";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { useLineProfile } from "@/lib/useLineProfile";
+import { MODE_TO_VIBE } from "@shared/vibeConfig";
 import toastLogoPath from "@assets/toast_logo_nobg.png";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import toastCharPath from "@assets/IMG_9345_1772899599160.png";
@@ -350,27 +351,12 @@ export default function Home() {
 
   const handleVibeClick = useCallback((mode: string) => {
     recordVibe(mode);
-    const p = new URLSearchParams();
-    switch (mode) {
-      case "cheap": p.set("budget", "Cheap"); break;
-      case "nearby": p.set("locations", "Near BTS"); break;
-      case "trending": p.set("interests", "Popular spots"); p.set("locations", "Trendy spots"); break;
-      case "hot": p.set("interests", "Popular spots,Hot & spicy"); break;
-      case "late": p.set("locations", "Late night"); break;
-      case "outdoor": p.set("interests", "Outdoor dining"); p.set("locations", "Rooftops,By the river"); break;
-      case "healthy": p.set("diet", "Vegetarian,Vegan"); p.set("interests", "Healthy"); break;
-      case "drinks": p.set("interests", "Drinks"); break;
-      case "partner": p.set("interests", "Fine dining,Romantic"); break;
-      case "delivery": p.set("interests", "Delivery"); p.set("locations", "Delivery"); break;
-      case "sweet": p.set("interests", "Desserts,Sweets"); break;
-      case "brunch": p.set("interests", "Brunch,Breakfast"); break;
-      case "streetfood": p.set("interests", "Street food"); break;
-      case "rooftop": p.set("interests", "Rooftop dining"); p.set("locations", "Rooftops"); break;
-      case "family": p.set("interests", "Family friendly"); break;
-      case "cafe": p.set("interests", "Coffee,Cafe"); break;
+    const vibeTag = mode === "trending" ? "popular" : MODE_TO_VIBE[mode];
+    if (vibeTag) {
+      navigate(`/solo/results?vibe=${vibeTag}`);
+    } else {
+      navigate("/solo/results");
     }
-    const qs = p.toString();
-    navigate(`/solo/results${qs ? `?${qs}` : ""}`);
   }, [navigate, recordVibe]);
 
   const vibeClickPending = useRef(false);

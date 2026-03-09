@@ -81,8 +81,8 @@ interface TopRestaurant {
 }
 
 const CONVERSION_FUNNEL = [
-  { label: "Impressions", value: 12400, pct: 100, color: "hsl(222, 47%, 85%)" },
-  { label: "Swipe Views", value: 8200, pct: 66, color: "hsl(222, 47%, 70%)" },
+  { label: "Impressions", value: 12400, pct: 100, color: "hsl(45, 100%, 70%)" },
+  { label: "Swipe Views", value: 8200, pct: 66, color: "#FFCC02" },
   { label: "Right Swipes", value: 3100, pct: 25, color: "hsl(45, 100%, 50%)" },
   { label: "Detail Views", value: 1800, pct: 15, color: "hsl(142, 71%, 45%)" },
   { label: "Orders / Bookings", value: 420, pct: 3.4, color: "hsl(222, 47%, 27%)" },
@@ -128,9 +128,9 @@ const HEATMAP_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const HEATMAP_HOURS = Array.from({ length: 18 }, (_, i) => `${i + 6}:00`);
 
 const DELIVERY_PLATFORMS = [
-  { name: "Grab", totalClicks: 12480, conversionRate: 8.2, avgOrderValue: 285, color: "#00B14F", bgColor: "bg-green-50 dark:bg-muted" },
-  { name: "LINE MAN", totalClicks: 9640, conversionRate: 7.1, avgOrderValue: 310, color: "#00C300", bgColor: "bg-emerald-50 dark:bg-muted" },
-  { name: "Robinhood", totalClicks: 4380, conversionRate: 5.4, avgOrderValue: 265, color: "#6C2BD9", bgColor: "bg-purple-50 dark:bg-muted" },
+  { name: "Grab", totalClicks: 12480, conversionRate: 8.2, avgOrderValue: 285, color: "#00B14F", bgColor: "bg-[#00B14F]/10" },
+  { name: "LINE MAN", totalClicks: 9640, conversionRate: 7.1, avgOrderValue: 310, color: "#00C300", bgColor: "bg-[#00B14F]/10" },
+  { name: "Robinhood", totalClicks: 4380, conversionRate: 5.4, avgOrderValue: 265, color: "#6C2BD9", bgColor: "bg-[#6C2BD9]/10" },
 ];
 
 const DAY_PATTERNS = [
@@ -332,13 +332,13 @@ export default function AdminAnalytics() {
         <div className="flex items-center gap-3">
           <BarChart3 className="w-5 h-5 text-teal-500" />
           <div>
-            <h2 className="text-xl font-semibold text-foreground" data-testid="text-analytics-title">
+            <h2 className="text-xl font-semibold text-gray-800" data-testid="text-analytics-title">
               Data Intelligence
             </h2>
             <p className="text-xs text-muted-foreground">Platform insights & partner analytics</p>
           </div>
         </div>
-        <div className="flex gap-1 bg-gray-100 dark:bg-muted rounded-xl p-1">
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
           {([
             ["7d", "7 days"],
             ["30d", "30 days"],
@@ -350,7 +350,7 @@ export default function AdminAnalytics() {
               data-testid={`tab-date-${key}`}
               className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-all ${
                 dateRange === key
-                  ? "bg-white dark:bg-card text-foreground shadow-sm"
+                  ? "bg-white text-gray-800 shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -363,7 +363,7 @@ export default function AdminAnalytics() {
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         {summaryKpis.map((kpi) => (
-          <div key={kpi.label} className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-border p-4" data-testid={`kpi-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}>
+          <div key={kpi.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4" data-testid={`kpi-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}>
             <div className="flex items-center gap-2 mb-2">
               <kpi.icon className={`w-4 h-4 ${kpi.iconColor}`} />
               <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">{kpi.label}</span>
@@ -380,16 +380,16 @@ export default function AdminAnalytics() {
       </div>
 
       {/* User Intelligence Section */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border overflow-hidden" data-testid="section-user-intelligence">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-testid="section-user-intelligence">
         <button
           onClick={() => setShowUserIntel(!showUserIntel)}
-          className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-muted transition-colors"
+          className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
           data-testid="button-toggle-user-intel"
         >
           <div className="flex items-center gap-3">
             <Users className="w-4 h-4 text-purple-500" />
             <div className="text-left">
-              <h3 className="text-[15px] font-semibold text-foreground">User Intelligence</h3>
+              <h3 className="text-[15px] font-semibold text-gray-800">User Intelligence</h3>
               <p className="text-xs text-muted-foreground/40">Demographics, behavior cohorts, activity patterns</p>
             </div>
           </div>
@@ -405,13 +405,13 @@ export default function AdminAnalytics() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="rounded-xl border border-gray-100 dark:border-border p-5" data-testid="section-gender-distribution">
+              <div className="rounded-xl border border-gray-100 p-5" data-testid="section-gender-distribution">
                 <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">Gender Distribution</h4>
                 <div className="space-y-2.5">
                   {USER_GENDER_DATA.map((g) => (
                     <div key={g.label} className="flex items-center gap-3">
                       <span className="w-14 text-xs text-muted-foreground">{g.label}</span>
-                      <div className="flex-1 bg-gray-100 dark:bg-muted rounded-full h-5 overflow-hidden">
+                      <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
                         <div className="h-full rounded-full flex items-center pl-2.5 text-[10px] font-medium text-white transition-all" style={{ width: `${g.pct}%`, backgroundColor: g.color }} data-testid={`bar-gender-${g.label.toLowerCase()}`}>
                           {g.pct}%
                         </div>
@@ -420,14 +420,14 @@ export default function AdminAnalytics() {
                   ))}
                 </div>
               </div>
-              <div className="rounded-xl border border-gray-100 dark:border-border p-5" data-testid="section-age-demographics">
+              <div className="rounded-xl border border-gray-100 p-5" data-testid="section-age-demographics">
                 <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">Age Demographics</h4>
                 <div className="space-y-2.5">
                   {USER_AGE_DATA.map((a) => (
                     <div key={a.label} className="flex items-center gap-3">
                       <span className="w-14 text-xs text-muted-foreground">{a.label}</span>
-                      <div className="flex-1 bg-gray-100 dark:bg-muted rounded-full h-5 overflow-hidden">
-                        <div className="h-full rounded-full flex items-center pl-2.5 text-[10px] font-medium text-white transition-all" style={{ width: `${a.pct}%`, background: "linear-gradient(90deg, hsl(222, 47%, 20%), hsl(222, 47%, 35%))" }} data-testid={`bar-age-${a.label}`}>
+                      <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
+                        <div className="h-full rounded-full flex items-center pl-2.5 text-[10px] font-medium text-white transition-all" style={{ width: `${a.pct}%`, background: "linear-gradient(90deg, #6C2BD9, #8B5CF6)" }} data-testid={`bar-age-${a.label}`}>
                           {a.pct}%
                         </div>
                       </div>
@@ -437,17 +437,17 @@ export default function AdminAnalytics() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-100 dark:border-border p-5" data-testid="section-user-type-segments">
+            <div className="rounded-xl border border-gray-100 p-5" data-testid="section-user-type-segments">
               <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">User Type Segments</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                 {USER_TYPE_SEGMENTS.map((seg) => (
-                  <div key={seg.label} className="rounded-lg border border-gray-100 dark:border-border p-3" data-testid={`card-segment-${seg.label.toLowerCase().replace(/\s+/g, "-")}`}>
+                  <div key={seg.label} className="rounded-lg border border-gray-100 p-3" data-testid={`card-segment-${seg.label.toLowerCase().replace(/\s+/g, "-")}`}>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: seg.color }} />
                       <span className="text-xs font-medium text-foreground">{seg.label}</span>
                     </div>
                     <div className="text-xl font-bold tracking-tight text-foreground mb-1">{seg.count.toLocaleString()}</div>
-                    <div className="w-full bg-gray-100 dark:bg-muted rounded-full h-1.5 mb-2 overflow-hidden">
+                    <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2 overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${seg.pct}%`, backgroundColor: seg.color }} />
                     </div>
                     <div className="space-y-1 text-[11px] text-muted-foreground">
@@ -460,17 +460,17 @@ export default function AdminAnalytics() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-100 dark:border-border p-5" data-testid="section-behavioral-cohorts">
+            <div className="rounded-xl border border-gray-100 p-5" data-testid="section-behavioral-cohorts">
               <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">Behavioral Cohorts</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {USER_BEHAVIORAL_COHORTS.map((c) => (
-                  <div key={c.label} className="rounded-lg border border-gray-100 dark:border-border p-3" data-testid={`card-cohort-${c.label.toLowerCase().replace(/\s+/g, "-")}`}>
+                  <div key={c.label} className="rounded-lg border border-gray-100 p-3" data-testid={`card-cohort-${c.label.toLowerCase().replace(/\s+/g, "-")}`}>
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <span className="text-xs font-medium text-foreground">{c.label}</span>
                       <span className="text-[10px] font-medium rounded-full px-2 py-0.5" style={{ backgroundColor: c.color + "18", color: c.color }}>{c.freq}</span>
                     </div>
                     <div className="text-xl font-bold tracking-tight text-foreground mb-1">{c.pct}%</div>
-                    <div className="w-full bg-gray-100 dark:bg-muted rounded-full h-1.5 mb-2 overflow-hidden">
+                    <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2 overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${c.pct * 2}%`, backgroundColor: c.color }} />
                     </div>
                     <div className="space-y-1 text-[11px] text-muted-foreground">
@@ -483,7 +483,7 @@ export default function AdminAnalytics() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="rounded-xl border border-gray-100 dark:border-border p-5" data-testid="section-user-day-activity">
+              <div className="rounded-xl border border-gray-100 p-5" data-testid="section-user-day-activity">
                 <div className="flex items-center gap-2 mb-3">
                   <Calendar className="w-3.5 h-3.5 text-indigo-500" />
                   <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Day-of-Week Activity</h4>
@@ -492,15 +492,15 @@ export default function AdminAnalytics() {
                   {USER_DAY_ACTIVITY.map((d) => (
                     <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
                       <span className="text-[10px] font-medium text-foreground">{d.pct}%</span>
-                      <div className="w-full bg-gray-100 dark:bg-muted rounded-md overflow-hidden" style={{ height: "80px" }}>
-                        <div className="w-full rounded-md" style={{ height: `${d.pct}%`, background: "linear-gradient(180deg, hsl(222, 47%, 20%), hsl(222, 47%, 35%))", marginTop: `${100 - d.pct}%` }} />
+                      <div className="w-full bg-gray-100 rounded-md overflow-hidden" style={{ height: "80px" }}>
+                        <div className="w-full rounded-md" style={{ height: `${d.pct}%`, background: "linear-gradient(180deg, #6C2BD9, #8B5CF6)", marginTop: `${100 - d.pct}%` }} />
                       </div>
                       <span className="text-[10px] text-muted-foreground">{d.day}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="rounded-xl border border-gray-100 dark:border-border p-5" data-testid="section-user-peak-hours">
+              <div className="rounded-xl border border-gray-100 p-5" data-testid="section-user-peak-hours">
                 <div className="flex items-center gap-2 mb-3">
                   <Clock className="w-3.5 h-3.5 text-cyan-500" />
                   <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Peak Hours</h4>
@@ -509,7 +509,7 @@ export default function AdminAnalytics() {
                   {USER_PEAK_HOURS.map((h) => (
                     <div key={h.hour} className="flex items-center gap-2">
                       <span className="w-20 text-[10px] text-muted-foreground">{h.hour}</span>
-                      <div className="flex-1 bg-gray-100 dark:bg-muted rounded-full h-3 overflow-hidden">
+                      <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
                         <div className="h-full rounded-full" style={{ width: `${h.pct}%`, background: "linear-gradient(90deg, hsl(185, 90%, 45%), hsl(185, 80%, 55%))" }} />
                       </div>
                       <span className="w-8 text-right text-[10px] font-medium text-foreground">{h.pct}%</span>
@@ -519,7 +519,7 @@ export default function AdminAnalytics() {
               </div>
             </div>
 
-            <div className="rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-muted dark:to-muted border border-gray-100 dark:border-border p-5" data-testid="section-user-ai-insights">
+            <div className="rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-100 p-5" data-testid="section-user-ai-insights">
               <div className="flex items-center gap-2 mb-3">
                 <Brain className="w-3.5 h-3.5 text-[#FFCC02]" />
                 <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">AI-Generated Insights</h4>
@@ -529,8 +529,8 @@ export default function AdminAnalytics() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {USER_AI_INSIGHTS.map((insight, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5 rounded-lg p-2.5 bg-white dark:bg-card border border-gray-100 dark:border-border" data-testid={`text-user-ai-insight-${idx}`}>
-                    <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: "linear-gradient(135deg, hsl(222, 47%, 20%), hsl(222, 47%, 35%))" }}>
+                  <div key={idx} className="flex items-start gap-2.5 rounded-lg p-2.5 bg-white border border-gray-100" data-testid={`text-user-ai-insight-${idx}`}>
+                    <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: "linear-gradient(135deg, #6C2BD9, #8B5CF6)" }}>
                       <span className="text-white text-[9px] font-bold">{idx + 1}</span>
                     </div>
                     <span className="text-xs text-muted-foreground">{insight}</span>
@@ -543,20 +543,20 @@ export default function AdminAnalytics() {
       </div>
 
       {/* Restaurant Performance Table */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6 space-y-4" data-testid="card-restaurant-performance">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-restaurant-performance">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-muted flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(35,80%,92%) 0%, hsl(40,70%,85%) 100%)" }}>
+          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(35,80%,92%) 0%, hsl(40,70%,85%) 100%)" }}>
             <Star className="w-4 h-4 text-[#FFCC02]" />
           </div>
           <div>
-            <h3 className="text-[15px] font-semibold text-foreground">Restaurant Performance</h3>
+            <h3 className="text-[15px] font-semibold text-gray-800">Restaurant Performance</h3>
             <p className="text-xs text-muted-foreground/40">Top 8 Bangkok restaurants by engagement</p>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm" data-testid="table-restaurant-performance">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-border">
+              <tr className="border-b border-gray-100">
                 <th className="text-left py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Name</th>
                 <th className="text-right py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Views</th>
                 <th className="text-right py-2.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Swipes Right</th>
@@ -568,7 +568,7 @@ export default function AdminAnalytics() {
             </thead>
             <tbody>
               {RESTAURANT_PERFORMANCE.map((r) => (
-                <tr key={r.name} className="border-b border-gray-100 dark:border-border" data-testid={`perf-row-${r.name.toLowerCase().replace(/\s/g, "-")}`}>
+                <tr key={r.name} className="border-b border-gray-100" data-testid={`perf-row-${r.name.toLowerCase().replace(/\s/g, "-")}`}>
                   <td className="py-2.5 font-medium text-foreground">{r.name}</td>
                   <td className="text-right text-muted-foreground py-2.5">{r.views.toLocaleString()}</td>
                   <td className="text-right text-muted-foreground py-2.5">{r.swipesRight.toLocaleString()}</td>
@@ -577,16 +577,16 @@ export default function AdminAnalytics() {
                   <td className="text-right text-purple-500 font-medium py-2.5">{r.robinhoodClicks.toLocaleString()}</td>
                   <td className="py-2.5 pr-2">
                     <div className="flex items-center justify-end gap-2">
-                      <div className="w-20 h-2 rounded-full bg-gray-100 dark:bg-muted overflow-hidden">
+                      <div className="w-20 h-2 rounded-full bg-gray-100 overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all"
                           style={{
                             width: `${r.conversion}%`,
-                            background: "linear-gradient(90deg, hsl(222, 47%, 20%), hsl(222, 47%, 35%))",
+                            background: "linear-gradient(90deg, #6C2BD9, #8B5CF6)",
                           }}
                         />
                       </div>
-                      <span className="text-xs font-semibold text-foreground w-8 text-right">{r.conversion}%</span>
+                      <span className="text-xs font-semibold text-gray-800 w-8 text-right">{r.conversion}%</span>
                     </div>
                   </td>
                 </tr>
@@ -597,13 +597,13 @@ export default function AdminAnalytics() {
       </div>
 
       {/* User Behavior Heatmap */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6 space-y-4" data-testid="card-user-heatmap">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-user-heatmap">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-muted flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(270,50%,92%) 0%, hsl(260,45%,85%) 100%)" }}>
+          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(270,50%,92%) 0%, hsl(260,45%,85%) 100%)" }}>
             <Layers className="w-4 h-4" style={{ color: "hsl(222, 47%, 35%)" }} />
           </div>
           <div>
-            <h3 className="text-[15px] font-semibold text-foreground">User Behavior Heatmap</h3>
+            <h3 className="text-[15px] font-semibold text-gray-800">User Behavior Heatmap</h3>
             <p className="text-xs text-muted-foreground/40">Activity intensity by day and hour</p>
           </div>
         </div>
@@ -646,20 +646,20 @@ export default function AdminAnalytics() {
       {/* Delivery Platform Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4" data-testid="section-delivery-platforms">
         {DELIVERY_PLATFORMS.map((platform) => (
-          <div key={platform.name} className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6 space-y-4" data-testid={`card-delivery-${platform.name.toLowerCase().replace(/\s/g, "-")}`}>
+          <div key={platform.name} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid={`card-delivery-${platform.name.toLowerCase().replace(/\s/g, "-")}`}>
             <div className="flex items-center gap-2">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${platform.bgColor}`}>
                 <ExternalLink className="w-4 h-4" style={{ color: platform.color }} />
               </div>
-              <h3 className="text-[15px] font-semibold text-foreground">{platform.name}</h3>
+              <h3 className="text-[15px] font-semibold text-gray-800">{platform.name}</h3>
             </div>
             <div className="space-y-3">
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-muted-foreground">Total Clicks</span>
-                  <span className="text-sm font-semibold text-foreground">{platform.totalClicks.toLocaleString()}</span>
+                  <span className="text-sm font-semibold text-gray-800">{platform.totalClicks.toLocaleString()}</span>
                 </div>
-                <div className="h-2 rounded-full bg-gray-100 dark:bg-muted overflow-hidden">
+                <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{ width: `${(platform.totalClicks / 15000) * 100}%`, backgroundColor: platform.color }}
@@ -669,9 +669,9 @@ export default function AdminAnalytics() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-muted-foreground">Conversion Rate</span>
-                  <span className="text-sm font-semibold text-foreground">{platform.conversionRate}%</span>
+                  <span className="text-sm font-semibold text-gray-800">{platform.conversionRate}%</span>
                 </div>
-                <div className="h-2 rounded-full bg-gray-100 dark:bg-muted overflow-hidden">
+                <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{ width: `${(platform.conversionRate / 10) * 100}%`, backgroundColor: platform.color }}
@@ -681,9 +681,9 @@ export default function AdminAnalytics() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-muted-foreground">Avg Order Value</span>
-                  <span className="text-sm font-semibold text-foreground">฿{platform.avgOrderValue}</span>
+                  <span className="text-sm font-semibold text-gray-800">฿{platform.avgOrderValue}</span>
                 </div>
-                <div className="h-2 rounded-full bg-gray-100 dark:bg-muted overflow-hidden">
+                <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{ width: `${(platform.avgOrderValue / 400) * 100}%`, backgroundColor: platform.color }}
@@ -697,20 +697,20 @@ export default function AdminAnalytics() {
 
       {/* Target Customer Behaviors */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6 space-y-4" data-testid="card-day-patterns">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-day-patterns">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-muted flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)" }}>
+            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)" }}>
               <Sun className="w-4 h-4 text-cyan-500" />
             </div>
             <div>
-              <h3 className="text-[15px] font-semibold text-foreground">Day-of-Week Patterns</h3>
+              <h3 className="text-[15px] font-semibold text-gray-800">Day-of-Week Patterns</h3>
               <p className="text-xs text-muted-foreground/40">Activity distribution across the week</p>
             </div>
           </div>
           <div className="flex items-end gap-2 h-32">
             {DAY_PATTERNS.map((d) => (
               <div key={d.day} className="flex-1 flex flex-col items-center gap-1" data-testid={`day-bar-${d.day.toLowerCase()}`}>
-                <span className="text-[10px] font-semibold text-foreground">{d.value}%</span>
+                <span className="text-[10px] font-semibold text-gray-800">{d.value}%</span>
                 <div
                   className="w-full rounded-t-md transition-all"
                   style={{
@@ -724,7 +724,7 @@ export default function AdminAnalytics() {
               </div>
             ))}
           </div>
-          <div className="flex items-center gap-3 pt-2 border-t border-gray-100 dark:border-border">
+          <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
             <div className="flex items-center gap-1.5">
               <Moon className="w-3 h-3" style={{ color: "hsl(222, 47%, 35%)" }} />
               <span className="text-[10px] text-muted-foreground">Peak hours: 12pm-1pm, 6pm-8pm</span>
@@ -732,13 +732,13 @@ export default function AdminAnalytics() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6 space-y-4" data-testid="card-meal-categories">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-meal-categories">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-muted flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(270,50%,92%) 0%, hsl(260,45%,85%) 100%)" }}>
+            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(270,50%,92%) 0%, hsl(260,45%,85%) 100%)" }}>
               <Utensils className="w-4 h-4" style={{ color: "hsl(222, 47%, 35%)" }} />
             </div>
             <div>
-              <h3 className="text-[15px] font-semibold text-foreground">Menu Category by Meal Time</h3>
+              <h3 className="text-[15px] font-semibold text-gray-800">Menu Category by Meal Time</h3>
               <p className="text-xs text-muted-foreground/40">Cuisine popularity across meal periods</p>
             </div>
           </div>
@@ -756,7 +756,7 @@ export default function AdminAnalytics() {
               </div>
             ))}
           </div>
-          <div className="flex flex-wrap gap-3 pt-2 border-t border-gray-100 dark:border-border">
+          <div className="flex flex-wrap gap-3 pt-2 border-t border-gray-100">
             {[
               { label: "Thai", color: "hsl(222, 47%, 30%)" },
               { label: "Japanese", color: "hsl(195, 80%, 45%)" },
@@ -774,19 +774,19 @@ export default function AdminAnalytics() {
       </div>
 
       {/* Partner Data Export */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6 space-y-4" data-testid="card-partner-export">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-partner-export">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-muted flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(35,80%,92%) 0%, hsl(40,70%,85%) 100%)" }}>
+          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(35,80%,92%) 0%, hsl(40,70%,85%) 100%)" }}>
             <Download className="w-4 h-4 text-[#FFCC02]" />
           </div>
           <div>
-            <h3 className="text-[15px] font-semibold text-foreground">Partner Data Export</h3>
+            <h3 className="text-[15px] font-semibold text-gray-800">Partner Data Export</h3>
             <p className="text-xs text-muted-foreground/40">Data packages for Grab, LINE MAN, mall partners</p>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           {DATA_PACKAGES.map((pkg) => (
-            <div key={pkg.name} className="bg-gray-50 dark:bg-muted border border-gray-100 dark:border-border rounded-xl p-4 flex flex-col gap-3" data-testid={`export-pkg-${pkg.name.toLowerCase().replace(/\s/g, "-")}`}>
+            <div key={pkg.name} className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex flex-col gap-3" data-testid={`export-pkg-${pkg.name.toLowerCase().replace(/\s/g, "-")}`}>
               <div className="flex items-center gap-2">
                 <pkg.icon className="w-4 h-4 text-[#FFCC02]" />
                 <span className="text-sm font-medium text-foreground">{pkg.name}</span>
@@ -809,12 +809,12 @@ export default function AdminAnalytics() {
       {/* === Existing Sections Below === */}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6 space-y-4" data-testid="card-event-breakdown">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-event-breakdown">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-muted flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(200,50%,92%) 0%, hsl(210,45%,85%) 100%)" }}>
+            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(200,50%,92%) 0%, hsl(210,45%,85%) 100%)" }}>
               <BarChart3 className="w-4 h-4" style={{ color: "hsl(222, 47%, 35%)" }} />
             </div>
-            <h3 className="text-[15px] font-semibold text-foreground">Event Breakdown</h3>
+            <h3 className="text-[15px] font-semibold text-gray-800">Event Breakdown</h3>
           </div>
           {loadingSummary ? (
             <div className="space-y-3">
@@ -837,12 +837,12 @@ export default function AdminAnalytics() {
                         {eventDot(type)}
                         {type}
                       </span>
-                      <span className="font-semibold text-foreground">{count}</span>
+                      <span className="font-semibold text-gray-800">{count}</span>
                     </div>
-                    <div className="h-2 rounded-full bg-gray-100 dark:bg-muted overflow-hidden">
+                    <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all"
-                        style={{ width: `${(count / maxEventCount) * 100}%`, background: "linear-gradient(90deg, hsl(222, 47%, 20%), hsl(222, 47%, 35%))" }}
+                        style={{ width: `${(count / maxEventCount) * 100}%`, background: "linear-gradient(90deg, #6C2BD9, #8B5CF6)" }}
                       />
                     </div>
                   </div>
@@ -851,13 +851,13 @@ export default function AdminAnalytics() {
           )}
         </div>
 
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6 space-y-4" data-testid="card-conversion-funnel">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-conversion-funnel">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-muted flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)" }}>
+            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)" }}>
               <Target className="w-4 h-4 text-cyan-500" />
             </div>
             <div>
-              <h3 className="text-[15px] font-semibold text-foreground">Conversion Funnel</h3>
+              <h3 className="text-[15px] font-semibold text-gray-800">Conversion Funnel</h3>
               <p className="text-xs text-muted-foreground/40">Swipe to order journey</p>
             </div>
           </div>
@@ -867,7 +867,7 @@ export default function AdminAnalytics() {
                 <div className="w-16 text-right">
                   <span className="text-xs font-medium text-muted-foreground">{step.pct}%</span>
                 </div>
-                <div className="flex-1 h-8 rounded-lg bg-gray-50 dark:bg-muted overflow-hidden relative">
+                <div className="flex-1 h-8 rounded-lg bg-gray-50 overflow-hidden relative">
                   <div
                     className="h-full rounded-lg flex items-center px-3 transition-all"
                     style={{ width: `${Math.max(step.pct, 8)}%`, backgroundColor: step.color }}
@@ -886,20 +886,20 @@ export default function AdminAnalytics() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6 space-y-4" data-testid="card-trending-cuisines">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-trending-cuisines">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-muted flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(270,50%,92%) 0%, hsl(260,45%,85%) 100%)" }}>
+            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(270,50%,92%) 0%, hsl(260,45%,85%) 100%)" }}>
               <TrendingUp className="w-4 h-4" style={{ color: "hsl(222, 47%, 35%)" }} />
             </div>
             <div>
-              <h3 className="text-[15px] font-semibold text-foreground">Trending Cuisines</h3>
+              <h3 className="text-[15px] font-semibold text-gray-800">Trending Cuisines</h3>
               <p className="text-xs text-muted-foreground/40">Growth in last 30 days</p>
             </div>
           </div>
           <div className="space-y-3">
             {TRENDING_CUISINES.map((cuisine) => (
               <div key={cuisine.name} className="flex items-center gap-3" data-testid={`trending-${cuisine.name.toLowerCase().replace(/\s/g, "-")}`}>
-                <div className="w-3 h-3 rounded-full bg-foreground flex-shrink-0" />
+                <div className="w-3 h-3 rounded-full bg-[#FFCC02] flex-shrink-0" />
                 <span className="flex-1 text-sm text-foreground font-medium">{cuisine.name}</span>
                 <div className="flex items-center gap-1">
                   <ArrowUpRight className="w-3 h-3 text-green-500" />
@@ -910,20 +910,20 @@ export default function AdminAnalytics() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6 space-y-4" data-testid="card-geo-hotspots">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-geo-hotspots">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-muted flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(35,80%,92%) 0%, hsl(40,70%,85%) 100%)" }}>
+            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(35,80%,92%) 0%, hsl(40,70%,85%) 100%)" }}>
               <MapPin className="w-4 h-4 text-[#FFCC02]" />
             </div>
             <div>
-              <h3 className="text-[15px] font-semibold text-foreground">Geographic Hotspots</h3>
+              <h3 className="text-[15px] font-semibold text-gray-800">Geographic Hotspots</h3>
               <p className="text-xs text-muted-foreground/40">Top order zones in Bangkok</p>
             </div>
           </div>
           <div className="space-y-2">
             {GEO_HOTSPOTS.map((spot) => (
               <div key={spot.zone} className="flex items-center gap-3 py-1.5" data-testid={`geo-spot-${spot.rank}`}>
-                <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0 ${spot.rank === 1 ? "bg-[#FFCC02] text-foreground" : "bg-gray-100 dark:bg-muted text-muted-foreground"}`}>
+                <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0 ${spot.rank === 1 ? "bg-[#FFCC02] text-foreground" : "bg-gray-100 text-muted-foreground"}`}>
                   {spot.rank}
                 </span>
                 <span className="flex-1 text-sm font-medium text-foreground">{spot.zone}</span>
@@ -934,12 +934,12 @@ export default function AdminAnalytics() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6 space-y-4" data-testid="card-user-segments">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-user-segments">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-muted flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(200,50%,92%) 0%, hsl(210,45%,85%) 100%)" }}>
+            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(200,50%,92%) 0%, hsl(210,45%,85%) 100%)" }}>
               <Users className="w-4 h-4" style={{ color: "hsl(222, 47%, 35%)" }} />
             </div>
-            <h3 className="text-[15px] font-semibold text-foreground">User Segments</h3>
+            <h3 className="text-[15px] font-semibold text-gray-800">User Segments</h3>
           </div>
           {loadingSegments ? (
             <div className="space-y-3">
@@ -957,17 +957,17 @@ export default function AdminAnalytics() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium text-foreground">{segment.name}</span>
-                    <span className="bg-gray-100 dark:bg-muted text-muted-foreground text-xs rounded-full px-3 py-0.5 font-medium">
+                    <span className="bg-gray-100 text-muted-foreground text-xs rounded-full px-3 py-0.5 font-medium">
                       {segment.estimatedCount.toLocaleString()}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">{segment.description}</p>
-                  <div className="h-2 rounded-full bg-gray-100 dark:bg-muted overflow-hidden">
+                  <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
                     <div
                       className="h-full rounded-full transition-all"
                       style={{
                         width: `${(segment.estimatedCount / maxSegmentCount) * 100}%`,
-                        background: "linear-gradient(90deg, hsl(222, 47%, 20%), hsl(222, 47%, 35%))",
+                        background: "linear-gradient(90deg, #6C2BD9, #8B5CF6)",
                       }}
                     />
                   </div>
@@ -977,12 +977,12 @@ export default function AdminAnalytics() {
           )}
         </div>
 
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6 space-y-4" data-testid="card-top-restaurants">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-top-restaurants">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-muted flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(35,80%,92%) 0%, hsl(40,70%,85%) 100%)" }}>
+            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(35,80%,92%) 0%, hsl(40,70%,85%) 100%)" }}>
               <Star className="w-4 h-4 text-[#FFCC02]" />
             </div>
-            <h3 className="text-[15px] font-semibold text-foreground">Top Restaurants</h3>
+            <h3 className="text-[15px] font-semibold text-gray-800">Top Restaurants</h3>
           </div>
           {loadingTop ? (
             <div className="space-y-2">
@@ -1002,11 +1002,11 @@ export default function AdminAnalytics() {
                   className="flex items-center gap-3 text-sm py-1.5"
                   data-testid={`top-restaurant-${r.restaurantId}`}
                 >
-                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0 ${idx === 0 ? "bg-[#FFCC02] text-foreground" : "bg-gray-100 dark:bg-muted text-muted-foreground"}`}>
+                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0 ${idx === 0 ? "bg-[#FFCC02] text-foreground" : "bg-gray-100 text-muted-foreground"}`}>
                     {idx + 1}
                   </span>
                   <span className="flex-1 truncate text-foreground font-medium">{r.name}</span>
-                  <span className="bg-gray-100 dark:bg-muted text-foreground text-xs rounded-full px-3 py-0.5 font-medium">
+                  <span className="bg-gray-100 text-foreground text-xs rounded-full px-3 py-0.5 font-medium">
                     {r.count}
                   </span>
                 </div>
@@ -1015,13 +1015,13 @@ export default function AdminAnalytics() {
           )}
         </div>
 
-        <div className="lg:col-span-2 bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6 space-y-4" data-testid="card-recent-events">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-recent-events">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-muted flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)" }}>
+              <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)" }}>
                 <Clock className="w-4 h-4 text-cyan-500" />
               </div>
-              <h3 className="text-[15px] font-semibold text-foreground">Recent Events</h3>
+              <h3 className="text-[15px] font-semibold text-gray-800">Recent Events</h3>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -1049,7 +1049,7 @@ export default function AdminAnalytics() {
                   <>
                     <span
                       key={`type-${event.id}`}
-                      className="flex items-center gap-1.5 py-2 border-b border-gray-100 dark:border-border text-foreground"
+                      className="flex items-center gap-1.5 py-2 border-b border-gray-100 text-foreground"
                       data-testid={`event-type-${event.id}`}
                     >
                       {eventDot(event.eventType)}
@@ -1057,21 +1057,21 @@ export default function AdminAnalytics() {
                     </span>
                     <span
                       key={`user-${event.id}`}
-                      className="truncate text-muted-foreground py-2 border-b border-gray-100 dark:border-border"
+                      className="truncate text-muted-foreground py-2 border-b border-gray-100"
                       data-testid={`event-user-${event.id}`}
                     >
                       {event.userId || "-"}
                     </span>
                     <span
                       key={`rest-${event.id}`}
-                      className="text-muted-foreground py-2 border-b border-gray-100 dark:border-border"
+                      className="text-muted-foreground py-2 border-b border-gray-100"
                       data-testid={`event-restaurant-${event.id}`}
                     >
                       {event.restaurantId ?? "-"}
                     </span>
                     <span
                       key={`time-${event.id}`}
-                      className="text-muted-foreground whitespace-nowrap py-2 border-b border-gray-100 dark:border-border"
+                      className="text-muted-foreground whitespace-nowrap py-2 border-b border-gray-100"
                       data-testid={`event-time-${event.id}`}
                     >
                       {relativeTime(event.timestamp)}
@@ -1084,16 +1084,16 @@ export default function AdminAnalytics() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border overflow-hidden" data-testid="card-data-catalog">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-testid="card-data-catalog">
         <button
           onClick={() => setShowCatalog(!showCatalog)}
-          className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-muted transition-colors"
+          className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
           data-testid="button-toggle-catalog"
         >
           <div className="flex items-center gap-3">
             <Layers className="w-4 h-4 text-blue-500" />
             <div className="text-left">
-              <h3 className="text-[15px] font-semibold text-foreground">Data Insights Catalog</h3>
+              <h3 className="text-[15px] font-semibold text-gray-800">Data Insights Catalog</h3>
               <p className="text-xs text-muted-foreground/40">Actionable analytics for partners & restaurant owners</p>
             </div>
           </div>
@@ -1105,15 +1105,15 @@ export default function AdminAnalytics() {
               {DATA_INSIGHTS_CATALOG.map((cat) => (
                 <div
                   key={cat.category}
-                  className="rounded-xl border border-gray-100 dark:border-border overflow-hidden bg-white dark:bg-card"
+                  className="rounded-xl border border-gray-100 overflow-hidden bg-white"
                   data-testid={`insight-card-${cat.category.toLowerCase().replace(/\s/g, "-")}`}
                 >
                   <div className="px-4 py-3 flex items-center gap-2.5" style={{ background: cat.headerGradient }}>
-                    <div className="w-7 h-7 rounded-lg bg-white/60 dark:bg-white/20 flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-lg bg-white/60 flex items-center justify-center">
                       <cat.icon className="w-3.5 h-3.5 text-foreground" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold text-foreground">{cat.category}</h4>
+                      <h4 className="text-sm font-semibold text-gray-800">{cat.category}</h4>
                       <p className="text-[9px] text-muted-foreground/60">{cat.insights.length} insights</p>
                     </div>
                   </div>
@@ -1121,9 +1121,9 @@ export default function AdminAnalytics() {
                     {cat.insights.map((insight, idx) => (
                       <div
                         key={insight.name}
-                        className={`flex items-start gap-2.5 py-2.5 ${idx < cat.insights.length - 1 ? "border-b border-gray-100 dark:border-border" : ""}`}
+                        className={`flex items-start gap-2.5 py-2.5 ${idx < cat.insights.length - 1 ? "border-b border-gray-100" : ""}`}
                       >
-                        <div className="w-5 h-5 rounded-md bg-gray-100 dark:bg-muted text-foreground flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div className="w-5 h-5 rounded-md bg-gray-100 text-foreground flex items-center justify-center flex-shrink-0 mt-0.5">
                           <span className="text-[9px] font-bold">{idx + 1}</span>
                         </div>
                         <div className="min-w-0">
@@ -1145,7 +1145,7 @@ export default function AdminAnalytics() {
 
 function UserKpiCard({ icon, label, value, sub, gradient }: { icon: React.ReactNode; label: string; value: string; sub?: string; gradient: string }) {
   return (
-    <div className="rounded-xl border border-gray-100 dark:border-border p-4" data-testid={`user-kpi-${label.toLowerCase().replace(/\s+/g, "-")}`}>
+    <div className="rounded-xl border border-gray-100 p-4" data-testid={`user-kpi-${label.toLowerCase().replace(/\s+/g, "-")}`}>
       <div className="flex items-center gap-2 mb-2">
         <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: gradient }}>
           {icon}

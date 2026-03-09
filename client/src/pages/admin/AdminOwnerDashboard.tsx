@@ -167,7 +167,7 @@ export default function AdminOwnerDashboard() {
     return (
       <div className="space-y-6" data-testid="owner-dashboard-loading">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6 h-40 animate-pulse" />
+          <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 h-40 animate-pulse" />
         ))}
       </div>
     );
@@ -182,20 +182,20 @@ export default function AdminOwnerDashboard() {
   const verificationStatusBadge = (status: string) => {
     switch (status) {
       case "approved":
-        return <span className="inline-flex items-center gap-1 text-xs font-medium rounded-full px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600"><ShieldCheck className="w-3 h-3" />Verified</span>;
+        return <span className="inline-flex items-center gap-1 text-xs font-medium rounded-full px-2.5 py-0.5 bg-[#00B14F]/10 text-[#00B14F]"><ShieldCheck className="w-3 h-3" />Verified</span>;
       case "pending":
-        return <span className="inline-flex items-center gap-1 text-xs font-medium rounded-full px-2.5 py-0.5 bg-amber-50 dark:bg-amber-500/10 text-amber-600"><Clock className="w-3 h-3" />Pending</span>;
+        return <span className="inline-flex items-center gap-1 text-xs font-medium rounded-full px-2.5 py-0.5 bg-amber-50 text-amber-600"><Clock className="w-3 h-3" />Pending</span>;
       default:
-        return <span className="inline-flex items-center gap-1 text-xs font-medium rounded-full px-2.5 py-0.5 bg-red-50 dark:bg-red-500/10 text-red-500"><AlertCircle className="w-3 h-3" />Not Verified</span>;
+        return <span className="inline-flex items-center gap-1 text-xs font-medium rounded-full px-2.5 py-0.5 bg-red-50 text-red-500"><AlertCircle className="w-3 h-3" />Not Verified</span>;
     }
   };
 
   const tierBadge = (tier: string) => {
     const colors: Record<string, string> = {
-      free: "bg-gray-100 dark:bg-muted text-muted-foreground",
-      basic: "bg-blue-50 dark:bg-blue-500/10 text-blue-600",
-      premium: "bg-purple-50 dark:bg-purple-500/10 text-purple-600",
-      enterprise: "bg-amber-50 dark:bg-amber-500/10 text-amber-600",
+      free: "bg-gray-100 text-gray-500",
+      basic: "bg-blue-50 text-blue-600",
+      premium: "bg-[#6C2BD9]/10 text-[#6C2BD9]",
+      enterprise: "bg-[#FFCC02]/15 text-gray-700",
     };
     return (
       <span className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2.5 py-0.5 ${colors[tier] || colors.free}`}>
@@ -210,7 +210,7 @@ export default function AdminOwnerDashboard() {
       <div className="flex items-center gap-3">
         <Store className="w-5 h-5 text-emerald-500" />
         <div>
-          <h2 className="text-xl font-semibold text-foreground" data-testid="text-owner-title">
+          <h2 className="text-xl font-semibold text-gray-800" data-testid="text-owner-title">
             My Restaurant
           </h2>
           <p className="text-xs text-muted-foreground">Manage your restaurant profile and campaigns</p>
@@ -218,7 +218,7 @@ export default function AdminOwnerDashboard() {
       </div>
 
       {restaurant ? (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border overflow-hidden" data-testid="card-restaurant-info">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-testid="card-restaurant-info">
           <div className="relative h-48 overflow-hidden">
             <img src={restaurant.imageUrl} alt={restaurant.name} className="w-full h-full object-cover" data-testid="img-restaurant-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -240,7 +240,7 @@ export default function AdminOwnerDashboard() {
           </div>
         </div>
       ) : (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-8 text-center" data-testid="card-no-restaurant">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center" data-testid="card-no-restaurant">
           <Store className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-muted-foreground mb-1">No restaurant linked to your account yet</p>
           <p className="text-xs text-muted-foreground/60">Search and claim your restaurant below</p>
@@ -254,15 +254,15 @@ export default function AdminOwnerDashboard() {
         <StatCard icon={<ExternalLink className="w-4 h-4 text-emerald-500" />} label="Delivery Taps" value={stats.deliveryTaps} gradient="linear-gradient(135deg, hsl(160,50%,90%) 0%, hsl(170,45%,83%) 100%)" />
       </div>
 
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6" data-testid="section-claim-restaurant">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-claim-restaurant">
         <div className="flex items-center gap-2 mb-4">
           <Search className="w-4 h-4 text-foreground" />
-          <h3 className="text-[15px] font-semibold text-foreground">Claim a Restaurant</h3>
+          <h3 className="text-[15px] font-semibold text-gray-800">Claim a Restaurant</h3>
         </div>
 
         {claimFormOpen && selectedRestaurant ? (
           <div className="space-y-4" data-testid="claim-form">
-            <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-border bg-gray-50 dark:bg-muted">
+            <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50">
               <img
                 src={selectedRestaurant.imageUrl}
                 alt={selectedRestaurant.name}
@@ -380,7 +380,7 @@ export default function AdminOwnerDashboard() {
 
             {isSearching && (
               <div className="flex items-center justify-center py-4">
-                <div className="w-5 h-5 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-[#FFCC02]/20 border-t-[#FFCC02] rounded-full animate-spin" />
               </div>
             )}
 
@@ -389,7 +389,7 @@ export default function AdminOwnerDashboard() {
                 {searchResults.map((r) => (
                   <div
                     key={r.id}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-border cursor-pointer hover-elevate"
+                    className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 cursor-pointer hover-elevate"
                     onClick={() => { setSelectedRestaurant(r); setClaimFormOpen(true); }}
                     data-testid={`search-result-${r.id}`}
                   >
@@ -430,26 +430,26 @@ export default function AdminOwnerDashboard() {
         )}
       </div>
 
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6" data-testid="section-owner-campaigns">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-owner-campaigns">
         <div className="flex items-center gap-2 mb-4">
           <Megaphone className="w-4 h-4 text-foreground" />
-          <h3 className="text-[15px] font-semibold text-foreground">My Campaigns</h3>
-          <span className="bg-foreground text-white text-xs font-medium rounded-full px-2.5 py-0.5">{campaigns.length}</span>
+          <h3 className="text-[15px] font-semibold text-gray-800">My Campaigns</h3>
+          <span className="bg-[#FFCC02] text-gray-900 text-xs font-medium rounded-full px-2.5 py-0.5">{campaigns.length}</span>
         </div>
         {campaigns.length === 0 ? (
           <p className="text-sm text-muted-foreground" data-testid="text-no-campaigns">No campaigns yet. Create one to promote your restaurant.</p>
         ) : (
           <div className="space-y-3">
             {campaigns.map((c: any) => (
-              <div key={c.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-border" data-testid={`card-campaign-${c.id}`}>
+              <div key={c.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100" data-testid={`card-campaign-${c.id}`}>
                 <div>
                   <span className="text-sm font-medium text-foreground">{c.title}</span>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-xs text-muted-foreground">{c.dealType}</span>
                     <span className={`text-xs font-medium rounded-full px-2 py-0.5 ${
-                      c.status === "active" ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600" :
-                      c.status === "draft" ? "bg-gray-100 dark:bg-muted text-muted-foreground" :
-                      "bg-red-50 dark:bg-red-500/10 text-red-500"
+                      c.status === "active" ? "bg-[#00B14F]/10 text-[#00B14F]" :
+                      c.status === "draft" ? "bg-gray-100 text-muted-foreground" :
+                      "bg-red-50 text-red-500"
                     }`}>{c.status}</span>
                   </div>
                 </div>
@@ -460,17 +460,17 @@ export default function AdminOwnerDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6" data-testid="section-claim-status">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-claim-status">
           <div className="flex items-center gap-2 mb-4">
             <ShieldCheck className="w-4 h-4 text-foreground" />
-            <h3 className="text-[15px] font-semibold text-foreground">Claim Status</h3>
+            <h3 className="text-[15px] font-semibold text-gray-800">Claim Status</h3>
           </div>
           {claims.length === 0 ? (
             <p className="text-sm text-muted-foreground" data-testid="text-no-claims">No claims submitted.</p>
           ) : (
             <div className="space-y-2">
               {claims.map((cl: any) => (
-                <div key={cl.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 dark:border-border" data-testid={`card-claim-${cl.id}`}>
+                <div key={cl.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-100" data-testid={`card-claim-${cl.id}`}>
                   <div className="text-sm">
                     <span className="text-foreground font-medium">Restaurant #{cl.restaurantId}</span>
                     <span className="text-xs text-muted-foreground ml-2">Submitted {new Date(cl.submittedAt).toLocaleDateString()}</span>
@@ -481,9 +481,9 @@ export default function AdminOwnerDashboard() {
                     )}
                   </div>
                   <span className={`text-xs font-medium rounded-full px-2.5 py-0.5 ${
-                    cl.status === "approved" ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600" :
-                    cl.status === "pending" ? "bg-amber-50 dark:bg-amber-500/10 text-amber-600" :
-                    "bg-red-50 dark:bg-red-500/10 text-red-500"
+                    cl.status === "approved" ? "bg-[#00B14F]/10 text-[#00B14F]" :
+                    cl.status === "pending" ? "bg-amber-50 text-amber-600" :
+                    "bg-red-50 text-red-500"
                   }`}>{cl.status}</span>
                 </div>
               ))}
@@ -491,10 +491,10 @@ export default function AdminOwnerDashboard() {
           )}
         </div>
 
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-6" data-testid="section-subscription">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-subscription">
           <div className="flex items-center gap-2 mb-4">
             <CreditCard className="w-4 h-4 text-foreground" />
-            <h3 className="text-[15px] font-semibold text-foreground">Subscription</h3>
+            <h3 className="text-[15px] font-semibold text-gray-800">Subscription</h3>
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -520,7 +520,7 @@ export default function AdminOwnerDashboard() {
 
 function StatCard({ icon, label, value, gradient }: { icon: React.ReactNode; label: string; value: number; gradient: string }) {
   return (
-    <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-border p-5" data-testid={`stat-${label.toLowerCase().replace(/\s+/g, "-")}`}>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" data-testid={`stat-${label.toLowerCase().replace(/\s+/g, "-")}`}>
       <div className="flex items-center gap-2 mb-2">
         <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: gradient }}>
           {icon}

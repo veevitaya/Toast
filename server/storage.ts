@@ -102,6 +102,8 @@ export interface IStorage {
   recordGroupSwipe(swipe: InsertGroupSwipe): Promise<GroupSwipe>;
   getGroupSwipes(sessionCode: string): Promise<GroupSwipe[]>;
   getGroupMatches(sessionCode: string): Promise<{ menuItemId: number; voters: string[] }[]>;
+  getPopularRestaurants(days: number, limit: number): Promise<{ restaurantId: number; score: number }[]>;
+  getRestaurantsByVibe(vibe: string): Promise<Restaurant[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -455,6 +457,31 @@ export class DatabaseStorage implements IStorage {
       }
     }
     return matches;
+  }
+
+  async getPopularRestaurants(days: number, limit: number): Promise<{ restaurantId: number; score: number }[]> {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const events = await db.select().from(analyticsEvents)
+      .where(gte(analyticsEvents.timestamp, since));
+
+    const scores = new Map<number, number>();
+    for (const evt of events) {
+      if (!evt.restaurantId) continue;
+      const weight = evt.eventType === "save" ? 3 : evt.eventType === "swipe_right" ? 2 : evt.eventType === "view_detail" ? 1 : 0;
+      if (weight > 0) {
+        scores.set(evt.restaurantId, (scores.get(evt.restaurantId) || 0) + weight);
+      }
+    }
+
+    return Array.from(scores.entries())
+      .map(([restaurantId, score]) => ({ restaurantId, score }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+  }
+
+  async getRestaurantsByVibe(vibe: string): Promise<Restaurant[]> {
+    const all = await db.select().from(restaurants).orderBy(desc(restaurants.trendingScore));
+    return all.filter(r => r.vibes && r.vibes.includes(vibe));
   }
 }
 

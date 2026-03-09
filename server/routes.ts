@@ -5,6 +5,7 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { createHash } from "crypto";
 import { classifyRestaurant, VERIFICATION_CHECKLIST_TEMPLATE } from "./classifier";
+import { autoAssignVibes, autoDetectDistrict } from "@shared/vibeConfig";
 
 function hashPassword(password: string): string {
   return createHash("sha256").update(password).digest("hex");
@@ -787,6 +788,53 @@ export async function registerRoutes(
       res.json(scored.slice(0, 5));
     } catch (err) {
       console.error("Personalized suggestions error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/restaurants/by-vibe", async (req, res) => {
+    try {
+      const { vibe, limit = 20 } = req.body;
+      if (!vibe) return res.status(400).json({ message: "vibe is required" });
+
+      if (vibe === "popular") {
+        const popular = await storage.getPopularRestaurants(7, limit);
+        if (popular.length === 0) {
+          const all = await storage.getRestaurants();
+          const sorted = all.sort((a, b) => (b.trendingScore || 0) - (a.trendingScore || 0)).slice(0, limit);
+          return res.json(sorted.map(r => ({ ...r, vibeMatch: r.trendingScore || 50 })));
+        }
+        const allRestaurants = await storage.getRestaurants();
+        const restaurantMap = new Map(allRestaurants.map(r => [r.id, r]));
+        const maxScore = popular[0]?.score || 1;
+        const results = popular
+          .map(p => {
+            const r = restaurantMap.get(p.restaurantId);
+            if (!r) return null;
+            return { ...r, vibeMatch: Math.round((p.score / maxScore) * 99) };
+          })
+          .filter(Boolean);
+        return res.json(results);
+      }
+
+      if (vibe === "budget") {
+        const all = await storage.getRestaurants();
+        const budget = all
+          .filter(r => r.priceLevel <= 2)
+          .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
+          .slice(0, limit)
+          .map(r => ({ ...r, vibeMatch: Math.round(90 - (r.priceLevel - 1) * 20 + parseFloat(r.rating) * 2) }));
+        return res.json(budget);
+      }
+
+      const vibeRestaurants = await storage.getRestaurantsByVibe(vibe);
+      const results = vibeRestaurants.slice(0, limit).map(r => ({
+        ...r,
+        vibeMatch: Math.min(99, Math.round(50 + (parseFloat(r.rating) - 4.0) * 15 + (r.trendingScore || 0) * 0.2)),
+      }));
+      res.json(results);
+    } catch (err) {
+      console.error("By-vibe error:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -1590,6 +1638,49 @@ export async function registerRoutes(
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       await storage.deleteRestaurant(id);
       res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/restaurants/auto-assign-vibes", adminAuth, async (_req, res) => {
+    try {
+      const all = await storage.getRestaurants();
+      let updated = 0;
+      for (const r of all) {
+        const vibes = autoAssignVibes(r);
+        const district = r.district || autoDetectDistrict(r.address);
+        const changes: Record<string, any> = {};
+        if (JSON.stringify(vibes) !== JSON.stringify(r.vibes || [])) {
+          changes.vibes = vibes;
+        }
+        if (district && district !== r.district) {
+          changes.district = district;
+        }
+        if (Object.keys(changes).length > 0) {
+          await storage.updateRestaurant(r.id, changes);
+          updated++;
+        }
+      }
+      res.json({ success: true, totalRestaurants: all.length, updated });
+    } catch (err) {
+      console.error("Auto-assign vibes error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/restaurants/:id/auto-assign-vibes", adminAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const restaurant = await storage.getRestaurantById(id);
+      if (!restaurant) return res.status(404).json({ message: "Not found" });
+      const vibes = autoAssignVibes(restaurant);
+      const district = restaurant.district || autoDetectDistrict(restaurant.address);
+      const updates: Record<string, any> = { vibes };
+      if (district) updates.district = district;
+      const updated = await storage.updateRestaurant(id, updates);
+      res.json(updated);
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
     }
