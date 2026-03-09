@@ -149,10 +149,11 @@ const icons: Record<IconName, (s: number, u: string) => JSX.Element> = {
   ),
   chili: (s) => (
     <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
-      <path d="M24 16 Q22 10 24 6" stroke="#2E9E8F" strokeWidth="3" strokeLinecap="round" fill="none" />
-      <path d="M20 20 C21 16 25 14 30 14 C34 14 36 16 35 20 Z" fill="#2E9E8F" />
-      <path d="M20 20 C16 26 12 36 16 44 C18 48 22 50 26 50 C32 50 38 46 44 38 C50 30 54 22 52 16 C50 12 46 12 42 14 C38 16 34 18 28 18 C24 18 21 19 20 20 Z" fill="#EF4836" />
-      <path d="M22 22 C18 28 15 36 18 44 C20 48 24 49 27 48 C32 46 38 42 42 36 C48 28 50 20 48 16" fill="#E53935" />
+      <path d="M27 10 C26 6 27 3 29 2" stroke="#2E9E8F" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+      <ellipse cx="28" cy="12" rx="5" ry="3.5" fill="#2E9E8F" />
+      <path d="M28 15 C34 15 38 14 40 12 C42 10 40 8 36 10 C33 12 30 15 28 15 Z" fill="#2E9E8F" opacity="0.6" />
+      <path d="M23 14 C19 20 13 32 12 42 C11 48 14 54 18 56 C22 58 26 54 30 48 C36 40 44 28 48 20 C50 16 48 12 44 12 C40 12 36 14 32 15 C28 16 25 15 23 14 Z" fill="#EF4836" />
+      <path d="M24 16 C20 24 15 34 14 42 C13 48 15 52 18 54 C22 56 26 52 30 46 C36 38 42 28 46 20 C48 16 46 14 44 14" fill="#E53935" />
     </svg>
   ),
   cocktail: (s) => (
