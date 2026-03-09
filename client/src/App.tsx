@@ -28,6 +28,12 @@ import AdminBanners from "@/pages/admin/AdminBanners";
 import AdminAnalytics from "@/pages/admin/AdminAnalytics";
 import AdminConfig from "@/pages/admin/AdminConfig";
 import AdminOwnerDashboard from "@/pages/admin/AdminOwnerDashboard";
+import OwnerMenu from "@/pages/admin/OwnerMenu";
+import OwnerReviews from "@/pages/admin/OwnerReviews";
+import OwnerPromotions from "@/pages/admin/OwnerPromotions";
+import OwnerPerformance from "@/pages/admin/OwnerPerformance";
+import OwnerNotifications from "@/pages/admin/OwnerNotifications";
+import OwnerSettings from "@/pages/admin/OwnerSettings";
 
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
@@ -128,6 +134,24 @@ function Router() {
         </Route>
         <Route path="/admin/my-restaurant">
           <AdminLayout><AdminOwnerDashboard /></AdminLayout>
+        </Route>
+        <Route path="/admin/owner/menu">
+          <AdminLayout><OwnerMenu /></AdminLayout>
+        </Route>
+        <Route path="/admin/owner/reviews">
+          <AdminLayout><OwnerReviews /></AdminLayout>
+        </Route>
+        <Route path="/admin/owner/promotions">
+          <AdminLayout><OwnerPromotions /></AdminLayout>
+        </Route>
+        <Route path="/admin/owner/performance">
+          <AdminLayout><OwnerPerformance /></AdminLayout>
+        </Route>
+        <Route path="/admin/owner/notifications">
+          <AdminLayout><OwnerNotifications /></AdminLayout>
+        </Route>
+        <Route path="/admin/owner/settings">
+          <AdminLayout><OwnerSettings /></AdminLayout>
         </Route>
         <Route path="/admin">
           <Redirect to="/admin/dashboard" />

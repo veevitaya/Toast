@@ -13,6 +13,10 @@ import {
   Store,
   ShieldCheck,
   ChevronRight,
+  UtensilsCrossed,
+  MessageSquare,
+  TrendingUp,
+  Bell,
 } from "lucide-react";
 import toastLogo from "@assets/toast_logo_nobg.png";
 
@@ -73,11 +77,30 @@ const adminNavGroups: NavGroup[] = [
 
 const ownerNavGroups: NavGroup[] = [
   {
-    label: "My Business",
+    label: "Overview",
     items: [
-      { label: "My Restaurant", icon: Store, href: "/admin/my-restaurant" },
-      { label: "Campaigns", icon: Megaphone, href: "/admin/campaigns" },
-      { label: "Analytics", icon: BarChart3, href: "/admin/analytics" },
+      { label: "Dashboard", icon: Store, href: "/admin/my-restaurant" },
+    ],
+  },
+  {
+    label: "Management",
+    items: [
+      { label: "Menu & Hours", icon: UtensilsCrossed, href: "/admin/owner/menu" },
+      { label: "Reviews", icon: MessageSquare, href: "/admin/owner/reviews" },
+      { label: "Promotions", icon: Megaphone, href: "/admin/owner/promotions" },
+    ],
+  },
+  {
+    label: "Insights",
+    items: [
+      { label: "Performance", icon: TrendingUp, href: "/admin/owner/performance" },
+      { label: "Notifications", icon: Bell, href: "/admin/owner/notifications" },
+    ],
+  },
+  {
+    label: "Account",
+    items: [
+      { label: "Settings", icon: Settings2, href: "/admin/owner/settings" },
     ],
   },
 ];
@@ -156,37 +179,48 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         <nav className="flex-1 px-3 py-4 flex flex-col gap-5 overflow-y-auto" data-testid="admin-nav">
-          {navGroups.map((group) => (
-            <div key={group.label}>
-              <p className="text-[10px] uppercase tracking-[0.15em] font-semibold text-gray-400 px-3 mb-1.5">
-                {group.label}
-              </p>
-              <div className="flex flex-col gap-0.5">
-                {group.items.map((item) => {
-                  const active = location.startsWith(item.href);
-                  return (
-                    <Link key={item.href} href={item.href}>
-                      <div
-                        className={`flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium cursor-pointer transition-all relative ${
-                          active
-                            ? "bg-[#FFCC02]/12 text-gray-900"
-                            : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
-                        }`}
-                        data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
-                      >
-                        {active && (
-                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[#FFCC02]" />
-                        )}
-                        <item.icon className={`w-[17px] h-[17px] ${active ? "text-[#FFCC02]" : "text-gray-400"}`} strokeWidth={active ? 2 : 1.5} />
-                        <span className="flex-1">{item.label}</span>
-                        {active && <ChevronRight className="w-3.5 h-3.5 text-gray-300" />}
-                      </div>
-                    </Link>
-                  );
-                })}
+          {navGroups.map((group) => {
+            const accentColor = isOwner ? "#00B14F" : "#FFCC02";
+            return (
+              <div key={group.label}>
+                <p className="text-[10px] uppercase tracking-[0.15em] font-semibold text-gray-400 px-3 mb-1.5">
+                  {group.label}
+                </p>
+                <div className="flex flex-col gap-0.5">
+                  {group.items.map((item) => {
+                    const active = location.startsWith(item.href);
+                    return (
+                      <Link key={item.href} href={item.href}>
+                        <div
+                          className={`flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium cursor-pointer transition-all relative ${
+                            active
+                              ? `text-gray-900`
+                              : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
+                          }`}
+                          style={active ? { backgroundColor: `${accentColor}19` } : undefined}
+                          data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, "-")}`}
+                        >
+                          {active && (
+                            <div
+                              className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full"
+                              style={{ backgroundColor: accentColor }}
+                            />
+                          )}
+                          <item.icon
+                            className={`w-[17px] h-[17px] ${active ? "" : "text-gray-400"}`}
+                            style={active ? { color: accentColor } : undefined}
+                            strokeWidth={active ? 2 : 1.5}
+                          />
+                          <span className="flex-1">{item.label}</span>
+                          {active && <ChevronRight className="w-3.5 h-3.5 text-gray-300" />}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </nav>
 
         <div className="p-4 border-t border-gray-100">
