@@ -145,7 +145,7 @@ const ICON_EMOJI: Record<IconName, string> = {
   pancakes: "🥞",
   noodles: "🍜",
   city: "🏙️",
-  family: "👨‍👩‍👧",
+  family: "🤗",
   coffee: "☕",
   sushi: "🍣",
   burger: "🍔",
