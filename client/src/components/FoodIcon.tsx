@@ -149,12 +149,12 @@ const icons: Record<IconName, (s: number, u: string) => JSX.Element> = {
   ),
   chili: (s) => (
     <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
-      <path d="M34 6c0-2 1.5-4 3-3.5c1.5 0.5 2 3 0.5 5.5l-2 3" stroke="#26A69A" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-      <ellipse cx="34" cy="13" rx="3.5" ry="2.8" fill="#26A69A" />
-      <path d="M18 56c-3-4-4-12-2-22c3-14 9-24 16-28c3-2 5.5 0 4 4c-3 10-6 20-7 30c-0.5 8-3 12-6 15c-2 2-4 2-5 1z" fill="#F44336" />
-      <path d="M20 54c-2-4-3-10-1-18c2-12 7-22 14-26" fill="none" stroke="#D32F2F" strokeWidth="1.5" opacity="0.5" />
-      <ellipse cx="24" cy="36" rx="3.5" ry="9" fill="#FF8A80" opacity="0.3" transform="rotate(-12 24 36)" />
-      <path d="M32 18c-2 4-4 10-5 18" stroke="#FFCDD2" strokeWidth="1" opacity="0.4" strokeLinecap="round" />
+      <path d="M33 10c0-3 1-6 3-7c1.5-0.8 3 0.5 2.5 3c-0.3 1.5-1.5 3-2.5 4" fill="#009688" />
+      <ellipse cx="34" cy="12" rx="4" ry="3" fill="#26A69A" />
+      <path d="M34 15c-2 2-6 8-10 18c-4 10-6 18-5 22c1 4 4 6 7 5c4-1 7-6 9-14c2-8 4-16 5-22c0.5-3-0.5-6-2-8c-1-1-2.5-2-4-1z" fill="#F44336" />
+      <path d="M34 15c-2 2-6 8-10 18c-4 10-6 18-5 22c1 4 4 6 7 5c4-1 7-6 9-14c2-8 4-16 5-22c0.5-3-0.5-6-2-8c-1-1-2.5-2-4-1z" fill="#EF5350" />
+      <path d="M32 20c-3 6-6 14-8 22c-1 4-0.5 7 1 8" fill="none" stroke="#D32F2F" strokeWidth="1.5" opacity="0.4" />
+      <ellipse cx="28" cy="36" rx="3" ry="8" fill="#FF8A80" opacity="0.25" transform="rotate(-20 28 36)" />
     </svg>
   ),
   cocktail: (s) => (
@@ -190,46 +190,45 @@ const icons: Record<IconName, (s: number, u: string) => JSX.Element> = {
   ),
   salad: (s) => (
     <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
-      <ellipse cx="32" cy="38" rx="26" ry="20" fill="#43A047" />
-      <ellipse cx="32" cy="36" rx="26" ry="20" fill="#66BB6A" />
-      <ellipse cx="32" cy="34" rx="22" ry="16" fill="#81C784" />
-      <path d="M32 18c0 0-8 4-12 12c-2 4-2 8 0 10" stroke="#A5D6A7" strokeWidth="2" opacity="0.6" fill="none" />
-      <path d="M32 18c0 0 8 4 12 12c2 4 2 8 0 10" stroke="#A5D6A7" strokeWidth="2" opacity="0.6" fill="none" />
-      <circle cx="32" cy="34" r="8" fill="#FDD835" />
-      <circle cx="32" cy="34" r="5.5" fill="#FFF176" />
-      <ellipse cx="22" cy="30" rx="5" ry="4" fill="#E53935" />
-      <ellipse cx="40" cy="28" rx="4.5" ry="3.5" fill="#FF7043" />
-      <ellipse cx="26" cy="40" rx="4" ry="3" fill="#AB47BC" opacity="0.7" />
-      <circle cx="38" cy="38" r="3" fill="#E53935" opacity="0.6" />
-      <path d="M30 20c0-6 4-10 4-14" stroke="#388E3C" strokeWidth="2" strokeLinecap="round" fill="none" />
-      <ellipse cx="36" cy="8" rx="4" ry="3" fill="#43A047" />
+      <path d="M4 38c0 0 4 20 28 20s28-20 28-20H4z" fill="#8D6E63" />
+      <path d="M4 36c0 0 4 20 28 20s28-20 28-20H4z" fill="#A1887F" />
+      <ellipse cx="32" cy="36" rx="28" ry="4" fill="#BCAAA4" />
+      <ellipse cx="18" cy="30" rx="10" ry="7" fill="#388E3C" />
+      <ellipse cx="18" cy="28" rx="10" ry="7" fill="#43A047" />
+      <ellipse cx="44" cy="28" rx="10" ry="7" fill="#2E7D32" />
+      <ellipse cx="44" cy="26" rx="10" ry="7" fill="#43A047" />
+      <ellipse cx="30" cy="24" rx="9" ry="6" fill="#4CAF50" />
+      <ellipse cx="30" cy="22" rx="9" ry="6" fill="#66BB6A" />
+      <path d="M22 22c2-3 5-4 8-3" stroke="#A5D6A7" strokeWidth="1.2" opacity="0.5" fill="none" />
+      <path d="M38 20c2-2 5-3 7-2" stroke="#A5D6A7" strokeWidth="1.2" opacity="0.5" fill="none" />
+      <circle cx="22" cy="26" r="3.5" fill="#E53935" />
+      <circle cx="38" cy="22" r="3" fill="#E53935" />
+      <circle cx="30" cy="30" r="2.5" fill="#FF9800" />
+      <ellipse cx="42" cy="30" rx="2.5" ry="2" fill="#FDD835" />
+      <circle cx="26" cy="18" r="2" fill="#E53935" opacity="0.6" />
     </svg>
   ),
   umbrella: (s) => (
     <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
-      <path d="M4 32c0-15.5 12.5-28 28-28s28 12.5 28 28H4z" fill="#42A5F5" />
-      <path d="M22 4c0 0 4 6 10 12l10-12c-3-2-6-3-10-3s-7 1-10 3z" fill="#42A5F5" />
-      <path d="M4 32c0-15.5 12.5-28 28-28c0 0 0 28 0 28H4z" fill="#64B5F6" />
-      <path d="M15 10c5 4 10 10 13 22H8c0-10 3-16 7-22z" fill="#FDD835" />
-      <path d="M37 8c6 4 12 10 15 24H32V8c2-1 3-1 5 0z" fill="#F48FB1" />
-      <path d="M32 4c-5 0-10 2-15 6l15 22V4z" fill="#FFD54F" opacity="0.5" />
-      <path d="M4 32h56" stroke="#1E88E5" strokeWidth="2" opacity="0.3" />
-      <rect x="30.5" y="32" width="3" height="24" rx="1.5" fill="#E0E0E0" />
-      <rect x="27" y="56" width="10" height="3.5" rx="1.75" fill="#BDBDBD" />
-      <rect x="28.5" y="54.5" width="7" height="3" rx="1.5" fill="#E0E0E0" />
+      <path d="M4 34c0-16 12.5-28 28-28s28 12 28 28H4z" fill="#4A90D9" />
+      <path d="M4 34l18-24c4 6 7 14 10 24H4z" fill="#5BA0E0" />
+      <path d="M22 10l10 24l10-24c-3-3-6-4-10-4s-7 1-10 4z" fill="#FFC107" />
+      <path d="M42 10l18 24H32l10-24z" fill="#F48FB1" />
+      <path d="M4 34h56" stroke="#3B7DD8" strokeWidth="1.5" opacity="0.2" />
+      <path d="M22 10c0 0 4 2 10 2s10-2 10-2" stroke="#E6A800" strokeWidth="1" opacity="0.3" fill="none" />
+      <rect x="30.5" y="34" width="3" height="22" rx="1.5" fill="#CFD8DC" />
+      <rect x="27" y="56" width="10" height="4" rx="2" fill="#B0BEC5" />
+      <rect x="28.5" y="55" width="7" height="3" rx="1.5" fill="#CFD8DC" />
     </svg>
   ),
   hearts: (s) => (
     <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
-      <rect x="28" y="30" width="8" height="28" rx="2" fill="#FFE0B2" />
-      <rect x="26" y="54" width="12" height="4" rx="2" fill="#FFCC80" />
-      <ellipse cx="32" cy="28" rx="10" ry="8" fill="#FF6F00" opacity="0.15" />
-      <path d="M32 6c-2 0-4 1-6 3c-3 3-4 8-1 12l7 10l7-10c3-4 2-9-1-12c-2-2-4-3-6-3z" fill="#FF7043" />
-      <path d="M32 8c-1.5 0-3 0.8-4.5 2.2c-2 2-3 6-0.5 9L32 26l5-6.8c2.5-3 1.5-7-0.5-9C35 8.8 33.5 8 32 8z" fill="#FFAB91" />
-      <ellipse cx="28" cy="14" rx="2" ry="2.5" fill="#FFCCBC" opacity="0.5" />
-      <ellipse cx="32" cy="22" rx="6" ry="4" fill="#FFCC02" opacity="0.3" />
-      <path d="M30 22c0 0 2 3 2 6" stroke="#FFE082" strokeWidth="1" opacity="0.4" />
-      <path d="M34 22c0 0-2 3-2 6" stroke="#FFE082" strokeWidth="1" opacity="0.4" />
+      <path d="M22 52l-16-20c-3-5-3-13 3-18c5-4 11-2 15 3c4-5 10-7 15-3c6 5 6 13 3 18L22 52z" fill="#EC407A" />
+      <path d="M22 48l-13-17c-2.5-4-2.5-10 2.5-14c4-3 9-2 12 2.5c3-4.5 8-5.5 12-2.5c5 4 5 10 2.5 14L22 48z" fill="#F06292" />
+      <ellipse cx="13" cy="24" rx="4" ry="5" fill="#F8BBD0" opacity="0.4" />
+      <path d="M44 44l-12-14c-2-3-2-8 2-11c3-2 7-1 9 2c2-3 6-4 9-2c4 3 4 8 2 11L44 44z" fill="#E91E63" />
+      <path d="M44 41l-9-11c-1.5-2-1.5-6 1.5-8c2.5-2 5.5-0.8 7 1.5c1.5-2.3 4.5-3.5 7-1.5c3 2 3 6 1.5 8L44 41z" fill="#F06292" />
+      <ellipse cx="38" cy="28" rx="2.5" ry="3" fill="#F8BBD0" opacity="0.35" />
     </svg>
   ),
   scooter: (s) => (
@@ -527,17 +526,19 @@ const icons: Record<IconName, (s: number, u: string) => JSX.Element> = {
   ),
   more: (s) => (
     <svg width={s} height={s} viewBox="0 0 64 64" fill="none">
-      <circle cx="32" cy="32" r="26" fill="#F5F5F5" />
-      <circle cx="32" cy="32" r="22" fill="white" />
-      <circle cx="32" cy="32" r="22" stroke="#E0E0E0" strokeWidth="1" />
-      <path d="M32 12v40" stroke="#FFCC02" strokeWidth="3" strokeLinecap="round" />
-      <path d="M12 32h40" stroke="#FFCC02" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="32" cy="12" r="4" fill="#FF7043" />
-      <circle cx="32" cy="52" r="4" fill="#66BB6A" />
-      <circle cx="12" cy="32" r="4" fill="#42A5F5" />
-      <circle cx="52" cy="32" r="4" fill="#AB47BC" />
-      <circle cx="32" cy="32" r="5" fill="#FFCC02" />
-      <circle cx="32" cy="32" r="3" fill="#FFE082" />
+      <circle cx="16" cy="16" r="7" fill="#E0E0E0" />
+      <circle cx="16" cy="16" r="5.5" fill="#EEEEEE" />
+      <circle cx="48" cy="16" r="7" fill="#E0E0E0" />
+      <circle cx="48" cy="16" r="5.5" fill="#EEEEEE" />
+      <circle cx="16" cy="48" r="7" fill="#E0E0E0" />
+      <circle cx="16" cy="48" r="5.5" fill="#EEEEEE" />
+      <circle cx="48" cy="48" r="7" fill="#E0E0E0" />
+      <circle cx="48" cy="48" r="5.5" fill="#EEEEEE" />
+      <circle cx="32" cy="32" r="8" fill="#BDBDBD" />
+      <circle cx="32" cy="32" r="6" fill="#E0E0E0" />
+      <circle cx="32" cy="32" r="3" fill="#9E9E9E" />
+      <path d="M32 26v12" stroke="#9E9E9E" strokeWidth="2" strokeLinecap="round" />
+      <path d="M26 32h12" stroke="#9E9E9E" strokeWidth="2" strokeLinecap="round" />
     </svg>
   ),
   sparkle: (s) => (
