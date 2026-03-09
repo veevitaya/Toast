@@ -376,7 +376,7 @@ function FullScreenSlide({
     : "text-gray-800 bg-black/10 backdrop-blur-sm";
   const dotActive = isDark ? "bg-white" : "bg-gray-900";
   const dotInactive = isDark ? "bg-white/35" : "bg-gray-900/30";
-  const badgeBg = isDark ? "bg-black/40 backdrop-blur-md" : "bg-white/60 backdrop-blur-md";
+  const badgeBg = isDark ? "bg-[#FFCC02]/20 backdrop-blur-md border border-[#FFCC02]/30" : "bg-[#FFCC02]/15 backdrop-blur-md border border-[#FFCC02]/25";
   const badgeTxt = isDark ? "text-white" : "text-gray-900";
   const gradient = isDark
     ? "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0) 100%)"
@@ -449,7 +449,7 @@ function FullScreenSlide({
       <div className="absolute left-4 z-20 flex items-center gap-1.5" style={{ top: "calc(env(safe-area-inset-top, 0px) + 56px)" }}>
         {post.trendingRank && post.trendingRank <= 5 && (
           <div className={`flex items-center gap-1 ${badgeBg} ${badgeTxt} px-2.5 py-1 rounded-full`} data-testid={`badge-trending-rank-${post.id}`}>
-            <TrendingUp className="w-3 h-3" />
+            <TrendingUp className="w-3 h-3 text-[#FFCC02]" />
             <span className="text-[11px] font-semibold">#{post.trendingRank}</span>
           </div>
         )}
@@ -479,8 +479,8 @@ function FullScreenSlide({
           aria-label={isSaved ? "Remove from saved" : "Save"}
           data-testid={`button-save-${post.id}`}
         >
-          <div className={`w-11 h-11 rounded-full flex items-center justify-center ${isSaved ? (isDark ? "bg-white" : "bg-gray-900") : btnBg}`}>
-            <Bookmark className={`w-[22px] h-[22px] ${isSaved ? (isDark ? "text-gray-900 fill-gray-900" : "text-white fill-white") : btnIcon}`} />
+          <div className={`w-11 h-11 rounded-full flex items-center justify-center ${btnBg}`}>
+            <Bookmark className={`w-[22px] h-[22px] ${isSaved ? "text-[#FFCC02] fill-[#FFCC02]" : btnIcon}`} />
           </div>
           <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>{isSaved ? "Saved" : "Save"}</span>
         </button>
@@ -728,7 +728,13 @@ export default function TrendingFeed() {
   }, [toast, navigate, profile, creatingSession]);
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col" data-testid="trending-feed-page">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="fixed inset-0 bg-black flex flex-col"
+      data-testid="trending-feed-page"
+    >
       <div className={`absolute top-0 left-0 right-0 z-30 backdrop-blur-md pt-[env(safe-area-inset-top)] border-b transition-colors duration-300 ${headerIsDark ? "bg-white/20 border-white/15" : "bg-black/10 border-black/10"}`}>
         <div className="flex items-center justify-between px-5 py-3">
           <div className="flex items-center gap-2">
@@ -764,6 +770,6 @@ export default function TrendingFeed() {
       </div>
 
       <BottomNav />
-    </div>
+    </motion.div>
   );
 }
