@@ -53,11 +53,11 @@ interface UserSegment {
 function getEventDotColor(eventType: string) {
   switch (eventType) {
     case "swipe_right":
-      return "bg-[#00B14F]";
+      return "bg-[#EC4899]";
     case "swipe_left":
       return "bg-rose-400";
     case "view_detail":
-      return "bg-[#6C2BD9]";
+      return "bg-[#3B82F6]";
     case "quiz_start":
       return "bg-[#FFCC02]";
     default:
@@ -114,11 +114,11 @@ const fallbackSegments: UserSegment[] = [
 ];
 
 const CONVERSION_FUNNEL = [
-  { label: "Impressions", value: 12400, pct: 100, color: "#6C2BD9" },
+  { label: "Impressions", value: 12400, pct: 100, color: "#3B82F6" },
   { label: "Swipe Views", value: 8200, pct: 66, color: "#FFCC02" },
-  { label: "Right Swipes", value: 3100, pct: 25, color: "#00B14F" },
-  { label: "Detail Views", value: 1800, pct: 15, color: "#6C2BD9" },
-  { label: "Orders", value: 420, pct: 3.4, color: "#00B14F" },
+  { label: "Right Swipes", value: 3100, pct: 25, color: "#EC4899" },
+  { label: "Detail Views", value: 1800, pct: 15, color: "#3B82F6" },
+  { label: "Orders", value: 420, pct: 3.4, color: "#EC4899" },
 ];
 
 const GEO_HOTSPOTS = [
@@ -130,17 +130,17 @@ const GEO_HOTSPOTS = [
 ];
 
 const TRENDING_CUISINES = [
-  { name: "Thai Street", growth: 42, max: 50, color: "#6C2BD9" },
+  { name: "Thai Street", growth: 42, max: 50, color: "#3B82F6" },
   { name: "Korean BBQ", growth: 35, max: 50, color: "#FFCC02" },
-  { name: "Japanese", growth: 28, max: 50, color: "#00B14F" },
-  { name: "Italian", growth: 18, max: 50, color: "#6C2BD9" },
+  { name: "Japanese", growth: 28, max: 50, color: "#EC4899" },
+  { name: "Italian", growth: 18, max: 50, color: "#3B82F6" },
   { name: "Vietnamese", growth: 15, max: 50, color: "#FFCC02" },
 ];
 
 const DELIVERY_ATTRIBUTION = [
-  { name: "Grab", clicks: 2184, pct: 46, color: "#00B14F", avgOrder: "฿285" },
+  { name: "Grab", clicks: 2184, pct: 46, color: "#EC4899", avgOrder: "฿285" },
   { name: "LINE MAN", clicks: 1663, pct: 35, color: "#FFCC02", avgOrder: "฿310" },
-  { name: "Robinhood", clicks: 892, pct: 19, color: "#6C2BD9", avgOrder: "฿265" },
+  { name: "Robinhood", clicks: 892, pct: 19, color: "#3B82F6", avgOrder: "฿265" },
 ];
 
 const TOP_RESTAURANTS = [
@@ -151,9 +151,9 @@ const TOP_RESTAURANTS = [
   { name: "Bo.Lan", swipes: 1260, conversion: 61, trend: "up" as const },
 ];
 
-const SEGMENT_COLORS = ["#6C2BD9", "#FFCC02", "#00B14F", "#6C2BD9"];
+const SEGMENT_COLORS = ["#3B82F6", "#FFCC02", "#EC4899", "#3B82F6"];
 
-function MiniSparkline({ data, color = "#6C2BD9" }: { data: number[]; color?: string }) {
+function MiniSparkline({ data, color = "#3B82F6" }: { data: number[]; color?: string }) {
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
@@ -273,9 +273,9 @@ export default function AdminDashboard() {
       delta: "+12%",
       deltaUp: true,
       sparkline: [18, 24, 32, 28, 35, 42, 48],
-      iconBg: "bg-[#6C2BD9]/10",
-      iconColor: "text-[#6C2BD9]",
-      sparkColor: "#6C2BD9",
+      iconBg: "bg-[#3B82F6]/10",
+      iconColor: "text-[#3B82F6]",
+      sparkColor: "#3B82F6",
     },
     {
       label: "Restaurants",
@@ -295,9 +295,9 @@ export default function AdminDashboard() {
       delta: "+340",
       deltaUp: true,
       sparkline: [120, 180, 210, 190, 260, 310, 340],
-      iconBg: "bg-[#00B14F]/10",
-      iconColor: "text-[#00B14F]",
-      sparkColor: "#00B14F",
+      iconBg: "bg-[#EC4899]/10",
+      iconColor: "text-[#EC4899]",
+      sparkColor: "#EC4899",
     },
     {
       label: "Delivery Clicks",
@@ -306,9 +306,9 @@ export default function AdminDashboard() {
       delta: "+18%",
       deltaUp: true,
       sparkline: [320, 380, 410, 390, 450, 480, 520],
-      iconBg: "bg-[#00B14F]/10",
-      iconColor: "text-[#00B14F]",
-      sparkColor: "#00B14F",
+      iconBg: "bg-[#EC4899]/10",
+      iconColor: "text-[#EC4899]",
+      sparkColor: "#EC4899",
     },
     {
       label: "Campaigns",
@@ -317,9 +317,9 @@ export default function AdminDashboard() {
       delta: "active",
       deltaUp: true,
       sparkline: [3, 4, 4, 5, 6, 5, 6],
-      iconBg: "bg-[#6C2BD9]/10",
-      iconColor: "text-[#6C2BD9]",
-      sparkColor: "#6C2BD9",
+      iconBg: "bg-[#3B82F6]/10",
+      iconColor: "text-[#3B82F6]",
+      sparkColor: "#3B82F6",
     },
   ];
 
@@ -357,11 +357,11 @@ export default function AdminDashboard() {
             </p>
             <div className="mt-2 flex items-center gap-1.5">
               {kpi.deltaUp ? (
-                <ArrowUpRight className="w-3 h-3 text-[#00B14F]" />
+                <ArrowUpRight className="w-3 h-3 text-emerald-500" />
               ) : (
                 <ArrowDownRight className="w-3 h-3 text-red-400" />
               )}
-              <span className={`text-xs font-medium ${kpi.deltaUp ? "text-[#00B14F]" : "text-red-400"}`}>{kpi.delta}</span>
+              <span className={`text-xs font-medium ${kpi.deltaUp ? "text-emerald-500" : "text-red-400"}`}>{kpi.delta}</span>
               <span className="text-[10px] text-gray-400">vs last period</span>
             </div>
           </div>
@@ -377,7 +377,7 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center gap-3 text-xs">
               <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#FFCC02]" />Today</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#00B14F]" />Peak</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#EC4899]" />Peak</span>
             </div>
           </div>
           <div className="flex items-end gap-3 h-36" data-testid="activity-chart">
@@ -386,7 +386,7 @@ export default function AdminDashboard() {
               const isPeak = day.count === maxBarCount && day.count > 0;
               let barColor: string;
               if (isPeak) {
-                barColor = "#00B14F";
+                barColor = "#EC4899";
               } else if (isToday) {
                 barColor = "#FFCC02";
               } else {
@@ -490,7 +490,7 @@ export default function AdminDashboard() {
             })}
           </div>
           <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-center gap-2">
-            <TrendingUp className="w-3 h-3 text-[#00B14F]" />
+            <TrendingUp className="w-3 h-3 text-emerald-500" />
             <span className="text-[11px] text-gray-500">Overall conversion: <span className="font-semibold text-gray-800">3.4%</span></span>
           </div>
         </div>
@@ -542,7 +542,7 @@ export default function AdminDashboard() {
                     <span className="text-xs font-medium text-gray-800">{r.name}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    {r.trend === "up" ? <ArrowUpRight className="w-2.5 h-2.5 text-[#00B14F]" /> : <ArrowDownRight className="w-2.5 h-2.5 text-red-400" />}
+                    {r.trend === "up" ? <ArrowUpRight className="w-2.5 h-2.5 text-emerald-500" /> : <ArrowDownRight className="w-2.5 h-2.5 text-red-400" />}
                     <span className="text-[10px] font-semibold text-gray-800">{r.conversion}%</span>
                   </div>
                 </div>
@@ -551,7 +551,7 @@ export default function AdminDashboard() {
                     className="h-full rounded-md flex items-center justify-end pr-2 transition-all"
                     style={{
                       width: `${(r.swipes / maxRestaurantSwipes) * 100}%`,
-                      backgroundColor: idx === 0 ? "#FFCC02" : "#6C2BD9",
+                      backgroundColor: idx === 0 ? "#FFCC02" : "#3B82F6",
                       opacity: idx === 0 ? 1 : 0.6 + (idx * 0.05),
                     }}
                   >
@@ -578,7 +578,7 @@ export default function AdminDashboard() {
               const heightPct = (spot.orders / maxGeoOrders) * 100;
               return (
                 <div key={spot.zone} className="flex-1 flex flex-col items-center gap-1" data-testid={`geo-spot-${idx}`}>
-                  <span className="text-[9px] font-semibold text-[#00B14F]">{spot.growth}</span>
+                  <span className="text-[9px] font-semibold text-emerald-500">{spot.growth}</span>
                   <span className="text-[10px] font-bold text-gray-800">{spot.orders.toLocaleString()}</span>
                   <div className="w-full flex-1 flex items-end">
                     <div
@@ -586,7 +586,7 @@ export default function AdminDashboard() {
                       style={{
                         height: `${heightPct}%`,
                         minHeight: "8px",
-                        backgroundColor: idx === 0 ? "#6C2BD9" : "#6C2BD9",
+                        backgroundColor: idx === 0 ? "#3B82F6" : "#3B82F6",
                         opacity: idx === 0 ? 1 : 0.4 + (idx * 0.1),
                       }}
                     />
@@ -617,7 +617,7 @@ export default function AdminDashboard() {
                 <RadialArc value={cuisine.growth} max={cuisine.max} color={cuisine.color} size={36} />
                 <div>
                   <p className="text-[10px] font-medium text-gray-800">{cuisine.name}</p>
-                  <p className="text-[9px] text-[#00B14F] font-semibold">+{cuisine.growth}%</p>
+                  <p className="text-[9px] text-emerald-500 font-semibold">+{cuisine.growth}%</p>
                 </div>
               </div>
             ))}
@@ -671,8 +671,8 @@ export default function AdminDashboard() {
               <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Real-time events</p>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#00B14F] animate-pulse" />
-              <span className="text-xs text-[#00B14F] font-medium">Live</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs text-emerald-500 font-medium">Live</span>
             </div>
           </div>
           {eventsLoading ? (

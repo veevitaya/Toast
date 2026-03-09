@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { getAdminSession } from "./AdminLayout";
 import {
   Megaphone,
@@ -13,6 +15,8 @@ import {
   Gift,
   Zap,
   Clock,
+  X,
+  Loader2,
 } from "lucide-react";
 
 function getOwnerHeaders() {
@@ -98,7 +102,7 @@ const typeIcons: Record<string, typeof Percent> = {
 };
 
 const typeColors: Record<string, string> = {
-  discount: "bg-[#6C2BD9]/10 text-[#6C2BD9]",
+  discount: "bg-[#3B82F6]/10 text-[#3B82F6]",
   bundle: "bg-[#FFCC02]/15 text-gray-700",
   freeItem: "bg-[#00B14F]/10 text-[#00B14F]",
   happyHour: "bg-blue-50 text-blue-600",
@@ -114,6 +118,67 @@ const statusColors: Record<string, string> = {
 export default function OwnerPromotions() {
   const session = getAdminSession();
   const [showCreate, setShowCreate] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    dealType: "discount" as "discount" | "bundle" | "freeItem" | "happyHour",
+    dealValue: "",
+    startDate: "",
+    endDate: "",
+    targetGroups: [] as string[],
+    budget: "",
+  });
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const ownerKey = session?.email || "";
+      const res = await apiRequest("POST", "/api/campaigns", {
+        restaurantOwnerKey: ownerKey,
+        title: data.title,
+        dealType: data.dealType,
+        dealValue: data.dealValue,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        targetGroups: data.targetGroups,
+        description: `Budget: ${data.budget}`,
+        status: "draft",
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      setShowCreate(false);
+      setFormData({
+        title: "",
+        dealType: "discount",
+        dealValue: "",
+        startDate: "",
+        endDate: "",
+        targetGroups: [],
+        budget: "",
+      });
+      toast({ title: "Promotion created", description: "Your new promotion has been saved as a draft." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title.trim() || !formData.dealType) return;
+    createMutation.mutate(formData);
+  };
+
+  const toggleTargetGroup = (group: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      targetGroups: prev.targetGroups.includes(group)
+        ? prev.targetGroups.filter((g) => g !== group)
+        : [...prev.targetGroups, group],
+    }));
+  };
 
   const activePromos = MOCK_PROMOTIONS.filter((p) => p.status === "active");
   const totalImpressions = MOCK_PROMOTIONS.reduce((s, p) => s + p.impressions, 0);
@@ -146,6 +211,147 @@ export default function OwnerPromotions() {
         </button>
       </div>
 
+      {showCreate && (
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5"
+          data-testid="form-create-promotion"
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-800">Create New Promotion</h3>
+            <button
+              type="button"
+              onClick={() => setShowCreate(false)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+              data-testid="button-close-create-form"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Title</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData((p) => ({ ...p, title: e.target.value }))}
+                placeholder="e.g. 20% Off All Mains"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00B14F]/30 focus:border-[#00B14F]"
+                required
+                data-testid="input-promo-title"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Deal Type</label>
+              <select
+                value={formData.dealType}
+                onChange={(e) => setFormData((p) => ({ ...p, dealType: e.target.value as typeof formData.dealType }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#00B14F]/30 focus:border-[#00B14F] bg-white"
+                data-testid="select-deal-type"
+              >
+                <option value="discount">Discount</option>
+                <option value="bundle">Bundle</option>
+                <option value="freeItem">Free Item</option>
+                <option value="happyHour">Happy Hour</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Deal Value</label>
+              <input
+                type="text"
+                value={formData.dealValue}
+                onChange={(e) => setFormData((p) => ({ ...p, dealValue: e.target.value }))}
+                placeholder="e.g. 20% or ฿100 off"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00B14F]/30 focus:border-[#00B14F]"
+                data-testid="input-deal-value"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Start Date</label>
+              <input
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData((p) => ({ ...p, startDate: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#00B14F]/30 focus:border-[#00B14F]"
+                data-testid="input-start-date"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">End Date</label>
+              <input
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => setFormData((p) => ({ ...p, endDate: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#00B14F]/30 focus:border-[#00B14F]"
+                data-testid="input-end-date"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Budget (฿)</label>
+              <input
+                type="number"
+                value={formData.budget}
+                onChange={(e) => setFormData((p) => ({ ...p, budget: e.target.value }))}
+                placeholder="e.g. 5000"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00B14F]/30 focus:border-[#00B14F]"
+                data-testid="input-budget"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Target Groups</label>
+              <div className="flex flex-wrap gap-2">
+                {["couples", "families", "students", "office_workers", "tourists", "foodies"].map((group) => (
+                  <button
+                    key={group}
+                    type="button"
+                    onClick={() => toggleTargetGroup(group)}
+                    className={`text-xs font-medium rounded-full px-3 py-1.5 border transition-colors ${
+                      formData.targetGroups.includes(group)
+                        ? "bg-[#00B14F]/10 text-[#00B14F] border-[#00B14F]/30"
+                        : "bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-300"
+                    }`}
+                    data-testid={`button-target-${group}`}
+                  >
+                    {group.replace(/_/g, " ")}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => setShowCreate(false)}
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors px-4 py-2"
+              data-testid="button-cancel-promotion"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={createMutation.isPending}
+              className="bg-[#00B14F] text-white text-sm font-medium rounded-xl px-5 py-2.5 hover:bg-[#00B14F]/90 transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+              data-testid="button-submit-promotion"
+            >
+              {createMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
+              Create Promotion
+            </button>
+          </div>
+        </form>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" data-testid="stat-active-promos">
           <div className="flex items-center gap-2 mb-2">
@@ -160,8 +366,8 @@ export default function OwnerPromotions() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" data-testid="stat-total-impressions">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-[#6C2BD9]/10 flex items-center justify-center">
-              <Eye className="w-4 h-4 text-[#6C2BD9]" />
+            <div className="w-8 h-8 rounded-lg bg-[#3B82F6]/10 flex items-center justify-center">
+              <Eye className="w-4 h-4 text-[#3B82F6]" />
             </div>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Impressions</span>
           </div>

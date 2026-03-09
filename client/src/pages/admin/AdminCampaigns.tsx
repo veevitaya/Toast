@@ -4,6 +4,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 import type { Campaign } from "@shared/schema";
 import {
   Play,
@@ -20,6 +21,8 @@ import {
   DollarSign,
   MapPin,
   Target,
+  Plus,
+  X,
 } from "lucide-react";
 
 const statusTabs = ["All", "Draft", "Active", "Paused", "Ended"] as const;
@@ -88,18 +91,62 @@ function formatNum(n: number): string {
 }
 
 const kpiCards = [
-  { label: "Total Impressions", value: "248K", icon: Eye, iconColor: "text-purple-500" },
-  { label: "Total Clicks", value: "12.4K", icon: MousePointerClick, iconColor: "text-teal-500" },
-  { label: "Avg CTR", value: "5.0%", icon: TrendingUp, iconColor: "text-blue-500" },
-  { label: "Revenue Generated", value: "฿847K", icon: DollarSign, iconColor: "text-emerald-500" },
+  { label: "Total Impressions", value: "248K", icon: Eye, iconColor: "text-[#3B82F6]", iconBg: "bg-[#3B82F6]/10" },
+  { label: "Total Clicks", value: "12.4K", icon: MousePointerClick, iconColor: "text-teal-500", iconBg: "bg-teal-50" },
+  { label: "Avg CTR", value: "5.0%", icon: TrendingUp, iconColor: "text-[#3B82F6]", iconBg: "bg-[#3B82F6]/10" },
+  { label: "Revenue Generated", value: "฿847K", icon: DollarSign, iconColor: "text-emerald-500", iconBg: "bg-emerald-50" },
 ];
+
+const dealTypeOptions = [
+  { value: "discount", label: "Discount" },
+  { value: "bundle", label: "Bundle" },
+  { value: "freeItem", label: "Free Item" },
+  { value: "happyHour", label: "Happy Hour" },
+  { value: "specialMenu", label: "Special Menu" },
+];
+
+const statusOptions = [
+  { value: "draft", label: "Draft" },
+  { value: "active", label: "Active" },
+  { value: "paused", label: "Paused" },
+];
+
+const targetGroupOptions = ["students", "families", "couples", "tourists", "office_workers", "foodies"];
+
+const emptyForm = {
+  title: "",
+  restaurantOwnerKey: "",
+  dealType: "discount",
+  dealValue: "",
+  startDate: "",
+  endDate: "",
+  targetGroups: [] as string[],
+  status: "active",
+};
 
 export default function AdminCampaigns() {
   const [activeTab, setActiveTab] = useState<string>("All");
   const [search, setSearch] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({ ...emptyForm });
+  const { toast } = useToast();
 
   const { data: campaigns = [], isLoading } = useQuery<Campaign[]>({
     queryKey: ["/api/campaigns"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: typeof emptyForm) =>
+      apiRequest("POST", "/api/campaigns", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      setShowCreate(false);
+      setForm({ ...emptyForm });
+      toast({ title: "Campaign created", description: "The new campaign has been created successfully." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create campaign.", variant: "destructive" });
+    },
   });
 
   const updateMutation = useMutation({
@@ -138,17 +185,172 @@ export default function AdminCampaigns() {
             {campaigns.length}
           </span>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search campaigns..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 w-64 rounded-xl border-gray-100 focus:ring-[#FFCC02]/30 focus:border-[#FFCC02]"
-            data-testid="input-search-campaigns"
-          />
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search campaigns..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 w-64 rounded-xl border-gray-100 focus:ring-[#FFCC02]/30 focus:border-[#FFCC02]"
+              data-testid="input-search-campaigns"
+            />
+          </div>
+          <Button
+            onClick={() => setShowCreate(!showCreate)}
+            className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white rounded-xl"
+            data-testid="button-create-campaign"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Create Campaign
+          </Button>
         </div>
       </div>
+
+      {showCreate && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="form-create-campaign">
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="text-lg font-semibold text-gray-800">Create New Campaign</h3>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => { setShowCreate(false); setForm({ ...emptyForm }); }}
+              data-testid="button-close-create-form"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700">Title</label>
+              <Input
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="Campaign title"
+                className="rounded-xl border-gray-200"
+                data-testid="input-create-title"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700">Restaurant Owner Key</label>
+              <Input
+                value={form.restaurantOwnerKey}
+                onChange={(e) => setForm({ ...form, restaurantOwnerKey: e.target.value })}
+                placeholder="e.g. owner_email@example.com"
+                className="rounded-xl border-gray-200"
+                data-testid="input-create-owner-key"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700">Deal Type</label>
+              <select
+                value={form.dealType}
+                onChange={(e) => setForm({ ...form, dealType: e.target.value })}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm"
+                data-testid="select-create-deal-type"
+              >
+                {dealTypeOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700">Deal Value</label>
+              <Input
+                value={form.dealValue}
+                onChange={(e) => setForm({ ...form, dealValue: e.target.value })}
+                placeholder="e.g. 20% off, Buy 1 Get 1"
+                className="rounded-xl border-gray-200"
+                data-testid="input-create-deal-value"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700">Start Date</label>
+              <Input
+                type="date"
+                value={form.startDate}
+                onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                className="rounded-xl border-gray-200"
+                data-testid="input-create-start-date"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700">End Date</label>
+              <Input
+                type="date"
+                value={form.endDate}
+                onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+                className="rounded-xl border-gray-200"
+                data-testid="input-create-end-date"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700">Status</label>
+              <select
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm"
+                data-testid="select-create-status"
+              >
+                {statusOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-gray-700">Target Groups</label>
+              <div className="flex gap-2 flex-wrap">
+                {targetGroupOptions.map((group) => (
+                  <button
+                    key={group}
+                    type="button"
+                    onClick={() => {
+                      const next = form.targetGroups.includes(group)
+                        ? form.targetGroups.filter((g) => g !== group)
+                        : [...form.targetGroups, group];
+                      setForm({ ...form, targetGroups: next });
+                    }}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                      form.targetGroups.includes(group)
+                        ? "bg-[#3B82F6] text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                    data-testid={`toggle-target-${group}`}
+                  >
+                    {group.replace("_", " ")}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => { setShowCreate(false); setForm({ ...emptyForm }); }}
+              className="rounded-xl"
+              data-testid="button-cancel-create"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!form.title || !form.restaurantOwnerKey) {
+                  toast({ title: "Validation Error", description: "Title and Restaurant Owner Key are required.", variant: "destructive" });
+                  return;
+                }
+                createMutation.mutate(form);
+              }}
+              disabled={createMutation.isPending}
+              className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white rounded-xl"
+              data-testid="button-submit-create"
+            >
+              {createMutation.isPending ? "Creating..." : "Create Campaign"}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="section-campaign-kpis">
         {kpiCards.map((kpi) => (

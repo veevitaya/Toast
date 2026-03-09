@@ -17,6 +17,7 @@ import {
   MessageSquare,
   TrendingUp,
   Bell,
+  CreditCard,
 } from "lucide-react";
 import toastLogo from "@assets/toast_logo_nobg.png";
 
@@ -70,6 +71,7 @@ const adminNavGroups: NavGroup[] = [
   {
     label: "Settings",
     items: [
+      { label: "Payments", icon: CreditCard, href: "/admin/payments" },
       { label: "App Config", icon: Settings2, href: "/admin/config" },
     ],
   },

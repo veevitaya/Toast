@@ -16,6 +16,13 @@ import {
   Globe,
   CreditCard,
   ChevronRight,
+  Wallet,
+  Trash2,
+  Pencil,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  Landmark,
 } from "lucide-react";
 
 function getOwnerHeaders() {
@@ -27,7 +34,7 @@ function getOwnerHeaders() {
 export default function OwnerSettings() {
   const session = getAdminSession();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<"profile" | "notifications" | "subscription">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "notifications" | "subscription" | "payments">("profile");
 
   const { data: dashData, isLoading } = useQuery<any>({
     queryKey: ["/api/admin/owner/dashboard"],
@@ -59,6 +66,12 @@ export default function OwnerSettings() {
     lineNotifications: true,
   });
 
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "bank">("card");
+  const [savedPayment, setSavedPayment] = useState<null | { type: "card" | "bank"; details: any }>(null);
+  const [editingPayment, setEditingPayment] = useState(false);
+  const [cardForm, setCardForm] = useState({ number: "", expiry: "", cvv: "", name: "" });
+  const [bankForm, setBankForm] = useState({ bankName: "Bangkok Bank", accountNumber: "", accountName: "" });
+
   if (!session || session.sessionType !== "owner") {
     return (
       <div className="flex items-center justify-center h-64">
@@ -77,10 +90,28 @@ export default function OwnerSettings() {
     );
   }
 
+  const mockInvoices = [
+    { id: "INV-2024-001", date: "2024-12-01", tier: "Premium", amount: "฿2,490", status: "paid" as const },
+    { id: "INV-2024-002", date: "2024-11-01", tier: "Premium", amount: "฿2,490", status: "paid" as const },
+    { id: "INV-2024-003", date: "2024-10-01", tier: "Basic", amount: "฿990", status: "paid" as const },
+    { id: "INV-2024-004", date: "2024-09-01", tier: "Basic", amount: "฿990", status: "paid" as const },
+    { id: "INV-2024-005", date: "2024-08-01", tier: "Basic", amount: "฿990", status: "failed" as const },
+  ];
+
+  const thaiBanks = [
+    "Bangkok Bank",
+    "Kasikorn Bank",
+    "Siam Commercial Bank (SCB)",
+    "Krungthai Bank",
+    "TMBThanachart Bank",
+    "Bank of Ayudhya (Krungsri)",
+  ];
+
   const tabs = [
     { key: "profile" as const, label: "Profile", icon: User },
     { key: "notifications" as const, label: "Notifications", icon: Bell },
     { key: "subscription" as const, label: "Subscription", icon: CreditCard },
+    { key: "payments" as const, label: "Payments", icon: Wallet },
   ];
 
   const tierInfo: Record<string, { name: string; price: string; features: string[] }> = {
@@ -215,7 +246,7 @@ export default function OwnerSettings() {
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-security">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-[3px] h-4 bg-[#6C2BD9] rounded-full" />
+              <div className="w-[3px] h-4 bg-[#3B82F6] rounded-full" />
               <h3 className="text-[15px] font-semibold text-gray-800">Security</h3>
             </div>
             <button
@@ -319,7 +350,9 @@ export default function OwnerSettings() {
                   <ul className="mt-3 space-y-1.5">
                     {info.features.map((f) => (
                       <li key={f} className="text-[11px] text-gray-500 flex items-start gap-1.5">
-                        <span className="text-[#00B14F] mt-0.5">✓</span>
+                        <span className="text-[#00B14F] mt-0.5">
+                          <CheckCircle2 className="w-3 h-3" />
+                        </span>
                         {f}
                       </li>
                     ))}
@@ -339,6 +372,300 @@ export default function OwnerSettings() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "payments" && (
+        <div className="space-y-4" data-testid="section-payments">
+          {savedPayment && !editingPayment ? (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-saved-payment">
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-[3px] h-4 bg-[#00B14F] rounded-full" />
+                <h3 className="text-[15px] font-semibold text-gray-800">Current Payment Method</h3>
+              </div>
+
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-[#00B14F]/[0.06] border border-[#00B14F]/20">
+                {savedPayment.type === "card" ? (
+                  <CreditCard className="w-5 h-5 text-[#00B14F]" />
+                ) : (
+                  <Landmark className="w-5 h-5 text-[#00B14F]" />
+                )}
+                <div className="flex-1 min-w-0">
+                  {savedPayment.type === "card" ? (
+                    <>
+                      <p className="text-sm font-semibold text-gray-800" data-testid="text-saved-card">
+                        **** **** **** {savedPayment.details.last4}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {savedPayment.details.name} &middot; Expires {savedPayment.details.expiry}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-semibold text-gray-800" data-testid="text-saved-bank">
+                        {savedPayment.details.bankName}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {savedPayment.details.accountName} &middot; ****{savedPayment.details.last4}
+                      </p>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setEditingPayment(true)}
+                    className="p-2 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
+                    data-testid="button-edit-payment"
+                  >
+                    <Pencil className="w-3.5 h-3.5 text-gray-500" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSavedPayment(null);
+                      toast({ title: "Payment method removed", description: "Your payment method has been removed." });
+                    }}
+                    className="p-2 rounded-lg border border-gray-100 hover:bg-red-50 transition-colors"
+                    data-testid="button-remove-payment"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-payment-form">
+              <div className="flex items-center gap-2 mb-5">
+                <div className="w-[3px] h-4 bg-[#00B14F] rounded-full" />
+                <h3 className="text-[15px] font-semibold text-gray-800">
+                  {editingPayment ? "Edit Payment Method" : "Add Payment Method"}
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-2 mb-5">
+                <button
+                  onClick={() => setPaymentMethod("card")}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    paymentMethod === "card"
+                      ? "bg-[#00B14F]/10 text-[#00B14F] border border-[#00B14F]/30"
+                      : "bg-gray-50 text-gray-500 border border-gray-100 hover:border-gray-200"
+                  }`}
+                  data-testid="button-method-card"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  Credit / Debit Card
+                </button>
+                <button
+                  onClick={() => setPaymentMethod("bank")}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    paymentMethod === "bank"
+                      ? "bg-[#00B14F]/10 text-[#00B14F] border border-[#00B14F]/30"
+                      : "bg-gray-50 text-gray-500 border border-gray-100 hover:border-gray-200"
+                  }`}
+                  data-testid="button-method-bank"
+                >
+                  <Landmark className="w-4 h-4" />
+                  Bank Transfer
+                </button>
+              </div>
+
+              {paymentMethod === "card" && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1.5 block">Cardholder Name</label>
+                    <input
+                      type="text"
+                      value={cardForm.name}
+                      onChange={(e) => setCardForm({ ...cardForm, name: e.target.value })}
+                      placeholder="Full name on card"
+                      className="w-full text-sm border border-gray-100 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#00B14F]/30"
+                      data-testid="input-card-name"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1.5 block">Card Number</label>
+                    <input
+                      type="text"
+                      value={cardForm.number}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "").slice(0, 16);
+                        const formatted = val.replace(/(.{4})/g, "$1 ").trim();
+                        setCardForm({ ...cardForm, number: formatted });
+                      }}
+                      placeholder="1234 5678 9012 3456"
+                      className="w-full text-sm border border-gray-100 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#00B14F]/30 font-mono"
+                      data-testid="input-card-number"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 mb-1.5 block">Expiry Date</label>
+                      <input
+                        type="text"
+                        value={cardForm.expiry}
+                        onChange={(e) => {
+                          let val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                          if (val.length > 2) val = val.slice(0, 2) + "/" + val.slice(2);
+                          setCardForm({ ...cardForm, expiry: val });
+                        }}
+                        placeholder="MM/YY"
+                        className="w-full text-sm border border-gray-100 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#00B14F]/30 font-mono"
+                        data-testid="input-card-expiry"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-500 mb-1.5 block">CVV</label>
+                      <input
+                        type="password"
+                        value={cardForm.cvv}
+                        onChange={(e) => setCardForm({ ...cardForm, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                        placeholder="***"
+                        className="w-full text-sm border border-gray-100 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#00B14F]/30 font-mono"
+                        data-testid="input-card-cvv"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {paymentMethod === "bank" && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1.5 block">Bank Name</label>
+                    <select
+                      value={bankForm.bankName}
+                      onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })}
+                      className="w-full text-sm border border-gray-100 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#00B14F]/30 bg-white"
+                      data-testid="select-bank-name"
+                    >
+                      {thaiBanks.map((bank) => (
+                        <option key={bank} value={bank}>{bank}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1.5 block">Account Number</label>
+                    <input
+                      type="text"
+                      value={bankForm.accountNumber}
+                      onChange={(e) => setBankForm({ ...bankForm, accountNumber: e.target.value.replace(/\D/g, "").slice(0, 15) })}
+                      placeholder="Enter account number"
+                      className="w-full text-sm border border-gray-100 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#00B14F]/30 font-mono"
+                      data-testid="input-bank-account-number"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1.5 block">Account Name</label>
+                    <input
+                      type="text"
+                      value={bankForm.accountName}
+                      onChange={(e) => setBankForm({ ...bankForm, accountName: e.target.value })}
+                      placeholder="Name on bank account"
+                      className="w-full text-sm border border-gray-100 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-1 focus:ring-[#00B14F]/30"
+                      data-testid="input-bank-account-name"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 justify-end mt-5">
+                {editingPayment && (
+                  <button
+                    onClick={() => setEditingPayment(false)}
+                    className="text-sm text-gray-400 hover:text-gray-600 transition-colors px-4 py-2"
+                    data-testid="button-cancel-edit"
+                  >
+                    Cancel
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    if (paymentMethod === "card") {
+                      const digits = cardForm.number.replace(/\s/g, "");
+                      if (!cardForm.name || digits.length < 12 || !cardForm.expiry || !cardForm.cvv) {
+                        toast({ title: "Missing fields", description: "Please fill in all card details.", variant: "destructive" });
+                        return;
+                      }
+                      setSavedPayment({
+                        type: "card",
+                        details: {
+                          last4: digits.slice(-4),
+                          name: cardForm.name,
+                          expiry: cardForm.expiry,
+                        },
+                      });
+                    } else {
+                      if (!bankForm.accountName || !bankForm.accountNumber) {
+                        toast({ title: "Missing fields", description: "Please fill in all bank details.", variant: "destructive" });
+                        return;
+                      }
+                      setSavedPayment({
+                        type: "bank",
+                        details: {
+                          bankName: bankForm.bankName,
+                          accountName: bankForm.accountName,
+                          last4: bankForm.accountNumber.slice(-4),
+                        },
+                      });
+                    }
+                    setEditingPayment(false);
+                    toast({ title: "Payment method saved", description: "Your payment method has been saved successfully." });
+                  }}
+                  className="bg-[#00B14F] text-white font-medium rounded-xl px-5 py-2 hover:bg-[#00B14F]/90 transition-colors flex items-center gap-1.5 text-sm shadow-sm"
+                  data-testid="button-save-payment"
+                >
+                  <Save className="w-3.5 h-3.5" /> Save Payment Method
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-billing-history">
+            <div className="flex items-center gap-2 mb-5">
+              <div className="w-[3px] h-4 bg-[#00B14F] rounded-full" />
+              <h3 className="text-[15px] font-semibold text-gray-800">Billing History</h3>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm" data-testid="table-billing-history">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left text-xs font-medium text-gray-400 py-2 pr-4">Invoice</th>
+                    <th className="text-left text-xs font-medium text-gray-400 py-2 pr-4">Date</th>
+                    <th className="text-left text-xs font-medium text-gray-400 py-2 pr-4">Plan</th>
+                    <th className="text-left text-xs font-medium text-gray-400 py-2 pr-4">Amount</th>
+                    <th className="text-left text-xs font-medium text-gray-400 py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mockInvoices.map((inv) => (
+                    <tr key={inv.id} className="border-b border-gray-50 last:border-0" data-testid={`row-invoice-${inv.id}`}>
+                      <td className="py-3 pr-4 text-gray-700 font-mono text-xs">{inv.id}</td>
+                      <td className="py-3 pr-4 text-gray-500">{inv.date}</td>
+                      <td className="py-3 pr-4 text-gray-700">{inv.tier}</td>
+                      <td className="py-3 pr-4 text-gray-800 font-medium">{inv.amount}</td>
+                      <td className="py-3">
+                        <span
+                          className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2 py-0.5 ${
+                            inv.status === "paid"
+                              ? "bg-[#00B14F]/10 text-[#00B14F]"
+                              : inv.status === "failed"
+                              ? "bg-red-50 text-red-500"
+                              : "bg-yellow-50 text-yellow-600"
+                          }`}
+                          data-testid={`status-invoice-${inv.id}`}
+                        >
+                          {inv.status === "paid" && <CheckCircle2 className="w-3 h-3" />}
+                          {inv.status === "failed" && <XCircle className="w-3 h-3" />}
+                          {inv.status === "pending" && <Clock className="w-3 h-3" />}
+                          {inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

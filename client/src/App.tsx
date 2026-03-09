@@ -27,6 +27,7 @@ import AdminCampaigns from "@/pages/admin/AdminCampaigns";
 import AdminBanners from "@/pages/admin/AdminBanners";
 import AdminAnalytics from "@/pages/admin/AdminAnalytics";
 import AdminConfig from "@/pages/admin/AdminConfig";
+import AdminPayments from "@/pages/admin/AdminPayments";
 import AdminOwnerDashboard from "@/pages/admin/AdminOwnerDashboard";
 import OwnerMenu from "@/pages/admin/OwnerMenu";
 import OwnerReviews from "@/pages/admin/OwnerReviews";
@@ -128,6 +129,9 @@ function Router() {
         </Route>
         <Route path="/admin/analytics">
           <AdminLayout><AdminAnalytics /></AdminLayout>
+        </Route>
+        <Route path="/admin/payments">
+          <AdminLayout><AdminPayments /></AdminLayout>
         </Route>
         <Route path="/admin/config">
           <AdminLayout><AdminConfig /></AdminLayout>
