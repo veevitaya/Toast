@@ -30,7 +30,7 @@ The design adopts an Airbnb-inspired aesthetic, featuring a #FFCC02 golden yello
 - **Icon Style:** Uses clean, plain `lucide-react` icons, colored with Tailwind text classes. Bottom navigation icons are brand-colored when active.
 
 **Technical Implementations:**
-- **LINE LIFF Integration:** Deep integration for user authentication, profile retrieval, and social sharing. Separate LINE OA integration handles group invites.
+- **LINE LIFF Integration:** Deep integration for user authentication, profile retrieval, and social sharing. LINE OA integration (Channel: `2009335625`, LIFF: `2009335625-Pyd3rjhr`) handles group session invites with mandatory LINE permission flow — users must authenticate via LINE before joining a group session (with guest fallback option). Server-side token verification via LINE OAuth2 API. Endpoints: `POST /api/line/verify-token` (validates LINE access tokens and syncs profiles), `GET /api/line/oa-config` (returns OA channel config and all endpoint URLs).
 - **Real-time Group Sessions:** Backend-powered sessions with PostgreSQL tables for `group_sessions`, `group_session_members`, and `group_swipes`. Supports trending swipe sessions with geolocation-based restaurant fetching.
 - **Data Model:** Structured PostgreSQL tables for all core entities including `restaurants`, `user_preferences`, `campaigns`, `analytics_events`, `group_sessions`, etc.
 - **Admin RBAC:** Role-based access control for admin users with granular permissions.

@@ -11,6 +11,37 @@ function hashPassword(password: string): string {
   return createHash("sha256").update(password).digest("hex");
 }
 
+interface VerifiedLineProfile {
+  userId: string;
+  displayName: string;
+  pictureUrl: string | null;
+}
+
+async function verifyLineAccessToken(accessToken: string): Promise<VerifiedLineProfile | null> {
+  try {
+    const verifyRes = await fetch("https://api.line.me/oauth2/v2.1/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `access_token=${encodeURIComponent(accessToken)}`,
+    });
+    if (!verifyRes.ok) return null;
+
+    const profileRes = await fetch("https://api.line.me/v2/profile", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!profileRes.ok) return null;
+
+    const lineProfile = await profileRes.json();
+    return {
+      userId: lineProfile.userId,
+      displayName: lineProfile.displayName,
+      pictureUrl: lineProfile.pictureUrl || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function seedAdminUser() {
   const admins = await storage.getAllAdminUsers();
   if (admins.length === 0) {
@@ -912,6 +943,106 @@ export async function registerRoutes(
       }
       res.status(500).json({ message: "Internal server error" });
     }
+  });
+
+  app.post("/api/line/verify-token", async (req, res) => {
+    try {
+      const schema = z.object({
+        accessToken: z.string().min(1),
+      });
+      const { accessToken } = schema.parse(req.body);
+
+      const verifyRes = await fetch("https://api.line.me/oauth2/v2.1/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `access_token=${encodeURIComponent(accessToken)}`,
+      });
+
+      if (!verifyRes.ok) {
+        return res.status(401).json({ valid: false, message: "Invalid access token" });
+      }
+
+      const tokenInfo = await verifyRes.json();
+
+      const profileRes = await fetch("https://api.line.me/v2/profile", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (!profileRes.ok) {
+        return res.status(401).json({ valid: false, message: "Failed to fetch profile" });
+      }
+
+      const lineProfile = await profileRes.json();
+
+      const existing = await storage.getProfile(lineProfile.userId);
+      if (!existing) {
+        await storage.upsertProfile({
+          lineUserId: lineProfile.userId,
+          displayName: lineProfile.displayName,
+          pictureUrl: lineProfile.pictureUrl || null,
+          statusMessage: lineProfile.statusMessage || null,
+          dietaryRestrictions: [],
+          cuisinePreferences: [],
+          defaultBudget: 2,
+          defaultDistance: "5km",
+          partnerLineUserId: null,
+          partnerDisplayName: null,
+          partnerPictureUrl: null,
+        });
+      } else {
+        await storage.updateProfile(lineProfile.userId, {
+          displayName: lineProfile.displayName,
+          pictureUrl: lineProfile.pictureUrl || null,
+          statusMessage: lineProfile.statusMessage || null,
+        });
+      }
+
+      res.json({
+        valid: true,
+        profile: {
+          userId: lineProfile.userId,
+          displayName: lineProfile.displayName,
+          pictureUrl: lineProfile.pictureUrl || null,
+          statusMessage: lineProfile.statusMessage || null,
+        },
+        tokenInfo: {
+          scope: tokenInfo.scope,
+          expiresIn: tokenInfo.expires_in,
+          clientId: tokenInfo.client_id,
+        },
+      });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      console.error("LINE token verification error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/line/oa-config", (_req, res) => {
+    res.json({
+      channelId: process.env.VITE_LINE_OA_CHANNEL_ID || "",
+      liffId: process.env.VITE_LINE_OA_LIFF_ID || "",
+      liffUrl: process.env.VITE_LINE_OA_LIFF_ID
+        ? `https://liff.line.me/${process.env.VITE_LINE_OA_LIFF_ID}`
+        : null,
+      endpoints: {
+        verifyToken: "/api/line/verify-token",
+        syncProfile: "/api/line/profile",
+        getProfile: "/api/profile/:lineUserId",
+        updateProfile: "/api/profile/:lineUserId",
+        groupSessionCreate: "/api/group/sessions",
+        groupSessionJoin: "/api/group/sessions/:code/join",
+        groupSessionGet: "/api/group/sessions/:code",
+        groupSessionStatus: "/api/group/sessions/:code/status",
+      },
+      scopes: ["profile", "openid"],
+      permissions: [
+        "profile (display name, profile picture, status message)",
+        "openid (user identification)",
+      ],
+    });
   });
 
   app.post("/api/line/profile", async (req, res) => {
@@ -1839,6 +1970,20 @@ export async function registerRoutes(
       });
       const input = schema.parse(req.body);
 
+      let hostUserId = input.hostLineUserId;
+      let hostDisplayName = input.hostDisplayName;
+      let hostPictureUrl = input.hostPictureUrl || null;
+
+      const lineToken = req.headers["x-line-access-token"] as string | undefined;
+      if (lineToken) {
+        const verified = await verifyLineAccessToken(lineToken);
+        if (verified) {
+          hostUserId = verified.userId;
+          hostDisplayName = verified.displayName;
+          hostPictureUrl = verified.pictureUrl;
+        }
+      }
+
       const existing = await storage.getGroupSession(input.sessionCode);
       if (existing) {
         return res.status(409).json({ message: "Session already exists" });
@@ -1846,7 +1991,7 @@ export async function registerRoutes(
 
       const session = await storage.createGroupSession({
         sessionCode: input.sessionCode,
-        hostLineUserId: input.hostLineUserId,
+        hostLineUserId: hostUserId,
         status: "waiting",
         sessionType: input.sessionType || "regular",
         sourceData: input.sourceData || null,
@@ -1855,9 +2000,9 @@ export async function registerRoutes(
 
       await storage.addGroupMember({
         sessionCode: input.sessionCode,
-        lineUserId: input.hostLineUserId,
-        displayName: input.hostDisplayName,
-        pictureUrl: input.hostPictureUrl || null,
+        lineUserId: hostUserId,
+        displayName: hostDisplayName,
+        pictureUrl: hostPictureUrl,
         latitude: input.latitude || null,
         longitude: input.longitude || null,
         joinedAt: new Date().toISOString(),
@@ -1884,12 +2029,26 @@ export async function registerRoutes(
       });
       const input = schema.parse(req.body);
 
+      let userId = input.lineUserId;
+      let displayName = input.displayName;
+      let pictureUrl = input.pictureUrl || null;
+
+      const lineToken = req.headers["x-line-access-token"] as string | undefined;
+      if (lineToken) {
+        const verified = await verifyLineAccessToken(lineToken);
+        if (verified) {
+          userId = verified.userId;
+          displayName = verified.displayName;
+          pictureUrl = verified.pictureUrl;
+        }
+      }
+
       const session = await storage.getGroupSession(code);
       if (!session) {
         return res.status(404).json({ message: "Session not found" });
       }
 
-      const alreadyMember = await storage.isGroupMember(code, input.lineUserId);
+      const alreadyMember = await storage.isGroupMember(code, userId);
       if (alreadyMember) {
         const members = await storage.getGroupMembers(code);
         return res.json({ session, members });
@@ -1897,9 +2056,9 @@ export async function registerRoutes(
 
       const member = await storage.addGroupMember({
         sessionCode: code,
-        lineUserId: input.lineUserId,
-        displayName: input.displayName,
-        pictureUrl: input.pictureUrl || null,
+        lineUserId: userId,
+        displayName: displayName,
+        pictureUrl: pictureUrl,
         latitude: input.latitude || null,
         longitude: input.longitude || null,
         joinedAt: new Date().toISOString(),

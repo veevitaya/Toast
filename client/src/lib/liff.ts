@@ -19,6 +19,7 @@ export interface ShareResult {
 let initialized = false;
 let initPromise: Promise<void> | null = null;
 let cachedProfile: LineProfile | null = null;
+let currentLiffId: string = "";
 
 export function isLiffAvailable(): boolean {
   return !!LIFF_ID;
@@ -38,9 +39,11 @@ export function getLineOALiffId(): string {
 
 export async function initLiff(): Promise<boolean> {
   if (!LIFF_ID) return false;
-  if (initialized) return true;
+  if (initialized && currentLiffId === LIFF_ID) return true;
 
-  if (!initPromise) {
+  if (!initPromise || currentLiffId !== LIFF_ID) {
+    currentLiffId = LIFF_ID;
+    initialized = false;
     initPromise = liff.init({ liffId: LIFF_ID }).then(() => {
       initialized = true;
     }).catch((err) => {
@@ -51,6 +54,42 @@ export async function initLiff(): Promise<boolean> {
 
   await initPromise;
   return initialized;
+}
+
+export async function initLiffOA(): Promise<boolean> {
+  const oaId = LINE_OA_LIFF_ID || LIFF_ID;
+  if (!oaId) return false;
+  if (initialized && currentLiffId === oaId) return true;
+
+  if (!initPromise || currentLiffId !== oaId) {
+    currentLiffId = oaId;
+    initialized = false;
+    initPromise = liff.init({ liffId: oaId }).then(() => {
+      initialized = true;
+    }).catch((err) => {
+      console.error("LIFF OA init failed:", err);
+      initPromise = null;
+    });
+  }
+
+  await initPromise;
+  return initialized;
+}
+
+export async function ensureLineLogin(): Promise<LineProfile | null> {
+  const ready = await initLiffOA();
+  if (!ready) return null;
+
+  if (!liff.isLoggedIn()) {
+    liff.login({ redirectUri: window.location.href });
+    return null;
+  }
+
+  const profile = await getProfile();
+  if (profile) {
+    await syncProfileToServer(profile);
+  }
+  return profile;
 }
 
 export function isLoggedIn(): boolean {

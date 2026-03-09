@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { initLiff, getProfile, isLoggedIn, isLiffAvailable, login, isInLiff, type LineProfile } from "./liff";
+import { initLiff, initLiffOA, getProfile, isLoggedIn, isLiffAvailable, isLineOAAvailable, login, isInLiff, syncProfileToServer, type LineProfile } from "./liff";
 
 const GUEST_KEY = "toast_guest_profile";
 
@@ -18,37 +18,79 @@ function getGuestProfile(): LineProfile {
   return profile;
 }
 
-export function useLineProfile() {
-  const [profile, setProfile] = useState<LineProfile | null>(null);
+export function useLineProfile(options?: { requireAuth?: boolean }) {
+  const [profile, setProfileState] = useState<LineProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLineUser, setIsLineUser] = useState(false);
+  const [authRequired, setAuthRequired] = useState(false);
+
+  const requireAuth = options?.requireAuth ?? false;
 
   useEffect(() => {
     async function init() {
-      if (isLiffAvailable()) {
-        const ready = await initLiff();
+      const useOA = requireAuth && isLineOAAvailable();
+      const liffAvailable = useOA ? isLineOAAvailable() : isLiffAvailable();
+
+      if (liffAvailable) {
+        const ready = useOA ? await initLiffOA() : await initLiff();
         if (ready) {
           if (isLoggedIn()) {
             const p = await getProfile();
             if (p) {
               localStorage.setItem(GUEST_KEY, JSON.stringify(p));
-              setProfile(p);
+              setProfileState(p);
               setIsLineUser(true);
               setLoading(false);
+              syncProfileToServer(p);
               return;
             }
           } else if (isInLiff()) {
             login();
             return;
+          } else if (requireAuth) {
+            setAuthRequired(true);
+            setLoading(false);
+            return;
           }
         }
       }
-      setProfile(getGuestProfile());
+
+      if (requireAuth) {
+        setAuthRequired(true);
+        setLoading(false);
+        return;
+      }
+
+      setProfileState(getGuestProfile());
       setIsLineUser(false);
       setLoading(false);
     }
     init();
-  }, []);
+  }, [requireAuth]);
 
-  return { profile, loading, isLineUser };
+  const triggerLineLogin = () => {
+    const useOA = requireAuth && isLineOAAvailable();
+    if (useOA) {
+      initLiffOA().then((ready) => {
+        if (ready) {
+          login();
+        }
+      });
+    } else {
+      initLiff().then((ready) => {
+        if (ready) {
+          login();
+        }
+      });
+    }
+  };
+
+  const continueAsGuest = () => {
+    const guest = getGuestProfile();
+    setProfileState(guest);
+    setIsLineUser(false);
+    setAuthRequired(false);
+  };
+
+  return { profile, loading, isLineUser, authRequired, triggerLineLogin, continueAsGuest };
 }

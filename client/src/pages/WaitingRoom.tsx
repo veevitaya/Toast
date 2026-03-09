@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, Shield, UserCheck } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import mascotImg from "@assets/toast_mascot_nobg.png";
-import { shareMessage, sendGroupInvite } from "@/lib/liff";
+import { shareMessage, sendGroupInvite, getAccessToken, isLineOAAvailable } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -27,7 +27,7 @@ interface SessionData {
 
 export default function WaitingRoom() {
   const [, navigate] = useLocation();
-  const { profile, loading: profileLoading } = useLineProfile();
+  const { profile, loading: profileLoading, isLineUser, authRequired, triggerLineLogin, continueAsGuest } = useLineProfile({ requireAuth: true });
   const [members, setMembers] = useState<SessionMember[]>([]);
   const [nudgedMembers, setNudgedMembers] = useState<Set<string>>(new Set());
   const [sessionCreated, setSessionCreated] = useState(false);
@@ -51,11 +51,15 @@ export default function WaitingRoom() {
     if (!profile || !sessionId) return;
 
     const loc = await getUserLocation();
+    const accessToken = getAccessToken();
 
     try {
       const createRes = await fetch("/api/group/sessions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { "X-Line-Access-Token": accessToken } : {}),
+        },
         body: JSON.stringify({
           sessionCode: sessionId,
           hostLineUserId: profile.userId,
@@ -71,7 +75,10 @@ export default function WaitingRoom() {
       } else if (createRes.status === 409) {
         const joinRes = await fetch(`/api/group/sessions/${sessionId}/join`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { "X-Line-Access-Token": accessToken } : {}),
+          },
           body: JSON.stringify({
             lineUserId: profile.userId,
             displayName: profile.displayName,
@@ -157,6 +164,10 @@ export default function WaitingRoom() {
     navigate(`/group/swipe?session=${sessionId}`);
   };
 
+  const handleContinueAsGuest = () => {
+    continueAsGuest();
+  };
+
   if (profileLoading) {
     return (
       <div className="w-full h-[100dvh] bg-[#FCFCFC] flex items-center justify-center">
@@ -176,6 +187,111 @@ export default function WaitingRoom() {
         >
           Start New Group
         </button>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (authRequired) {
+    return (
+      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6" data-testid="line-permission-gate">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-[15%] left-[10%] w-32 h-32 bg-green-50/40 rounded-full blur-3xl" />
+          <div className="absolute bottom-[20%] right-[15%] w-40 h-40 bg-green-50/40 rounded-full blur-3xl" />
+        </div>
+
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", damping: 18, stiffness: 200 }}
+          className="mb-6"
+        >
+          <div
+            className="w-24 h-24 rounded-full bg-gradient-to-br from-[#00B900] to-[#00C300] flex items-center justify-center"
+            style={{ boxShadow: "0 8px 30px -6px rgba(0,185,0,0.3)" }}
+          >
+            <svg viewBox="0 0 24 24" fill="white" className="w-14 h-14">
+              <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
+            </svg>
+          </div>
+        </motion.div>
+
+        <motion.h1
+          initial={{ y: 16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="text-[24px] font-bold mb-2 text-center"
+        >
+          Connect with LINE
+        </motion.h1>
+
+        <motion.p
+          initial={{ y: 16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-muted-foreground text-center text-sm mb-8 max-w-[280px]"
+        >
+          Sign in with LINE so your friends can see your name and picture in the group session.
+        </motion.p>
+
+        <motion.div
+          initial={{ y: 16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.25 }}
+          className="w-full max-w-xs space-y-4 mb-6"
+        >
+          <div className="flex items-start gap-3 px-4">
+            <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <UserCheck className="w-4 h-4 text-[#00B900]" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Your profile photo & name</p>
+              <p className="text-xs text-muted-foreground">Shown in the waiting room so friends know you've joined</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 px-4">
+            <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Shield className="w-4 h-4 text-[#00B900]" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Secure & private</p>
+              <p className="text-xs text-muted-foreground">We only use your display name and profile picture</p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ y: 16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="w-full max-w-xs flex flex-col gap-3"
+        >
+          <button
+            onClick={triggerLineLogin}
+            className="w-full py-4 rounded-full font-bold text-[15px] text-white bg-[#00B900] active:scale-[0.96] transition-transform"
+            style={{ boxShadow: "0 6px 20px -4px rgba(0,185,0,0.3)" }}
+            data-testid="button-line-login"
+          >
+            Continue with LINE
+          </button>
+          <button
+            onClick={handleContinueAsGuest}
+            className="w-full py-3 rounded-full font-medium text-[13px] text-muted-foreground bg-gray-100 active:scale-[0.96] transition-transform"
+            data-testid="button-continue-guest"
+          >
+            Continue as Guest
+          </button>
+        </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="text-[11px] text-muted-foreground text-center mt-4 max-w-[240px]"
+        >
+          Session code: <span className="font-mono font-bold">{sessionId}</span>
+        </motion.p>
+
         <BottomNav />
       </div>
     );
@@ -201,6 +317,27 @@ export default function WaitingRoom() {
           <img src={mascotImg} alt="Toast mascot" className="h-12 w-12 object-contain animate-soft-bob gpu-accelerated" draggable={false} />
         </div>
       </motion.div>
+
+      {isLineUser && profile && (
+        <motion.div
+          initial={{ y: 16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.05, duration: 0.3 }}
+          className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1.5 rounded-full mb-3"
+          data-testid="badge-line-connected"
+        >
+          <div className="w-4 h-4 rounded-full overflow-hidden">
+            {profile.pictureUrl ? (
+              <img src={profile.pictureUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-green-200 flex items-center justify-center">
+                <span className="text-[8px] font-bold text-green-700">{profile.displayName.charAt(0)}</span>
+              </div>
+            )}
+          </div>
+          <span className="text-[12px] font-semibold">Connected as {profile.displayName}</span>
+        </motion.div>
+      )}
 
       {sessionInfo?.sessionType === "trending" && (
         <motion.div
