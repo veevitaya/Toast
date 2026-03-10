@@ -23,6 +23,7 @@ interface SessionData {
   status: string;
   sessionType: string | null;
   sourceData: string | null;
+  expectedMembers: number | null;
 }
 
 export default function WaitingRoom() {
@@ -149,6 +150,8 @@ export default function WaitingRoom() {
   };
 
   const memberCount = members.length;
+  const expectedCount = sessionInfo?.expectedMembers || null;
+  const remainingCount = expectedCount ? Math.max(0, expectedCount - memberCount) : 0;
   const canStart = memberCount >= 2;
 
   const handleStartSwiping = async () => {
@@ -357,6 +360,7 @@ export default function WaitingRoom() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.15, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
         className="text-[26px] font-semibold mb-2 text-center"
+        data-testid="text-waiting-title"
       >
         {memberCount < 2 ? "Waiting for friends..." : "Ready to go!"}
       </motion.h1>
@@ -373,11 +377,17 @@ export default function WaitingRoom() {
               className="w-2 h-2 rounded-full bg-[hsl(160,60%,45%)] transition-all duration-500"
             />
           ))}
-          {memberCount < 2 && (
-            <div className="w-2 h-2 rounded-full bg-gray-200" />
+          {expectedCount ? (
+            Array.from({ length: remainingCount }).map((_, i) => (
+              <div key={`pending-${i}`} className="w-2 h-2 rounded-full bg-gray-200" />
+            ))
+          ) : (
+            memberCount < 2 && <div className="w-2 h-2 rounded-full bg-gray-200" />
           )}
         </div>
-        <span className="text-muted-foreground text-sm font-medium">{memberCount} joined</span>
+        <span className="text-muted-foreground text-sm font-medium" data-testid="text-member-count">
+          {expectedCount ? `${memberCount} of ${expectedCount} joined` : `${memberCount} joined`}
+        </span>
       </motion.div>
 
       <div className="flex flex-wrap justify-center gap-6 mb-8 max-w-sm">
@@ -414,6 +424,22 @@ export default function WaitingRoom() {
             </div>
             <span className="text-sm font-bold">{m.lineUserId === profile?.userId ? "You" : m.displayName}</span>
             <span className="text-[11px] font-semibold text-[hsl(160,60%,45%)]">Ready</span>
+          </motion.div>
+        ))}
+
+        {expectedCount && remainingCount > 0 && Array.from({ length: remainingCount }).map((_, i) => (
+          <motion.div
+            key={`placeholder-${i}`}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 0.5 }}
+            transition={{ delay: 0.35 + (memberCount + i) * 0.08, type: "spring", damping: 18, stiffness: 200 }}
+            className="flex flex-col items-center gap-2"
+            data-testid={`member-placeholder-${i}`}
+          >
+            <div className="w-[72px] h-[72px] rounded-full border-[3px] border-dashed border-gray-200 flex items-center justify-center">
+              <span className="text-gray-300 text-xl">?</span>
+            </div>
+            <span className="text-sm font-bold text-muted-foreground/40">Waiting...</span>
           </motion.div>
         ))}
 
@@ -457,7 +483,7 @@ export default function WaitingRoom() {
           style={canStart ? { boxShadow: "var(--shadow-glow-primary)" } : {}}
           disabled={!canStart}
         >
-          {canStart ? "Start Swiping!" : "Waiting for more friends..."}
+          {canStart ? "Start Swiping!" : expectedCount && remainingCount > 0 ? `Waiting for ${remainingCount} more...` : "Waiting for more friends..."}
         </motion.button>
 
         <motion.p

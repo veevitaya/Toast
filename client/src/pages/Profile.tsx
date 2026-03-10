@@ -243,6 +243,23 @@ export default function Profile() {
   const [partnerInput, setPartnerInput] = useState("");
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [isOwnerMode, setIsOwnerMode] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState<"choice" | "register" | "claim" | "done">("choice");
+  const [newRestaurantName, setNewRestaurantName] = useState("");
+  const [newRestaurantCategory, setNewRestaurantCategory] = useState("");
+  const [newRestaurantAddress, setNewRestaurantAddress] = useState("");
+  const [claimSearchQuery, setClaimSearchQuery] = useState("");
+
+  const ownerOnboarded = (() => {
+    try {
+      const stored = localStorage.getItem(OWNER_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return !!(parsed.restaurantName && parsed.restaurantName.trim());
+      }
+    } catch {}
+    return false;
+  })();
 
   useEffect(() => {
     if (lineProfile) {
@@ -390,12 +407,14 @@ export default function Profile() {
           )}
         </div>
 
-        <ProfileToggle isOwnerMode={isOwnerMode} onToggle={setIsOwnerMode} />
+        {ownerOnboarded && (
+          <ProfileToggle isOwnerMode={isOwnerMode} onToggle={setIsOwnerMode} />
+        )}
       </div>
 
       <div className="px-5 pb-32">
         <AnimatePresence mode="wait" initial={false}>
-          {isOwnerMode ? (
+          {isOwnerMode && ownerOnboarded ? (
             <motion.div
               key="owner"
               initial={{ opacity: 0, x: 20 }}
@@ -687,7 +706,271 @@ export default function Profile() {
         )}
       </AnimatePresence>
 
+      {!ownerOnboarded && !isOwnerMode && (
+        <motion.button
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          onClick={() => { setShowOnboarding(true); setOnboardingStep("choice"); }}
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-5 py-3 rounded-full bg-white border border-gray-100 text-sm font-semibold text-foreground active:scale-[0.96] transition-transform"
+          style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
+          data-testid="button-owner-onboarding"
+        >
+          <Store className="w-4 h-4 text-[#00B14F]" />
+          Restaurant Owner?
+        </motion.button>
+      )}
+
+      <AnimatePresence>
+        {showOnboarding && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowOnboarding(false); }}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="w-full max-w-lg bg-white rounded-t-3xl p-6 pb-10 max-h-[85vh] overflow-y-auto"
+              data-testid="modal-owner-onboarding"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold">
+                  {onboardingStep === "choice" && "Become a Restaurant Owner"}
+                  {onboardingStep === "register" && "Register Your Restaurant"}
+                  {onboardingStep === "claim" && "Claim Existing Restaurant"}
+                  {onboardingStep === "done" && "You're All Set!"}
+                </h2>
+                <button
+                  onClick={() => setShowOnboarding(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+                  data-testid="button-close-onboarding"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {onboardingStep === "choice" && (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Get your restaurant on Toast and reach thousands of diners in Bangkok.
+                  </p>
+                  <button
+                    onClick={() => setOnboardingStep("register")}
+                    className="w-full flex items-center gap-4 p-4 rounded-2xl border border-gray-100 active:scale-[0.98] transition-all"
+                    style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                    data-testid="button-register-new"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-[#00B14F]/10 flex items-center justify-center flex-shrink-0">
+                      <Plus className="w-6 h-6 text-[#00B14F]" />
+                    </div>
+                    <div className="text-left flex-1">
+                      <p className="font-bold text-sm">Register New Restaurant</p>
+                      <p className="text-xs text-muted-foreground">Add your restaurant to Toast</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                  </button>
+                  <button
+                    onClick={() => setOnboardingStep("claim")}
+                    className="w-full flex items-center gap-4 p-4 rounded-2xl border border-gray-100 active:scale-[0.98] transition-all"
+                    style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                    data-testid="button-claim-existing"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-[#FFCC02]/10 flex items-center justify-center flex-shrink-0">
+                      <Search className="w-6 h-6 text-[#FFCC02]" />
+                    </div>
+                    <div className="text-left flex-1">
+                      <p className="font-bold text-sm">Claim Existing Restaurant</p>
+                      <p className="text-xs text-muted-foreground">Already listed? Take ownership</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                  </button>
+                </div>
+              )}
+
+              {onboardingStep === "register" && (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => setOnboardingStep("choice")}
+                    className="flex items-center gap-1 text-sm text-muted-foreground mb-2"
+                    data-testid="button-back-to-choice"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5 rotate-180" />
+                    Back
+                  </button>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Restaurant Name</label>
+                    <input
+                      type="text"
+                      value={newRestaurantName}
+                      onChange={(e) => setNewRestaurantName(e.target.value)}
+                      placeholder="e.g. Jay Fai, Gaggan, Sorn"
+                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-transparent focus:border-gray-200 outline-none text-sm font-medium"
+                      data-testid="input-register-name"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Category</label>
+                    <select
+                      value={newRestaurantCategory}
+                      onChange={(e) => setNewRestaurantCategory(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-transparent focus:border-gray-200 outline-none text-sm font-medium"
+                      data-testid="select-register-category"
+                    >
+                      <option value="">Select category</option>
+                      {RESTAURANT_CATEGORIES.map((c) => (
+                        <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Address</label>
+                    <input
+                      type="text"
+                      value={newRestaurantAddress}
+                      onChange={(e) => setNewRestaurantAddress(e.target.value)}
+                      placeholder="Street address in Bangkok"
+                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-transparent focus:border-gray-200 outline-none text-sm font-medium"
+                      data-testid="input-register-address"
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (!newRestaurantName.trim()) return;
+                      const ownerProfile = getStoredOwnerProfile();
+                      const updated = {
+                        ...ownerProfile,
+                        restaurantName: newRestaurantName.trim(),
+                        category: newRestaurantCategory,
+                        address: newRestaurantAddress.trim(),
+                      };
+                      localStorage.setItem(OWNER_STORAGE_KEY, JSON.stringify(updated));
+                      setOnboardingStep("done");
+                    }}
+                    disabled={!newRestaurantName.trim()}
+                    className="w-full py-3.5 rounded-xl bg-[#00B14F] text-white font-bold text-sm active:scale-[0.97] transition-transform disabled:opacity-40"
+                    style={{ boxShadow: "0 4px 16px rgba(0,177,79,0.25)" }}
+                    data-testid="button-submit-register"
+                  >
+                    Register Restaurant
+                  </button>
+                </div>
+              )}
+
+              {onboardingStep === "claim" && (
+                <div className="space-y-4">
+                  <button
+                    onClick={() => setOnboardingStep("choice")}
+                    className="flex items-center gap-1 text-sm text-muted-foreground mb-2"
+                    data-testid="button-back-to-choice-claim"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5 rotate-180" />
+                    Back
+                  </button>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
+                    <input
+                      type="text"
+                      value={claimSearchQuery}
+                      onChange={(e) => setClaimSearchQuery(e.target.value)}
+                      placeholder="Search for your restaurant..."
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 border border-transparent focus:border-gray-200 outline-none text-sm font-medium"
+                      data-testid="input-claim-search"
+                    />
+                  </div>
+                  <ClaimSearchResults
+                    query={claimSearchQuery}
+                    onSelect={(name: string) => {
+                      const ownerProfile = getStoredOwnerProfile();
+                      const updated = { ...ownerProfile, restaurantName: name };
+                      localStorage.setItem(OWNER_STORAGE_KEY, JSON.stringify(updated));
+                      setOnboardingStep("done");
+                    }}
+                  />
+                </div>
+              )}
+
+              {onboardingStep === "done" && (
+                <div className="text-center py-4">
+                  <div className="w-16 h-16 rounded-full bg-[#00B14F]/10 flex items-center justify-center mx-auto mb-4">
+                    <Check className="w-8 h-8 text-[#00B14F]" />
+                  </div>
+                  <p className="font-bold text-lg mb-2">Welcome, Owner!</p>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    Your restaurant profile is ready. Switch to Owner mode anytime from your profile.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setShowOnboarding(false);
+                      setIsOwnerMode(true);
+                    }}
+                    className="w-full py-3.5 rounded-xl bg-foreground text-white font-bold text-sm active:scale-[0.97] transition-transform"
+                    style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}
+                    data-testid="button-go-to-dashboard"
+                  >
+                    Go to Owner Dashboard
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <BottomNav showBack={false} />
+    </div>
+  );
+}
+
+function ClaimSearchResults({ query, onSelect }: { query: string; onSelect: (name: string) => void }) {
+  const { data: restaurants } = useQuery<any[]>({
+    queryKey: ["/api/restaurants"],
+    enabled: true,
+  });
+
+  const filtered = useMemo(() => {
+    if (!restaurants || !query.trim()) return [];
+    const q = query.toLowerCase();
+    return restaurants.filter((r: any) =>
+      r.name?.toLowerCase().includes(q) || r.cuisine?.toLowerCase().includes(q)
+    ).slice(0, 5);
+  }, [restaurants, query]);
+
+  if (!query.trim()) {
+    return <p className="text-sm text-muted-foreground text-center py-4">Start typing to search for your restaurant</p>;
+  }
+
+  if (filtered.length === 0) {
+    return <p className="text-sm text-muted-foreground text-center py-4">No restaurants found matching "{query}"</p>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {filtered.map((r: any) => (
+        <button
+          key={r.id}
+          onClick={() => onSelect(r.name)}
+          className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-100 active:scale-[0.98] transition-all text-left"
+          data-testid={`claim-restaurant-${r.id}`}
+        >
+          <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+            {r.imageUrl ? (
+              <img src={r.imageUrl} alt={r.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-lg">🍽️</div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm truncate">{r.name}</p>
+            <p className="text-xs text-muted-foreground truncate">{r.cuisine} {r.priceRange ? `· ${r.priceRange}` : ""}</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+        </button>
+      ))}
     </div>
   );
 }

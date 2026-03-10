@@ -189,6 +189,7 @@ export const groupSessions = pgTable("group_sessions", {
   status: text("status").default("waiting"),
   sessionType: text("session_type").default("regular"),
   sourceData: text("source_data"),
+  expectedMembers: integer("expected_members"),
   createdAt: text("created_at").notNull(),
 });
 

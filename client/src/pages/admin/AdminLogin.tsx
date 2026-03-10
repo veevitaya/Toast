@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { apiRequest } from "@/lib/queryClient";
 import toastLogo from "@assets/toast_logo_nobg.png";
-import { Lock, User, Mail, Store } from "lucide-react";
+import { Lock, User, Mail, ArrowLeft } from "lucide-react";
 
 type LoginMode = "admin" | "owner";
 
@@ -91,42 +91,36 @@ export default function AdminLogin() {
               </span>
             </div>
 
-            <div className="w-full flex bg-gray-100 rounded-xl p-1">
+            {mode === "owner" && (
               <button
                 type="button"
-                onClick={() => { setMode("admin"); setError(""); }}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all ${
-                  mode === "admin"
-                    ? "bg-white text-gray-800 shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                data-testid="tab-admin-login"
+                onClick={() => { setMode("admin"); setError(""); setPassword(""); }}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="link-back-to-admin"
               >
-                <User className="w-3.5 h-3.5" />
-                Admin
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Back to Admin Login
               </button>
-              <button
-                type="button"
-                onClick={() => { setMode("owner"); setError(""); }}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all ${
-                  mode === "owner"
-                    ? "bg-white text-gray-800 shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                data-testid="tab-owner-login"
-              >
-                <Store className="w-3.5 h-3.5" />
-                Owner
-              </button>
-            </div>
+            )}
 
             <div className="text-center">
-              <p
-                className="text-sm text-muted-foreground"
-                data-testid="text-admin-subtitle"
-              >
-                {mode === "admin" ? "Sign in to manage your platform" : "Sign in to manage your restaurant"}
-              </p>
+              {mode === "admin" ? (
+                <>
+                  <p
+                    className="text-sm text-muted-foreground"
+                    data-testid="text-admin-subtitle"
+                  >
+                    Sign in to manage your platform
+                  </p>
+                </>
+              ) : (
+                <p
+                  className="text-sm text-muted-foreground"
+                  data-testid="text-admin-subtitle"
+                >
+                  Sign in to manage your restaurant
+                </p>
+              )}
             </div>
 
             <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
@@ -198,12 +192,27 @@ export default function AdminLogin() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full text-sm font-semibold transition-all disabled:opacity-50 disabled:pointer-events-none bg-[#FFCC02] hover:bg-[#FFCC02]/90 text-gray-900 rounded-xl px-8 py-3 mt-2 shadow-md shadow-[#FFCC02]/10"
+                className={`w-full text-sm font-semibold transition-all disabled:opacity-50 disabled:pointer-events-none rounded-xl px-8 py-3 mt-2 shadow-md ${
+                  mode === "admin"
+                    ? "bg-[#FFCC02] hover:bg-[#FFCC02]/90 text-gray-900 shadow-[#FFCC02]/10"
+                    : "bg-[#00B14F] hover:bg-[#00B14F]/90 text-white shadow-[#00B14F]/10"
+                }`}
                 data-testid="button-login"
               >
                 {loading ? "Signing in..." : "Sign In"}
               </button>
             </form>
+
+            {mode === "admin" && (
+              <button
+                type="button"
+                onClick={() => { setMode("owner"); setError(""); setPassword(""); }}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="link-owner-login"
+              >
+                Logging in as Restaurant Owner?
+              </button>
+            )}
           </div>
         </div>
 

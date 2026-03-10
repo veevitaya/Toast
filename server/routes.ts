@@ -1965,6 +1965,7 @@ export async function registerRoutes(
         hostPictureUrl: z.string().optional(),
         sessionType: z.string().optional(),
         sourceData: z.string().optional(),
+        expectedMembers: z.number().int().min(2).max(20).optional(),
         latitude: z.string().optional(),
         longitude: z.string().optional(),
       });
@@ -1995,6 +1996,7 @@ export async function registerRoutes(
         status: "waiting",
         sessionType: input.sessionType || "regular",
         sourceData: input.sourceData || null,
+        expectedMembers: input.expectedMembers || null,
         createdAt: new Date().toISOString(),
       });
 

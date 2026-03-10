@@ -93,6 +93,7 @@ export default function GroupSetup() {
   const [hourPickerOpen, setHourPickerOpen] = useState(false);
   const [inviteStatus, setInviteStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
+  const [expectedMembers, setExpectedMembers] = useState<number>(3);
   const dateScrollRef = useRef<HTMLDivElement>(null);
   const hourPickerRef = useRef<HTMLDivElement>(null);
   const upcomingDays = getNext14Days();
@@ -126,6 +127,7 @@ export default function GroupSetup() {
             hostLineUserId: profile.userId,
             hostDisplayName: profile.displayName,
             hostPictureUrl: profile.pictureUrl || "",
+            expectedMembers: expectedMembers || undefined,
           }),
         });
       } catch {}
@@ -489,6 +491,27 @@ export default function GroupSetup() {
               <Users className="w-4 h-4 text-[#00B14F]" />
               <h2 className="text-[12px] font-bold uppercase tracking-[0.1em] text-foreground">Who's coming?</h2>
             </div>
+
+            <div className="mb-4">
+              <p className="text-[11px] text-muted-foreground mb-2">How many people? (including you)</p>
+              <div className="flex items-center gap-2">
+                {[2, 3, 4, 5, 6, 8, 10].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setExpectedMembers(n)}
+                    data-testid={`chip-group-size-${n}`}
+                    className={`w-10 h-10 rounded-xl text-sm font-bold transition-all duration-200 ${
+                      expectedMembers === n
+                        ? "bg-foreground text-white shadow-md"
+                        : "bg-white border border-gray-100 text-muted-foreground"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-4 gap-2 mb-4">
               {GROUP_TYPES.map((g) => {
                 const Icon = g.icon;
