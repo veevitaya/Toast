@@ -776,7 +776,7 @@ export default function Profile() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="w-full max-w-lg bg-white rounded-t-3xl p-6 pb-10 max-h-[85vh] overflow-y-auto"
+              className="w-full max-w-lg bg-white rounded-t-3xl p-6 pb-24 max-h-[85vh] overflow-y-auto"
               data-testid="modal-owner-onboarding"
             >
               <div className="flex items-center justify-between mb-4">
