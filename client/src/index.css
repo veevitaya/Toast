@@ -35,18 +35,18 @@
   --warm-100: 30 30% 96%;
   --warm-200: 28 22% 90%;
 
-  --admin-blue: #4A7BF7;
-  --admin-pink: #F24B8A;
+  --admin-blue: #3B7BF5;
+  --admin-pink: #FF6347;
   --admin-cyan: #4DD9D0;
-  --admin-blue-light: #ECF2FE;
-  --admin-pink-light: #FDEEF3;
-  --admin-blue-10: rgba(74, 123, 247, 0.1);
-  --admin-blue-90: rgba(74, 123, 247, 0.9);
-  --admin-pink-10: rgba(242, 75, 138, 0.1);
+  --admin-blue-light: #EBF1FE;
+  --admin-pink-light: #FFF0ED;
+  --admin-blue-10: rgba(59, 123, 245, 0.1);
+  --admin-blue-90: rgba(59, 123, 245, 0.9);
+  --admin-pink-10: rgba(255, 99, 71, 0.1);
   --admin-cyan-20: rgba(77, 217, 208, 0.2);
   --admin-cyan-30: rgba(77, 217, 208, 0.3);
-  --admin-teal: #F0B0D0;
-  --admin-deep-purple: #8B5CF6;
+  --admin-teal: #A78BFA;
+  --admin-deep-purple: #6366F1;
 
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
   --shadow-card: 0 6px 20px -4px rgba(0,0,0,0.06), 0 2px 6px -2px rgba(0,0,0,0.03);
