@@ -59,7 +59,7 @@ function getEventDotColor(eventType: string) {
     case "view_detail":
       return "bg-[var(--admin-cyan)]";
     case "quiz_start":
-      return "bg-[#FFCC02]";
+      return "bg-[var(--admin-teal)]";
     default:
       return "bg-gray-300";
   }
@@ -115,7 +115,7 @@ const fallbackSegments: UserSegment[] = [
 
 const CONVERSION_FUNNEL = [
   { label: "Impressions", value: 12400, pct: 100, color: "var(--admin-cyan)" },
-  { label: "Swipe Views", value: 8200, pct: 66, color: "#FFCC02" },
+  { label: "Swipe Views", value: 8200, pct: 66, color: "var(--admin-blue)" },
   { label: "Right Swipes", value: 3100, pct: 25, color: "var(--admin-pink)" },
   { label: "Detail Views", value: 1800, pct: 15, color: "var(--admin-teal)" },
   { label: "Orders", value: 420, pct: 3.4, color: "var(--admin-pink)" },
@@ -131,7 +131,7 @@ const GEO_HOTSPOTS = [
 
 const TRENDING_CUISINES = [
   { name: "Thai Street", growth: 42, max: 50, color: "var(--admin-cyan)" },
-  { name: "Korean BBQ", growth: 35, max: 50, color: "#FFCC02" },
+  { name: "Korean BBQ", growth: 35, max: 50, color: "var(--admin-blue)" },
   { name: "Japanese", growth: 28, max: 50, color: "var(--admin-pink)" },
   { name: "Italian", growth: 18, max: 50, color: "var(--admin-teal)" },
   { name: "Vietnamese", growth: 15, max: 50, color: "var(--admin-blue)" },
@@ -139,7 +139,7 @@ const TRENDING_CUISINES = [
 
 const DELIVERY_ATTRIBUTION = [
   { name: "Grab", clicks: 2184, pct: 46, color: "var(--admin-pink)", avgOrder: "฿285" },
-  { name: "LINE MAN", clicks: 1663, pct: 35, color: "#FFCC02", avgOrder: "฿310" },
+  { name: "LINE MAN", clicks: 1663, pct: 35, color: "var(--admin-blue)", avgOrder: "฿310" },
   { name: "Robinhood", clicks: 892, pct: 19, color: "var(--admin-cyan)", avgOrder: "฿265" },
 ];
 
@@ -151,7 +151,7 @@ const TOP_RESTAURANTS = [
   { name: "Bo.Lan", swipes: 1260, conversion: 61, trend: "up" as const },
 ];
 
-const SEGMENT_COLORS = ["var(--admin-cyan)", "#FFCC02", "var(--admin-pink)", "var(--admin-teal)"];
+const SEGMENT_COLORS = ["var(--admin-cyan)", "var(--admin-blue)", "var(--admin-pink)", "var(--admin-teal)"];
 
 function MiniSparkline({ data, color = "var(--admin-cyan)" }: { data: number[]; color?: string }) {
   const max = Math.max(...data);
@@ -284,9 +284,9 @@ export default function AdminDashboard() {
       delta: "+5",
       deltaUp: true,
       sparkline: [12, 14, 15, 16, 18, 19, 22],
-      iconBg: "bg-[#FFCC02]/15",
-      iconColor: "text-[#FFCC02]",
-      sparkColor: "#FFCC02",
+      iconBg: "bg-[var(--admin-blue-10)]",
+      iconColor: "text-[var(--admin-blue)]",
+      sparkColor: "var(--admin-blue)",
     },
     {
       label: "Total Swipes",
@@ -371,12 +371,12 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="activity-chart-card">
           <div className="flex items-center justify-between gap-2 mb-6">
-            <div className="border-l-2 border-[#FFCC02] pl-3">
+            <div className="border-l-2 border-[var(--admin-blue)] pl-3">
               <h2 className="text-[15px] font-semibold text-gray-800">Activity Overview</h2>
               <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Last 7 days</p>
             </div>
             <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#FFCC02]" />Today</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[var(--admin-blue)]" />Today</span>
               <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[var(--admin-cyan)]" />Peak</span>
             </div>
           </div>
@@ -388,9 +388,9 @@ export default function AdminDashboard() {
               if (isPeak) {
                 barColor = "var(--admin-cyan)";
               } else if (isToday) {
-                barColor = "#FFCC02";
+                barColor = "var(--admin-blue)";
               } else {
-                barColor = "rgba(255, 204, 2, 0.5)";
+                barColor = "rgba(59, 123, 245, 0.35)";
               }
               return (
                 <div key={day.dateStr} className="flex-1 flex flex-col items-center gap-1.5">
@@ -414,7 +414,7 @@ export default function AdminDashboard() {
 
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" data-testid="platform-health-card">
-            <div className="border-l-2 border-[#FFCC02] pl-3 mb-4">
+            <div className="border-l-2 border-[var(--admin-blue)] pl-3 mb-4">
               <h2 className="text-[15px] font-semibold text-gray-800">Platform Health</h2>
             </div>
             <div className="space-y-3">
@@ -428,13 +428,13 @@ export default function AdminDashboard() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Events Today</span>
-                <span className="bg-[#FFCC02] text-gray-800 text-xs font-semibold rounded-full px-2.5 py-0.5" data-testid="badge-events-today">{stats.eventsToday}</span>
+                <span className="bg-[var(--admin-cyan)] text-white text-xs font-semibold rounded-full px-2.5 py-0.5" data-testid="badge-events-today">{stats.eventsToday}</span>
               </div>
             </div>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" data-testid="quick-actions-card">
-            <div className="border-l-2 border-[#FFCC02] pl-3 mb-3">
+            <div className="border-l-2 border-[var(--admin-blue)] pl-3 mb-3">
               <h2 className="text-[15px] font-semibold text-gray-800">Quick Actions</h2>
             </div>
             <div className="flex flex-col gap-1.5">
@@ -460,7 +460,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-conversion-funnel">
-          <div className="border-l-2 border-[#FFCC02] pl-3 mb-5">
+          <div className="border-l-2 border-[var(--admin-blue)] pl-3 mb-5">
             <h2 className="text-[15px] font-semibold text-gray-800">Conversion Funnel</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Swipe to order</p>
           </div>
@@ -496,7 +496,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-delivery-attribution">
-          <div className="border-l-2 border-[#FFCC02] pl-3 mb-5">
+          <div className="border-l-2 border-[var(--admin-blue)] pl-3 mb-5">
             <h2 className="text-[15px] font-semibold text-gray-800">Delivery Attribution</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Platform breakdown</p>
           </div>
@@ -527,7 +527,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-top-restaurants">
-          <div className="border-l-2 border-[#FFCC02] pl-3 mb-4">
+          <div className="border-l-2 border-[var(--admin-blue)] pl-3 mb-4">
             <h2 className="text-[15px] font-semibold text-gray-800">Top Restaurants</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">By swipe volume</p>
           </div>
@@ -536,7 +536,7 @@ export default function AdminDashboard() {
               <div key={r.name} data-testid={`top-restaurant-${idx}`}>
                 <div className="flex items-center justify-between gap-1 mb-1">
                   <div className="flex items-center gap-2">
-                    <span className={`w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold flex-shrink-0 ${idx === 0 ? "bg-[#FFCC02] text-gray-800" : "bg-gray-100 text-gray-500"}`}>
+                    <span className={`w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold flex-shrink-0 ${idx === 0 ? "bg-[var(--admin-pink)] text-white" : "bg-gray-100 text-gray-500"}`}>
                       {idx + 1}
                     </span>
                     <span className="text-xs font-medium text-gray-800">{r.name}</span>
@@ -551,7 +551,7 @@ export default function AdminDashboard() {
                     className="h-full rounded-md flex items-center justify-end pr-2 transition-all"
                     style={{
                       width: `${(r.swipes / maxRestaurantSwipes) * 100}%`,
-                      backgroundColor: idx === 0 ? "#FFCC02" : "var(--admin-cyan)",
+                      backgroundColor: idx === 0 ? "var(--admin-pink)" : "var(--admin-cyan)",
                       opacity: idx === 0 ? 1 : 0.6 + (idx * 0.05),
                     }}
                   >
@@ -569,7 +569,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-geo-hotspots">
-          <div className="border-l-2 border-[#FFCC02] pl-3 mb-4">
+          <div className="border-l-2 border-[var(--admin-blue)] pl-3 mb-4">
             <h2 className="text-[15px] font-semibold text-gray-800">Geo Hotspots</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Bangkok zones</p>
           </div>
@@ -599,7 +599,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-trending-cuisines">
-          <div className="border-l-2 border-[#FFCC02] pl-3 mb-4">
+          <div className="border-l-2 border-[var(--admin-blue)] pl-3 mb-4">
             <h2 className="text-[15px] font-semibold text-gray-800">Trending Cuisines</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">30-day growth</p>
           </div>
@@ -627,7 +627,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="segments-card">
-          <div className="border-l-2 border-[#FFCC02] pl-3 mb-5">
+          <div className="border-l-2 border-[var(--admin-blue)] pl-3 mb-5">
             <h2 className="text-[15px] font-semibold text-gray-800">User Segments</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Audience breakdown</p>
           </div>
@@ -666,7 +666,7 @@ export default function AdminDashboard() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="recent-activity-card">
           <div className="flex items-center justify-between gap-2 mb-5">
-            <div className="border-l-2 border-[#FFCC02] pl-3">
+            <div className="border-l-2 border-[var(--admin-blue)] pl-3">
               <h2 className="text-[15px] font-semibold text-gray-800">Live Activity</h2>
               <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Real-time events</p>
             </div>
