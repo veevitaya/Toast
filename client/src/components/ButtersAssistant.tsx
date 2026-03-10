@@ -293,10 +293,10 @@ export default function ButtersAssistant() {
                 <div
                   className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed whitespace-pre-line ${
                     msg.type === "user"
-                      ? "bg-[#1980D5] text-white"
+                      ? "bg-[var(--admin-blue)] text-white"
                       : msg.type === "action"
                       ? "bg-gray-100 text-gray-600 italic"
-                      : "bg-[#E5F5FF] text-gray-800 border border-[#60B0F7]/20"
+                      : "bg-[var(--admin-blue-light)] text-gray-800 border border-[var(--admin-cyan-20)]"
                   }`}
                   data-testid={`chat-message-${msg.id}`}
                 >
@@ -353,7 +353,7 @@ export default function ButtersAssistant() {
                   <button
                     key={action.query}
                     onClick={() => processQuery(action.query)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium bg-white border border-gray-200 text-gray-600 hover:bg-[#E5F5FF] hover:border-[#60B0F7]/30 hover:text-[#1980D5] transition-all active:scale-95 whitespace-nowrap"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium bg-white border border-gray-200 text-gray-600 hover:bg-[var(--admin-blue-light)] hover:border-[var(--admin-cyan-30)] hover:text-[var(--admin-blue)] transition-all active:scale-95 whitespace-nowrap"
                     data-testid={`quick-action-${action.query.replace(/\s+/g, "-")}`}
                   >
                     <action.icon className="w-3 h-3" />
@@ -371,7 +371,7 @@ export default function ButtersAssistant() {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleSend(); }}
                 placeholder="Ask Butters anything..."
-                className="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-[13px] outline-none focus:border-[#60B0F7] transition-colors placeholder:text-gray-400"
+                className="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-gray-200 text-[13px] outline-none focus:border-[var(--admin-cyan)] transition-colors placeholder:text-gray-400"
                 data-testid="input-butters-query"
               />
               <button
@@ -416,7 +416,7 @@ function TaskSection({
         className="w-full flex items-center gap-2.5 px-3.5 py-3 text-left text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition-colors"
         data-testid={`button-toggle-${testId}`}
       >
-        <span className="text-[#1980D5]">{icon}</span>
+        <span className="text-[var(--admin-blue)]">{icon}</span>
         <span className="flex-1">{title}</span>
         {expanded ? (
           <ChevronUp className="w-3.5 h-3.5 text-gray-400" />

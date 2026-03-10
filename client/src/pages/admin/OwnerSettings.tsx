@@ -246,7 +246,7 @@ export default function OwnerSettings() {
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-security">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-[3px] h-4 bg-[#1980D5] rounded-full" />
+              <div className="w-[3px] h-4 bg-[var(--admin-blue)] rounded-full" />
               <h3 className="text-[15px] font-semibold text-gray-800">Security</h3>
             </div>
             <button

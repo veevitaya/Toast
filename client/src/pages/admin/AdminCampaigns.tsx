@@ -91,9 +91,9 @@ function formatNum(n: number): string {
 }
 
 const kpiCards = [
-  { label: "Total Impressions", value: "248K", icon: Eye, iconColor: "text-[#1980D5]", iconBg: "bg-[#1980D5]/10" },
+  { label: "Total Impressions", value: "248K", icon: Eye, iconColor: "text-[var(--admin-blue)]", iconBg: "bg-[var(--admin-blue-10)]" },
   { label: "Total Clicks", value: "12.4K", icon: MousePointerClick, iconColor: "text-teal-500", iconBg: "bg-teal-50" },
-  { label: "Avg CTR", value: "5.0%", icon: TrendingUp, iconColor: "text-[#1980D5]", iconBg: "bg-[#1980D5]/10" },
+  { label: "Avg CTR", value: "5.0%", icon: TrendingUp, iconColor: "text-[var(--admin-blue)]", iconBg: "bg-[var(--admin-blue-10)]" },
   { label: "Revenue Generated", value: "฿847K", icon: DollarSign, iconColor: "text-emerald-500", iconBg: "bg-emerald-50" },
 ];
 
@@ -198,7 +198,7 @@ export default function AdminCampaigns() {
           </div>
           <Button
             onClick={() => setShowCreate(!showCreate)}
-            className="bg-[#1980D5] hover:bg-[#1980D5]/90 text-white rounded-xl"
+            className="bg-[var(--admin-blue)] hover:bg-[var(--admin-blue-90)] text-white rounded-xl"
             data-testid="button-create-campaign"
           >
             <Plus className="w-4 h-4 mr-1" />
@@ -313,7 +313,7 @@ export default function AdminCampaigns() {
                     }}
                     className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                       form.targetGroups.includes(group)
-                        ? "bg-[#1980D5] text-white"
+                        ? "bg-[var(--admin-blue)] text-white"
                         : "bg-gray-100 text-gray-600"
                     }`}
                     data-testid={`toggle-target-${group}`}
@@ -343,7 +343,7 @@ export default function AdminCampaigns() {
                 createMutation.mutate(form);
               }}
               disabled={createMutation.isPending}
-              className="bg-[#1980D5] hover:bg-[#1980D5]/90 text-white rounded-xl"
+              className="bg-[var(--admin-blue)] hover:bg-[var(--admin-blue-90)] text-white rounded-xl"
               data-testid="button-submit-create"
             >
               {createMutation.isPending ? "Creating..." : "Create Campaign"}
