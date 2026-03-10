@@ -46,7 +46,7 @@ type AdminUserSafe = Omit<AdminUser, "passwordHash">;
 
 const ROLE_COLORS: Record<string, string> = {
   superadmin: "bg-[#FFCC02]/15 text-[#FFCC02]",
-  admin: "bg-[#6C2BD9]/10 text-[#6C2BD9]",
+  admin: "bg-[var(--admin-blue-10)] text-[var(--admin-blue)]",
   moderator: "bg-[#00B14F]/10 text-[#00B14F]",
   viewer: "bg-gray-100 text-gray-500",
 };

@@ -81,7 +81,7 @@ const MOCK_NOTIFICATIONS: Notification[] = [
 
 const typeConfig: Record<string, { icon: typeof Bell; bgColor: string; iconColor: string }> = {
   review: { icon: MessageSquare, bgColor: "bg-[#FFCC02]/15", iconColor: "text-[#FFCC02]" },
-  campaign: { icon: Megaphone, bgColor: "bg-[#6C2BD9]/10", iconColor: "text-[#6C2BD9]" },
+  campaign: { icon: Megaphone, bgColor: "bg-[var(--admin-blue-10)]", iconColor: "text-[var(--admin-blue)]" },
   milestone: { icon: TrendingUp, bgColor: "bg-[#00B14F]/10", iconColor: "text-[#00B14F]" },
   verification: { icon: ShieldCheck, bgColor: "bg-blue-50", iconColor: "text-blue-500" },
   tip: { icon: Star, bgColor: "bg-amber-50", iconColor: "text-amber-500" },

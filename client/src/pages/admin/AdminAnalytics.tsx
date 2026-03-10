@@ -130,7 +130,7 @@ const HEATMAP_HOURS = Array.from({ length: 18 }, (_, i) => `${i + 6}:00`);
 const DELIVERY_PLATFORMS = [
   { name: "Grab", totalClicks: 12480, conversionRate: 8.2, avgOrderValue: 285, color: "#00B14F", bgColor: "bg-[#00B14F]/10" },
   { name: "LINE MAN", totalClicks: 9640, conversionRate: 7.1, avgOrderValue: 310, color: "#00C300", bgColor: "bg-[#00B14F]/10" },
-  { name: "Robinhood", totalClicks: 4380, conversionRate: 5.4, avgOrderValue: 265, color: "#6C2BD9", bgColor: "bg-[#6C2BD9]/10" },
+  { name: "Robinhood", totalClicks: 4380, conversionRate: 5.4, avgOrderValue: 265, color: "var(--admin-blue)", bgColor: "bg-[var(--admin-blue-10)]" },
 ];
 
 const DAY_PATTERNS = [
@@ -427,7 +427,7 @@ export default function AdminAnalytics() {
                     <div key={a.label} className="flex items-center gap-3">
                       <span className="w-14 text-xs text-muted-foreground">{a.label}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
-                        <div className="h-full rounded-full flex items-center pl-2.5 text-[10px] font-medium text-white transition-all" style={{ width: `${a.pct}%`, background: "linear-gradient(90deg, #6C2BD9, #8B5CF6)" }} data-testid={`bar-age-${a.label}`}>
+                        <div className="h-full rounded-full flex items-center pl-2.5 text-[10px] font-medium text-white transition-all" style={{ width: `${a.pct}%`, background: "linear-gradient(90deg, var(--admin-deep-purple), var(--admin-blue))" }} data-testid={`bar-age-${a.label}`}>
                           {a.pct}%
                         </div>
                       </div>
@@ -493,7 +493,7 @@ export default function AdminAnalytics() {
                     <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
                       <span className="text-[10px] font-medium text-foreground">{d.pct}%</span>
                       <div className="w-full bg-gray-100 rounded-md overflow-hidden" style={{ height: "80px" }}>
-                        <div className="w-full rounded-md" style={{ height: `${d.pct}%`, background: "linear-gradient(180deg, #6C2BD9, #8B5CF6)", marginTop: `${100 - d.pct}%` }} />
+                        <div className="w-full rounded-md" style={{ height: `${d.pct}%`, background: "linear-gradient(180deg, var(--admin-deep-purple), var(--admin-blue))", marginTop: `${100 - d.pct}%` }} />
                       </div>
                       <span className="text-[10px] text-muted-foreground">{d.day}</span>
                     </div>
@@ -530,7 +530,7 @@ export default function AdminAnalytics() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {USER_AI_INSIGHTS.map((insight, idx) => (
                   <div key={idx} className="flex items-start gap-2.5 rounded-lg p-2.5 bg-white border border-gray-100" data-testid={`text-user-ai-insight-${idx}`}>
-                    <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: "linear-gradient(135deg, #6C2BD9, #8B5CF6)" }}>
+                    <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: "linear-gradient(135deg, var(--admin-deep-purple), var(--admin-blue))" }}>
                       <span className="text-white text-[9px] font-bold">{idx + 1}</span>
                     </div>
                     <span className="text-xs text-muted-foreground">{insight}</span>
@@ -582,7 +582,7 @@ export default function AdminAnalytics() {
                           className="h-full rounded-full transition-all"
                           style={{
                             width: `${r.conversion}%`,
-                            background: "linear-gradient(90deg, #6C2BD9, #8B5CF6)",
+                            background: "linear-gradient(90deg, var(--admin-deep-purple), var(--admin-blue))",
                           }}
                         />
                       </div>
@@ -842,7 +842,7 @@ export default function AdminAnalytics() {
                     <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all"
-                        style={{ width: `${(count / maxEventCount) * 100}%`, background: "linear-gradient(90deg, #6C2BD9, #8B5CF6)" }}
+                        style={{ width: `${(count / maxEventCount) * 100}%`, background: "linear-gradient(90deg, var(--admin-deep-purple), var(--admin-blue))" }}
                       />
                     </div>
                   </div>
@@ -967,7 +967,7 @@ export default function AdminAnalytics() {
                       className="h-full rounded-full transition-all"
                       style={{
                         width: `${(segment.estimatedCount / maxSegmentCount) * 100}%`,
-                        background: "linear-gradient(90deg, #6C2BD9, #8B5CF6)",
+                        background: "linear-gradient(90deg, var(--admin-deep-purple), var(--admin-blue))",
                       }}
                     />
                   </div>

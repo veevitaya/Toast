@@ -483,7 +483,7 @@ export default function AdminConfig() {
                                 className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                                 style={{
                                   background: feature.enabled
-                                    ? "linear-gradient(135deg, #6C2BD9 0%, #8B5CF6 100%)"
+                                    ? "linear-gradient(135deg, var(--admin-deep-purple) 0%, var(--admin-blue) 100%)"
                                     : "hsl(0,0%,92%)",
                                 }}
                               >

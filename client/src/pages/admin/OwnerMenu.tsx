@@ -216,7 +216,7 @@ export default function OwnerMenu() {
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-vibes">
         <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-4 h-4 text-[#6C2BD9]" />
+          <Sparkles className="w-4 h-4 text-[var(--admin-blue)]" />
           <h3 className="text-[15px] font-semibold text-gray-800">Your Vibes</h3>
           <span className="text-xs text-gray-400 ml-1">Auto-assigned based on your restaurant profile</span>
         </div>

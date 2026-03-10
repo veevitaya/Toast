@@ -301,7 +301,7 @@ export default function AdminOwnerDashboard() {
                   </span>
                 )}
                 <span className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2.5 py-1 bg-white/90 backdrop-blur-sm shadow-sm ${
-                  owner?.subscriptionTier === "premium" ? "text-[#6C2BD9]" :
+                  owner?.subscriptionTier === "premium" ? "text-[var(--admin-blue)]" :
                   owner?.subscriptionTier === "enterprise" ? "text-[#FFCC02]" :
                   "text-gray-600"
                 }`}>
@@ -394,9 +394,9 @@ export default function AdminOwnerDashboard() {
           {ownedRestaurants.length > 1 && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-owned-restaurants">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-[3px] h-4 bg-[#6C2BD9] rounded-full" />
+                <div className="w-[3px] h-4 bg-[var(--admin-blue)] rounded-full" />
                 <h3 className="text-[15px] font-semibold text-gray-800">Your Restaurants</h3>
-                <span className="bg-[#6C2BD9]/10 text-[#6C2BD9] text-[10px] font-bold rounded-full px-2 py-0.5">{ownedRestaurants.length}</span>
+                <span className="bg-[var(--admin-blue-10)] text-[var(--admin-blue)] text-[10px] font-bold rounded-full px-2 py-0.5">{ownedRestaurants.length}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {ownedRestaurants.map((r) => (
@@ -430,7 +430,7 @@ export default function AdminOwnerDashboard() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { icon: Megaphone, label: "New Promotion", desc: "Create a deal", href: "/admin/owner/promotions", color: "text-[#6C2BD9]", bg: "bg-[#6C2BD9]/10" },
+                  { icon: Megaphone, label: "New Promotion", desc: "Create a deal", href: "/admin/owner/promotions", color: "text-[var(--admin-blue)]", bg: "bg-[var(--admin-blue-10)]" },
                   { icon: BarChart3, label: "View Analytics", desc: "Check performance", href: "/admin/owner/performance", color: "text-[#00B14F]", bg: "bg-[#00B14F]/10" },
                   { icon: Utensils, label: "Update Menu", desc: "Edit items & hours", href: "/admin/owner/menu", color: "text-[#FFCC02]", bg: "bg-[#FFCC02]/15" },
                   { icon: Star, label: "Read Reviews", desc: "Reply to feedback", href: "/admin/owner/reviews", color: "text-rose-500", bg: "bg-rose-50" },
@@ -455,7 +455,7 @@ export default function AdminOwnerDashboard() {
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-owner-profile">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-[3px] h-4 bg-[#6C2BD9] rounded-full" />
+                <div className="w-[3px] h-4 bg-[var(--admin-blue)] rounded-full" />
                 <h3 className="text-[15px] font-semibold text-gray-800">Owner Profile</h3>
               </div>
               <div className="space-y-3">
@@ -492,7 +492,7 @@ export default function AdminOwnerDashboard() {
                       </span>
                     )}
                     <span className={`inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 ${
-                      owner?.subscriptionTier === "premium" ? "bg-[#6C2BD9]/10 text-[#6C2BD9]" :
+                      owner?.subscriptionTier === "premium" ? "bg-[var(--admin-blue-10)] text-[var(--admin-blue)]" :
                       owner?.subscriptionTier === "enterprise" ? "bg-[#FFCC02]/15 text-gray-700" :
                       "bg-gray-100 text-gray-500"
                     }`}>
@@ -521,9 +521,9 @@ export default function AdminOwnerDashboard() {
                 </p>
                 <p className="text-[11px] text-gray-400 mt-0.5">Likes + Saves per View</p>
               </div>
-              <div className="p-4 rounded-xl bg-gradient-to-br from-[#6C2BD9]/5 to-[#6C2BD9]/10 border border-[#6C2BD9]/10">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-[var(--admin-blue-10)] to-[var(--admin-blue-10)] border border-[var(--admin-blue-10)]">
                 <div className="flex items-center gap-2 mb-2">
-                  <Users className="w-4 h-4 text-[#6C2BD9]" />
+                  <Users className="w-4 h-4 text-[var(--admin-blue)]" />
                   <span className="text-xs font-medium text-gray-500">Unique Visitors</span>
                 </div>
                 <p className="text-xl font-bold text-gray-800">{Math.max(stats.views, 1)}</p>
@@ -543,7 +543,7 @@ export default function AdminOwnerDashboard() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-owner-campaigns">
             <div className="flex items-center justify-between gap-2 mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-[3px] h-4 bg-[#6C2BD9] rounded-full" />
+                <div className="w-[3px] h-4 bg-[var(--admin-blue)] rounded-full" />
                 <h3 className="text-[15px] font-semibold text-gray-800">Active Campaigns</h3>
                 <span className="bg-[#FFCC02] text-gray-900 text-[10px] font-bold rounded-full px-2 py-0.5">{campaigns.length}</span>
               </div>
@@ -886,7 +886,7 @@ export default function AdminOwnerDashboard() {
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm text-gray-500">Current Plan</span>
               <span className={`inline-flex items-center gap-1 text-xs font-medium rounded-full px-2.5 py-0.5 ${
-                owner?.subscriptionTier === "premium" ? "bg-[#6C2BD9]/10 text-[#6C2BD9]" :
+                owner?.subscriptionTier === "premium" ? "bg-[var(--admin-blue-10)] text-[var(--admin-blue)]" :
                 owner?.subscriptionTier === "enterprise" ? "bg-[#FFCC02]/15 text-gray-700" :
                 owner?.subscriptionTier === "basic" ? "bg-blue-50 text-blue-600" :
                 "bg-gray-100 text-gray-500"
