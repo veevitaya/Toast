@@ -102,7 +102,7 @@ const typeIcons: Record<string, typeof Percent> = {
 };
 
 const typeColors: Record<string, string> = {
-  discount: "bg-[#3B82F6]/10 text-[#3B82F6]",
+  discount: "bg-[#1980D5]/10 text-[#1980D5]",
   bundle: "bg-[#FFCC02]/15 text-gray-700",
   freeItem: "bg-[#00B14F]/10 text-[#00B14F]",
   happyHour: "bg-blue-50 text-blue-600",
@@ -366,8 +366,8 @@ export default function OwnerPromotions() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" data-testid="stat-total-impressions">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-[#3B82F6]/10 flex items-center justify-center">
-              <Eye className="w-4 h-4 text-[#3B82F6]" />
+            <div className="w-8 h-8 rounded-lg bg-[#1980D5]/10 flex items-center justify-center">
+              <Eye className="w-4 h-4 text-[#1980D5]" />
             </div>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Impressions</span>
           </div>

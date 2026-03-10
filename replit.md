@@ -38,7 +38,7 @@ The design adopts an Airbnb-inspired aesthetic, featuring a #FFCC02 golden yello
 - **"Butters" Admin Assistant:** Floating yellow (#FFCC02) bot icon in bottom-right of admin layout (admin-only, not owner). Opens a slide-up chat panel showing pending tasks (claims, registrations). Can approve/reject claims directly with confirmation messages. Component: `client/src/components/ButtersAssistant.tsx`.
 - **Admin Owner Claim Improvements:** Enhanced search results with full restaurant cards, "Already Claimed" badges preventing duplicate claims, name-typing confirmation step, multi-restaurant display grid for verified owners.
 - **Admin Payments Page:** Revenue KPIs, Omise/Stripe gateway status, transaction table, subscription breakdown, payout settings. Route: `/admin/payments`.
-- **Admin Color Scheme:** Dashboard uses light blue `#3B82F6`, pink `#EC4899`, yellow `#FFCC02` (no purple). Owner portal accent: green `#00B14F`.
+- **Admin Color Scheme:** Dashboard graph/chart palette: deep blue `#1980D5`, medium blue `#60B0F7`, light blue `#E5F5FF`, light pink `#F5D1E0`, medium pink `#FF76A2`. Yellow `#FFCC02` for brand elements (nav, sidebar, Butters). Owner portal accent: green `#00B14F`.
 - **Session Management:** Utilizes `sessionStorage` with `useSyncExternalStore` for persistent, global session tracking.
 - **Search Functionality:** Matches restaurant names, categories, and menu keywords with priority.
 - **Performance Optimizations:** Includes lazy loading for images and map iframes, and preloading of critical assets.

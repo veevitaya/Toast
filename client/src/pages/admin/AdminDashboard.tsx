@@ -53,11 +53,11 @@ interface UserSegment {
 function getEventDotColor(eventType: string) {
   switch (eventType) {
     case "swipe_right":
-      return "bg-[#EC4899]";
+      return "bg-[#FF76A2]";
     case "swipe_left":
       return "bg-rose-400";
     case "view_detail":
-      return "bg-[#3B82F6]";
+      return "bg-[#1980D5]";
     case "quiz_start":
       return "bg-[#FFCC02]";
     default:
@@ -114,11 +114,11 @@ const fallbackSegments: UserSegment[] = [
 ];
 
 const CONVERSION_FUNNEL = [
-  { label: "Impressions", value: 12400, pct: 100, color: "#3B82F6" },
+  { label: "Impressions", value: 12400, pct: 100, color: "#1980D5" },
   { label: "Swipe Views", value: 8200, pct: 66, color: "#FFCC02" },
-  { label: "Right Swipes", value: 3100, pct: 25, color: "#EC4899" },
-  { label: "Detail Views", value: 1800, pct: 15, color: "#3B82F6" },
-  { label: "Orders", value: 420, pct: 3.4, color: "#EC4899" },
+  { label: "Right Swipes", value: 3100, pct: 25, color: "#FF76A2" },
+  { label: "Detail Views", value: 1800, pct: 15, color: "#60B0F7" },
+  { label: "Orders", value: 420, pct: 3.4, color: "#FF76A2" },
 ];
 
 const GEO_HOTSPOTS = [
@@ -130,17 +130,17 @@ const GEO_HOTSPOTS = [
 ];
 
 const TRENDING_CUISINES = [
-  { name: "Thai Street", growth: 42, max: 50, color: "#3B82F6" },
+  { name: "Thai Street", growth: 42, max: 50, color: "#1980D5" },
   { name: "Korean BBQ", growth: 35, max: 50, color: "#FFCC02" },
-  { name: "Japanese", growth: 28, max: 50, color: "#EC4899" },
-  { name: "Italian", growth: 18, max: 50, color: "#3B82F6" },
+  { name: "Japanese", growth: 28, max: 50, color: "#FF76A2" },
+  { name: "Italian", growth: 18, max: 50, color: "#60B0F7" },
   { name: "Vietnamese", growth: 15, max: 50, color: "#FFCC02" },
 ];
 
 const DELIVERY_ATTRIBUTION = [
-  { name: "Grab", clicks: 2184, pct: 46, color: "#EC4899", avgOrder: "฿285" },
+  { name: "Grab", clicks: 2184, pct: 46, color: "#FF76A2", avgOrder: "฿285" },
   { name: "LINE MAN", clicks: 1663, pct: 35, color: "#FFCC02", avgOrder: "฿310" },
-  { name: "Robinhood", clicks: 892, pct: 19, color: "#3B82F6", avgOrder: "฿265" },
+  { name: "Robinhood", clicks: 892, pct: 19, color: "#1980D5", avgOrder: "฿265" },
 ];
 
 const TOP_RESTAURANTS = [
@@ -151,9 +151,9 @@ const TOP_RESTAURANTS = [
   { name: "Bo.Lan", swipes: 1260, conversion: 61, trend: "up" as const },
 ];
 
-const SEGMENT_COLORS = ["#3B82F6", "#FFCC02", "#EC4899", "#3B82F6"];
+const SEGMENT_COLORS = ["#1980D5", "#FFCC02", "#FF76A2", "#60B0F7"];
 
-function MiniSparkline({ data, color = "#3B82F6" }: { data: number[]; color?: string }) {
+function MiniSparkline({ data, color = "#1980D5" }: { data: number[]; color?: string }) {
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
@@ -273,9 +273,9 @@ export default function AdminDashboard() {
       delta: "+12%",
       deltaUp: true,
       sparkline: [18, 24, 32, 28, 35, 42, 48],
-      iconBg: "bg-[#3B82F6]/10",
-      iconColor: "text-[#3B82F6]",
-      sparkColor: "#3B82F6",
+      iconBg: "bg-[#1980D5]/10",
+      iconColor: "text-[#1980D5]",
+      sparkColor: "#1980D5",
     },
     {
       label: "Restaurants",
@@ -295,9 +295,9 @@ export default function AdminDashboard() {
       delta: "+340",
       deltaUp: true,
       sparkline: [120, 180, 210, 190, 260, 310, 340],
-      iconBg: "bg-[#EC4899]/10",
-      iconColor: "text-[#EC4899]",
-      sparkColor: "#EC4899",
+      iconBg: "bg-[#FF76A2]/10",
+      iconColor: "text-[#FF76A2]",
+      sparkColor: "#FF76A2",
     },
     {
       label: "Delivery Clicks",
@@ -306,9 +306,9 @@ export default function AdminDashboard() {
       delta: "+18%",
       deltaUp: true,
       sparkline: [320, 380, 410, 390, 450, 480, 520],
-      iconBg: "bg-[#EC4899]/10",
-      iconColor: "text-[#EC4899]",
-      sparkColor: "#EC4899",
+      iconBg: "bg-[#FF76A2]/10",
+      iconColor: "text-[#FF76A2]",
+      sparkColor: "#FF76A2",
     },
     {
       label: "Campaigns",
@@ -317,9 +317,9 @@ export default function AdminDashboard() {
       delta: "active",
       deltaUp: true,
       sparkline: [3, 4, 4, 5, 6, 5, 6],
-      iconBg: "bg-[#3B82F6]/10",
-      iconColor: "text-[#3B82F6]",
-      sparkColor: "#3B82F6",
+      iconBg: "bg-[#1980D5]/10",
+      iconColor: "text-[#1980D5]",
+      sparkColor: "#1980D5",
     },
   ];
 
@@ -377,7 +377,7 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center gap-3 text-xs">
               <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#FFCC02]" />Today</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#EC4899]" />Peak</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#FF76A2]" />Peak</span>
             </div>
           </div>
           <div className="flex items-end gap-3 h-36" data-testid="activity-chart">
@@ -386,7 +386,7 @@ export default function AdminDashboard() {
               const isPeak = day.count === maxBarCount && day.count > 0;
               let barColor: string;
               if (isPeak) {
-                barColor = "#EC4899";
+                barColor = "#FF76A2";
               } else if (isToday) {
                 barColor = "#FFCC02";
               } else {
@@ -551,7 +551,7 @@ export default function AdminDashboard() {
                     className="h-full rounded-md flex items-center justify-end pr-2 transition-all"
                     style={{
                       width: `${(r.swipes / maxRestaurantSwipes) * 100}%`,
-                      backgroundColor: idx === 0 ? "#FFCC02" : "#3B82F6",
+                      backgroundColor: idx === 0 ? "#FFCC02" : "#1980D5",
                       opacity: idx === 0 ? 1 : 0.6 + (idx * 0.05),
                     }}
                   >
@@ -586,7 +586,7 @@ export default function AdminDashboard() {
                       style={{
                         height: `${heightPct}%`,
                         minHeight: "8px",
-                        backgroundColor: idx === 0 ? "#3B82F6" : "#3B82F6",
+                        backgroundColor: idx === 0 ? "#1980D5" : "#1980D5",
                         opacity: idx === 0 ? 1 : 0.4 + (idx * 0.1),
                       }}
                     />

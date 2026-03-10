@@ -36,7 +36,7 @@ const TOP_SOURCES = [
   { source: "Vibe Browse", pct: 35, color: "#FFCC02" },
   { source: "Search", pct: 25, color: "#6C2BD9" },
   { source: "Trending Feed", pct: 20, color: "#00B14F" },
-  { source: "Recommendations", pct: 12, color: "#3B82F6" },
+  { source: "Recommendations", pct: 12, color: "#1980D5" },
   { source: "Direct Link", pct: 8, color: "#94A3B8" },
 ];
 
