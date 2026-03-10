@@ -545,7 +545,7 @@ export default function AdminAnalytics() {
       {/* Restaurant Performance Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-restaurant-performance">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(59,123,245,0.1) 100%)" }}>
+          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(108,92,231,0.1) 0%, rgba(91,141,239,0.1) 100%)" }}>
             <Star className="w-4 h-4 text-[var(--admin-deep-purple)]" />
           </div>
           <div>
@@ -776,7 +776,7 @@ export default function AdminAnalytics() {
       {/* Partner Data Export */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-partner-export">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(59,123,245,0.1) 100%)" }}>
+          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(108,92,231,0.1) 0%, rgba(91,141,239,0.1) 100%)" }}>
             <Download className="w-4 h-4 text-[var(--admin-deep-purple)]" />
           </div>
           <div>
@@ -912,7 +912,7 @@ export default function AdminAnalytics() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-geo-hotspots">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(59,123,245,0.1) 100%)" }}>
+            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(108,92,231,0.1) 0%, rgba(91,141,239,0.1) 100%)" }}>
               <MapPin className="w-4 h-4 text-[var(--admin-deep-purple)]" />
             </div>
             <div>
@@ -979,7 +979,7 @@ export default function AdminAnalytics() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-top-restaurants">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(59,123,245,0.1) 100%)" }}>
+            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(108,92,231,0.1) 0%, rgba(91,141,239,0.1) 100%)" }}>
               <Star className="w-4 h-4 text-[var(--admin-deep-purple)]" />
             </div>
             <h3 className="text-[15px] font-semibold text-gray-800">Top Restaurants</h3>

@@ -390,7 +390,7 @@ export default function AdminDashboard() {
               } else if (isToday) {
                 barColor = "linear-gradient(180deg, var(--admin-deep-purple), var(--admin-blue))";
               } else {
-                barColor = "linear-gradient(180deg, rgba(99, 102, 241, 0.3), rgba(59, 123, 245, 0.3))";
+                barColor = "linear-gradient(180deg, rgba(108, 92, 231, 0.3), rgba(91, 141, 239, 0.3))";
               }
               return (
                 <div key={day.dateStr} className="flex-1 flex flex-col items-center gap-1.5">
