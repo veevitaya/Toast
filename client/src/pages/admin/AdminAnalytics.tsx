@@ -81,11 +81,11 @@ interface TopRestaurant {
 }
 
 const CONVERSION_FUNNEL = [
-  { label: "Impressions", value: 12400, pct: 100, color: "hsl(45, 100%, 70%)" },
-  { label: "Swipe Views", value: 8200, pct: 66, color: "#FFCC02" },
-  { label: "Right Swipes", value: 3100, pct: 25, color: "hsl(45, 100%, 50%)" },
-  { label: "Detail Views", value: 1800, pct: 15, color: "hsl(142, 71%, 45%)" },
-  { label: "Orders / Bookings", value: 420, pct: 3.4, color: "hsl(222, 47%, 27%)" },
+  { label: "Impressions", value: 12400, pct: 100, color: "var(--admin-deep-purple)" },
+  { label: "Swipe Views", value: 8200, pct: 66, color: "var(--admin-blue)" },
+  { label: "Right Swipes", value: 3100, pct: 25, color: "var(--admin-pink)" },
+  { label: "Detail Views", value: 1800, pct: 15, color: "var(--admin-cyan)" },
+  { label: "Orders / Bookings", value: 420, pct: 3.4, color: "var(--admin-pink)" },
 ];
 
 const GEO_HOTSPOTS = [
@@ -521,10 +521,10 @@ export default function AdminAnalytics() {
 
             <div className="rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-100 p-5" data-testid="section-user-ai-insights">
               <div className="flex items-center gap-2 mb-3">
-                <Brain className="w-3.5 h-3.5 text-[#FFCC02]" />
+                <Brain className="w-3.5 h-3.5 text-[var(--admin-deep-purple)]" />
                 <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">AI-Generated Insights</h4>
-                <span className="inline-flex items-center text-[10px] font-medium rounded-full px-1.5 py-0.5 bg-[#FFCC02]/15 text-foreground">
-                  <Zap className="w-2.5 h-2.5 mr-0.5 text-[#FFCC02]" />Auto
+                <span className="inline-flex items-center text-[10px] font-medium rounded-full px-1.5 py-0.5 bg-[var(--admin-blue-10)] text-foreground">
+                  <Zap className="w-2.5 h-2.5 mr-0.5 text-[var(--admin-deep-purple)]" />Auto
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -545,8 +545,8 @@ export default function AdminAnalytics() {
       {/* Restaurant Performance Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-restaurant-performance">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(35,80%,92%) 0%, hsl(40,70%,85%) 100%)" }}>
-            <Star className="w-4 h-4 text-[#FFCC02]" />
+          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(74,123,247,0.1) 100%)" }}>
+            <Star className="w-4 h-4 text-[var(--admin-deep-purple)]" />
           </div>
           <div>
             <h3 className="text-[15px] font-semibold text-gray-800">Restaurant Performance</h3>
@@ -776,8 +776,8 @@ export default function AdminAnalytics() {
       {/* Partner Data Export */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-partner-export">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(35,80%,92%) 0%, hsl(40,70%,85%) 100%)" }}>
-            <Download className="w-4 h-4 text-[#FFCC02]" />
+          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(74,123,247,0.1) 100%)" }}>
+            <Download className="w-4 h-4 text-[var(--admin-deep-purple)]" />
           </div>
           <div>
             <h3 className="text-[15px] font-semibold text-gray-800">Partner Data Export</h3>
@@ -788,7 +788,7 @@ export default function AdminAnalytics() {
           {DATA_PACKAGES.map((pkg) => (
             <div key={pkg.name} className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex flex-col gap-3" data-testid={`export-pkg-${pkg.name.toLowerCase().replace(/\s/g, "-")}`}>
               <div className="flex items-center gap-2">
-                <pkg.icon className="w-4 h-4 text-[#FFCC02]" />
+                <pkg.icon className="w-4 h-4 text-[var(--admin-deep-purple)]" />
                 <span className="text-sm font-medium text-foreground">{pkg.name}</span>
               </div>
               <p className="text-[11px] text-muted-foreground flex-1">{pkg.desc}</p>
@@ -899,7 +899,7 @@ export default function AdminAnalytics() {
           <div className="space-y-3">
             {TRENDING_CUISINES.map((cuisine) => (
               <div key={cuisine.name} className="flex items-center gap-3" data-testid={`trending-${cuisine.name.toLowerCase().replace(/\s/g, "-")}`}>
-                <div className="w-3 h-3 rounded-full bg-[#FFCC02] flex-shrink-0" />
+                <div className="w-3 h-3 rounded-full bg-[var(--admin-deep-purple)] flex-shrink-0" />
                 <span className="flex-1 text-sm text-foreground font-medium">{cuisine.name}</span>
                 <div className="flex items-center gap-1">
                   <ArrowUpRight className="w-3 h-3 text-green-500" />
@@ -912,8 +912,8 @@ export default function AdminAnalytics() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-geo-hotspots">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(35,80%,92%) 0%, hsl(40,70%,85%) 100%)" }}>
-              <MapPin className="w-4 h-4 text-[#FFCC02]" />
+            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(74,123,247,0.1) 100%)" }}>
+              <MapPin className="w-4 h-4 text-[var(--admin-deep-purple)]" />
             </div>
             <div>
               <h3 className="text-[15px] font-semibold text-gray-800">Geographic Hotspots</h3>
@@ -923,7 +923,7 @@ export default function AdminAnalytics() {
           <div className="space-y-2">
             {GEO_HOTSPOTS.map((spot) => (
               <div key={spot.zone} className="flex items-center gap-3 py-1.5" data-testid={`geo-spot-${spot.rank}`}>
-                <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0 ${spot.rank === 1 ? "bg-[#FFCC02] text-foreground" : "bg-gray-100 text-muted-foreground"}`}>
+                <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0 ${spot.rank === 1 ? "bg-[var(--admin-deep-purple)] text-white" : "bg-gray-100 text-muted-foreground"}`}>
                   {spot.rank}
                 </span>
                 <span className="flex-1 text-sm font-medium text-foreground">{spot.zone}</span>
@@ -979,8 +979,8 @@ export default function AdminAnalytics() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-top-restaurants">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(35,80%,92%) 0%, hsl(40,70%,85%) 100%)" }}>
-              <Star className="w-4 h-4 text-[#FFCC02]" />
+            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(74,123,247,0.1) 100%)" }}>
+              <Star className="w-4 h-4 text-[var(--admin-deep-purple)]" />
             </div>
             <h3 className="text-[15px] font-semibold text-gray-800">Top Restaurants</h3>
           </div>
@@ -1002,7 +1002,7 @@ export default function AdminAnalytics() {
                   className="flex items-center gap-3 text-sm py-1.5"
                   data-testid={`top-restaurant-${r.restaurantId}`}
                 >
-                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0 ${idx === 0 ? "bg-[#FFCC02] text-foreground" : "bg-gray-100 text-muted-foreground"}`}>
+                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0 ${idx === 0 ? "bg-[var(--admin-deep-purple)] text-white" : "bg-gray-100 text-muted-foreground"}`}>
                     {idx + 1}
                   </span>
                   <span className="flex-1 truncate text-foreground font-medium">{r.name}</span>
