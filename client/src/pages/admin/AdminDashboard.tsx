@@ -57,7 +57,7 @@ function getEventDotColor(eventType: string) {
     case "swipe_left":
       return "bg-rose-400";
     case "view_detail":
-      return "bg-[var(--admin-blue)]";
+      return "bg-[var(--admin-cyan)]";
     case "quiz_start":
       return "bg-[#FFCC02]";
     default:
@@ -114,10 +114,10 @@ const fallbackSegments: UserSegment[] = [
 ];
 
 const CONVERSION_FUNNEL = [
-  { label: "Impressions", value: 12400, pct: 100, color: "var(--admin-blue)" },
+  { label: "Impressions", value: 12400, pct: 100, color: "var(--admin-cyan)" },
   { label: "Swipe Views", value: 8200, pct: 66, color: "#FFCC02" },
   { label: "Right Swipes", value: 3100, pct: 25, color: "var(--admin-pink)" },
-  { label: "Detail Views", value: 1800, pct: 15, color: "var(--admin-cyan)" },
+  { label: "Detail Views", value: 1800, pct: 15, color: "var(--admin-teal)" },
   { label: "Orders", value: 420, pct: 3.4, color: "var(--admin-pink)" },
 ];
 
@@ -130,17 +130,17 @@ const GEO_HOTSPOTS = [
 ];
 
 const TRENDING_CUISINES = [
-  { name: "Thai Street", growth: 42, max: 50, color: "var(--admin-blue)" },
+  { name: "Thai Street", growth: 42, max: 50, color: "var(--admin-cyan)" },
   { name: "Korean BBQ", growth: 35, max: 50, color: "#FFCC02" },
   { name: "Japanese", growth: 28, max: 50, color: "var(--admin-pink)" },
-  { name: "Italian", growth: 18, max: 50, color: "var(--admin-cyan)" },
-  { name: "Vietnamese", growth: 15, max: 50, color: "#FFCC02" },
+  { name: "Italian", growth: 18, max: 50, color: "var(--admin-teal)" },
+  { name: "Vietnamese", growth: 15, max: 50, color: "var(--admin-blue)" },
 ];
 
 const DELIVERY_ATTRIBUTION = [
   { name: "Grab", clicks: 2184, pct: 46, color: "var(--admin-pink)", avgOrder: "฿285" },
   { name: "LINE MAN", clicks: 1663, pct: 35, color: "#FFCC02", avgOrder: "฿310" },
-  { name: "Robinhood", clicks: 892, pct: 19, color: "var(--admin-blue)", avgOrder: "฿265" },
+  { name: "Robinhood", clicks: 892, pct: 19, color: "var(--admin-cyan)", avgOrder: "฿265" },
 ];
 
 const TOP_RESTAURANTS = [
@@ -151,9 +151,9 @@ const TOP_RESTAURANTS = [
   { name: "Bo.Lan", swipes: 1260, conversion: 61, trend: "up" as const },
 ];
 
-const SEGMENT_COLORS = ["var(--admin-blue)", "#FFCC02", "var(--admin-pink)", "var(--admin-cyan)"];
+const SEGMENT_COLORS = ["var(--admin-cyan)", "#FFCC02", "var(--admin-pink)", "var(--admin-teal)"];
 
-function MiniSparkline({ data, color = "var(--admin-blue)" }: { data: number[]; color?: string }) {
+function MiniSparkline({ data, color = "var(--admin-cyan)" }: { data: number[]; color?: string }) {
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
@@ -273,9 +273,9 @@ export default function AdminDashboard() {
       delta: "+12%",
       deltaUp: true,
       sparkline: [18, 24, 32, 28, 35, 42, 48],
-      iconBg: "bg-[var(--admin-blue-10)]",
-      iconColor: "text-[var(--admin-blue)]",
-      sparkColor: "var(--admin-blue)",
+      iconBg: "bg-[var(--admin-cyan-20)]",
+      iconColor: "text-[var(--admin-cyan)]",
+      sparkColor: "var(--admin-cyan)",
     },
     {
       label: "Restaurants",
@@ -306,9 +306,9 @@ export default function AdminDashboard() {
       delta: "+18%",
       deltaUp: true,
       sparkline: [320, 380, 410, 390, 450, 480, 520],
-      iconBg: "bg-[var(--admin-pink-10)]",
-      iconColor: "text-[var(--admin-pink)]",
-      sparkColor: "var(--admin-pink)",
+      iconBg: "bg-[var(--admin-cyan-20)]",
+      iconColor: "text-[var(--admin-cyan)]",
+      sparkColor: "var(--admin-cyan)",
     },
     {
       label: "Campaigns",
@@ -377,7 +377,7 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center gap-3 text-xs">
               <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#FFCC02]" />Today</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[var(--admin-pink)]" />Peak</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[var(--admin-cyan)]" />Peak</span>
             </div>
           </div>
           <div className="flex items-end gap-3 h-36" data-testid="activity-chart">
@@ -386,7 +386,7 @@ export default function AdminDashboard() {
               const isPeak = day.count === maxBarCount && day.count > 0;
               let barColor: string;
               if (isPeak) {
-                barColor = "var(--admin-pink)";
+                barColor = "var(--admin-cyan)";
               } else if (isToday) {
                 barColor = "#FFCC02";
               } else {
@@ -551,7 +551,7 @@ export default function AdminDashboard() {
                     className="h-full rounded-md flex items-center justify-end pr-2 transition-all"
                     style={{
                       width: `${(r.swipes / maxRestaurantSwipes) * 100}%`,
-                      backgroundColor: idx === 0 ? "#FFCC02" : "var(--admin-blue)",
+                      backgroundColor: idx === 0 ? "#FFCC02" : "var(--admin-cyan)",
                       opacity: idx === 0 ? 1 : 0.6 + (idx * 0.05),
                     }}
                   >
@@ -586,7 +586,7 @@ export default function AdminDashboard() {
                       style={{
                         height: `${heightPct}%`,
                         minHeight: "8px",
-                        backgroundColor: idx === 0 ? "var(--admin-blue)" : "var(--admin-blue)",
+                        backgroundColor: idx === 0 ? "var(--admin-teal)" : "var(--admin-teal)",
                         opacity: idx === 0 ? 1 : 0.4 + (idx * 0.1),
                       }}
                     />
