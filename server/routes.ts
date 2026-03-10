@@ -1632,6 +1632,25 @@ export async function registerRoutes(
       });
       const input = schema.parse(req.body);
       const ownerId = req.ownerUser.id;
+
+      const restaurant = await storage.getRestaurant(input.restaurantId);
+      if (!restaurant) return res.status(404).json({ message: "Restaurant not found" });
+
+      if (restaurant.ownerClaimStatus === "verified" || restaurant.ownerClaimStatus === "approved") {
+        return res.status(409).json({ message: "This restaurant has already been claimed and verified by another owner." });
+      }
+
+      const existingClaims = await storage.getRestaurantClaims("pending");
+      const duplicateClaim = existingClaims.find(
+        (c) => c.restaurantId === input.restaurantId && (c.ownerId === ownerId || c.status === "pending")
+      );
+      if (duplicateClaim) {
+        if (duplicateClaim.ownerId === ownerId) {
+          return res.status(409).json({ message: "You already have a pending claim for this restaurant." });
+        }
+        return res.status(409).json({ message: "Another claim for this restaurant is already under review." });
+      }
+
       const claim = await storage.createRestaurantClaim({
         ...input,
         ownerId,
@@ -1688,7 +1707,22 @@ export async function registerRoutes(
             r.category.toLowerCase().includes(query)
           )
         : all;
-      res.json(filtered.slice(0, 20));
+      const results = filtered.slice(0, 20).map(r => ({
+        id: r.id,
+        name: r.name,
+        category: r.category,
+        address: r.address,
+        imageUrl: r.imageUrl,
+        rating: r.rating,
+        priceLevel: r.priceLevel,
+        description: r.description,
+        district: r.district,
+        vibes: r.vibes || [],
+        trendingScore: r.trendingScore || 0,
+        ownerClaimStatus: r.ownerClaimStatus || "unclaimed",
+        ownerId: r.ownerId || null,
+      }));
+      res.json(results);
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -1706,6 +1740,38 @@ export async function registerRoutes(
         : [];
       const claims = await storage.getRestaurantClaims();
       const myClaims = claims.filter(c => c.ownerId === owner.id);
+
+      const allRestaurants = await storage.getRestaurants();
+      const ownedRestaurants = allRestaurants
+        .filter(r => r.ownerId === owner.id)
+        .map(r => ({
+          id: r.id,
+          name: r.name,
+          category: r.category,
+          address: r.address,
+          imageUrl: r.imageUrl,
+          rating: r.rating,
+          ownerClaimStatus: r.ownerClaimStatus || "unclaimed",
+        }));
+
+      const claimedRestaurants = await Promise.all(
+        myClaims.map(async (c: any) => {
+          const r = await storage.getRestaurantById(c.restaurantId);
+          return {
+            claimId: c.id,
+            restaurantId: c.restaurantId,
+            restaurantName: r?.name || `Restaurant #${c.restaurantId}`,
+            restaurantImage: r?.imageUrl || "",
+            restaurantAddress: r?.address || "",
+            restaurantCategory: r?.category || "",
+            restaurantRating: r?.rating || "0",
+            status: c.status,
+            submittedAt: c.submittedAt,
+            reviewedAt: c.reviewedAt,
+          };
+        })
+      );
+
       let stats = { views: 0, likes: 0, saves: 0, deliveryTaps: 0 };
       if (owner.restaurantId) {
         const events = await storage.getEvents({ restaurantId: owner.restaurantId });
@@ -1719,6 +1785,8 @@ export async function registerRoutes(
         restaurant,
         campaigns,
         claims: myClaims,
+        claimedRestaurants,
+        ownedRestaurants,
         stats,
       });
     } catch (err) {

@@ -20,6 +20,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import toastLogo from "@assets/toast_logo_nobg.png";
+import ButtersAssistant from "@/components/ButtersAssistant";
 
 interface AdminSession {
   sessionType: "admin" | "owner";
@@ -294,6 +295,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {children}
         </main>
       </div>
+      {!isOwner && <ButtersAssistant />}
     </div>
   );
 }

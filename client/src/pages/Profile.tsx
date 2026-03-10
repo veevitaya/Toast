@@ -5,7 +5,7 @@ import { useLineProfile } from "@/hooks/use-line-profile";
 import { sendGroupInvite } from "@/lib/liff";
 import { BottomNav } from "@/components/BottomNav";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
-import { ChevronRight, UserPlus, Unlink, LogIn, LogOut, X, Store, User, Star, TrendingUp, Image, Sparkles, Plus, Check, Crown, Eye, ExternalLink, MapPin, Clock, BarChart3, ArrowUpRight, ArrowDownRight, Utensils, Zap, Calendar, Megaphone, Tag, Percent, Trash2, Send, Users, Target, Search } from "lucide-react";
+import { ChevronRight, UserPlus, Unlink, LogIn, LogOut, X, Store, User, Star, TrendingUp, Image, Sparkles, Plus, Check, Crown, Eye, ExternalLink, MapPin, Clock, BarChart3, ArrowUpRight, ArrowDownRight, Utensils, Zap, Calendar, Megaphone, Tag, Percent, Trash2, Send, Users, Target, Search, Shield, AlertTriangle, Upload, FileText, Building2, Phone, Mail, ChevronDown, ShieldCheck } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { RestaurantResponse } from "@shared/routes";
@@ -150,6 +150,11 @@ interface OwnerProfile {
   address: string;
   activePackages: string[];
   campaigns: Campaign[];
+  photos?: string[];
+  ownerName?: string;
+  ownerContact?: string;
+  phone?: string;
+  documents?: { businessReg?: string; ownershipProof?: string; photoId?: string };
 }
 
 function getStoredProfile(): LocalProfile {
@@ -244,18 +249,40 @@ export default function Profile() {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [isOwnerMode, setIsOwnerMode] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState<"choice" | "register" | "claim" | "done">("choice");
+  const [onboardingStep, setOnboardingStep] = useState<"choice" | "profile" | "register" | "claim" | "claim-confirm" | "documents" | "submitted">("choice");
+  const [ownerName, setOwnerName] = useState("");
+  const [ownerContact, setOwnerContact] = useState("");
   const [newRestaurantName, setNewRestaurantName] = useState("");
   const [newRestaurantCategory, setNewRestaurantCategory] = useState("");
   const [newRestaurantAddress, setNewRestaurantAddress] = useState("");
+  const [newRestaurantPhone, setNewRestaurantPhone] = useState("");
   const [claimSearchQuery, setClaimSearchQuery] = useState("");
+  const [selectedClaimRestaurant, setSelectedClaimRestaurant] = useState<any>(null);
+  const [claimConfirmText, setClaimConfirmText] = useState("");
+  const [onboardingPath, setOnboardingPath] = useState<"register" | "claim">("register");
+  const [docBusinessReg, setDocBusinessReg] = useState("");
+  const [docOwnershipProof, setDocOwnershipProof] = useState("");
+  const [docPhotoId, setDocPhotoId] = useState("");
+
+  const ONBOARDING_STATUS_KEY = "toast_owner_onboarding_status";
+
+  const ownerOnboardingStatus = (() => {
+    try {
+      const stored = localStorage.getItem(ONBOARDING_STATUS_KEY);
+      if (stored) return JSON.parse(stored) as { status: "pending" | "approved" | "rejected"; restaurantName: string };
+    } catch {}
+    return null;
+  })();
 
   const ownerOnboarded = (() => {
+    const status = ownerOnboardingStatus?.status;
+    if (status === "approved") return true;
     try {
       const stored = localStorage.getItem(OWNER_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        return !!(parsed.restaurantName && parsed.restaurantName.trim());
+        const hasName = !!(parsed.restaurantName && parsed.restaurantName.trim());
+        return hasName && status === "approved";
       }
     } catch {}
     return false;
@@ -706,7 +733,7 @@ export default function Profile() {
         )}
       </AnimatePresence>
 
-      {!ownerOnboarded && !isOwnerMode && (
+      {!ownerOnboarded && !isOwnerMode && !ownerOnboardingStatus && (
         <motion.button
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -719,6 +746,20 @@ export default function Profile() {
           <Store className="w-4 h-4 text-[#00B14F]" />
           Restaurant Owner?
         </motion.button>
+      )}
+
+      {ownerOnboardingStatus?.status === "pending" && !isOwnerMode && (
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-5 py-3 rounded-full bg-amber-50 border border-amber-200 text-sm font-semibold text-amber-800"
+          style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
+          data-testid="badge-pending-approval"
+        >
+          <Clock className="w-4 h-4 text-amber-500 animate-pulse-soft" />
+          Claim pending approval — {ownerOnboardingStatus.restaurantName}
+        </motion.div>
       )}
 
       <AnimatePresence>
@@ -738,13 +779,33 @@ export default function Profile() {
               className="w-full max-w-lg bg-white rounded-t-3xl p-6 pb-10 max-h-[85vh] overflow-y-auto"
               data-testid="modal-owner-onboarding"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold">
-                  {onboardingStep === "choice" && "Become a Restaurant Owner"}
-                  {onboardingStep === "register" && "Register Your Restaurant"}
-                  {onboardingStep === "claim" && "Claim Existing Restaurant"}
-                  {onboardingStep === "done" && "You're All Set!"}
-                </h2>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  {onboardingStep !== "choice" && onboardingStep !== "submitted" && (
+                    <button
+                      onClick={() => {
+                        if (onboardingStep === "profile") setOnboardingStep("choice");
+                        else if (onboardingStep === "register") setOnboardingStep("profile");
+                        else if (onboardingStep === "claim") setOnboardingStep("profile");
+                        else if (onboardingStep === "claim-confirm") setOnboardingStep("claim");
+                        else if (onboardingStep === "documents") setOnboardingStep(onboardingPath === "claim" ? "claim-confirm" : "register");
+                      }}
+                      className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+                      data-testid="button-back-onboarding"
+                    >
+                      <ChevronRight className="w-4 h-4 rotate-180" />
+                    </button>
+                  )}
+                  <h2 className="text-lg font-bold">
+                    {onboardingStep === "choice" && "Become a Restaurant Owner"}
+                    {onboardingStep === "profile" && "Your Information"}
+                    {onboardingStep === "register" && "Restaurant Details"}
+                    {onboardingStep === "claim" && "Find Your Restaurant"}
+                    {onboardingStep === "claim-confirm" && "Confirm Ownership"}
+                    {onboardingStep === "documents" && "Verification Documents"}
+                    {onboardingStep === "submitted" && "Submitted for Review"}
+                  </h2>
+                </div>
                 <button
                   onClick={() => setShowOnboarding(false)}
                   className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
@@ -754,13 +815,27 @@ export default function Profile() {
                 </button>
               </div>
 
+              {onboardingStep !== "choice" && onboardingStep !== "submitted" && (
+                <div className="flex gap-1 mb-5">
+                  {(onboardingPath === "register" ? ["profile", "register", "documents"] : ["profile", "claim", "claim-confirm", "documents"]).map((step, i, arr) => (
+                    <div
+                      key={step}
+                      className="flex-1 h-1 rounded-full"
+                      style={{
+                        backgroundColor: arr.indexOf(onboardingStep) >= i ? "#00B14F" : "#e5e7eb"
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+
               {onboardingStep === "choice" && (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground mb-4">
                     Get your restaurant on Toast and reach thousands of diners in Bangkok.
                   </p>
                   <button
-                    onClick={() => setOnboardingStep("register")}
+                    onClick={() => { setOnboardingPath("register"); setOnboardingStep("profile"); }}
                     className="w-full flex items-center gap-4 p-4 rounded-2xl border border-gray-100 active:scale-[0.98] transition-all"
                     style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
                     data-testid="button-register-new"
@@ -775,7 +850,7 @@ export default function Profile() {
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                   </button>
                   <button
-                    onClick={() => setOnboardingStep("claim")}
+                    onClick={() => { setOnboardingPath("claim"); setOnboardingStep("profile"); }}
                     className="w-full flex items-center gap-4 p-4 rounded-2xl border border-gray-100 active:scale-[0.98] transition-all"
                     style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
                     data-testid="button-claim-existing"
@@ -792,16 +867,52 @@ export default function Profile() {
                 </div>
               )}
 
+              {onboardingStep === "profile" && (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">Tell us about yourself so we can verify your ownership.</p>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Full Name</label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
+                      <input
+                        type="text"
+                        value={ownerName}
+                        onChange={(e) => setOwnerName(e.target.value)}
+                        placeholder="Your full name"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 border border-transparent focus:border-gray-200 outline-none text-sm font-medium"
+                        data-testid="input-owner-name"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Contact Email or Phone</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
+                      <input
+                        type="text"
+                        value={ownerContact}
+                        onChange={(e) => setOwnerContact(e.target.value)}
+                        placeholder="email@example.com or +66..."
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 border border-transparent focus:border-gray-200 outline-none text-sm font-medium"
+                        data-testid="input-owner-contact"
+                      />
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setOnboardingStep(onboardingPath === "register" ? "register" : "claim")}
+                    disabled={!ownerName.trim() || !ownerContact.trim()}
+                    className="w-full py-3.5 rounded-xl bg-[#00B14F] text-white font-bold text-sm active:scale-[0.97] transition-transform disabled:opacity-40"
+                    style={{ boxShadow: "0 4px 16px rgba(0,177,79,0.25)" }}
+                    data-testid="button-continue-profile"
+                  >
+                    Continue
+                  </button>
+                </div>
+              )}
+
               {onboardingStep === "register" && (
                 <div className="space-y-4">
-                  <button
-                    onClick={() => setOnboardingStep("choice")}
-                    className="flex items-center gap-1 text-sm text-muted-foreground mb-2"
-                    data-testid="button-back-to-choice"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5 rotate-180" />
-                    Back
-                  </button>
+                  <p className="text-sm text-muted-foreground">Enter your restaurant's details.</p>
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Restaurant Name</label>
                     <input
@@ -829,48 +940,47 @@ export default function Profile() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Address</label>
-                    <input
-                      type="text"
-                      value={newRestaurantAddress}
-                      onChange={(e) => setNewRestaurantAddress(e.target.value)}
-                      placeholder="Street address in Bangkok"
-                      className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-transparent focus:border-gray-200 outline-none text-sm font-medium"
-                      data-testid="input-register-address"
-                    />
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
+                      <input
+                        type="text"
+                        value={newRestaurantAddress}
+                        onChange={(e) => setNewRestaurantAddress(e.target.value)}
+                        placeholder="Street address in Bangkok"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 border border-transparent focus:border-gray-200 outline-none text-sm font-medium"
+                        data-testid="input-register-address"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Phone Number</label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
+                      <input
+                        type="text"
+                        value={newRestaurantPhone}
+                        onChange={(e) => setNewRestaurantPhone(e.target.value)}
+                        placeholder="+66..."
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 border border-transparent focus:border-gray-200 outline-none text-sm font-medium"
+                        data-testid="input-register-phone"
+                      />
+                    </div>
                   </div>
                   <button
-                    onClick={() => {
-                      if (!newRestaurantName.trim()) return;
-                      const ownerProfile = getStoredOwnerProfile();
-                      const updated = {
-                        ...ownerProfile,
-                        restaurantName: newRestaurantName.trim(),
-                        category: newRestaurantCategory,
-                        address: newRestaurantAddress.trim(),
-                      };
-                      localStorage.setItem(OWNER_STORAGE_KEY, JSON.stringify(updated));
-                      setOnboardingStep("done");
-                    }}
-                    disabled={!newRestaurantName.trim()}
+                    onClick={() => setOnboardingStep("documents")}
+                    disabled={!newRestaurantName.trim() || !newRestaurantAddress.trim()}
                     className="w-full py-3.5 rounded-xl bg-[#00B14F] text-white font-bold text-sm active:scale-[0.97] transition-transform disabled:opacity-40"
                     style={{ boxShadow: "0 4px 16px rgba(0,177,79,0.25)" }}
-                    data-testid="button-submit-register"
+                    data-testid="button-continue-register"
                   >
-                    Register Restaurant
+                    Continue to Verification
                   </button>
                 </div>
               )}
 
               {onboardingStep === "claim" && (
                 <div className="space-y-4">
-                  <button
-                    onClick={() => setOnboardingStep("choice")}
-                    className="flex items-center gap-1 text-sm text-muted-foreground mb-2"
-                    data-testid="button-back-to-choice-claim"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5 rotate-180" />
-                    Back
-                  </button>
+                  <p className="text-sm text-muted-foreground">Search for the restaurant you own or manage.</p>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
                     <input
@@ -884,35 +994,248 @@ export default function Profile() {
                   </div>
                   <ClaimSearchResults
                     query={claimSearchQuery}
-                    onSelect={(name: string) => {
-                      const ownerProfile = getStoredOwnerProfile();
-                      const updated = { ...ownerProfile, restaurantName: name };
-                      localStorage.setItem(OWNER_STORAGE_KEY, JSON.stringify(updated));
-                      setOnboardingStep("done");
+                    onSelect={(restaurant: any) => {
+                      setSelectedClaimRestaurant(restaurant);
+                      setClaimConfirmText("");
+                      setOnboardingStep("claim-confirm");
                     }}
                   />
                 </div>
               )}
 
-              {onboardingStep === "done" && (
-                <div className="text-center py-4">
-                  <div className="w-16 h-16 rounded-full bg-[#00B14F]/10 flex items-center justify-center mx-auto mb-4">
-                    <Check className="w-8 h-8 text-[#00B14F]" />
+              {onboardingStep === "claim-confirm" && selectedClaimRestaurant && (
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-gray-100 overflow-hidden" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                    <div className="h-32 bg-gray-100 relative">
+                      {selectedClaimRestaurant.imageUrl ? (
+                        <img src={selectedClaimRestaurant.imageUrl} alt={selectedClaimRestaurant.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-3xl">🍽️</div>
+                      )}
+                      {selectedClaimRestaurant.ownerClaimStatus === "verified" && (
+                        <div className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                          <Shield className="w-3 h-3" />
+                          Already Claimed
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-base mb-1" data-testid="text-claim-restaurant-name">{selectedClaimRestaurant.name}</h3>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                        <MapPin className="w-3 h-3" /> {selectedClaimRestaurant.address || "Bangkok"}
+                      </p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                        <Utensils className="w-3 h-3" /> {selectedClaimRestaurant.category || "Restaurant"}
+                      </p>
+                      {selectedClaimRestaurant.rating && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> {selectedClaimRestaurant.rating}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <p className="font-bold text-lg mb-2">Welcome, Owner!</p>
-                  <p className="text-sm text-muted-foreground mb-6">
-                    Your restaurant profile is ready. Switch to Owner mode anytime from your profile.
+
+                  {selectedClaimRestaurant.ownerClaimStatus === "verified" ? (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                      <Shield className="w-8 h-8 text-red-400 mx-auto mb-2" />
+                      <p className="text-sm font-semibold text-red-700 mb-1">This restaurant has already been claimed</p>
+                      <p className="text-xs text-red-500">If you believe this is an error, please contact support.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-xs font-semibold text-amber-700">Is this your restaurant?</p>
+                          <p className="text-[11px] text-amber-600 mt-0.5">Fraudulent claims may result in account suspension.</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
+                          Type "<span className="text-foreground">{selectedClaimRestaurant.name}</span>" to confirm
+                        </label>
+                        <input
+                          type="text"
+                          value={claimConfirmText}
+                          onChange={(e) => setClaimConfirmText(e.target.value)}
+                          placeholder={`Type: ${selectedClaimRestaurant.name}`}
+                          className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-transparent focus:border-gray-200 outline-none text-sm font-medium"
+                          data-testid="input-claim-confirm-name"
+                        />
+                      </div>
+
+                      <button
+                        onClick={() => setOnboardingStep("documents")}
+                        disabled={claimConfirmText.trim().toLowerCase() !== selectedClaimRestaurant.name.trim().toLowerCase()}
+                        className="w-full py-3.5 rounded-xl bg-[#00B14F] text-white font-bold text-sm active:scale-[0.97] transition-transform disabled:opacity-40"
+                        style={{ boxShadow: "0 4px 16px rgba(0,177,79,0.25)" }}
+                        data-testid="button-confirm-claim"
+                      >
+                        Yes, This is My Restaurant
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {onboardingStep === "documents" && (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Upload documents to verify your ownership. This helps us keep the platform trustworthy.
                   </p>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5" />
+                        Business Registration / License
+                      </label>
+                      <div
+                        className="w-full px-4 py-4 rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 text-center cursor-pointer hover:border-[#00B14F]/40 transition-colors"
+                        onClick={() => {
+                          const url = prompt("Paste a link to your business registration document (Google Drive, Dropbox, etc.):");
+                          if (url) setDocBusinessReg(url);
+                        }}
+                        data-testid="upload-business-reg"
+                      >
+                        {docBusinessReg ? (
+                          <div className="flex items-center gap-2 justify-center text-[#00B14F]">
+                            <Check className="w-4 h-4" />
+                            <span className="text-sm font-medium">Document linked</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                            <Upload className="w-5 h-5" />
+                            <span className="text-xs">Tap to add link</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5" />
+                        Proof of Ownership (lease, utility bill, etc.)
+                      </label>
+                      <div
+                        className="w-full px-4 py-4 rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 text-center cursor-pointer hover:border-[#00B14F]/40 transition-colors"
+                        onClick={() => {
+                          const url = prompt("Paste a link to your ownership proof document:");
+                          if (url) setDocOwnershipProof(url);
+                        }}
+                        data-testid="upload-ownership-proof"
+                      >
+                        {docOwnershipProof ? (
+                          <div className="flex items-center gap-2 justify-center text-[#00B14F]">
+                            <Check className="w-4 h-4" />
+                            <span className="text-sm font-medium">Document linked</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                            <Upload className="w-5 h-5" />
+                            <span className="text-xs">Tap to add link</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5" />
+                        Photo ID (optional)
+                      </label>
+                      <div
+                        className="w-full px-4 py-4 rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 text-center cursor-pointer hover:border-[#00B14F]/40 transition-colors"
+                        onClick={() => {
+                          const url = prompt("Paste a link to your photo ID:");
+                          if (url) setDocPhotoId(url);
+                        }}
+                        data-testid="upload-photo-id"
+                      >
+                        {docPhotoId ? (
+                          <div className="flex items-center gap-2 justify-center text-[#00B14F]">
+                            <Check className="w-4 h-4" />
+                            <span className="text-sm font-medium">Document linked</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                            <Upload className="w-5 h-5" />
+                            <span className="text-xs">Tap to add link (optional)</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   <button
                     onClick={() => {
-                      setShowOnboarding(false);
-                      setIsOwnerMode(true);
+                      const restaurantName = onboardingPath === "claim"
+                        ? selectedClaimRestaurant?.name || ""
+                        : newRestaurantName.trim();
+
+                      const ownerProfile = getStoredOwnerProfile();
+                      const updated = {
+                        ...ownerProfile,
+                        restaurantName,
+                        ownerName: ownerName.trim(),
+                        ownerContact: ownerContact.trim(),
+                        category: onboardingPath === "register" ? newRestaurantCategory : (selectedClaimRestaurant?.category || ""),
+                        address: onboardingPath === "register" ? newRestaurantAddress.trim() : (selectedClaimRestaurant?.address || ""),
+                        phone: newRestaurantPhone.trim(),
+                        documents: {
+                          businessReg: docBusinessReg,
+                          ownershipProof: docOwnershipProof,
+                          photoId: docPhotoId,
+                        },
+                      };
+                      localStorage.setItem(OWNER_STORAGE_KEY, JSON.stringify(updated));
+
+                      localStorage.setItem(ONBOARDING_STATUS_KEY, JSON.stringify({
+                        status: "pending",
+                        restaurantName,
+                        path: onboardingPath,
+                        restaurantId: onboardingPath === "claim" ? selectedClaimRestaurant?.id : null,
+                        submittedAt: new Date().toISOString(),
+                      }));
+
+                      setOnboardingStep("submitted");
                     }}
+                    disabled={!docBusinessReg && !docOwnershipProof}
+                    className="w-full py-3.5 rounded-xl bg-[#00B14F] text-white font-bold text-sm active:scale-[0.97] transition-transform disabled:opacity-40"
+                    style={{ boxShadow: "0 4px 16px rgba(0,177,79,0.25)" }}
+                    data-testid="button-submit-documents"
+                  >
+                    Submit for Review
+                  </button>
+
+                  <p className="text-[11px] text-center text-muted-foreground">
+                    At least one document is required. Reviews typically take 1-2 business days.
+                  </p>
+                </div>
+              )}
+
+              {onboardingStep === "submitted" && (
+                <div className="text-center py-4">
+                  <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4">
+                    <Clock className="w-8 h-8 text-amber-500" />
+                  </div>
+                  <p className="font-bold text-lg mb-2">Submitted for Review</p>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {onboardingPath === "claim"
+                      ? `Your claim for "${selectedClaimRestaurant?.name}" has been submitted.`
+                      : `Your registration for "${newRestaurantName}" has been submitted.`}
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-6">
+                    Our team will review your documents and notify you once approved. This usually takes 1-2 business days.
+                  </p>
+                  <button
+                    onClick={() => setShowOnboarding(false)}
                     className="w-full py-3.5 rounded-xl bg-foreground text-white font-bold text-sm active:scale-[0.97] transition-transform"
                     style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.15)" }}
-                    data-testid="button-go-to-dashboard"
+                    data-testid="button-close-submitted"
                   >
-                    Go to Owner Dashboard
+                    Got It
                   </button>
                 </div>
               )}
@@ -926,7 +1249,7 @@ export default function Profile() {
   );
 }
 
-function ClaimSearchResults({ query, onSelect }: { query: string; onSelect: (name: string) => void }) {
+function ClaimSearchResults({ query, onSelect }: { query: string; onSelect: (restaurant: any) => void }) {
   const { data: restaurants } = useQuery<any[]>({
     queryKey: ["/api/restaurants"],
     enabled: true,
@@ -936,8 +1259,8 @@ function ClaimSearchResults({ query, onSelect }: { query: string; onSelect: (nam
     if (!restaurants || !query.trim()) return [];
     const q = query.toLowerCase();
     return restaurants.filter((r: any) =>
-      r.name?.toLowerCase().includes(q) || r.cuisine?.toLowerCase().includes(q)
-    ).slice(0, 5);
+      r.name?.toLowerCase().includes(q) || r.category?.toLowerCase().includes(q) || r.address?.toLowerCase().includes(q)
+    ).slice(0, 6);
   }, [restaurants, query]);
 
   if (!query.trim()) {
@@ -953,11 +1276,11 @@ function ClaimSearchResults({ query, onSelect }: { query: string; onSelect: (nam
       {filtered.map((r: any) => (
         <button
           key={r.id}
-          onClick={() => onSelect(r.name)}
+          onClick={() => onSelect(r)}
           className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-100 active:scale-[0.98] transition-all text-left"
           data-testid={`claim-restaurant-${r.id}`}
         >
-          <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+          <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
             {r.imageUrl ? (
               <img src={r.imageUrl} alt={r.name} className="w-full h-full object-cover" />
             ) : (
@@ -965,8 +1288,20 @@ function ClaimSearchResults({ query, onSelect }: { query: string; onSelect: (nam
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-sm truncate">{r.name}</p>
-            <p className="text-xs text-muted-foreground truncate">{r.cuisine} {r.priceRange ? `· ${r.priceRange}` : ""}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="font-semibold text-sm truncate">{r.name}</p>
+              {r.ownerClaimStatus === "verified" && (
+                <span className="text-[9px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full whitespace-nowrap">Claimed</span>
+              )}
+              {r.ownerClaimStatus === "pending" && (
+                <span className="text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full whitespace-nowrap">Pending</span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground truncate">{r.category || "Restaurant"}</p>
+            <p className="text-[11px] text-muted-foreground/60 truncate flex items-center gap-1">
+              <MapPin className="w-2.5 h-2.5" /> {r.address || "Bangkok"}
+              {r.rating && <><Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400 ml-1" /> {r.rating}</>}
+            </p>
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
         </button>
@@ -1260,175 +1595,289 @@ function OwnerDashboard() {
   const hourlyValues = insights.hourlyData.map(d => d.value);
   const maxHourly = Math.max(...hourlyValues);
 
+  const onboardingStatus = (() => {
+    try {
+      const stored = localStorage.getItem("toast_owner_onboarding_status");
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return null;
+  })();
+  const isVerified = onboardingStatus?.status === "approved";
+  const isPending = onboardingStatus?.status === "pending";
+
+  const weeklyStats = useMemo(() => ({
+    views: Math.floor(Math.random() * 2000) + 500,
+    likes: Math.floor(Math.random() * 300) + 50,
+    saves: Math.floor(Math.random() * 100) + 10,
+  }), [ownerKey]);
+
   return (
     <div>
       <div className="mb-4">
         <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border">
-          <div className="px-5 py-4">
-            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">Restaurant Setup</p>
-
-            <input
-              type="text"
-              value={ownerProfile.restaurantName}
-              onChange={(e) => updateOwner({ restaurantName: e.target.value })}
-              placeholder="Restaurant name"
-              className="w-full text-[17px] font-bold bg-transparent border-none outline-none placeholder:text-muted-foreground/30 tracking-tight mb-4"
-              data-testid="input-restaurant-name"
-            />
-
-            <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-2">Category</p>
-            <div ref={categoryRef} className="relative mb-4" data-testid="input-restaurant-category">
-              {selectedCategoryObj ? (
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-muted flex-1">
-                    <span className="text-sm">{selectedCategoryObj.emoji}</span>
-                    <span className="text-sm font-medium">{selectedCategoryObj.label}</span>
-                  </div>
-                  <button
-                    onClick={() => updateOwner({ category: "" })}
-                    className="w-9 h-9 rounded-xl bg-gray-50 dark:bg-muted flex items-center justify-center text-muted-foreground/60 active:scale-90 transition-transform"
-                    data-testid="button-clear-category"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-muted">
-                    <Search className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
-                    <input
-                      type="text"
-                      value={categorySearch}
-                      onChange={(e) => { setCategorySearch(e.target.value); setCategoryDropdownOpen(true); }}
-                      onFocus={() => setCategoryDropdownOpen(true)}
-                      placeholder="Search category..."
-                      className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/40"
-                      data-testid="input-category-search"
-                    />
-                  </div>
-                  <AnimatePresence>
-                    {categoryDropdownOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute z-20 left-0 right-0 mt-1.5 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-border overflow-hidden"
-                        style={{ boxShadow: "0 8px 32px -8px rgba(0,0,0,0.12)" }}
-                      >
-                        <div className="max-h-48 overflow-y-auto py-1">
-                          {filteredCategories.length === 0 ? (
-                            <p className="px-4 py-3 text-sm text-muted-foreground text-center">No matches</p>
-                          ) : (
-                            filteredCategories.map((cat) => (
-                              <button
-                                key={cat.value}
-                                onClick={() => {
-                                  updateOwner({ category: cat.value });
-                                  setCategorySearch("");
-                                  setCategoryDropdownOpen(false);
-                                }}
-                                className="w-full px-4 py-2.5 flex items-center gap-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-muted active:bg-gray-100"
-                                data-testid={`category-${cat.value}`}
-                              >
-                                <span className="text-base">{cat.emoji}</span>
-                                <span className="text-[13px] font-medium">{cat.label}</span>
-                              </button>
-                            ))
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </>
-              )}
-            </div>
-
-            <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-2">Tags</p>
-            <div ref={tagRef} className="relative mb-4" data-testid="input-restaurant-tags">
-              {(ownerProfile.tags || []).length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  {(ownerProfile.tags || []).map((tagVal) => {
-                    const tagObj = RESTAURANT_TAGS.find(t => t.value === tagVal);
-                    if (!tagObj) return null;
-                    return (
-                      <span
-                        key={tagVal}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-foreground text-white text-[11px] font-medium"
-                      >
-                        {tagObj.emoji} {tagObj.label}
-                        <button
-                          onClick={() => updateOwner({ tags: (ownerProfile.tags || []).filter(t => t !== tagVal) })}
-                          className="ml-0.5 opacity-70 hover:opacity-100"
-                          data-testid={`remove-tag-${tagVal}`}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
-              <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-muted">
-                <Search className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
-                <input
-                  type="text"
-                  value={tagSearch}
-                  onChange={(e) => { setTagSearch(e.target.value); setTagDropdownOpen(true); }}
-                  onFocus={() => setTagDropdownOpen(true)}
-                  placeholder="Search tags..."
-                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/40"
-                  data-testid="input-tag-search"
-                />
+          <div className="relative h-36 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden" data-testid="owner-hero-banner">
+            {ownerProfile.photos && ownerProfile.photos.length > 0 ? (
+              <img src={ownerProfile.photos[0]} alt={ownerProfile.restaurantName} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#00B14F]/10 to-[#FFCC02]/10">
+                <Store className="w-12 h-12 text-[#00B14F]/30" />
               </div>
-              <AnimatePresence>
-                {tagDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute z-20 left-0 right-0 mt-1.5 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-border overflow-hidden"
-                    style={{ boxShadow: "0 8px 32px -8px rgba(0,0,0,0.12)" }}
-                  >
-                    <div className="max-h-48 overflow-y-auto py-1">
-                      {filteredTags.length === 0 ? (
-                        <p className="px-4 py-3 text-sm text-muted-foreground text-center">No more tags</p>
-                      ) : (
-                        filteredTags.map((tag) => (
-                          <button
-                            key={tag.value}
-                            onClick={() => {
-                              const current = ownerProfile.tags || [];
-                              updateOwner({ tags: [...current, tag.value] });
-                              setTagSearch("");
-                            }}
-                            className="w-full px-4 py-2.5 flex items-center gap-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-muted active:bg-gray-100"
-                            data-testid={`tag-${tag.value}`}
-                          >
-                            <span className="text-base">{tag.emoji}</span>
-                            <span className="text-[13px] font-medium">{tag.label}</span>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+
+            <div className="absolute top-3 right-3 flex gap-1.5">
+              {isVerified && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#00B14F] text-white text-[10px] font-bold" data-testid="badge-verified">
+                  <ShieldCheck className="w-3 h-3" /> Verified
+                </span>
+              )}
+              {isPending && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500 text-white text-[10px] font-bold" data-testid="badge-pending">
+                  <Clock className="w-3 h-3" /> Pending Approval
+                </span>
+              )}
+              {!isVerified && !isPending && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gray-700/80 text-white text-[10px] font-bold" data-testid="badge-unverified">
+                  <Store className="w-3 h-3" /> Setup Mode
+                </span>
+              )}
             </div>
 
-            <p className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-2">Address</p>
-            <div className="flex items-center gap-2 mb-1">
-              <MapPin className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
-              <input
-                type="text"
-                value={ownerProfile.address}
-                onChange={(e) => updateOwner({ address: e.target.value })}
-                placeholder="e.g. 123 Sukhumvit Rd, Bangkok"
-                className="flex-1 px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-muted text-sm outline-none placeholder:text-muted-foreground/40"
-                data-testid="input-restaurant-address"
-              />
+            <div className="absolute bottom-3 left-4 right-4">
+              <h2 className="text-white font-bold text-lg truncate drop-shadow-sm" data-testid="text-hero-restaurant-name">
+                {ownerProfile.restaurantName || "Your Restaurant"}
+              </h2>
+              <div className="flex items-center gap-3 mt-0.5">
+                {selectedCategoryObj && (
+                  <span className="text-white/80 text-xs flex items-center gap-1">
+                    {selectedCategoryObj.emoji} {selectedCategoryObj.label}
+                  </span>
+                )}
+                {ownerProfile.address && (
+                  <span className="text-white/70 text-xs flex items-center gap-1">
+                    <MapPin className="w-3 h-3" /> {ownerProfile.address}
+                  </span>
+                )}
+              </div>
             </div>
+          </div>
+
+          <div className="grid grid-cols-3 divide-x divide-gray-100 dark:divide-border border-b border-gray-100 dark:border-border" data-testid="owner-quick-stats">
+            <div className="py-3 text-center">
+              <p className="text-lg font-bold text-foreground" data-testid="stat-views">{weeklyStats.views.toLocaleString()}</p>
+              <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-semibold">Views</p>
+            </div>
+            <div className="py-3 text-center">
+              <p className="text-lg font-bold text-foreground" data-testid="stat-likes">{weeklyStats.likes.toLocaleString()}</p>
+              <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-semibold">Likes</p>
+            </div>
+            <div className="py-3 text-center">
+              <p className="text-lg font-bold text-foreground" data-testid="stat-saves">{weeklyStats.saves.toLocaleString()}</p>
+              <p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-semibold">Saves</p>
+            </div>
+          </div>
+
+          <div className="px-5 py-4">
+            <button
+              onClick={() => setActiveSection(activeSection === "details" ? null : "details")}
+              className="w-full flex items-center gap-3 active:opacity-70 transition-opacity"
+              data-testid="button-edit-details"
+            >
+              <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-gray-500" />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="font-semibold text-sm">Restaurant Details</p>
+                <p className="text-[11px] text-muted-foreground">Name, category, tags, address</p>
+              </div>
+              <ChevronRight className={`w-4 h-4 text-muted-foreground/40 transition-transform duration-300 ${activeSection === "details" ? "rotate-90" : ""}`} />
+            </button>
+
+            <AnimatePresence initial={false}>
+              {activeSection === "details" && (
+                <motion.div
+                  initial={{ height: 0 }}
+                  animate={{ height: "auto" }}
+                  exit={{ height: 0 }}
+                  transition={springConfig}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-4 space-y-4">
+                    <div>
+                      <label className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-1.5 block">Restaurant Name</label>
+                      <input
+                        type="text"
+                        value={ownerProfile.restaurantName}
+                        onChange={(e) => updateOwner({ restaurantName: e.target.value })}
+                        placeholder="Restaurant name"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-muted text-sm font-medium outline-none"
+                        data-testid="input-restaurant-name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-1.5 block">Category</label>
+                      <div ref={categoryRef} className="relative" data-testid="input-restaurant-category">
+                        {selectedCategoryObj ? (
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-muted flex-1">
+                              <span className="text-sm">{selectedCategoryObj.emoji}</span>
+                              <span className="text-sm font-medium">{selectedCategoryObj.label}</span>
+                            </div>
+                            <button
+                              onClick={() => updateOwner({ category: "" })}
+                              className="w-9 h-9 rounded-xl bg-gray-50 dark:bg-muted flex items-center justify-center text-muted-foreground/60 active:scale-90 transition-transform"
+                              data-testid="button-clear-category"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-muted">
+                              <Search className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                              <input
+                                type="text"
+                                value={categorySearch}
+                                onChange={(e) => { setCategorySearch(e.target.value); setCategoryDropdownOpen(true); }}
+                                onFocus={() => setCategoryDropdownOpen(true)}
+                                placeholder="Search category..."
+                                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/40"
+                                data-testid="input-category-search"
+                              />
+                            </div>
+                            <AnimatePresence>
+                              {categoryDropdownOpen && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: -4 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -4 }}
+                                  transition={{ duration: 0.15 }}
+                                  className="absolute z-20 left-0 right-0 mt-1.5 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-border overflow-hidden"
+                                  style={{ boxShadow: "0 8px 32px -8px rgba(0,0,0,0.12)" }}
+                                >
+                                  <div className="max-h-48 overflow-y-auto py-1">
+                                    {filteredCategories.length === 0 ? (
+                                      <p className="px-4 py-3 text-sm text-muted-foreground text-center">No matches</p>
+                                    ) : (
+                                      filteredCategories.map((cat) => (
+                                        <button
+                                          key={cat.value}
+                                          onClick={() => {
+                                            updateOwner({ category: cat.value });
+                                            setCategorySearch("");
+                                            setCategoryDropdownOpen(false);
+                                          }}
+                                          className="w-full px-4 py-2.5 flex items-center gap-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-muted active:bg-gray-100"
+                                          data-testid={`category-${cat.value}`}
+                                        >
+                                          <span className="text-base">{cat.emoji}</span>
+                                          <span className="text-[13px] font-medium">{cat.label}</span>
+                                        </button>
+                                      ))
+                                    )}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-1.5 block">Tags</label>
+                      <div ref={tagRef} className="relative" data-testid="input-restaurant-tags">
+                        {(ownerProfile.tags || []).length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-2">
+                            {(ownerProfile.tags || []).map((tagVal) => {
+                              const tagObj = RESTAURANT_TAGS.find(t => t.value === tagVal);
+                              if (!tagObj) return null;
+                              return (
+                                <span
+                                  key={tagVal}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-foreground text-white text-[11px] font-medium"
+                                >
+                                  {tagObj.emoji} {tagObj.label}
+                                  <button
+                                    onClick={() => updateOwner({ tags: (ownerProfile.tags || []).filter(t => t !== tagVal) })}
+                                    className="ml-0.5 opacity-70 hover:opacity-100"
+                                    data-testid={`remove-tag-${tagVal}`}
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-muted">
+                          <Search className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                          <input
+                            type="text"
+                            value={tagSearch}
+                            onChange={(e) => { setTagSearch(e.target.value); setTagDropdownOpen(true); }}
+                            onFocus={() => setTagDropdownOpen(true)}
+                            placeholder="Search tags..."
+                            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/40"
+                            data-testid="input-tag-search"
+                          />
+                        </div>
+                        <AnimatePresence>
+                          {tagDropdownOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -4 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute z-20 left-0 right-0 mt-1.5 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-border overflow-hidden"
+                              style={{ boxShadow: "0 8px 32px -8px rgba(0,0,0,0.12)" }}
+                            >
+                              <div className="max-h-48 overflow-y-auto py-1">
+                                {filteredTags.length === 0 ? (
+                                  <p className="px-4 py-3 text-sm text-muted-foreground text-center">No more tags</p>
+                                ) : (
+                                  filteredTags.map((tag) => (
+                                    <button
+                                      key={tag.value}
+                                      onClick={() => {
+                                        const current = ownerProfile.tags || [];
+                                        updateOwner({ tags: [...current, tag.value] });
+                                        setTagSearch("");
+                                      }}
+                                      className="w-full px-4 py-2.5 flex items-center gap-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-muted active:bg-gray-100"
+                                      data-testid={`tag-${tag.value}`}
+                                    >
+                                      <span className="text-base">{tag.emoji}</span>
+                                      <span className="text-[13px] font-medium">{tag.label}</span>
+                                    </button>
+                                  ))
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-1.5 block">Address</label>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                        <input
+                          type="text"
+                          value={ownerProfile.address}
+                          onChange={(e) => updateOwner({ address: e.target.value })}
+                          placeholder="e.g. 123 Sukhumvit Rd, Bangkok"
+                          className="flex-1 px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-muted text-sm outline-none placeholder:text-muted-foreground/40"
+                          data-testid="input-restaurant-address"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
