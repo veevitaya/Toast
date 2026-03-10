@@ -273,9 +273,10 @@ export default function AdminDashboard() {
       delta: "+12%",
       deltaUp: true,
       sparkline: [18, 24, 32, 28, 35, 42, 48],
-      iconBg: "bg-[var(--admin-blue-10)]",
-      iconColor: "text-[var(--admin-deep-purple)]",
+      iconBg: "bg-[var(--admin-deep-purple)]",
+      iconColor: "text-white",
       sparkColor: "var(--admin-deep-purple)",
+      accentColor: "var(--admin-deep-purple)",
     },
     {
       label: "Restaurants",
@@ -284,9 +285,10 @@ export default function AdminDashboard() {
       delta: "+5",
       deltaUp: true,
       sparkline: [12, 14, 15, 16, 18, 19, 22],
-      iconBg: "bg-[var(--admin-blue-10)]",
-      iconColor: "text-[var(--admin-blue)]",
+      iconBg: "bg-[var(--admin-blue)]",
+      iconColor: "text-white",
       sparkColor: "var(--admin-blue)",
+      accentColor: "var(--admin-blue)",
     },
     {
       label: "Total Swipes",
@@ -295,9 +297,10 @@ export default function AdminDashboard() {
       delta: "+340",
       deltaUp: true,
       sparkline: [120, 180, 210, 190, 260, 310, 340],
-      iconBg: "bg-[var(--admin-pink-10)]",
-      iconColor: "text-[var(--admin-pink)]",
+      iconBg: "bg-[var(--admin-pink)]",
+      iconColor: "text-white",
       sparkColor: "var(--admin-pink)",
+      accentColor: "var(--admin-pink)",
     },
     {
       label: "Delivery Clicks",
@@ -306,9 +309,10 @@ export default function AdminDashboard() {
       delta: "+18%",
       deltaUp: true,
       sparkline: [320, 380, 410, 390, 450, 480, 520],
-      iconBg: "bg-[var(--admin-cyan-20)]",
-      iconColor: "text-[var(--admin-cyan)]",
+      iconBg: "bg-[var(--admin-cyan)]",
+      iconColor: "text-white",
       sparkColor: "var(--admin-cyan)",
+      accentColor: "var(--admin-cyan)",
     },
     {
       label: "Campaigns",
@@ -317,9 +321,10 @@ export default function AdminDashboard() {
       delta: "active",
       deltaUp: true,
       sparkline: [3, 4, 4, 5, 6, 5, 6],
-      iconBg: "bg-[var(--admin-pink-10)]",
-      iconColor: "text-[var(--admin-deep-purple)]",
-      sparkColor: "var(--admin-deep-purple)",
+      iconBg: "bg-[var(--admin-teal)]",
+      iconColor: "text-white",
+      sparkColor: "var(--admin-teal)",
+      accentColor: "var(--admin-teal)",
     },
   ];
 
@@ -339,47 +344,51 @@ export default function AdminDashboard() {
         {kpis.map((kpi) => (
           <div
             key={kpi.label}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 group hover:shadow-md transition-shadow duration-300"
+            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden group hover:shadow-md transition-shadow duration-300"
             data-testid={`kpi-card-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}
           >
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center ${kpi.iconBg}`}>
-                <kpi.icon className={`w-4 h-4 ${kpi.iconColor}`} />
+            <div className="h-1.5 w-full" style={{ background: kpi.accentColor }} />
+            <div className="p-5 pt-4">
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${kpi.iconBg}`}>
+                  <kpi.icon className={`w-5 h-5 ${kpi.iconColor}`} />
+                </div>
+                <MiniSparkline data={kpi.sparkline} color={kpi.sparkColor} />
               </div>
-              <MiniSparkline data={kpi.sparkline} color={kpi.sparkColor} />
-            </div>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{kpi.label}</p>
-            <p
-              className="text-2xl font-bold tracking-tight text-gray-800 mt-0.5"
-              data-testid={`kpi-value-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}
-            >
-              {dashLoading ? "-" : kpi.value.toLocaleString()}
-            </p>
-            <div className="mt-2 flex items-center gap-1.5">
-              {kpi.deltaUp ? (
-                <ArrowUpRight className="w-3 h-3 text-emerald-500" />
-              ) : (
-                <ArrowDownRight className="w-3 h-3 text-red-400" />
-              )}
-              <span className={`text-xs font-medium ${kpi.deltaUp ? "text-emerald-500" : "text-red-400"}`}>{kpi.delta}</span>
-              <span className="text-[10px] text-gray-400">vs last period</span>
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: kpi.accentColor }}>{kpi.label}</p>
+              <p
+                className="text-2xl font-bold tracking-tight text-gray-800 mt-0.5"
+                data-testid={`kpi-value-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}
+              >
+                {dashLoading ? "-" : kpi.value.toLocaleString()}
+              </p>
+              <div className="mt-2 flex items-center gap-1.5">
+                {kpi.deltaUp ? (
+                  <ArrowUpRight className="w-3 h-3 text-emerald-500" />
+                ) : (
+                  <ArrowDownRight className="w-3 h-3 text-red-400" />
+                )}
+                <span className={`text-xs font-medium ${kpi.deltaUp ? "text-emerald-500" : "text-red-400"}`}>{kpi.delta}</span>
+                <span className="text-[10px] text-gray-400">vs last period</span>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="activity-chart-card">
-          <div className="flex items-center justify-between gap-2 mb-6">
-            <div className="border-l-2 border-[var(--admin-deep-purple)] pl-3">
-              <h2 className="text-[15px] font-semibold text-gray-800">Activity Overview</h2>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Last 7 days</p>
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-testid="activity-chart-card">
+          <div className="flex items-center justify-between gap-2 px-6 py-4" style={{ background: "linear-gradient(135deg, var(--admin-deep-purple), var(--admin-blue))" }}>
+            <div>
+              <h2 className="text-[15px] font-semibold text-white">Activity Overview</h2>
+              <p className="text-[10px] text-white/60 uppercase tracking-widest font-bold">Last 7 days</p>
             </div>
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[var(--admin-blue)]" />Today</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[var(--admin-deep-purple)]" />Peak</span>
+            <div className="flex items-center gap-3 text-xs text-white/80">
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-white/80" />Today</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[var(--admin-cyan)]" />Peak</span>
             </div>
           </div>
+          <div className="p-6 pt-4">
           <div className="flex items-end gap-3 h-36" data-testid="activity-chart">
             {last7Days.map((day, idx) => {
               const isToday = idx === last7Days.length - 1;
@@ -410,21 +419,22 @@ export default function AdminDashboard() {
               );
             })}
           </div>
+          </div>
         </div>
 
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" data-testid="platform-health-card">
-            <div className="border-l-2 border-[var(--admin-deep-purple)] pl-3 mb-4">
+            <div className="border-l-3 border-[var(--admin-pink)] pl-3 mb-4">
               <h2 className="text-[15px] font-semibold text-gray-800">Platform Health</h2>
             </div>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Active Banners</span>
-                <span className="bg-gray-100 text-gray-800 text-xs font-semibold rounded-full px-2.5 py-0.5" data-testid="badge-active-banners">{stats.activeBanners}</span>
+                <span className="text-xs font-semibold rounded-full px-2.5 py-0.5 text-white" style={{ background: "var(--admin-blue)" }} data-testid="badge-active-banners">{stats.activeBanners}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Draft Campaigns</span>
-                <span className="bg-gray-100 text-gray-500 text-xs font-medium rounded-full px-2.5 py-0.5" data-testid="badge-draft-campaigns">{stats.draftCampaigns}</span>
+                <span className="text-xs font-medium rounded-full px-2.5 py-0.5 text-white" style={{ background: "var(--admin-teal)" }} data-testid="badge-draft-campaigns">{stats.draftCampaigns}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Events Today</span>
@@ -434,23 +444,23 @@ export default function AdminDashboard() {
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" data-testid="quick-actions-card">
-            <div className="border-l-2 border-[var(--admin-deep-purple)] pl-3 mb-3">
+            <div className="border-l-3 border-[var(--admin-cyan)] pl-3 mb-3">
               <h2 className="text-[15px] font-semibold text-gray-800">Quick Actions</h2>
             </div>
             <div className="flex flex-col gap-1.5">
               <Link href="/admin/restaurants">
-                <button className="w-full flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gray-50 text-gray-800 text-sm font-medium hover:bg-gray-100 transition-colors" data-testid="button-add-restaurant">
-                  <Plus className="w-3.5 h-3.5" />Add Restaurant<ChevronRight className="w-3.5 h-3.5 ml-auto opacity-40" />
+                <button className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-white" style={{ background: "linear-gradient(135deg, var(--admin-deep-purple), var(--admin-blue))" }} data-testid="button-add-restaurant">
+                  <Plus className="w-3.5 h-3.5" />Add Restaurant<ChevronRight className="w-3.5 h-3.5 ml-auto opacity-60" />
                 </button>
               </Link>
               <Link href="/admin/banners">
-                <button className="w-full flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gray-50 text-gray-800 text-sm font-medium hover:bg-gray-100 transition-colors" data-testid="button-create-banner">
-                  <ImageIcon className="w-3.5 h-3.5" />Create Banner<ChevronRight className="w-3.5 h-3.5 ml-auto opacity-40" />
+                <button className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-white" style={{ background: "linear-gradient(135deg, var(--admin-pink), var(--admin-deep-purple))" }} data-testid="button-create-banner">
+                  <ImageIcon className="w-3.5 h-3.5" />Create Banner<ChevronRight className="w-3.5 h-3.5 ml-auto opacity-60" />
                 </button>
               </Link>
               <Link href="/admin/analytics">
-                <button className="w-full flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gray-50 text-gray-800 text-sm font-medium hover:bg-gray-100 transition-colors" data-testid="button-view-analytics">
-                  <BarChart3 className="w-3.5 h-3.5" />View Analytics<ChevronRight className="w-3.5 h-3.5 ml-auto opacity-40" />
+                <button className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-white" style={{ background: "linear-gradient(135deg, var(--admin-cyan), var(--admin-teal))" }} data-testid="button-view-analytics">
+                  <BarChart3 className="w-3.5 h-3.5" />View Analytics<ChevronRight className="w-3.5 h-3.5 ml-auto opacity-60" />
                 </button>
               </Link>
             </div>
@@ -460,7 +470,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-conversion-funnel">
-          <div className="border-l-2 border-[var(--admin-deep-purple)] pl-3 mb-5">
+          <div className="border-l-3 border-[var(--admin-deep-purple)] pl-3 mb-5">
             <h2 className="text-[15px] font-semibold text-gray-800">Conversion Funnel</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Swipe to order</p>
           </div>
@@ -475,7 +485,7 @@ export default function AdminDashboard() {
                       width: `${widthPct}%`,
                       backgroundColor: step.color,
                       borderRadius: idx === 0 ? "8px 8px 2px 2px" : idx === CONVERSION_FUNNEL.length - 1 ? "2px 2px 8px 8px" : "2px",
-                      opacity: 0.85,
+                      opacity: 0.95,
                     }}
                   >
                     <span className="text-[11px] font-semibold whitespace-nowrap text-white">
@@ -496,7 +506,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-delivery-attribution">
-          <div className="border-l-2 border-[var(--admin-deep-purple)] pl-3 mb-5">
+          <div className="border-l-3 border-[var(--admin-pink)] pl-3 mb-5">
             <h2 className="text-[15px] font-semibold text-gray-800">Delivery Attribution</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Platform breakdown</p>
           </div>
@@ -527,7 +537,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-top-restaurants">
-          <div className="border-l-2 border-[var(--admin-deep-purple)] pl-3 mb-4">
+          <div className="border-l-3 border-[var(--admin-blue)] pl-3 mb-4">
             <h2 className="text-[15px] font-semibold text-gray-800">Top Restaurants</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">By swipe volume</p>
           </div>
@@ -569,7 +579,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-geo-hotspots">
-          <div className="border-l-2 border-[var(--admin-deep-purple)] pl-3 mb-4">
+          <div className="border-l-3 border-[var(--admin-cyan)] pl-3 mb-4">
             <h2 className="text-[15px] font-semibold text-gray-800">Geo Hotspots</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Bangkok zones</p>
           </div>
@@ -599,7 +609,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-trending-cuisines">
-          <div className="border-l-2 border-[var(--admin-deep-purple)] pl-3 mb-4">
+          <div className="border-l-3 border-[var(--admin-teal)] pl-3 mb-4">
             <h2 className="text-[15px] font-semibold text-gray-800">Trending Cuisines</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">30-day growth</p>
           </div>
@@ -627,7 +637,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="segments-card">
-          <div className="border-l-2 border-[var(--admin-deep-purple)] pl-3 mb-5">
+          <div className="border-l-3 border-[var(--admin-deep-purple)] pl-3 mb-5">
             <h2 className="text-[15px] font-semibold text-gray-800">User Segments</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Audience breakdown</p>
           </div>
@@ -666,7 +676,7 @@ export default function AdminDashboard() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="recent-activity-card">
           <div className="flex items-center justify-between gap-2 mb-5">
-            <div className="border-l-2 border-[var(--admin-deep-purple)] pl-3">
+            <div className="border-l-3 border-[var(--admin-blue)] pl-3">
               <h2 className="text-[15px] font-semibold text-gray-800">Live Activity</h2>
               <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Real-time events</p>
             </div>

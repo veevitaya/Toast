@@ -231,7 +231,7 @@ const USER_TYPE_SEGMENTS = [
   { label: "Couples", pct: 22, count: 784, topCuisine: "Italian", avgBudget: "฿฿฿", peakTime: "7-8pm", color: "hsl(189, 95%, 43%)" },
   { label: "Friends Group", pct: 18, count: 641, topCuisine: "Korean BBQ", avgBudget: "฿฿", peakTime: "6-8pm", color: "hsl(258, 90%, 66%)" },
   { label: "Families", pct: 15, count: 534, topCuisine: "Thai", avgBudget: "฿฿฿", peakTime: "11am-1pm", color: "hsl(160, 84%, 39%)" },
-  { label: "Coworkers", pct: 10, count: 356, topCuisine: "Buffet", avgBudget: "฿฿", peakTime: "12-1pm", color: "hsl(38, 92%, 50%)" },
+  { label: "Coworkers", pct: 10, count: 356, topCuisine: "Buffet", avgBudget: "฿฿", peakTime: "12-1pm", color: "hsl(200, 80%, 55%)" },
 ];
 
 const USER_BEHAVIORAL_COHORTS = [
@@ -271,13 +271,13 @@ const USER_AI_INSIGHTS = [
 function getHeatmapColor(value: number): string {
   const max = 88;
   const intensity = value / max;
-  if (intensity < 0.15) return "hsl(222, 47%, 95%)";
-  if (intensity < 0.3) return "hsl(222, 47%, 85%)";
-  if (intensity < 0.45) return "hsl(222, 47%, 72%)";
-  if (intensity < 0.6) return "hsl(222, 47%, 58%)";
-  if (intensity < 0.75) return "hsl(222, 47%, 45%)";
-  if (intensity < 0.9) return "hsl(222, 47%, 35%)";
-  return "hsl(222, 47%, 25%)";
+  if (intensity < 0.15) return "hsl(255, 50%, 95%)";
+  if (intensity < 0.3) return "hsl(255, 55%, 85%)";
+  if (intensity < 0.45) return "hsl(252, 60%, 75%)";
+  if (intensity < 0.6) return "hsl(250, 65%, 65%)";
+  if (intensity < 0.75) return "hsl(248, 70%, 55%)";
+  if (intensity < 0.9) return "hsl(246, 75%, 45%)";
+  return "hsl(244, 80%, 38%)";
 }
 
 export default function AdminAnalytics() {
@@ -316,12 +316,12 @@ export default function AdminAnalytics() {
   const maxEventCount = Math.max(...Object.values(eventBreakdown), 1);
 
   const summaryKpis = [
-    { label: "Total Events", value: summary?.totalEvents || 0, icon: Activity, iconColor: "text-blue-500" },
-    { label: "Total Swipes", value: summary?.totalSwipes || 0, icon: MousePointer, iconColor: "text-teal-500" },
-    { label: "Active Campaigns", value: summary?.activeCampaigns || 0, icon: Target, iconColor: "text-purple-500" },
-    { label: "Restaurants", value: summary?.totalRestaurants || 0, icon: ShoppingBag, iconColor: "text-orange-500" },
-    { label: "Delivery Clicks", value: 3847, icon: ExternalLink, iconColor: "text-emerald-500" },
-    { label: "Avg Session", value: "4.2min", icon: Timer, iconColor: "text-slate-500" },
+    { label: "Total Events", value: summary?.totalEvents || 0, icon: Activity, iconColor: "text-white", iconBg: "var(--admin-deep-purple)", accentColor: "var(--admin-deep-purple)" },
+    { label: "Total Swipes", value: summary?.totalSwipes || 0, icon: MousePointer, iconColor: "text-white", iconBg: "var(--admin-blue)", accentColor: "var(--admin-blue)" },
+    { label: "Active Campaigns", value: summary?.activeCampaigns || 0, icon: Target, iconColor: "text-white", iconBg: "var(--admin-pink)", accentColor: "var(--admin-pink)" },
+    { label: "Restaurants", value: summary?.totalRestaurants || 0, icon: ShoppingBag, iconColor: "text-white", iconBg: "var(--admin-cyan)", accentColor: "var(--admin-cyan)" },
+    { label: "Delivery Clicks", value: 3847, icon: ExternalLink, iconColor: "text-white", iconBg: "var(--admin-teal)", accentColor: "var(--admin-teal)" },
+    { label: "Avg Session", value: "4.2min", icon: Timer, iconColor: "text-white", iconBg: "var(--admin-deep-purple)", accentColor: "var(--admin-deep-purple)" },
   ];
 
   const maxDayValue = Math.max(...DAY_PATTERNS.map((d) => d.value));
@@ -330,7 +330,7 @@ export default function AdminAnalytics() {
     <div data-testid="admin-analytics-page" className="space-y-8">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <BarChart3 className="w-5 h-5 text-teal-500" />
+          <BarChart3 className="w-5 h-5 text-[var(--admin-deep-purple)]" />
           <div>
             <h2 className="text-xl font-semibold text-gray-800" data-testid="text-analytics-title">
               Data Intelligence
@@ -363,18 +363,23 @@ export default function AdminAnalytics() {
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         {summaryKpis.map((kpi) => (
-          <div key={kpi.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4" data-testid={`kpi-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}>
-            <div className="flex items-center gap-2 mb-2">
-              <kpi.icon className={`w-4 h-4 ${kpi.iconColor}`} />
-              <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">{kpi.label}</span>
+          <div key={kpi.label} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden" data-testid={`kpi-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}>
+            <div className="h-1" style={{ background: kpi.accentColor }} />
+            <div className="p-4 pt-3">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: kpi.iconBg }}>
+                  <kpi.icon className={`w-3.5 h-3.5 ${kpi.iconColor}`} />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: kpi.accentColor }}>{kpi.label}</span>
+              </div>
+              <p className="text-2xl font-bold tracking-tight text-foreground" data-testid={`kpi-value-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}>
+                {loadingSummary && typeof kpi.value === "number" && kpi.label !== "Delivery Clicks" && kpi.label !== "Avg Session"
+                  ? "-"
+                  : typeof kpi.value === "number"
+                    ? kpi.value.toLocaleString()
+                    : kpi.value}
+              </p>
             </div>
-            <p className="text-2xl font-bold tracking-tight text-foreground" data-testid={`kpi-value-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}>
-              {loadingSummary && typeof kpi.value === "number" && kpi.label !== "Delivery Clicks" && kpi.label !== "Avg Session"
-                ? "-"
-                : typeof kpi.value === "number"
-                  ? kpi.value.toLocaleString()
-                  : kpi.value}
-            </p>
           </div>
         ))}
       </div>
@@ -387,7 +392,7 @@ export default function AdminAnalytics() {
           data-testid="button-toggle-user-intel"
         >
           <div className="flex items-center gap-3">
-            <Users className="w-4 h-4 text-purple-500" />
+            <Users className="w-4 h-4 text-[var(--admin-deep-purple)]" />
             <div className="text-left">
               <h3 className="text-[15px] font-semibold text-gray-800">User Intelligence</h3>
               <p className="text-xs text-muted-foreground/40">Demographics, behavior cohorts, activity patterns</p>
@@ -545,8 +550,8 @@ export default function AdminAnalytics() {
       {/* Restaurant Performance Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-restaurant-performance">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(108,92,231,0.1) 0%, rgba(91,141,239,0.1) 100%)" }}>
-            <Star className="w-4 h-4 text-[var(--admin-deep-purple)]" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-blue)" }}>
+            <Star className="w-4 h-4 text-white" />
           </div>
           <div>
             <h3 className="text-[15px] font-semibold text-gray-800">Restaurant Performance</h3>
@@ -599,8 +604,8 @@ export default function AdminAnalytics() {
       {/* User Behavior Heatmap */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-user-heatmap">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(270,50%,92%) 0%, hsl(260,45%,85%) 100%)" }}>
-            <Layers className="w-4 h-4" style={{ color: "hsl(222, 47%, 35%)" }} />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-deep-purple)" }}>
+            <Layers className="w-4 h-4 text-white" />
           </div>
           <div>
             <h3 className="text-[15px] font-semibold text-gray-800">User Behavior Heatmap</h3>
@@ -699,8 +704,8 @@ export default function AdminAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-day-patterns">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)" }}>
-              <Sun className="w-4 h-4 text-cyan-500" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-teal)" }}>
+              <Sun className="w-4 h-4 text-white" />
             </div>
             <div>
               <h3 className="text-[15px] font-semibold text-gray-800">Day-of-Week Patterns</h3>
@@ -734,8 +739,8 @@ export default function AdminAnalytics() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-meal-categories">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(270,50%,92%) 0%, hsl(260,45%,85%) 100%)" }}>
-              <Utensils className="w-4 h-4" style={{ color: "hsl(222, 47%, 35%)" }} />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-pink)" }}>
+              <Utensils className="w-4 h-4 text-white" />
             </div>
             <div>
               <h3 className="text-[15px] font-semibold text-gray-800">Menu Category by Meal Time</h3>
@@ -749,7 +754,7 @@ export default function AdminAnalytics() {
                 <div className="flex h-5 rounded-md overflow-hidden">
                   <div className="h-full" style={{ width: `${meal.thai}%`, backgroundColor: "hsl(222, 47%, 30%)" }} title={`Thai ${meal.thai}%`} />
                   <div className="h-full" style={{ width: `${meal.japanese}%`, backgroundColor: "hsl(195, 80%, 45%)" }} title={`Japanese ${meal.japanese}%`} />
-                  <div className="h-full" style={{ width: `${meal.korean}%`, backgroundColor: "hsl(45, 100%, 50%)" }} title={`Korean ${meal.korean}%`} />
+                  <div className="h-full" style={{ width: `${meal.korean}%`, backgroundColor: "hsl(200, 80%, 55%)" }} title={`Korean ${meal.korean}%`} />
                   <div className="h-full" style={{ width: `${meal.italian}%`, backgroundColor: "hsl(142, 71%, 45%)" }} title={`Italian ${meal.italian}%`} />
                   <div className="h-full" style={{ width: `${meal.other}%`, backgroundColor: "hsl(222, 47%, 80%)" }} title={`Other ${meal.other}%`} />
                 </div>
@@ -760,7 +765,7 @@ export default function AdminAnalytics() {
             {[
               { label: "Thai", color: "hsl(222, 47%, 30%)" },
               { label: "Japanese", color: "hsl(195, 80%, 45%)" },
-              { label: "Korean", color: "hsl(45, 100%, 50%)" },
+              { label: "Korean", color: "hsl(200, 80%, 55%)" },
               { label: "Italian", color: "hsl(142, 71%, 45%)" },
               { label: "Other", color: "hsl(222, 47%, 80%)" },
             ].map((item) => (
@@ -776,8 +781,8 @@ export default function AdminAnalytics() {
       {/* Partner Data Export */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-partner-export">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(108,92,231,0.1) 0%, rgba(91,141,239,0.1) 100%)" }}>
-            <Download className="w-4 h-4 text-[var(--admin-deep-purple)]" />
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-cyan)" }}>
+            <Download className="w-4 h-4 text-white" />
           </div>
           <div>
             <h3 className="text-[15px] font-semibold text-gray-800">Partner Data Export</h3>
@@ -811,8 +816,8 @@ export default function AdminAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-event-breakdown">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(200,50%,92%) 0%, hsl(210,45%,85%) 100%)" }}>
-              <BarChart3 className="w-4 h-4" style={{ color: "hsl(222, 47%, 35%)" }} />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-blue)" }}>
+              <BarChart3 className="w-4 h-4 text-white" />
             </div>
             <h3 className="text-[15px] font-semibold text-gray-800">Event Breakdown</h3>
           </div>
@@ -853,8 +858,8 @@ export default function AdminAnalytics() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-conversion-funnel">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)" }}>
-              <Target className="w-4 h-4 text-cyan-500" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-deep-purple)" }}>
+              <Target className="w-4 h-4 text-white" />
             </div>
             <div>
               <h3 className="text-[15px] font-semibold text-gray-800">Conversion Funnel</h3>
@@ -888,8 +893,8 @@ export default function AdminAnalytics() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-trending-cuisines">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(270,50%,92%) 0%, hsl(260,45%,85%) 100%)" }}>
-              <TrendingUp className="w-4 h-4" style={{ color: "hsl(222, 47%, 35%)" }} />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-cyan)" }}>
+              <TrendingUp className="w-4 h-4 text-white" />
             </div>
             <div>
               <h3 className="text-[15px] font-semibold text-gray-800">Trending Cuisines</h3>
@@ -912,8 +917,8 @@ export default function AdminAnalytics() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-geo-hotspots">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(108,92,231,0.1) 0%, rgba(91,141,239,0.1) 100%)" }}>
-              <MapPin className="w-4 h-4 text-[var(--admin-deep-purple)]" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-pink)" }}>
+              <MapPin className="w-4 h-4 text-white" />
             </div>
             <div>
               <h3 className="text-[15px] font-semibold text-gray-800">Geographic Hotspots</h3>
@@ -936,8 +941,8 @@ export default function AdminAnalytics() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-user-segments">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(200,50%,92%) 0%, hsl(210,45%,85%) 100%)" }}>
-              <Users className="w-4 h-4" style={{ color: "hsl(222, 47%, 35%)" }} />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-teal)" }}>
+              <Users className="w-4 h-4 text-white" />
             </div>
             <h3 className="text-[15px] font-semibold text-gray-800">User Segments</h3>
           </div>
@@ -979,8 +984,8 @@ export default function AdminAnalytics() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-top-restaurants">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, rgba(108,92,231,0.1) 0%, rgba(91,141,239,0.1) 100%)" }}>
-              <Star className="w-4 h-4 text-[var(--admin-deep-purple)]" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-blue)" }}>
+              <Star className="w-4 h-4 text-white" />
             </div>
             <h3 className="text-[15px] font-semibold text-gray-800">Top Restaurants</h3>
           </div>
@@ -1018,8 +1023,8 @@ export default function AdminAnalytics() {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-recent-events">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center" style={{ background: "linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)" }}>
-                <Clock className="w-4 h-4 text-cyan-500" />
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-deep-purple)" }}>
+                <Clock className="w-4 h-4 text-white" />
               </div>
               <h3 className="text-[15px] font-semibold text-gray-800">Recent Events</h3>
             </div>
