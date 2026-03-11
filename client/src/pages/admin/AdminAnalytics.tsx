@@ -81,11 +81,11 @@ interface TopRestaurant {
 }
 
 const CONVERSION_FUNNEL = [
-  { label: "Impressions", value: 12400, pct: 100, color: "var(--admin-deep-purple)" },
-  { label: "Swipe Views", value: 8200, pct: 66, color: "var(--admin-blue)" },
-  { label: "Right Swipes", value: 3100, pct: 25, color: "var(--admin-pink)" },
-  { label: "Detail Views", value: 1800, pct: 15, color: "var(--admin-cyan)" },
-  { label: "Orders / Bookings", value: 420, pct: 3.4, color: "var(--admin-pink)" },
+  { label: "Impressions", value: 12400, pct: 100, color: "var(--admin-pink)", opacity: 0.25 },
+  { label: "Swipe Views", value: 8200, pct: 66, color: "var(--admin-pink)", opacity: 0.45 },
+  { label: "Right Swipes", value: 3100, pct: 25, color: "var(--admin-pink)", opacity: 0.65 },
+  { label: "Detail Views", value: 1800, pct: 15, color: "var(--admin-pink)", opacity: 0.85 },
+  { label: "Orders / Bookings", value: 420, pct: 3.4, color: "var(--admin-pink)", opacity: 1 },
 ];
 
 const GEO_HOTSPOTS = [
@@ -130,7 +130,7 @@ const HEATMAP_HOURS = Array.from({ length: 18 }, (_, i) => `${i + 6}:00`);
 const DELIVERY_PLATFORMS = [
   { name: "Grab", totalClicks: 12480, conversionRate: 8.2, avgOrderValue: 285, color: "#00B14F", bgColor: "bg-[#00B14F]/10" },
   { name: "LINE MAN", totalClicks: 9640, conversionRate: 7.1, avgOrderValue: 310, color: "#00C300", bgColor: "bg-[#00B14F]/10" },
-  { name: "Robinhood", totalClicks: 4380, conversionRate: 5.4, avgOrderValue: 265, color: "var(--admin-blue)", bgColor: "bg-[var(--admin-blue-10)]" },
+  { name: "Robinhood", totalClicks: 4380, conversionRate: 5.4, avgOrderValue: 265, color: "#6C2BD9", bgColor: "bg-[#6C2BD9]/10" },
 ];
 
 const DAY_PATTERNS = [
@@ -161,7 +161,7 @@ const DATA_INSIGHTS_CATALOG = [
   {
     category: "Menu Performance",
     icon: ShoppingBag,
-    headerGradient: "linear-gradient(135deg, hsl(200,50%,92%) 0%, hsl(210,45%,85%) 100%)",
+    headerBg: "hsl(200,50%,92%)",
     insights: [
       { name: "Orders & Revenue Trend", desc: "Total orders, revenue per menu, views & matches" },
       { name: "Performance by Time", desc: "Lunch vs dinner vs late-night breakdown" },
@@ -171,7 +171,7 @@ const DATA_INSIGHTS_CATALOG = [
   {
     category: "Order & Booking",
     icon: Target,
-    headerGradient: "linear-gradient(135deg, hsl(240,40%,92%) 0%, hsl(250,35%,85%) 100%)",
+    headerBg: "hsl(240,40%,92%)",
     insights: [
       { name: "Swipe-to-Order Revenue", desc: "Orders generated through swipe, partner breakdown" },
       { name: "Conversion Funnel", desc: "Swipe → Match → Order rate analysis" },
@@ -181,7 +181,7 @@ const DATA_INSIGHTS_CATALOG = [
   {
     category: "Market Trends",
     icon: TrendingUp,
-    headerGradient: "linear-gradient(135deg, hsl(170,40%,90%) 0%, hsl(180,35%,83%) 100%)",
+    headerBg: "hsl(170,40%,90%)",
     insights: [
       { name: "Trending Categories", desc: "Cuisine & dish popularity growth curves" },
       { name: "Price Positioning", desc: "Avg price vs nearby competitors" },
@@ -192,7 +192,7 @@ const DATA_INSIGHTS_CATALOG = [
   {
     category: "User Behavior",
     icon: Eye,
-    headerGradient: "linear-gradient(135deg, hsl(240,40%,92%) 0%, hsl(250,35%,85%) 100%)",
+    headerBg: "hsl(240,40%,92%)",
     insights: [
       { name: "Menu Discoverability", desc: "Swipe vs search exposure, tag-keyword alignment" },
       { name: "Interest & Engagement", desc: "Attention, Interest, Action KPIs & CTA performance" },
@@ -202,7 +202,7 @@ const DATA_INSIGHTS_CATALOG = [
   {
     category: "Geographic Insights",
     icon: MapPin,
-    headerGradient: "linear-gradient(135deg, hsl(170,40%,90%) 0%, hsl(180,35%,83%) 100%)",
+    headerBg: "hsl(170,40%,90%)",
     insights: [
       { name: "Order Density Heatmap", desc: "Orders by zone, hot zones for targeted campaigns" },
       { name: "High-Value Areas", desc: "Revenue concentration by location" },
@@ -280,6 +280,15 @@ function getHeatmapColor(value: number): string {
   return "hsl(244, 80%, 38%)";
 }
 
+function getTintVar(accentColor: string): string {
+  if (accentColor === "var(--admin-blue)") return "var(--admin-blue-10)";
+  if (accentColor === "var(--admin-pink)") return "var(--admin-pink-10)";
+  if (accentColor === "var(--admin-cyan)") return "var(--admin-cyan-10)";
+  if (accentColor === "var(--admin-teal)") return "var(--admin-teal-10)";
+  if (accentColor === "var(--admin-deep-purple)") return "var(--admin-deep-purple-10)";
+  return "rgba(0,0,0,0.05)";
+}
+
 export default function AdminAnalytics() {
   const [dateRange, setDateRange] = useState<DateRange>("7d");
   const [showCatalog, setShowCatalog] = useState(false);
@@ -316,12 +325,12 @@ export default function AdminAnalytics() {
   const maxEventCount = Math.max(...Object.values(eventBreakdown), 1);
 
   const summaryKpis = [
-    { label: "Total Events", value: summary?.totalEvents || 0, icon: Activity, iconColor: "text-white", iconBg: "var(--admin-deep-purple)", accentColor: "var(--admin-deep-purple)" },
-    { label: "Total Swipes", value: summary?.totalSwipes || 0, icon: MousePointer, iconColor: "text-white", iconBg: "var(--admin-blue)", accentColor: "var(--admin-blue)" },
-    { label: "Active Campaigns", value: summary?.activeCampaigns || 0, icon: Target, iconColor: "text-white", iconBg: "var(--admin-pink)", accentColor: "var(--admin-pink)" },
-    { label: "Restaurants", value: summary?.totalRestaurants || 0, icon: ShoppingBag, iconColor: "text-white", iconBg: "var(--admin-cyan)", accentColor: "var(--admin-cyan)" },
-    { label: "Delivery Clicks", value: 3847, icon: ExternalLink, iconColor: "text-white", iconBg: "var(--admin-teal)", accentColor: "var(--admin-teal)" },
-    { label: "Avg Session", value: "4.2min", icon: Timer, iconColor: "text-white", iconBg: "var(--admin-deep-purple)", accentColor: "var(--admin-deep-purple)" },
+    { label: "Total Events", value: summary?.totalEvents || 0, icon: Activity, accentColor: "var(--admin-pink)" },
+    { label: "Total Swipes", value: summary?.totalSwipes || 0, icon: MousePointer, accentColor: "var(--admin-pink)" },
+    { label: "Active Campaigns", value: summary?.activeCampaigns || 0, icon: Target, accentColor: "var(--admin-cyan)" },
+    { label: "Restaurants", value: summary?.totalRestaurants || 0, icon: ShoppingBag, accentColor: "var(--admin-blue)" },
+    { label: "Delivery Clicks", value: 3847, icon: ExternalLink, accentColor: "var(--admin-teal)" },
+    { label: "Avg Session", value: "4.2min", icon: Timer, accentColor: "var(--admin-deep-purple)" },
   ];
 
   const maxDayValue = Math.max(...DAY_PATTERNS.map((d) => d.value));
@@ -363,14 +372,14 @@ export default function AdminAnalytics() {
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         {summaryKpis.map((kpi) => (
-          <div key={kpi.label} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden" data-testid={`kpi-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}>
-            <div className="h-1" style={{ background: kpi.accentColor }} />
+          <div key={kpi.label} className="bg-white rounded-xl border border-gray-100 overflow-hidden" data-testid={`kpi-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}>
+            <div className="h-[3px]" style={{ backgroundColor: kpi.accentColor }} />
             <div className="p-4 pt-3">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: kpi.iconBg }}>
-                  <kpi.icon className={`w-3.5 h-3.5 ${kpi.iconColor}`} />
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: getTintVar(kpi.accentColor) }}>
+                  <kpi.icon className="w-3.5 h-3.5" style={{ color: kpi.accentColor }} />
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: kpi.accentColor }}>{kpi.label}</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{kpi.label}</span>
               </div>
               <p className="text-2xl font-bold tracking-tight text-foreground" data-testid={`kpi-value-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}>
                 {loadingSummary && typeof kpi.value === "number" && kpi.label !== "Delivery Clicks" && kpi.label !== "Avg Session"
@@ -403,10 +412,10 @@ export default function AdminAnalytics() {
         {showUserIntel && (
           <div className="px-6 pb-6 pt-2 space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="section-user-kpis">
-              <UserKpiCard icon={<Users className="w-4 h-4 text-indigo-500" />} label="Total Users" value={(summary?.totalUsers || 0).toLocaleString()} gradient="linear-gradient(135deg, hsl(230,50%,92%) 0%, hsl(240,45%,85%) 100%)" />
-              <UserKpiCard icon={<Activity className="w-4 h-4 text-cyan-500" />} label="Active This Week" value="68%" sub="2,422 users" gradient="linear-gradient(135deg, hsl(185,50%,92%) 0%, hsl(195,45%,85%) 100%)" />
-              <UserKpiCard icon={<BarChart3 className="w-4 h-4 text-violet-500" />} label="Avg Sessions/User" value="3.2" sub="per week" gradient="linear-gradient(135deg, hsl(260,50%,92%) 0%, hsl(270,45%,85%) 100%)" />
-              <UserKpiCard icon={<TrendingUp className="w-4 h-4 text-green-500" />} label="Retention Rate" value="74%" sub="+3% vs last month" gradient="linear-gradient(135deg, hsl(145,50%,92%) 0%, hsl(155,45%,85%) 100%)" />
+              <UserKpiCard icon={<Users className="w-4 h-4" style={{ color: "var(--admin-deep-purple)" }} />} label="Total Users" value={(summary?.totalUsers || 0).toLocaleString()} accentColor="var(--admin-deep-purple)" />
+              <UserKpiCard icon={<Activity className="w-4 h-4" style={{ color: "var(--admin-pink)" }} />} label="Active This Week" value="68%" sub="2,422 users" accentColor="var(--admin-pink)" />
+              <UserKpiCard icon={<BarChart3 className="w-4 h-4" style={{ color: "var(--admin-deep-purple)" }} />} label="Avg Sessions/User" value="3.2" sub="per week" accentColor="var(--admin-deep-purple)" />
+              <UserKpiCard icon={<TrendingUp className="w-4 h-4" style={{ color: "var(--admin-cyan)" }} />} label="Retention Rate" value="74%" sub="+3% vs last month" accentColor="var(--admin-cyan)" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -432,7 +441,7 @@ export default function AdminAnalytics() {
                     <div key={a.label} className="flex items-center gap-3">
                       <span className="w-14 text-xs text-muted-foreground">{a.label}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
-                        <div className="h-full rounded-full flex items-center pl-2.5 text-[10px] font-medium text-white transition-all" style={{ width: `${a.pct}%`, background: "linear-gradient(90deg, var(--admin-deep-purple), var(--admin-blue))" }} data-testid={`bar-age-${a.label}`}>
+                        <div className="h-full rounded-full flex items-center pl-2.5 text-[10px] font-medium text-white transition-all" style={{ width: `${a.pct}%`, backgroundColor: "var(--admin-deep-purple)" }} data-testid={`bar-age-${a.label}`}>
                           {a.pct}%
                         </div>
                       </div>
@@ -498,7 +507,7 @@ export default function AdminAnalytics() {
                     <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
                       <span className="text-[10px] font-medium text-foreground">{d.pct}%</span>
                       <div className="w-full bg-gray-100 rounded-md overflow-hidden" style={{ height: "80px" }}>
-                        <div className="w-full rounded-md" style={{ height: `${d.pct}%`, background: "linear-gradient(180deg, var(--admin-deep-purple), var(--admin-blue))", marginTop: `${100 - d.pct}%` }} />
+                        <div className="w-full rounded-md" style={{ height: `${d.pct}%`, backgroundColor: "var(--admin-deep-purple)", opacity: d.pct > 80 ? 1 : 0.5, marginTop: `${100 - d.pct}%` }} />
                       </div>
                       <span className="text-[10px] text-muted-foreground">{d.day}</span>
                     </div>
@@ -515,7 +524,7 @@ export default function AdminAnalytics() {
                     <div key={h.hour} className="flex items-center gap-2">
                       <span className="w-20 text-[10px] text-muted-foreground">{h.hour}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${h.pct}%`, background: "linear-gradient(90deg, hsl(185, 90%, 45%), hsl(185, 80%, 55%))" }} />
+                        <div className="h-full rounded-full" style={{ width: `${h.pct}%`, backgroundColor: "var(--admin-deep-purple)", opacity: h.pct > 70 ? 0.9 : 0.4 }} />
                       </div>
                       <span className="w-8 text-right text-[10px] font-medium text-foreground">{h.pct}%</span>
                     </div>
@@ -524,7 +533,7 @@ export default function AdminAnalytics() {
               </div>
             </div>
 
-            <div className="rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-100 p-5" data-testid="section-user-ai-insights">
+            <div className="rounded-xl bg-gray-50 border border-gray-100 p-5" data-testid="section-user-ai-insights">
               <div className="flex items-center gap-2 mb-3">
                 <Brain className="w-3.5 h-3.5 text-[var(--admin-deep-purple)]" />
                 <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">AI-Generated Insights</h4>
@@ -535,7 +544,7 @@ export default function AdminAnalytics() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {USER_AI_INSIGHTS.map((insight, idx) => (
                   <div key={idx} className="flex items-start gap-2.5 rounded-lg p-2.5 bg-white border border-gray-100" data-testid={`text-user-ai-insight-${idx}`}>
-                    <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: "linear-gradient(135deg, var(--admin-deep-purple), var(--admin-blue))" }}>
+                    <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: "var(--admin-deep-purple)" }}>
                       <span className="text-white text-[9px] font-bold">{idx + 1}</span>
                     </div>
                     <span className="text-xs text-muted-foreground">{insight}</span>
@@ -587,7 +596,7 @@ export default function AdminAnalytics() {
                           className="h-full rounded-full transition-all"
                           style={{
                             width: `${r.conversion}%`,
-                            background: "linear-gradient(90deg, var(--admin-deep-purple), var(--admin-blue))",
+                            backgroundColor: "var(--admin-blue)",
                           }}
                         />
                       </div>
@@ -720,9 +729,8 @@ export default function AdminAnalytics() {
                   className="w-full rounded-t-md transition-all"
                   style={{
                     height: `${(d.value / maxDayValue) * 100}%`,
-                    background: d.day === "Sat" || d.day === "Fri"
-                      ? "linear-gradient(180deg, hsl(222, 47%, 20%), hsl(222, 47%, 35%))"
-                      : "linear-gradient(180deg, hsl(222, 47%, 70%), hsl(222, 47%, 85%))",
+                    backgroundColor: "var(--admin-pink)",
+                    opacity: d.day === "Sat" || d.day === "Fri" ? 1 : 0.35,
                   }}
                 />
                 <span className="text-[10px] text-muted-foreground font-medium">{d.day}</span>
@@ -847,7 +855,7 @@ export default function AdminAnalytics() {
                     <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all"
-                        style={{ width: `${(count / maxEventCount) * 100}%`, background: "linear-gradient(90deg, var(--admin-deep-purple), var(--admin-blue))" }}
+                        style={{ width: `${(count / maxEventCount) * 100}%`, backgroundColor: "var(--admin-pink)" }}
                       />
                     </div>
                   </div>
@@ -875,10 +883,10 @@ export default function AdminAnalytics() {
                 <div className="flex-1 h-8 rounded-lg bg-gray-50 overflow-hidden relative">
                   <div
                     className="h-full rounded-lg flex items-center px-3 transition-all"
-                    style={{ width: `${Math.max(step.pct, 8)}%`, backgroundColor: step.color }}
+                    style={{ width: `${Math.max(step.pct, 8)}%`, backgroundColor: step.color, opacity: step.opacity }}
                   >
                     {step.pct > 20 && (
-                      <span className={`text-[10px] font-medium whitespace-nowrap ${idx >= 4 ? "text-white" : "text-foreground"}`}>{step.value.toLocaleString()}</span>
+                      <span className={`text-[10px] font-medium whitespace-nowrap ${(step.opacity || 1) >= 0.65 ? "text-white" : "text-gray-700"}`}>{step.value.toLocaleString()}</span>
                     )}
                   </div>
                   {step.pct <= 20 && (
@@ -904,7 +912,7 @@ export default function AdminAnalytics() {
           <div className="space-y-3">
             {TRENDING_CUISINES.map((cuisine) => (
               <div key={cuisine.name} className="flex items-center gap-3" data-testid={`trending-${cuisine.name.toLowerCase().replace(/\s/g, "-")}`}>
-                <div className="w-3 h-3 rounded-full bg-[var(--admin-deep-purple)] flex-shrink-0" />
+                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: "var(--admin-cyan)" }} />
                 <span className="flex-1 text-sm text-foreground font-medium">{cuisine.name}</span>
                 <div className="flex items-center gap-1">
                   <ArrowUpRight className="w-3 h-3 text-green-500" />
@@ -917,7 +925,7 @@ export default function AdminAnalytics() {
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-geo-hotspots">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-pink)" }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: "var(--admin-cyan)" }}>
               <MapPin className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -972,7 +980,7 @@ export default function AdminAnalytics() {
                       className="h-full rounded-full transition-all"
                       style={{
                         width: `${(segment.estimatedCount / maxSegmentCount) * 100}%`,
-                        background: "linear-gradient(90deg, var(--admin-deep-purple), var(--admin-blue))",
+                        backgroundColor: "var(--admin-deep-purple)",
                       }}
                     />
                   </div>
@@ -1113,7 +1121,7 @@ export default function AdminAnalytics() {
                   className="rounded-xl border border-gray-100 overflow-hidden bg-white"
                   data-testid={`insight-card-${cat.category.toLowerCase().replace(/\s/g, "-")}`}
                 >
-                  <div className="px-4 py-3 flex items-center gap-2.5" style={{ background: cat.headerGradient }}>
+                  <div className="px-4 py-3 flex items-center gap-2.5" style={{ backgroundColor: cat.headerBg }}>
                     <div className="w-7 h-7 rounded-lg bg-white/60 flex items-center justify-center">
                       <cat.icon className="w-3.5 h-3.5 text-foreground" />
                     </div>
@@ -1148,11 +1156,12 @@ export default function AdminAnalytics() {
   );
 }
 
-function UserKpiCard({ icon, label, value, sub, gradient }: { icon: React.ReactNode; label: string; value: string; sub?: string; gradient: string }) {
+function UserKpiCard({ icon, label, value, sub, accentColor }: { icon: React.ReactNode; label: string; value: string; sub?: string; accentColor: string }) {
   return (
-    <div className="rounded-xl border border-gray-100 p-4" data-testid={`user-kpi-${label.toLowerCase().replace(/\s+/g, "-")}`}>
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: gradient }}>
+    <div className="rounded-xl border border-gray-100 p-4 overflow-hidden relative" data-testid={`user-kpi-${label.toLowerCase().replace(/\s+/g, "-")}`}>
+      <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ backgroundColor: accentColor }} />
+      <div className="flex items-center gap-2 mb-2 mt-1">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: getTintVar(accentColor) }}>
           {icon}
         </div>
         <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">{label}</span>

@@ -55,11 +55,13 @@ function getEventDotColor(eventType: string) {
     case "swipe_right":
       return "bg-[var(--admin-pink)]";
     case "swipe_left":
-      return "bg-rose-400";
+      return "bg-gray-300";
     case "view_detail":
-      return "bg-[var(--admin-cyan)]";
+      return "bg-[var(--admin-blue)]";
     case "quiz_start":
       return "bg-[var(--admin-deep-purple)]";
+    case "delivery_click":
+      return "bg-[var(--admin-teal)]";
     default:
       return "bg-gray-300";
   }
@@ -90,6 +92,8 @@ function formatEventDescription(event: AnalyticsEvent): string {
       return `${user} viewed restaurant #${event.restaurantId}`;
     case "quiz_start":
       return `${user} started a taste quiz`;
+    case "delivery_click":
+      return `${user} clicked delivery for #${event.restaurantId}`;
     default:
       return `${user} triggered ${event.eventType}`;
   }
@@ -114,11 +118,11 @@ const fallbackSegments: UserSegment[] = [
 ];
 
 const CONVERSION_FUNNEL = [
-  { label: "Impressions", value: 12400, pct: 100, color: "var(--admin-deep-purple)" },
-  { label: "Swipe Views", value: 8200, pct: 66, color: "var(--admin-blue)" },
-  { label: "Right Swipes", value: 3100, pct: 25, color: "var(--admin-pink)" },
-  { label: "Detail Views", value: 1800, pct: 15, color: "var(--admin-cyan)" },
-  { label: "Orders", value: 420, pct: 3.4, color: "var(--admin-pink)" },
+  { label: "Impressions", value: 12400, pct: 100, color: "var(--admin-pink)", opacity: 0.25 },
+  { label: "Swipe Views", value: 8200, pct: 66, color: "var(--admin-pink)", opacity: 0.45 },
+  { label: "Right Swipes", value: 3100, pct: 25, color: "var(--admin-pink)", opacity: 0.65 },
+  { label: "Detail Views", value: 1800, pct: 15, color: "var(--admin-pink)", opacity: 0.85 },
+  { label: "Orders", value: 420, pct: 3.4, color: "var(--admin-pink)", opacity: 1 },
 ];
 
 const GEO_HOTSPOTS = [
@@ -130,17 +134,17 @@ const GEO_HOTSPOTS = [
 ];
 
 const TRENDING_CUISINES = [
-  { name: "Thai Street", growth: 42, max: 50, color: "var(--admin-deep-purple)" },
-  { name: "Korean BBQ", growth: 35, max: 50, color: "var(--admin-blue)" },
-  { name: "Japanese", growth: 28, max: 50, color: "var(--admin-pink)" },
+  { name: "Thai Street", growth: 42, max: 50, color: "var(--admin-cyan)" },
+  { name: "Korean BBQ", growth: 35, max: 50, color: "var(--admin-cyan)" },
+  { name: "Japanese", growth: 28, max: 50, color: "var(--admin-cyan)" },
   { name: "Italian", growth: 18, max: 50, color: "var(--admin-cyan)" },
-  { name: "Vietnamese", growth: 15, max: 50, color: "var(--admin-teal)" },
+  { name: "Vietnamese", growth: 15, max: 50, color: "var(--admin-cyan)" },
 ];
 
 const DELIVERY_ATTRIBUTION = [
-  { name: "Grab", clicks: 2184, pct: 46, color: "var(--admin-pink)", avgOrder: "฿285" },
-  { name: "LINE MAN", clicks: 1663, pct: 35, color: "var(--admin-deep-purple)", avgOrder: "฿310" },
-  { name: "Robinhood", clicks: 892, pct: 19, color: "var(--admin-blue)", avgOrder: "฿265" },
+  { name: "Grab", clicks: 2184, pct: 46, color: "#00B14F", avgOrder: "฿285" },
+  { name: "LINE MAN", clicks: 1663, pct: 35, color: "#06C755", avgOrder: "฿310" },
+  { name: "Robinhood", clicks: 892, pct: 19, color: "#6C2BD9", avgOrder: "฿265" },
 ];
 
 const TOP_RESTAURANTS = [
@@ -151,7 +155,17 @@ const TOP_RESTAURANTS = [
   { name: "Bo.Lan", swipes: 1260, conversion: 61, trend: "up" as const },
 ];
 
-const SEGMENT_COLORS = ["var(--admin-deep-purple)", "var(--admin-blue)", "var(--admin-pink)", "var(--admin-cyan)"];
+const SEGMENT_COLORS = ["var(--admin-deep-purple)", "var(--admin-deep-purple)", "var(--admin-deep-purple)", "var(--admin-deep-purple)"];
+const SEGMENT_OPACITIES = [1, 0.7, 0.5, 0.3];
+
+function getTintVar(accentColor: string): string {
+  if (accentColor === "var(--admin-blue)") return "var(--admin-blue-10)";
+  if (accentColor === "var(--admin-pink)") return "var(--admin-pink-10)";
+  if (accentColor === "var(--admin-cyan)") return "var(--admin-cyan-10)";
+  if (accentColor === "var(--admin-teal)") return "var(--admin-teal-10)";
+  if (accentColor === "var(--admin-deep-purple)") return "var(--admin-deep-purple-10)";
+  return "rgba(0,0,0,0.05)";
+}
 
 function MiniSparkline({ data, color = "var(--admin-deep-purple)" }: { data: number[]; color?: string }) {
   const max = Math.max(...data);
@@ -162,7 +176,7 @@ function MiniSparkline({ data, color = "var(--admin-deep-purple)" }: { data: num
   const points = data.map((v, i) => `${(i / (data.length - 1)) * w},${h - ((v - min) / range) * h}`).join(" ");
   return (
     <svg width={w} height={h} className="flex-shrink-0">
-      <polyline fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" points={points} />
+      <polyline fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" points={points} opacity="0.5" />
     </svg>
   );
 }
@@ -273,9 +287,6 @@ export default function AdminDashboard() {
       delta: "+12%",
       deltaUp: true,
       sparkline: [18, 24, 32, 28, 35, 42, 48],
-      iconBg: "bg-[var(--admin-deep-purple)]",
-      iconColor: "text-white",
-      sparkColor: "var(--admin-deep-purple)",
       accentColor: "var(--admin-deep-purple)",
     },
     {
@@ -285,9 +296,6 @@ export default function AdminDashboard() {
       delta: "+5",
       deltaUp: true,
       sparkline: [12, 14, 15, 16, 18, 19, 22],
-      iconBg: "bg-[var(--admin-blue)]",
-      iconColor: "text-white",
-      sparkColor: "var(--admin-blue)",
       accentColor: "var(--admin-blue)",
     },
     {
@@ -297,9 +305,6 @@ export default function AdminDashboard() {
       delta: "+340",
       deltaUp: true,
       sparkline: [120, 180, 210, 190, 260, 310, 340],
-      iconBg: "bg-[var(--admin-pink)]",
-      iconColor: "text-white",
-      sparkColor: "var(--admin-pink)",
       accentColor: "var(--admin-pink)",
     },
     {
@@ -309,10 +314,7 @@ export default function AdminDashboard() {
       delta: "+18%",
       deltaUp: true,
       sparkline: [320, 380, 410, 390, 450, 480, 520],
-      iconBg: "bg-[var(--admin-cyan)]",
-      iconColor: "text-white",
-      sparkColor: "var(--admin-cyan)",
-      accentColor: "var(--admin-cyan)",
+      accentColor: "var(--admin-teal)",
     },
     {
       label: "Campaigns",
@@ -321,10 +323,7 @@ export default function AdminDashboard() {
       delta: "active",
       deltaUp: true,
       sparkline: [3, 4, 4, 5, 6, 5, 6],
-      iconBg: "bg-[var(--admin-teal)]",
-      iconColor: "text-white",
-      sparkColor: "var(--admin-teal)",
-      accentColor: "var(--admin-teal)",
+      accentColor: "var(--admin-cyan)",
     },
   ];
 
@@ -344,18 +343,18 @@ export default function AdminDashboard() {
         {kpis.map((kpi) => (
           <div
             key={kpi.label}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden group hover:shadow-md transition-shadow duration-300"
+            className="bg-white rounded-2xl border border-gray-100 overflow-hidden group hover:shadow-md transition-shadow duration-300"
             data-testid={`kpi-card-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}
           >
-            <div className="h-1.5 w-full" style={{ background: kpi.accentColor }} />
+            <div className="h-[3px] w-full" style={{ background: kpi.accentColor }} />
             <div className="p-5 pt-4">
               <div className="flex items-start justify-between gap-2 mb-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${kpi.iconBg}`}>
-                  <kpi.icon className={`w-5 h-5 ${kpi.iconColor}`} />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: getTintVar(kpi.accentColor) }}>
+                  <kpi.icon className="w-5 h-5" style={{ color: kpi.accentColor }} />
                 </div>
-                <MiniSparkline data={kpi.sparkline} color={kpi.sparkColor} />
+                <MiniSparkline data={kpi.sparkline} color={kpi.accentColor} />
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: kpi.accentColor }}>{kpi.label}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{kpi.label}</p>
               <p
                 className="text-2xl font-bold tracking-tight text-gray-800 mt-0.5"
                 data-testid={`kpi-value-${kpi.label.toLowerCase().replace(/\s/g, "-")}`}
@@ -377,15 +376,14 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-testid="activity-chart-card">
-          <div className="flex items-center justify-between gap-2 px-6 py-4" style={{ background: "linear-gradient(135deg, var(--admin-deep-purple), var(--admin-blue))" }}>
-            <div>
-              <h2 className="text-[15px] font-semibold text-white">Activity Overview</h2>
-              <p className="text-[10px] text-white/60 uppercase tracking-widest font-bold">Last 7 days</p>
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 overflow-hidden" data-testid="activity-chart-card">
+          <div className="flex items-center justify-between gap-2 px-6 py-4 border-b border-gray-100">
+            <div className="border-l-[3px] pl-3" style={{ borderColor: "var(--admin-pink)" }}>
+              <h2 className="text-[15px] font-semibold text-gray-800">Activity Overview</h2>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Last 7 days</p>
             </div>
-            <div className="flex items-center gap-3 text-xs text-white/80">
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-white/80" />Today</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[var(--admin-cyan)]" />Peak</span>
+            <div className="flex items-center gap-3 text-xs text-gray-400">
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ backgroundColor: "var(--admin-pink)" }} />Events</span>
             </div>
           </div>
           <div className="p-6 pt-4">
@@ -393,23 +391,17 @@ export default function AdminDashboard() {
             {last7Days.map((day, idx) => {
               const isToday = idx === last7Days.length - 1;
               const isPeak = day.count === maxBarCount && day.count > 0;
-              let barColor: string;
-              if (isPeak) {
-                barColor = "linear-gradient(180deg, var(--admin-deep-purple), var(--admin-blue))";
-              } else if (isToday) {
-                barColor = "linear-gradient(180deg, var(--admin-deep-purple), var(--admin-blue))";
-              } else {
-                barColor = "linear-gradient(180deg, rgba(108, 92, 231, 0.3), rgba(91, 141, 239, 0.3))";
-              }
+              const barOpacity = isToday || isPeak ? 1 : 0.35;
               return (
                 <div key={day.dateStr} className="flex-1 flex flex-col items-center gap-1.5">
                   <span className="text-[10px] font-semibold text-gray-500">{day.count}</span>
-                  <div className="w-full relative border-l border-gray-100">
+                  <div className="w-full relative">
                     <div
                       className="w-full rounded-t-md transition-all duration-500"
                       style={{
                         height: `${Math.max((day.count / maxBarCount) * 100, 6)}px`,
-                        background: barColor,
+                        backgroundColor: "var(--admin-pink)",
+                        opacity: barOpacity,
                       }}
                       data-testid={`bar-${day.dateStr}`}
                     />
@@ -423,44 +415,44 @@ export default function AdminDashboard() {
         </div>
 
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" data-testid="platform-health-card">
-            <div className="border-l-3 border-[var(--admin-pink)] pl-3 mb-4">
+          <div className="bg-white rounded-2xl border border-gray-100 p-5" data-testid="platform-health-card">
+            <div className="border-l-[3px] pl-3 mb-4" style={{ borderColor: "var(--admin-blue)" }}>
               <h2 className="text-[15px] font-semibold text-gray-800">Platform Health</h2>
             </div>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Active Banners</span>
-                <span className="text-xs font-semibold rounded-full px-2.5 py-0.5 text-white" style={{ background: "var(--admin-blue)" }} data-testid="badge-active-banners">{stats.activeBanners}</span>
+                <span className="text-xs font-semibold rounded-full px-2.5 py-0.5 bg-gray-100 text-gray-700" data-testid="badge-active-banners">{stats.activeBanners}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Draft Campaigns</span>
-                <span className="text-xs font-medium rounded-full px-2.5 py-0.5 text-white" style={{ background: "var(--admin-teal)" }} data-testid="badge-draft-campaigns">{stats.draftCampaigns}</span>
+                <span className="text-xs font-medium rounded-full px-2.5 py-0.5 bg-gray-100 text-gray-700" data-testid="badge-draft-campaigns">{stats.draftCampaigns}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">Events Today</span>
-                <span className="bg-[var(--admin-deep-purple)] text-white text-xs font-semibold rounded-full px-2.5 py-0.5" data-testid="badge-events-today">{stats.eventsToday}</span>
+                <span className="text-xs font-semibold rounded-full px-2.5 py-0.5 bg-gray-100 text-gray-700" data-testid="badge-events-today">{stats.eventsToday}</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" data-testid="quick-actions-card">
-            <div className="border-l-3 border-[var(--admin-cyan)] pl-3 mb-3">
+          <div className="bg-white rounded-2xl border border-gray-100 p-5" data-testid="quick-actions-card">
+            <div className="border-l-[3px] pl-3 mb-3" style={{ borderColor: "var(--admin-blue)" }}>
               <h2 className="text-[15px] font-semibold text-gray-800">Quick Actions</h2>
             </div>
             <div className="flex flex-col gap-1.5">
               <Link href="/admin/restaurants">
-                <button className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-white" style={{ background: "linear-gradient(135deg, var(--admin-deep-purple), var(--admin-blue))" }} data-testid="button-add-restaurant">
-                  <Plus className="w-3.5 h-3.5" />Add Restaurant<ChevronRight className="w-3.5 h-3.5 ml-auto opacity-60" />
+                <button className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors bg-gray-50 text-gray-700 hover:bg-gray-100" data-testid="button-add-restaurant">
+                  <Plus className="w-3.5 h-3.5" style={{ color: "var(--admin-blue)" }} />Add Restaurant<ChevronRight className="w-3.5 h-3.5 ml-auto opacity-40" />
                 </button>
               </Link>
               <Link href="/admin/banners">
-                <button className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-white" style={{ background: "linear-gradient(135deg, var(--admin-pink), var(--admin-deep-purple))" }} data-testid="button-create-banner">
-                  <ImageIcon className="w-3.5 h-3.5" />Create Banner<ChevronRight className="w-3.5 h-3.5 ml-auto opacity-60" />
+                <button className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors bg-gray-50 text-gray-700 hover:bg-gray-100" data-testid="button-create-banner">
+                  <ImageIcon className="w-3.5 h-3.5" style={{ color: "var(--admin-blue)" }} />Create Banner<ChevronRight className="w-3.5 h-3.5 ml-auto opacity-40" />
                 </button>
               </Link>
               <Link href="/admin/analytics">
-                <button className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors text-white" style={{ background: "linear-gradient(135deg, var(--admin-cyan), var(--admin-teal))" }} data-testid="button-view-analytics">
-                  <BarChart3 className="w-3.5 h-3.5" />View Analytics<ChevronRight className="w-3.5 h-3.5 ml-auto opacity-60" />
+                <button className="w-full flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors bg-gray-50 text-gray-700 hover:bg-gray-100" data-testid="button-view-analytics">
+                  <BarChart3 className="w-3.5 h-3.5" style={{ color: "var(--admin-blue)" }} />View Analytics<ChevronRight className="w-3.5 h-3.5 ml-auto opacity-40" />
                 </button>
               </Link>
             </div>
@@ -469,8 +461,8 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-conversion-funnel">
-          <div className="border-l-3 border-[var(--admin-deep-purple)] pl-3 mb-5">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6" data-testid="card-conversion-funnel">
+          <div className="border-l-[3px] pl-3 mb-5" style={{ borderColor: "var(--admin-pink)" }}>
             <h2 className="text-[15px] font-semibold text-gray-800">Conversion Funnel</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Swipe to order</p>
           </div>
@@ -485,10 +477,10 @@ export default function AdminDashboard() {
                       width: `${widthPct}%`,
                       backgroundColor: step.color,
                       borderRadius: idx === 0 ? "8px 8px 2px 2px" : idx === CONVERSION_FUNNEL.length - 1 ? "2px 2px 8px 8px" : "2px",
-                      opacity: 0.95,
+                      opacity: step.opacity,
                     }}
                   >
-                    <span className="text-[11px] font-semibold whitespace-nowrap text-white">
+                    <span className={`text-[11px] font-semibold whitespace-nowrap ${step.opacity >= 0.65 ? "text-white" : "text-gray-700"}`}>
                       {step.label} — {step.value.toLocaleString()}
                     </span>
                   </div>
@@ -505,8 +497,8 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-delivery-attribution">
-          <div className="border-l-3 border-[var(--admin-pink)] pl-3 mb-5">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6" data-testid="card-delivery-attribution">
+          <div className="border-l-[3px] pl-3 mb-5" style={{ borderColor: "var(--admin-teal)" }}>
             <h2 className="text-[15px] font-semibold text-gray-800">Delivery Attribution</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Platform breakdown</p>
           </div>
@@ -536,8 +528,8 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-top-restaurants">
-          <div className="border-l-3 border-[var(--admin-blue)] pl-3 mb-4">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6" data-testid="card-top-restaurants">
+          <div className="border-l-[3px] pl-3 mb-4" style={{ borderColor: "var(--admin-blue)" }}>
             <h2 className="text-[15px] font-semibold text-gray-800">Top Restaurants</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">By swipe volume</p>
           </div>
@@ -546,7 +538,7 @@ export default function AdminDashboard() {
               <div key={r.name} data-testid={`top-restaurant-${idx}`}>
                 <div className="flex items-center justify-between gap-1 mb-1">
                   <div className="flex items-center gap-2">
-                    <span className={`w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold flex-shrink-0 ${idx === 0 ? "bg-[var(--admin-deep-purple)] text-white" : "bg-gray-100 text-gray-500"}`}>
+                    <span className={`w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold flex-shrink-0 ${idx === 0 ? "text-white" : "bg-gray-100 text-gray-500"}`} style={idx === 0 ? { backgroundColor: "var(--admin-blue)" } : {}}>
                       {idx + 1}
                     </span>
                     <span className="text-xs font-medium text-gray-800">{r.name}</span>
@@ -561,11 +553,11 @@ export default function AdminDashboard() {
                     className="h-full rounded-md flex items-center justify-end pr-2 transition-all"
                     style={{
                       width: `${(r.swipes / maxRestaurantSwipes) * 100}%`,
-                      background: idx === 0 ? "linear-gradient(90deg, var(--admin-deep-purple), var(--admin-blue))" : "linear-gradient(90deg, var(--admin-deep-purple), var(--admin-blue))",
-                      opacity: idx === 0 ? 1 : 0.4 + (idx * 0.1),
+                      backgroundColor: "var(--admin-blue)",
+                      opacity: 1 - (idx * 0.15),
                     }}
                   >
-                    <span className={`text-[9px] font-bold ${idx === 0 ? "text-gray-800" : "text-white"}`}>{r.swipes.toLocaleString()}</span>
+                    <span className="text-[9px] font-bold text-white">{r.swipes.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -578,8 +570,8 @@ export default function AdminDashboard() {
           </Link>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-geo-hotspots">
-          <div className="border-l-3 border-[var(--admin-cyan)] pl-3 mb-4">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6" data-testid="card-geo-hotspots">
+          <div className="border-l-[3px] pl-3 mb-4" style={{ borderColor: "var(--admin-cyan)" }}>
             <h2 className="text-[15px] font-semibold text-gray-800">Geo Hotspots</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Bangkok zones</p>
           </div>
@@ -596,8 +588,8 @@ export default function AdminDashboard() {
                       style={{
                         height: `${heightPct}%`,
                         minHeight: "8px",
-                        background: "linear-gradient(180deg, var(--admin-deep-purple), var(--admin-blue))",
-                        opacity: idx === 0 ? 1 : 0.4 + (idx * 0.1),
+                        backgroundColor: "var(--admin-cyan)",
+                        opacity: 1 - (idx * 0.15),
                       }}
                     />
                   </div>
@@ -608,8 +600,8 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="card-trending-cuisines">
-          <div className="border-l-3 border-[var(--admin-teal)] pl-3 mb-4">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6" data-testid="card-trending-cuisines">
+          <div className="border-l-[3px] pl-3 mb-4" style={{ borderColor: "var(--admin-cyan)" }}>
             <h2 className="text-[15px] font-semibold text-gray-800">Trending Cuisines</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">30-day growth</p>
           </div>
@@ -636,8 +628,8 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="segments-card">
-          <div className="border-l-3 border-[var(--admin-deep-purple)] pl-3 mb-5">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6" data-testid="segments-card">
+          <div className="border-l-[3px] pl-3 mb-5" style={{ borderColor: "var(--admin-deep-purple)" }}>
             <h2 className="text-[15px] font-semibold text-gray-800">User Segments</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Audience breakdown</p>
           </div>
@@ -651,6 +643,7 @@ export default function AdminDashboard() {
                   style={{
                     width: `${pct}%`,
                     backgroundColor: SEGMENT_COLORS[idx % SEGMENT_COLORS.length],
+                    opacity: SEGMENT_OPACITIES[idx % SEGMENT_OPACITIES.length],
                   }}
                   title={`${seg.name}: ${seg.estimatedCount} users (${Math.round(pct)}%)`}
                 />
@@ -662,7 +655,7 @@ export default function AdminDashboard() {
               const pct = Math.round((seg.estimatedCount / totalSegmentUsers) * 100);
               return (
                 <div key={seg.id} className="flex items-center gap-2.5 rounded-lg bg-gray-50 px-3 py-2" data-testid={`segment-${seg.id}`}>
-                  <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: SEGMENT_COLORS[idx % SEGMENT_COLORS.length] }} />
+                  <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: SEGMENT_COLORS[idx % SEGMENT_COLORS.length], opacity: SEGMENT_OPACITIES[idx % SEGMENT_OPACITIES.length] }} />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-gray-800 truncate">{seg.name}</p>
                     <p className="text-[10px] text-gray-500">{seg.estimatedCount} users</p>
@@ -674,9 +667,9 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="recent-activity-card">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6" data-testid="recent-activity-card">
           <div className="flex items-center justify-between gap-2 mb-5">
-            <div className="border-l-3 border-[var(--admin-blue)] pl-3">
+            <div className="border-l-[3px] pl-3" style={{ borderColor: "var(--admin-pink)" }}>
               <h2 className="text-[15px] font-semibold text-gray-800">Live Activity</h2>
               <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Real-time events</p>
             </div>

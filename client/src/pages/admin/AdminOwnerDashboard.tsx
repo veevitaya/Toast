@@ -511,7 +511,7 @@ export default function AdminOwnerDashboard() {
               <h3 className="text-[15px] font-semibold text-gray-800">This Week's Highlights</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-gradient-to-br from-[#00B14F]/5 to-[#00B14F]/10 border border-[#00B14F]/10">
+              <div className="p-4 rounded-xl bg-[#00B14F]/5 border border-[#00B14F]/10">
                 <div className="flex items-center gap-2 mb-2">
                   <Zap className="w-4 h-4 text-[#00B14F]" />
                   <span className="text-xs font-medium text-gray-500">Engagement Rate</span>
@@ -521,7 +521,7 @@ export default function AdminOwnerDashboard() {
                 </p>
                 <p className="text-[11px] text-gray-400 mt-0.5">Likes + Saves per View</p>
               </div>
-              <div className="p-4 rounded-xl bg-gradient-to-br from-[var(--admin-blue-10)] to-[var(--admin-blue-10)] border border-[var(--admin-blue-10)]">
+              <div className="p-4 rounded-xl bg-[var(--admin-blue-10)] border border-[var(--admin-blue-10)]">
                 <div className="flex items-center gap-2 mb-2">
                   <Users className="w-4 h-4 text-[var(--admin-blue)]" />
                   <span className="text-xs font-medium text-gray-500">Unique Visitors</span>
@@ -529,7 +529,7 @@ export default function AdminOwnerDashboard() {
                 <p className="text-xl font-bold text-gray-800">{Math.max(stats.views, 1)}</p>
                 <p className="text-[11px] text-gray-400 mt-0.5">People who viewed your page</p>
               </div>
-              <div className="p-4 rounded-xl bg-gradient-to-br from-[#FFCC02]/5 to-[#FFCC02]/10 border border-[#FFCC02]/10">
+              <div className="p-4 rounded-xl bg-[#FFCC02]/5 border border-[#FFCC02]/10">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-[#FFCC02]" />
                   <span className="text-xs font-medium text-gray-500">Trending Score</span>
