@@ -35,7 +35,7 @@ const CUISINE_OPTIONS = [
   { value: "french", label: "French", emoji: "🇫🇷" },
   { value: "vietnamese", label: "Vietnamese", emoji: "🇻🇳" },
   { value: "middle_eastern", label: "Middle Eastern", emoji: "🧆" },
-  { value: "street_food", label: "Street Food", emoji: "🛒" },
+  { value: "street_food", label: "Street Food", emoji: "🍢" },
 ];
 
 const BUDGET_OPTIONS = [
@@ -119,7 +119,7 @@ const RESTAURANT_CATEGORIES = [
 ];
 
 const RESTAURANT_TAGS = [
-  { value: "street_food", label: "Street Food", emoji: "🛒" },
+  { value: "street_food", label: "Street Food", emoji: "🍢" },
   { value: "family_friendly", label: "Family Friendly", emoji: "👨‍👩‍👧" },
   { value: "date_night", label: "Date Night", emoji: "💕" },
   { value: "late_night", label: "Late Night", emoji: "🌙" },
