@@ -466,26 +466,22 @@ export default function AdminDashboard() {
             <h2 className="text-[15px] font-semibold text-gray-800">Conversion Funnel</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Swipe to order</p>
           </div>
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-1.5">
             {CONVERSION_FUNNEL.map((step, idx) => {
               const widthPct = Math.max(20, step.pct);
               return (
                 <div key={step.label} className="w-full flex flex-col items-center" data-testid={`funnel-step-${idx}`}>
                   <div
-                    className="relative flex items-center justify-center py-2.5 transition-all"
+                    className="relative h-8 transition-all"
                     style={{
                       width: `${widthPct}%`,
                       backgroundColor: step.bg,
                       borderRadius: idx === 0 ? "8px 8px 2px 2px" : idx === CONVERSION_FUNNEL.length - 1 ? "2px 2px 8px 8px" : "2px",
                     }}
-                  >
-                    <span className={`text-[11px] font-semibold whitespace-nowrap ${step.textColor}`}>
-                      {step.label} — {step.value.toLocaleString()}
-                    </span>
-                  </div>
-                  {idx < CONVERSION_FUNNEL.length - 1 && (
-                    <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-transparent border-t-gray-200" />
-                  )}
+                  />
+                  <span className="text-[11px] font-semibold text-gray-700 mt-0.5 whitespace-nowrap">
+                    {step.label} — {step.value.toLocaleString()}
+                  </span>
                 </div>
               );
             })}
