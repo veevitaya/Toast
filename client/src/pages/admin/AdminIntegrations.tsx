@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { Plug, CheckCircle, AlertCircle, Clock, RefreshCw, ExternalLink, Zap, Shield, Key } from "lucide-react";
+import { Plug, CheckCircle, AlertCircle, Clock, RefreshCw, ExternalLink, Zap, Shield, Key, Loader2, X, ToggleRight, ToggleLeft } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-const INTEGRATIONS = [
-  { name: "LINE LIFF", status: "connected" as const, lastSync: "Real-time", description: "User auth, profile data, rich menus", appId: "2009293021-mFgkOhqd", health: 99.8 },
-  { name: "LINE Official Account", status: "connected" as const, lastSync: "Real-time", description: "Messaging, push notifications, friend tracking", appId: "2009335625-Pyd3rjhr", health: 99.5 },
-  { name: "Grab", status: "connected" as const, lastSync: "4h ago", description: "Deep links for food delivery", appId: "Partner deeplink", health: 98.2 },
-  { name: "LINE MAN", status: "connected" as const, lastSync: "4h ago", description: "Deep links for food delivery", appId: "Partner deeplink", health: 97.8 },
-  { name: "Robinhood", status: "connected" as const, lastSync: "4h ago", description: "Deep links for food delivery", appId: "Partner deeplink", health: 96.1 },
-  { name: "Google Places API", status: "connected" as const, lastSync: "2h ago", description: "Restaurant data, ratings, photos", appId: "API Key", health: 99.9 },
-  { name: "Leaflet / OpenStreetMap", status: "connected" as const, lastSync: "Real-time", description: "Map tiles and geocoding", appId: "Public API", health: 99.7 },
-  { name: "Stripe", status: "planned" as const, lastSync: "—", description: "Owner subscription payments", appId: "—", health: 0 },
-  { name: "Google Analytics", status: "planned" as const, lastSync: "—", description: "Web analytics and event tracking", appId: "—", health: 0 },
+const INTEGRATIONS_INIT = [
+  { name: "LINE LIFF", status: "connected" as const, lastSync: "Real-time", description: "User auth, profile data, rich menus", appId: "2009293021-mFgkOhqd", health: 99.8, canDisable: true },
+  { name: "LINE Official Account", status: "connected" as const, lastSync: "Real-time", description: "Messaging, push notifications, friend tracking", appId: "2009335625-Pyd3rjhr", health: 99.5, canDisable: true },
+  { name: "Grab", status: "connected" as const, lastSync: "4h ago", description: "Deep links for food delivery", appId: "Partner deeplink", health: 98.2, canDisable: true },
+  { name: "LINE MAN", status: "connected" as const, lastSync: "4h ago", description: "Deep links for food delivery", appId: "Partner deeplink", health: 97.8, canDisable: true },
+  { name: "Robinhood", status: "connected" as const, lastSync: "4h ago", description: "Deep links for food delivery", appId: "Partner deeplink", health: 96.1, canDisable: true },
+  { name: "Google Places API", status: "connected" as const, lastSync: "2h ago", description: "Restaurant data, ratings, photos", appId: "API Key", health: 99.9, canDisable: true },
+  { name: "Leaflet / OpenStreetMap", status: "connected" as const, lastSync: "Real-time", description: "Map tiles and geocoding", appId: "Public API", health: 99.7, canDisable: false },
+  { name: "Stripe", status: "planned" as const, lastSync: "—", description: "Owner subscription payments", appId: "—", health: 0, canDisable: false },
+  { name: "Google Analytics", status: "planned" as const, lastSync: "—", description: "Web analytics and event tracking", appId: "—", health: 0, canDisable: false },
 ];
 
 const WEBHOOK_LOGS = [
@@ -30,6 +31,32 @@ const API_USAGE = [
 
 export default function AdminIntegrations() {
   const [tab, setTab] = useState<"services" | "webhooks" | "api">("services");
+  const [integrations, setIntegrations] = useState(INTEGRATIONS_INIT);
+  const [syncingName, setSyncingName] = useState<string | null>(null);
+  const [detailIntegration, setDetailIntegration] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const handleSync = (name: string) => {
+    setSyncingName(name);
+    setTimeout(() => {
+      toast({ title: "Sync Complete", description: `${name} has been synced successfully` });
+      setSyncingName(null);
+    }, 2000);
+  };
+
+  const toggleIntegration = (name: string) => {
+    setIntegrations(prev => prev.map(i => {
+      if (i.name !== name) return i;
+      const newStatus = i.status === "connected" ? "planned" as const : "connected" as const;
+      toast({
+        title: newStatus === "connected" ? "Integration Enabled" : "Integration Disabled",
+        description: `${name} has been ${newStatus === "connected" ? "enabled" : "disabled"}`
+      });
+      return { ...i, status: newStatus, health: newStatus === "connected" ? 99.0 : 0 };
+    }));
+  };
+
+  const detail = integrations.find(i => i.name === detailIntegration);
 
   return (
     <div className="space-y-8" data-testid="admin-integrations-page">
@@ -43,7 +70,7 @@ export default function AdminIntegrations() {
         </div>
         <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
           {(["services", "webhooks", "api"] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-all capitalize ${tab === t ? "bg-white text-gray-800 shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+            <button key={t} onClick={() => setTab(t)} className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-all capitalize ${tab === t ? "bg-white text-gray-800 shadow-sm" : "text-muted-foreground hover:text-foreground"}`} data-testid={`tab-${t}`}>
               {t === "services" ? "Services" : t === "webhooks" ? "Webhook Logs" : "API Usage"}
             </button>
           ))}
@@ -52,7 +79,7 @@ export default function AdminIntegrations() {
 
       {tab === "services" && (
         <div className="space-y-3">
-          {INTEGRATIONS.map(integration => (
+          {integrations.map(integration => (
             <div key={integration.name} className="bg-white rounded-2xl border border-gray-100 p-5 hover:border-gray-200 transition-colors" data-testid={`integration-${integration.name.toLowerCase().replace(/\s+/g, "-")}`}>
               <div className="flex items-center gap-4">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -83,11 +110,42 @@ export default function AdminIntegrations() {
                     <span className="text-[10px] text-gray-400">Last: {integration.lastSync}</span>
                   </div>
                 )}
-                {integration.status === "connected" && (
-                  <button className="text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors flex items-center gap-1">
-                    <RefreshCw className="w-3 h-3" /> Sync
+                <div className="flex gap-1.5">
+                  {integration.canDisable && (
+                    <button
+                      onClick={() => toggleIntegration(integration.name)}
+                      className="flex-shrink-0"
+                      data-testid={`btn-toggle-${integration.name.toLowerCase().replace(/\s+/g, "-")}`}
+                    >
+                      {integration.status === "connected" ? (
+                        <ToggleRight className="w-8 h-8 text-emerald-500" />
+                      ) : (
+                        <ToggleLeft className="w-8 h-8 text-gray-300" />
+                      )}
+                    </button>
+                  )}
+                  {integration.status === "connected" && (
+                    <button
+                      onClick={() => handleSync(integration.name)}
+                      disabled={syncingName === integration.name}
+                      className="text-xs font-medium px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors flex items-center gap-1 disabled:opacity-50"
+                      data-testid={`btn-sync-${integration.name.toLowerCase().replace(/\s+/g, "-")}`}
+                    >
+                      {syncingName === integration.name ? (
+                        <><Loader2 className="w-3 h-3 animate-spin" /> Syncing...</>
+                      ) : (
+                        <><RefreshCw className="w-3 h-3" /> Sync</>
+                      )}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setDetailIntegration(integration.name)}
+                    className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-gray-50 text-gray-400 hover:bg-gray-100 transition-colors"
+                    data-testid={`btn-detail-${integration.name.toLowerCase().replace(/\s+/g, "-")}`}
+                  >
+                    Details
                   </button>
-                )}
+                </div>
               </div>
             </div>
           ))}
@@ -143,6 +201,51 @@ export default function AdminIntegrations() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {detailIntegration && detail && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-6" data-testid="integration-detail-modal">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${detail.status === "connected" ? "bg-emerald-50" : "bg-gray-100"}`}>
+                  {detail.status === "connected" ? <Zap className="w-4 h-4 text-emerald-500" /> : <Clock className="w-4 h-4 text-gray-400" />}
+                </div>
+                <h3 className="text-sm font-semibold text-gray-800">{detail.name}</h3>
+              </div>
+              <button onClick={() => setDetailIntegration(null)} className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200" data-testid="btn-close-detail">
+                <X className="w-3.5 h-3.5 text-gray-500" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Description</p>
+                <p className="text-sm text-gray-700">{detail.description}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-gray-50">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</p>
+                  <span className={`text-sm font-medium ${detail.status === "connected" ? "text-emerald-600" : "text-gray-500"}`}>{detail.status}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-gray-50">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Health</p>
+                  <span className="text-sm font-medium text-gray-700">{detail.health > 0 ? `${detail.health}%` : "N/A"}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-gray-50">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">App ID</p>
+                  <span className="text-xs font-mono text-gray-600 break-all">{detail.appId}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-gray-50">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Last Sync</p>
+                  <span className="text-sm font-medium text-gray-700">{detail.lastSync}</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 bg-gray-50">
+              <button onClick={() => setDetailIntegration(null)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors rounded-lg" data-testid="btn-close-detail-bottom">Close</button>
+            </div>
           </div>
         </div>
       )}

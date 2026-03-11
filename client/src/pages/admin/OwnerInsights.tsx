@@ -1,4 +1,6 @@
-import { Lightbulb, TrendingUp, Eye, Heart, ExternalLink, Users, Target, Clock, Zap, ArrowUp, ArrowDown } from "lucide-react";
+import { useState } from "react";
+import { Lightbulb, TrendingUp, Eye, Heart, ExternalLink, Users, Target, Clock, Zap, ArrowUp, ArrowDown, Check, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const AUDIENCE_BREAKDOWN = [
   { segment: "Foodies", pct: 32, trend: "+5%" },
@@ -15,12 +17,12 @@ const PERFORMANCE_METRICS = [
   { label: "Unique Viewers", value: "2,140", trend: "+12%", up: true, icon: Users, desc: "Individual users who saw you" },
 ];
 
-const RECOMMENDATIONS = [
-  { title: "Add Late Night hours", impact: "high" as const, reason: "28% of your viewers search after 10pm, but you're listed as closed", action: "Update hours" },
-  { title: "Add 2 more menu photos", impact: "high" as const, reason: "Listings with 5+ photos get 42% more clickouts", action: "Upload images" },
-  { title: "Create a weekend promotion", impact: "medium" as const, reason: "Your competitors run 2.3 promotions on average", action: "Create promo" },
-  { title: "Add delivery via LINE MAN", impact: "medium" as const, reason: "32% of clickouts go to LINE MAN but you only have Grab", action: "Add link" },
-  { title: "Update vibe tags", impact: "low" as const, reason: "Adding 'instagrammable' tag increases discovery by 18%", action: "Edit tags" },
+const RECOMMENDATIONS_INIT = [
+  { title: "Add Late Night hours", impact: "high" as const, reason: "28% of your viewers search after 10pm, but you're listed as closed", action: "Update hours", completed: false },
+  { title: "Add 2 more menu photos", impact: "high" as const, reason: "Listings with 5+ photos get 42% more clickouts", action: "Upload images", completed: false },
+  { title: "Create a weekend promotion", impact: "medium" as const, reason: "Your competitors run 2.3 promotions on average", action: "Create promo", completed: false },
+  { title: "Add delivery via LINE MAN", impact: "medium" as const, reason: "32% of clickouts go to LINE MAN but you only have Grab", action: "Add link", completed: false },
+  { title: "Update vibe tags", impact: "low" as const, reason: "Adding 'instagrammable' tag increases discovery by 18%", action: "Edit tags", completed: false },
 ];
 
 const COMPETITOR_COMPARISON = [
@@ -34,6 +36,27 @@ const COMPETITOR_COMPARISON = [
 const OPPORTUNITY_SCORE = 72;
 
 export default function OwnerInsights() {
+  const [recommendations, setRecommendations] = useState(RECOMMENDATIONS_INIT);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const { toast } = useToast();
+
+  const completedCount = recommendations.filter(r => r.completed).length;
+  const currentScore = OPPORTUNITY_SCORE + (completedCount * 5);
+
+  const handleAction = (index: number) => {
+    setActionLoading(index);
+    setTimeout(() => {
+      setRecommendations(prev => prev.map((r, i) =>
+        i === index ? { ...r, completed: true } : r
+      ));
+      toast({
+        title: "Action Completed",
+        description: `"${recommendations[index].title}" has been marked as done. Your Opportunity Score improved!`
+      });
+      setActionLoading(null);
+    }, 1500);
+  };
+
   return (
     <div className="space-y-8" data-testid="owner-insights-page">
       <div className="flex items-center gap-3">
@@ -65,30 +88,44 @@ export default function OwnerInsights() {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6" data-testid="card-recommendations">
           <div className="border-l-[3px] pl-3 mb-5" style={{ borderColor: "#00B14F" }}>
             <h3 className="text-[15px] font-semibold text-gray-800">Recommendations</h3>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Actions to boost your performance</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Actions to boost your performance ({completedCount}/{recommendations.length} done)</p>
           </div>
           <div className="space-y-2.5">
-            {RECOMMENDATIONS.map((r, i) => (
-              <div key={i} className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
+            {recommendations.map((r, i) => (
+              <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border transition-colors ${r.completed ? "border-emerald-100 bg-emerald-50/30" : "border-gray-100 hover:border-gray-200"}`}>
                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                  r.impact === "high" ? "bg-emerald-50" : r.impact === "medium" ? "bg-blue-50" : "bg-gray-100"
+                  r.completed ? "bg-emerald-100" : r.impact === "high" ? "bg-emerald-50" : r.impact === "medium" ? "bg-blue-50" : "bg-gray-100"
                 }`}>
-                  <Target className={`w-3.5 h-3.5 ${
-                    r.impact === "high" ? "text-emerald-500" : r.impact === "medium" ? "text-blue-500" : "text-gray-400"
-                  }`} />
+                  {r.completed ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  ) : (
+                    <Target className={`w-3.5 h-3.5 ${
+                      r.impact === "high" ? "text-emerald-500" : r.impact === "medium" ? "text-blue-500" : "text-gray-400"
+                    }`} />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-800">{r.title}</span>
+                    <span className={`text-sm font-medium ${r.completed ? "text-gray-400 line-through" : "text-gray-800"}`}>{r.title}</span>
                     <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
                       r.impact === "high" ? "bg-emerald-50 text-emerald-700" : r.impact === "medium" ? "bg-blue-50 text-blue-600" : "bg-gray-100 text-gray-500"
                     }`}>{r.impact}</span>
                   </div>
                   <p className="text-[11px] text-gray-400 mt-0.5">{r.reason}</p>
                 </div>
-                <button className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-[#00B14F]/10 text-[#00B14F] hover:bg-[#00B14F]/20 transition-colors flex-shrink-0" data-testid={`btn-action-${i}`}>
-                  {r.action}
-                </button>
+                {r.completed ? (
+                  <span className="text-[10px] font-medium text-emerald-600 flex-shrink-0 px-3 py-1.5">Done</span>
+                ) : (
+                  <button
+                    onClick={() => handleAction(i)}
+                    disabled={actionLoading === i}
+                    className="text-[11px] font-medium px-3 py-1.5 rounded-lg bg-[#00B14F]/10 text-[#00B14F] hover:bg-[#00B14F]/20 transition-colors flex-shrink-0 disabled:opacity-50 flex items-center gap-1"
+                    data-testid={`btn-action-${i}`}
+                  >
+                    {actionLoading === i ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                    {r.action}
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -105,13 +142,18 @@ export default function OwnerInsights() {
                 <svg className="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="42" fill="none" stroke="#f3f4f6" strokeWidth="8" />
                   <circle cx="50" cy="50" r="42" fill="none" stroke="#00B14F" strokeWidth="8" strokeLinecap="round"
-                    strokeDasharray={`${OPPORTUNITY_SCORE * 2.64} 264`} />
+                    strokeDasharray={`${Math.min(currentScore, 100) * 2.64} 264`} />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-gray-800">{OPPORTUNITY_SCORE}</span>
+                  <span className="text-2xl font-bold text-gray-800">{currentScore}</span>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-3">Complete {5 - RECOMMENDATIONS.filter(r => r.impact === "high").length} more actions to reach 85+</p>
+              <p className="text-xs text-gray-500 mt-3">
+                {completedCount === recommendations.length
+                  ? "All recommendations completed!"
+                  : `Complete ${recommendations.filter(r => !r.completed && r.impact === "high").length} more high-impact actions`
+                }
+              </p>
             </div>
           </div>
 

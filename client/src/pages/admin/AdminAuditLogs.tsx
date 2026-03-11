@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ScrollText, Search, Filter, User, Settings, Database, Shield, Clock, ChevronDown } from "lucide-react";
+import { ScrollText, Search, Filter, User, Settings, Database, Shield, Clock, ChevronDown, Download, X, Eye } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 type LogLevel = "all" | "info" | "warning" | "critical";
 
@@ -26,6 +27,8 @@ const SUMMARY_STATS = [
 export default function AdminAuditLogs() {
   const [searchQuery, setSearchQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState<LogLevel>("all");
+  const [detailEntry, setDetailEntry] = useState<typeof AUDIT_ENTRIES[0] | null>(null);
+  const { toast } = useToast();
 
   const filtered = AUDIT_ENTRIES.filter(e => {
     const matchSearch = !searchQuery || e.action.toLowerCase().includes(searchQuery.toLowerCase()) || e.target.toLowerCase().includes(searchQuery.toLowerCase()) || e.details.toLowerCase().includes(searchQuery.toLowerCase());
@@ -33,14 +36,40 @@ export default function AdminAuditLogs() {
     return matchSearch && matchLevel;
   });
 
+  const handleExport = () => {
+    const csv = [
+      "ID,Timestamp,Actor,Action,Target,Level,Details,IP",
+      ...filtered.map(e => `${e.id},${e.timestamp},${e.actor},${e.action},"${e.target}",${e.level},"${e.details}",${e.ip}`)
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: "Audit Logs Exported", description: `${filtered.length} entries saved as CSV` });
+  };
+
   return (
     <div className="space-y-8" data-testid="admin-audit-logs-page">
-      <div className="flex items-center gap-3">
-        <ScrollText className="w-5 h-5" style={{ color: "var(--admin-deep-purple)" }} />
-        <div>
-          <h2 className="text-xl font-semibold text-gray-800">Audit Logs</h2>
-          <p className="text-xs text-muted-foreground">Complete activity trail for admin actions, system events, and data changes</p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <ScrollText className="w-5 h-5" style={{ color: "var(--admin-deep-purple)" }} />
+          <div>
+            <h2 className="text-xl font-semibold text-gray-800">Audit Logs</h2>
+            <p className="text-xs text-muted-foreground">Complete activity trail for admin actions, system events, and data changes</p>
+          </div>
         </div>
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+          data-testid="btn-export-logs"
+        >
+          <Download className="w-3.5 h-3.5" /> Export CSV
+        </button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -77,9 +106,15 @@ export default function AdminAuditLogs() {
 
         <div className="space-y-1">
           {filtered.map(entry => (
-            <div key={entry.id} className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors border-l-2" style={{
-              borderColor: entry.level === "critical" ? "#F43F5E" : entry.level === "warning" ? "#F59E0B" : "transparent",
-            }} data-testid={`audit-entry-${entry.id}`}>
+            <div
+              key={entry.id}
+              onClick={() => setDetailEntry(entry)}
+              className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors border-l-2 cursor-pointer"
+              style={{
+                borderColor: entry.level === "critical" ? "#F43F5E" : entry.level === "warning" ? "#F59E0B" : "transparent",
+              }}
+              data-testid={`audit-entry-${entry.id}`}
+            >
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${
                 entry.actor === "admin" ? "bg-blue-50" : entry.actor === "owner" ? "bg-purple-50" : "bg-gray-100"
               }`}>
@@ -106,6 +141,44 @@ export default function AdminAuditLogs() {
           ))}
         </div>
       </div>
+
+      {detailEntry && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-6" data-testid="audit-detail-modal">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                  detailEntry.actor === "admin" ? "bg-blue-50" : detailEntry.actor === "owner" ? "bg-purple-50" : "bg-gray-100"
+                }`}>
+                  {detailEntry.actor === "admin" ? <Shield className="w-4 h-4 text-blue-500" /> :
+                   detailEntry.actor === "owner" ? <User className="w-4 h-4 text-purple-500" /> :
+                   <Settings className="w-4 h-4 text-gray-400" />}
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-800">{detailEntry.action}</h3>
+                  <p className="text-[10px] text-gray-400">{detailEntry.id}</p>
+                </div>
+              </div>
+              <button onClick={() => setDetailEntry(null)} className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200" data-testid="btn-close-audit-detail">
+                <X className="w-3.5 h-3.5 text-gray-500" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-gray-50"><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Actor</p><p className="text-xs text-gray-700 capitalize">{detailEntry.actor}</p></div>
+                <div className="p-3 rounded-xl bg-gray-50"><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Level</p><span className={`text-xs font-medium ${detailEntry.level === "critical" ? "text-red-500" : detailEntry.level === "warning" ? "text-amber-600" : "text-gray-500"}`}>{detailEntry.level}</span></div>
+                <div className="p-3 rounded-xl bg-gray-50"><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Timestamp</p><p className="text-xs text-gray-700 font-mono">{detailEntry.timestamp}</p></div>
+                <div className="p-3 rounded-xl bg-gray-50"><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">IP Address</p><p className="text-xs text-gray-700 font-mono">{detailEntry.ip}</p></div>
+              </div>
+              <div className="p-3 rounded-xl bg-gray-50"><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Target</p><p className="text-sm text-gray-700">{detailEntry.target}</p></div>
+              <div className="p-3 rounded-xl bg-gray-50"><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Details</p><p className="text-sm text-gray-700">{detailEntry.details}</p></div>
+            </div>
+            <div className="flex items-center justify-end px-6 py-4 border-t border-gray-100 bg-gray-50">
+              <button onClick={() => setDetailEntry(null)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 rounded-lg">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
