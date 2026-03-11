@@ -21,7 +21,7 @@ The design adopts an Airbnb-inspired aesthetic, featuring a #FFCC02 golden yello
 - **Restaurant Detail:** Provides comprehensive restaurant information, including photos, reviews, hours, map location, and deep links for delivery services (Grab, LINE MAN, Robinhood).
 - **User Profile:** Allows users to manage dietary restrictions, preferences, and LINE integration settings.
 - **Vibe Tagging System:** Restaurants are categorized using 14 distinct vibe tags (e.g., `spicy`, `drinks`, `date_night`). An auto-assign logic maps keywords, price levels, and operating hours to these vibes.
-- **Admin Panel:** A comprehensive data analytics platform for partners, featuring a dashboard, user insights, campaign management, and app configuration.
+- **Admin Panel:** A comprehensive data analytics platform with 17 super admin pages (Dashboard, Analytics, Restaurants, Menus, Campaigns, Banners, Swipe Sessions, Users, Food Trends, Geography, Partner Clickouts, Predictive Intel, Owners, Data Ops, Integrations, Reports, Audit Logs) and 9 owner pages (Dashboard, Menu & Hours, Reviews, Promotions, Performance, Insights, Notifications, Support, Settings). Shared utility: `adminUtils.ts` exports `getTintVar()` for consistent tint backgrounds.
 - **Campaign System:** Enables restaurant owners to create and manage promotional campaigns, displayed as banners on the home screen and detail pages.
 - **Analytics Tracking:** Client-side event tracking for user behavior analysis.
 - **Toast Picks:** A personalized predictive recommendation system leveraging user preferences and context.

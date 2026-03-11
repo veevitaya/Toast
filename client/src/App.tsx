@@ -29,12 +29,25 @@ import AdminBanners from "@/pages/admin/AdminBanners";
 import AdminAnalytics from "@/pages/admin/AdminAnalytics";
 import AdminConfig from "@/pages/admin/AdminConfig";
 import AdminPayments from "@/pages/admin/AdminPayments";
+import AdminSwipeSessions from "@/pages/admin/AdminSwipeSessions";
+import AdminMenus from "@/pages/admin/AdminMenus";
+import AdminOwners from "@/pages/admin/AdminOwners";
+import AdminPartnerClickouts from "@/pages/admin/AdminPartnerClickouts";
+import AdminFoodTrends from "@/pages/admin/AdminFoodTrends";
+import AdminGeography from "@/pages/admin/AdminGeography";
+import AdminPredictiveIntelligence from "@/pages/admin/AdminPredictiveIntelligence";
+import AdminDataOps from "@/pages/admin/AdminDataOps";
+import AdminIntegrations from "@/pages/admin/AdminIntegrations";
+import AdminReports from "@/pages/admin/AdminReports";
+import AdminAuditLogs from "@/pages/admin/AdminAuditLogs";
 import AdminOwnerDashboard from "@/pages/admin/AdminOwnerDashboard";
 import OwnerMenu from "@/pages/admin/OwnerMenu";
 import OwnerReviews from "@/pages/admin/OwnerReviews";
 import OwnerPromotions from "@/pages/admin/OwnerPromotions";
 import OwnerPerformance from "@/pages/admin/OwnerPerformance";
+import OwnerInsights from "@/pages/admin/OwnerInsights";
 import OwnerNotifications from "@/pages/admin/OwnerNotifications";
+import OwnerSupport from "@/pages/admin/OwnerSupport";
 import OwnerSettings from "@/pages/admin/OwnerSettings";
 
 const pageVariants = {
@@ -137,6 +150,39 @@ function Router() {
         <Route path="/admin/config">
           <AdminLayout><AdminConfig /></AdminLayout>
         </Route>
+        <Route path="/admin/swipe-sessions">
+          <AdminLayout><AdminSwipeSessions /></AdminLayout>
+        </Route>
+        <Route path="/admin/menus">
+          <AdminLayout><AdminMenus /></AdminLayout>
+        </Route>
+        <Route path="/admin/owners">
+          <AdminLayout><AdminOwners /></AdminLayout>
+        </Route>
+        <Route path="/admin/partner-clickouts">
+          <AdminLayout><AdminPartnerClickouts /></AdminLayout>
+        </Route>
+        <Route path="/admin/food-trends">
+          <AdminLayout><AdminFoodTrends /></AdminLayout>
+        </Route>
+        <Route path="/admin/geography">
+          <AdminLayout><AdminGeography /></AdminLayout>
+        </Route>
+        <Route path="/admin/predictive">
+          <AdminLayout><AdminPredictiveIntelligence /></AdminLayout>
+        </Route>
+        <Route path="/admin/data-ops">
+          <AdminLayout><AdminDataOps /></AdminLayout>
+        </Route>
+        <Route path="/admin/integrations">
+          <AdminLayout><AdminIntegrations /></AdminLayout>
+        </Route>
+        <Route path="/admin/reports">
+          <AdminLayout><AdminReports /></AdminLayout>
+        </Route>
+        <Route path="/admin/audit-logs">
+          <AdminLayout><AdminAuditLogs /></AdminLayout>
+        </Route>
         <Route path="/admin/my-restaurant">
           <AdminLayout><AdminOwnerDashboard /></AdminLayout>
         </Route>
@@ -152,8 +198,14 @@ function Router() {
         <Route path="/admin/owner/performance">
           <AdminLayout><OwnerPerformance /></AdminLayout>
         </Route>
+        <Route path="/admin/owner/insights">
+          <AdminLayout><OwnerInsights /></AdminLayout>
+        </Route>
         <Route path="/admin/owner/notifications">
           <AdminLayout><OwnerNotifications /></AdminLayout>
+        </Route>
+        <Route path="/admin/owner/support">
+          <AdminLayout><OwnerSupport /></AdminLayout>
         </Route>
         <Route path="/admin/owner/settings">
           <AdminLayout><OwnerSettings /></AdminLayout>

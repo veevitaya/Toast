@@ -18,6 +18,17 @@ import {
   TrendingUp,
   Bell,
   CreditCard,
+  Repeat,
+  Flame,
+  MapPin,
+  Brain,
+  Database,
+  Plug,
+  FileText,
+  ScrollText,
+  Lightbulb,
+  HelpCircle,
+  UserCircle,
 } from "lucide-react";
 import toastLogo from "@assets/toast_logo_nobg.png";
 import ButtersAssistant from "@/components/ButtersAssistant";
@@ -52,12 +63,14 @@ const adminNavGroups: NavGroup[] = [
     label: "Overview",
     items: [
       { label: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard" },
+      { label: "Analytics", icon: BarChart3, href: "/admin/analytics" },
     ],
   },
   {
     label: "Content",
     items: [
       { label: "Restaurants", icon: Utensils, href: "/admin/restaurants" },
+      { label: "Menus", icon: UtensilsCrossed, href: "/admin/menus" },
       { label: "Campaigns", icon: Megaphone, href: "/admin/campaigns" },
       { label: "Banners", icon: ImageIcon, href: "/admin/banners" },
     ],
@@ -65,13 +78,27 @@ const adminNavGroups: NavGroup[] = [
   {
     label: "Insights",
     items: [
-      { label: "Analytics", icon: BarChart3, href: "/admin/analytics" },
+      { label: "Swipe Sessions", icon: Repeat, href: "/admin/swipe-sessions" },
       { label: "Users", icon: Users, href: "/admin/users" },
+      { label: "Food Trends", icon: Flame, href: "/admin/food-trends" },
+      { label: "Geography", icon: MapPin, href: "/admin/geography" },
+      { label: "Partner Clickouts", icon: ExternalLink, href: "/admin/partner-clickouts" },
+      { label: "Predictive Intel", icon: Brain, href: "/admin/predictive" },
     ],
   },
   {
-    label: "Settings",
+    label: "Operations",
     items: [
+      { label: "Owners", icon: Store, href: "/admin/owners" },
+      { label: "Data Ops", icon: Database, href: "/admin/data-ops" },
+      { label: "Integrations", icon: Plug, href: "/admin/integrations" },
+    ],
+  },
+  {
+    label: "System",
+    items: [
+      { label: "Reports", icon: FileText, href: "/admin/reports" },
+      { label: "Audit Logs", icon: ScrollText, href: "/admin/audit-logs" },
       { label: "Payments", icon: CreditCard, href: "/admin/payments" },
       { label: "App Config", icon: Settings2, href: "/admin/config" },
     ],
@@ -97,12 +124,14 @@ const ownerNavGroups: NavGroup[] = [
     label: "Insights",
     items: [
       { label: "Performance", icon: TrendingUp, href: "/admin/owner/performance" },
+      { label: "Insights", icon: Lightbulb, href: "/admin/owner/insights" },
       { label: "Notifications", icon: Bell, href: "/admin/owner/notifications" },
     ],
   },
   {
     label: "Account",
     items: [
+      { label: "Support", icon: HelpCircle, href: "/admin/owner/support" },
       { label: "Settings", icon: Settings2, href: "/admin/owner/settings" },
     ],
   },
