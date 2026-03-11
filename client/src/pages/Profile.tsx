@@ -5,10 +5,12 @@ import { useLineProfile } from "@/hooks/use-line-profile";
 import { sendGroupInvite } from "@/lib/liff";
 import { BottomNav } from "@/components/BottomNav";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
-import { ChevronRight, UserPlus, Unlink, LogIn, LogOut, X, Store, User, Star, TrendingUp, Image, Sparkles, Plus, Check, Crown, Eye, ExternalLink, MapPin, Clock, BarChart3, ArrowUpRight, ArrowDownRight, Utensils, Zap, Calendar, Megaphone, Tag, Percent, Trash2, Send, Users, Target, Search, Shield, AlertTriangle, Upload, FileText, Building2, Phone, Mail, ChevronDown, ShieldCheck } from "lucide-react";
+import { ChevronRight, UserPlus, Unlink, LogIn, LogOut, X, Store, User, Star, TrendingUp, Image, Sparkles, Plus, Check, Crown, Eye, ExternalLink, MapPin, Clock, BarChart3, ArrowUpRight, ArrowDownRight, Utensils, Zap, Calendar, Megaphone, Tag, Percent, Trash2, Send, Users, Target, Search, Shield, AlertTriangle, Upload, FileText, Building2, Phone, Mail, ChevronDown, ShieldCheck, Globe } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { RestaurantResponse } from "@shared/routes";
+import { useLanguage } from "@/i18n/LanguageProvider";
+import type { LanguagePreference } from "@/i18n/index";
 
 const DIETARY_OPTIONS = [
   { value: "halal", label: "Halal", emoji: "🕌" },
@@ -240,9 +242,16 @@ async function fetchFromServer(lineUserId: string): Promise<Partial<LocalProfile
 
 const springConfig = { type: "spring" as const, damping: 26, stiffness: 260, mass: 0.8 };
 
+const LANGUAGE_OPTIONS: { value: LanguagePreference; labelKey: string; flag: string }[] = [
+  { value: "auto", labelKey: "profile.language_auto", flag: "🌐" },
+  { value: "en", labelKey: "profile.language_english", flag: "🇬🇧" },
+  { value: "th", labelKey: "profile.language_thai", flag: "🇹🇭" },
+];
+
 export default function Profile() {
   const [, navigate] = useLocation();
   const { profile: lineProfile, liffAvailable, login: lineLogin, logout: lineLogout } = useLineProfile();
+  const { locale, preference: languagePreference, setLanguage, t } = useLanguage();
   const [localProfile, setLocalProfile] = useState<LocalProfile>(getStoredProfile);
   const [showPartnerModal, setShowPartnerModal] = useState(false);
   const [partnerInput, setPartnerInput] = useState("");
@@ -352,7 +361,7 @@ export default function Profile() {
             className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground/40"
             data-testid="text-profile-label"
           >
-            {isOwnerMode ? "Business" : "Profile"}
+            {isOwnerMode ? t("profile.business") : t("profile.title")}
           </p>
           <div className="flex items-center gap-2">
             {!isOwnerMode && !lineProfile && liffAvailable && (
@@ -491,7 +500,7 @@ export default function Profile() {
                       🥗
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="font-bold text-[15px]">Dietary</p>
+                      <p className="font-bold text-[15px]">{t("profile.dietary_title")}</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
                         {localProfile.dietaryRestrictions.length > 0
                           ? localProfile.dietaryRestrictions.map(v => DIETARY_OPTIONS.find(o => o.value === v)?.label).filter(Boolean).join(", ")
@@ -544,7 +553,7 @@ export default function Profile() {
                       🍜
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="font-bold text-[15px]">Cuisines</p>
+                      <p className="font-bold text-[15px]">{t("profile.cuisine_title")}</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
                         {localProfile.cuisinePreferences.length > 0
                           ? localProfile.cuisinePreferences.map(v => CUISINE_OPTIONS.find(o => o.value === v)?.emoji).filter(Boolean).join("  ")
@@ -601,7 +610,7 @@ export default function Profile() {
                       ⚙️
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="font-bold text-[15px]">Settings</p>
+                      <p className="font-bold text-[15px]">{t("profile.settings_title")}</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
                         {"฿".repeat(localProfile.defaultBudget)} · {localProfile.defaultDistance}
                       </p>
@@ -619,7 +628,7 @@ export default function Profile() {
                       >
                         <div className="px-5 pb-5 space-y-5">
                           <div>
-                            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">Budget Level</p>
+                            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">{t("profile.budget_level")}</p>
                             <div className="grid grid-cols-4 gap-2">
                               {BUDGET_OPTIONS.map(opt => (
                                 <button
@@ -641,7 +650,7 @@ export default function Profile() {
                           </div>
 
                           <div>
-                            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">Search Radius</p>
+                            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">{t("profile.search_radius")}</p>
                             <div className="flex gap-2">
                               {DISTANCE_OPTIONS.map(opt => (
                                 <button
@@ -656,6 +665,27 @@ export default function Profile() {
                                   style={localProfile.defaultDistance === opt.value ? { boxShadow: "0 2px 8px rgba(0,0,0,0.15)" } : {}}
                                 >
                                   {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">{t("profile.language_title")}</p>
+                            <div className="flex gap-2">
+                              {LANGUAGE_OPTIONS.map(opt => (
+                                <button
+                                  key={opt.value}
+                                  onClick={() => setLanguage(opt.value)}
+                                  data-testid={`button-language-${opt.value}`}
+                                  className={`flex-1 py-2.5 rounded-xl text-[11px] font-medium transition-all duration-200 active:scale-95 border ${
+                                    languagePreference === opt.value
+                                      ? "bg-foreground text-white border-foreground"
+                                      : "bg-white dark:bg-muted text-foreground/50 border-gray-100 dark:border-border"
+                                  }`}
+                                  style={languagePreference === opt.value ? { boxShadow: "0 2px 8px rgba(0,0,0,0.15)" } : {}}
+                                >
+                                  <span className="mr-1">{opt.flag}</span> {t(opt.labelKey)}
                                 </button>
                               ))}
                             </div>

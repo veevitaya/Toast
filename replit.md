@@ -42,6 +42,7 @@ The design adopts an Airbnb-inspired aesthetic, featuring a #FFCC02 golden yello
 - **Session Management:** Utilizes `sessionStorage` with `useSyncExternalStore` for persistent, global session tracking.
 - **Search Functionality:** Matches restaurant names, categories, and menu keywords with priority.
 - **Performance Optimizations:** Includes lazy loading for images and map iframes, and preloading of critical assets.
+- **Internationalization (i18n):** Full Thai/English language system. Core files: `client/src/i18n/index.ts` (translation logic, `t()` function, locale detection, `getLocalizedValue()` for API content), `client/src/i18n/LanguageProvider.tsx` (React context + `useLanguage()` hook), `client/src/locales/en.json` and `client/src/locales/th.json` (translation dictionaries). Language preference stored in localStorage (`toast_app_language`), options: Auto (device detection), English, Thai. Fallback: English. LanguageProvider wraps App in `App.tsx`. To add a new language: add locale file in `locales/`, add to `SUPPORTED_LOCALES` in `i18n/index.ts`, add option in Profile.tsx `LANGUAGE_OPTIONS`. Consumer-facing pages use `t()` for UI text; admin pages remain English-only.
 
 ## External Dependencies
 - **LINE LIFF:** For user authentication, profile retrieval, and social sharing within the LINE ecosystem.
