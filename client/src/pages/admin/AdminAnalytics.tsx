@@ -86,11 +86,11 @@ interface TopRestaurant {
 }
 
 const CONVERSION_FUNNEL = [
-  { label: "Impressions", value: 12400, pct: 100, color: "var(--admin-pink)", opacity: 0.25 },
-  { label: "Swipe Views", value: 8200, pct: 66, color: "var(--admin-pink)", opacity: 0.45 },
-  { label: "Right Swipes", value: 3100, pct: 25, color: "var(--admin-pink)", opacity: 0.65 },
-  { label: "Detail Views", value: 1800, pct: 15, color: "var(--admin-pink)", opacity: 0.85 },
-  { label: "Orders / Bookings", value: 420, pct: 3.4, color: "var(--admin-pink)", opacity: 1 },
+  { label: "Impressions", value: 12400, pct: 100, bg: "rgba(244, 63, 94, 0.15)", textColor: "text-gray-700" },
+  { label: "Swipe Views", value: 8200, pct: 66, bg: "rgba(244, 63, 94, 0.30)", textColor: "text-gray-800" },
+  { label: "Right Swipes", value: 3100, pct: 25, bg: "rgba(244, 63, 94, 0.55)", textColor: "text-white" },
+  { label: "Detail Views", value: 1800, pct: 15, bg: "rgba(244, 63, 94, 0.75)", textColor: "text-white" },
+  { label: "Orders / Bookings", value: 420, pct: 3.4, bg: "rgba(244, 63, 94, 1)", textColor: "text-white" },
 ];
 
 const GEO_HOTSPOTS = [
@@ -888,10 +888,10 @@ export default function AdminAnalytics() {
                 <div className="flex-1 h-8 rounded-lg bg-gray-50 overflow-hidden relative">
                   <div
                     className="h-full rounded-lg flex items-center px-3 transition-all"
-                    style={{ width: `${Math.max(step.pct, 8)}%`, backgroundColor: step.color, opacity: step.opacity }}
+                    style={{ width: `${Math.max(step.pct, 8)}%`, backgroundColor: step.bg }}
                   >
                     {step.pct > 20 && (
-                      <span className={`text-[10px] font-medium whitespace-nowrap ${(step.opacity || 1) >= 0.65 ? "text-white" : "text-gray-700"}`}>{step.value.toLocaleString()}</span>
+                      <span className={`text-[10px] font-medium whitespace-nowrap ${step.textColor}`}>{step.value.toLocaleString()}</span>
                     )}
                   </div>
                   {step.pct <= 20 && (

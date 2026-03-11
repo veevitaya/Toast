@@ -118,11 +118,11 @@ const fallbackSegments: UserSegment[] = [
 ];
 
 const CONVERSION_FUNNEL = [
-  { label: "Impressions", value: 12400, pct: 100, color: "var(--admin-pink)", opacity: 0.25 },
-  { label: "Swipe Views", value: 8200, pct: 66, color: "var(--admin-pink)", opacity: 0.45 },
-  { label: "Right Swipes", value: 3100, pct: 25, color: "var(--admin-pink)", opacity: 0.65 },
-  { label: "Detail Views", value: 1800, pct: 15, color: "var(--admin-pink)", opacity: 0.85 },
-  { label: "Orders", value: 420, pct: 3.4, color: "var(--admin-pink)", opacity: 1 },
+  { label: "Impressions", value: 12400, pct: 100, bg: "rgba(244, 63, 94, 0.15)", textColor: "text-gray-700" },
+  { label: "Swipe Views", value: 8200, pct: 66, bg: "rgba(244, 63, 94, 0.30)", textColor: "text-gray-800" },
+  { label: "Right Swipes", value: 3100, pct: 25, bg: "rgba(244, 63, 94, 0.55)", textColor: "text-white" },
+  { label: "Detail Views", value: 1800, pct: 15, bg: "rgba(244, 63, 94, 0.75)", textColor: "text-white" },
+  { label: "Orders", value: 420, pct: 3.4, bg: "rgba(244, 63, 94, 1)", textColor: "text-white" },
 ];
 
 const GEO_HOTSPOTS = [
@@ -472,15 +472,14 @@ export default function AdminDashboard() {
               return (
                 <div key={step.label} className="w-full flex flex-col items-center" data-testid={`funnel-step-${idx}`}>
                   <div
-                    className="relative flex items-center justify-center py-2 transition-all"
+                    className="relative flex items-center justify-center py-2.5 transition-all"
                     style={{
                       width: `${widthPct}%`,
-                      backgroundColor: step.color,
+                      backgroundColor: step.bg,
                       borderRadius: idx === 0 ? "8px 8px 2px 2px" : idx === CONVERSION_FUNNEL.length - 1 ? "2px 2px 8px 8px" : "2px",
-                      opacity: step.opacity,
                     }}
                   >
-                    <span className={`text-[11px] font-semibold whitespace-nowrap ${step.opacity >= 0.65 ? "text-white" : "text-gray-700"}`}>
+                    <span className={`text-[11px] font-semibold whitespace-nowrap ${step.textColor}`}>
                       {step.label} — {step.value.toLocaleString()}
                     </span>
                   </div>
