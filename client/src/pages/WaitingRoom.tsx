@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
-import { TrendingUp, Shield, UserCheck } from "lucide-react";
+import { TrendingUp, Shield, UserCheck, Bell } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import mascotImg from "@assets/toast_mascot_nobg.png";
 import { shareMessage, sendGroupInvite, getAccessToken, isLineOAAvailable } from "@/lib/liff";
@@ -142,11 +142,17 @@ export default function WaitingRoom() {
     await sendGroupInvite(sessionId);
   };
 
-  const handleNudgeMember = async (memberName: string) => {
-    setNudgedMembers((prev) => new Set(prev).add(memberName));
-    const appUrl = window.location.origin;
-    const text = `Hey ${memberName}! We're waiting for you on Toast. Join our food session!\n\n${appUrl}/group/waiting?session=${sessionId}`;
-    await shareMessage(text);
+  const handleNudgeMember = async (nudgeKey: string = "general", memberName?: string) => {
+    const oaLiffId = isLineOAAvailable() ? import.meta.env.VITE_LINE_OA_LIFF_ID : "";
+    const joinUrl = oaLiffId
+      ? `https://liff.line.me/${oaLiffId}/group/waiting?session=${sessionId}`
+      : `${window.location.origin}/group/waiting?session=${sessionId}`;
+    const greeting = memberName ? `Hey ${memberName}! ` : "";
+    const text = `${greeting}🍞 Nudge! We're waiting for you on Toast!\n\nJoin our food swiping session now:\n${joinUrl}`;
+    const result = await shareMessage(text);
+    if (result.shared) {
+      setNudgedMembers((prev) => new Set(prev).add(nudgeKey));
+    }
   };
 
   const memberCount = members.length;
@@ -433,13 +439,26 @@ export default function WaitingRoom() {
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 0.5 }}
             transition={{ delay: 0.35 + (memberCount + i) * 0.08, type: "spring", damping: 18, stiffness: 200 }}
-            className="flex flex-col items-center gap-2"
+            className="flex flex-col items-center gap-1.5"
             data-testid={`member-placeholder-${i}`}
           >
             <div className="w-[72px] h-[72px] rounded-full border-[3px] border-dashed border-gray-200 flex items-center justify-center">
               <span className="text-gray-300 text-xl">?</span>
             </div>
             <span className="text-sm font-bold text-muted-foreground/40">Waiting...</span>
+            <button
+              onClick={() => handleNudgeMember()}
+              disabled={nudgedMembers.has("general")}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all active:scale-95 ${
+                nudgedMembers.has("general")
+                  ? "bg-gray-100 text-muted-foreground/40"
+                  : "bg-amber-50 text-amber-700 border border-amber-200"
+              }`}
+              data-testid={`button-nudge-placeholder-${i}`}
+            >
+              <Bell className="w-3 h-3" />
+              {nudgedMembers.has("general") ? "Sent!" : "Nudge"}
+            </button>
           </motion.div>
         ))}
 

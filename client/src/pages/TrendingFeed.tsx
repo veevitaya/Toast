@@ -715,7 +715,7 @@ export default function TrendingFeed() {
         });
       }
 
-      navigate(`/waiting-room?session=${sessionCode}`);
+      navigate(`/group/waiting?session=${sessionCode}`);
     } catch (err) {
       toast({
         title: "Couldn't create session",
