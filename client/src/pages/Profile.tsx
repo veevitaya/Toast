@@ -363,28 +363,7 @@ export default function Profile() {
           >
             {isOwnerMode ? t("profile.business") : t("profile.title")}
           </p>
-          <div className="flex items-center gap-2">
-            {!isOwnerMode && !lineProfile && liffAvailable && (
-              <button
-                onClick={lineLogin}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#06C755] text-white text-xs font-semibold active:scale-95 transition-transform"
-                style={{ boxShadow: "0 3px 12px rgba(6,199,85,0.3)" }}
-                data-testid="button-line-login"
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                LINE
-              </button>
-            )}
-            {!isOwnerMode && lineProfile && (
-              <button
-                onClick={lineLogout}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 dark:bg-muted text-muted-foreground text-xs font-medium active:scale-95 transition-transform"
-                data-testid="button-line-logout"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+          <div className="flex items-center gap-2" />
         </div>
 
         <div className="flex flex-col items-center text-center mb-6">
@@ -419,24 +398,24 @@ export default function Profile() {
             )}
           </div>
           {isOwnerMode ? (
-            <p className="text-[22px] font-bold tracking-tight">Business Dashboard</p>
+            <p className="text-[22px] font-bold tracking-tight">{t("profile.business_dashboard")}</p>
           ) : (
             <>
               <input
                 type="text"
                 value={localProfile.displayName}
                 onChange={(e) => updateProfile({ displayName: e.target.value })}
-                placeholder="Your name"
+                placeholder={t("profile.your_name")}
                 className="text-[22px] font-bold bg-transparent border-none outline-none text-center w-full placeholder:text-muted-foreground/30 tracking-tight"
                 data-testid="input-display-name"
               />
               {!liffAvailable && !lineProfile && (
-                <p className="text-[11px] text-muted-foreground/50 mt-1">Open in LINE for full features</p>
+                <p className="text-[11px] text-muted-foreground/50 mt-1">{t("profile.open_in_line")}</p>
               )}
               {lineProfile && (
                 <p className="text-[11px] text-[#06C755] font-medium mt-1.5 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#06C755] inline-block" />
-                  Connected via LINE
+                  {t("profile.connected_via_line")}
                 </p>
               )}
             </>
@@ -468,29 +447,11 @@ export default function Profile() {
               exit={{ opacity: 0, x: 20 }}
               transition={springConfig}
             >
-              <StatsRow />
+              <StatsRow t={t} />
 
-              <div className="mb-3">
-                <div
-                  className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border"
-                >
-                  <PartnerRow
-                    profile={localProfile}
-                    onInvite={invitePartnerViaLine}
-                    onManualAdd={() => setShowPartnerModal(true)}
-                    onUnlink={unlinkPartner}
-                  />
-                </div>
-              </div>
-
-              <div className="mb-3">
-                <SavedSection />
-              </div>
-
-              <div className="mb-3">
-                <div
-                  className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border"
-                >
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-2 mt-2 px-1">{t("profile.section_food")}</p>
+              <div className="mb-5">
+                <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
                   <button
                     onClick={() => setActiveSection(activeSection === "dietary" ? null : "dietary")}
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
@@ -503,8 +464,8 @@ export default function Profile() {
                       <p className="font-bold text-[15px]">{t("profile.dietary_title")}</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
                         {localProfile.dietaryRestrictions.length > 0
-                          ? localProfile.dietaryRestrictions.map(v => DIETARY_OPTIONS.find(o => o.value === v)?.label).filter(Boolean).join(", ")
-                          : "No restrictions"}
+                          ? localProfile.dietaryRestrictions.map(v => t(`profile.${v === "shellfish_free" ? "no_shellfish" : v}`)).filter(Boolean).join(", ")
+                          : t("profile.no_restrictions")}
                       </p>
                     </div>
                     <ChevronRight className={`w-4 h-4 text-muted-foreground/40 transition-transform duration-300 ${activeSection === "dietary" ? "rotate-90" : ""}`} />
@@ -533,7 +494,7 @@ export default function Profile() {
                                 style={localProfile.dietaryRestrictions.includes(opt.value) ? { boxShadow: "0 2px 8px rgba(0,0,0,0.15)" } : {}}
                               >
                                 <span className="text-sm">{opt.emoji}</span>
-                                {opt.label}
+                                {t(`profile.${opt.value === "shellfish_free" ? "no_shellfish" : opt.value}`)}
                               </button>
                             ))}
                           </div>
@@ -557,7 +518,7 @@ export default function Profile() {
                       <p className="text-[11px] text-muted-foreground mt-0.5">
                         {localProfile.cuisinePreferences.length > 0
                           ? localProfile.cuisinePreferences.map(v => CUISINE_OPTIONS.find(o => o.value === v)?.emoji).filter(Boolean).join("  ")
-                          : "All cuisines"}
+                          : t("profile.all_cuisines")}
                       </p>
                     </div>
                     <ChevronRight className={`w-4 h-4 text-muted-foreground/40 transition-transform duration-300 ${activeSection === "cuisines" ? "rotate-90" : ""}`} />
@@ -586,7 +547,7 @@ export default function Profile() {
                                 style={localProfile.cuisinePreferences.includes(opt.value) ? { boxShadow: "0 2px 8px rgba(0,0,0,0.15)" } : {}}
                               >
                                 <span className="text-lg">{opt.emoji}</span>
-                                {opt.label}
+                                {t(`cuisine.${opt.value}`)}
                               </button>
                             ))}
                           </div>
@@ -597,22 +558,21 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="mb-3">
-                <div
-                  className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border"
-                >
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-2 px-1">{t("profile.section_app")}</p>
+              <div className="mb-5">
+                <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
                   <button
                     onClick={() => setActiveSection(activeSection === "defaults" ? null : "defaults")}
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-defaults-section"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(45,55%,92%) 0%, hsl(40,50%,85%) 100%)" }}>
-                      ⚙️
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(220,50%,92%) 0%, hsl(230,45%,85%) 100%)" }}>
+                      🎯
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="font-bold text-[15px]">{t("profile.settings_title")}</p>
+                      <p className="font-bold text-[15px]">{t("profile.budget_level")} & {t("profile.search_radius")}</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {"฿".repeat(localProfile.defaultBudget)} · {localProfile.defaultDistance}
+                        {"฿".repeat(localProfile.defaultBudget)} · {localProfile.defaultDistance === "any" ? t("profile.anywhere") : localProfile.defaultDistance}
                       </p>
                     </div>
                     <ChevronRight className={`w-4 h-4 text-muted-foreground/40 transition-transform duration-300 ${activeSection === "defaults" ? "rotate-90" : ""}`} />
@@ -630,22 +590,25 @@ export default function Profile() {
                           <div>
                             <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">{t("profile.budget_level")}</p>
                             <div className="grid grid-cols-4 gap-2">
-                              {BUDGET_OPTIONS.map(opt => (
-                                <button
-                                  key={opt.value}
-                                  onClick={() => updateProfile({ defaultBudget: opt.value })}
-                                  data-testid={`button-budget-${opt.value}`}
-                                  className={`relative py-3.5 rounded-2xl text-center transition-all duration-200 active:scale-95 border overflow-hidden ${
-                                    localProfile.defaultBudget === opt.value
-                                      ? "bg-foreground text-white border-foreground font-bold"
-                                      : "bg-white dark:bg-muted text-foreground/50 border-gray-100 dark:border-border"
-                                  }`}
-                                  style={localProfile.defaultBudget === opt.value ? { boxShadow: "0 4px 12px rgba(0,0,0,0.15)" } : {}}
-                                >
-                                  <p className="text-sm font-semibold">{opt.label}</p>
-                                  <p className={`text-[8px] mt-0.5 ${localProfile.defaultBudget === opt.value ? "text-white/60" : "text-muted-foreground/50"}`}>{opt.description}</p>
-                                </button>
-                              ))}
+                              {BUDGET_OPTIONS.map(opt => {
+                                const descKey = `profile.budget_${opt.value === 1 ? "budget" : opt.value === 2 ? "moderate" : opt.value === 3 ? "upscale" : "fine"}`;
+                                return (
+                                  <button
+                                    key={opt.value}
+                                    onClick={() => updateProfile({ defaultBudget: opt.value })}
+                                    data-testid={`button-budget-${opt.value}`}
+                                    className={`relative py-3.5 rounded-2xl text-center transition-all duration-200 active:scale-95 border overflow-hidden ${
+                                      localProfile.defaultBudget === opt.value
+                                        ? "bg-foreground text-white border-foreground font-bold"
+                                        : "bg-white dark:bg-muted text-foreground/50 border-gray-100 dark:border-border"
+                                    }`}
+                                    style={localProfile.defaultBudget === opt.value ? { boxShadow: "0 4px 12px rgba(0,0,0,0.15)" } : {}}
+                                  >
+                                    <p className="text-sm font-semibold">{opt.label}</p>
+                                    <p className={`text-[8px] mt-0.5 ${localProfile.defaultBudget === opt.value ? "text-white/60" : "text-muted-foreground/50"}`}>{t(descKey)}</p>
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
 
@@ -664,28 +627,7 @@ export default function Profile() {
                                   }`}
                                   style={localProfile.defaultDistance === opt.value ? { boxShadow: "0 2px 8px rgba(0,0,0,0.15)" } : {}}
                                 >
-                                  {opt.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div>
-                            <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">{t("profile.language_title")}</p>
-                            <div className="flex gap-2">
-                              {LANGUAGE_OPTIONS.map(opt => (
-                                <button
-                                  key={opt.value}
-                                  onClick={() => setLanguage(opt.value)}
-                                  data-testid={`button-language-${opt.value}`}
-                                  className={`flex-1 py-2.5 rounded-xl text-[11px] font-medium transition-all duration-200 active:scale-95 border ${
-                                    languagePreference === opt.value
-                                      ? "bg-foreground text-white border-foreground"
-                                      : "bg-white dark:bg-muted text-foreground/50 border-gray-100 dark:border-border"
-                                  }`}
-                                  style={languagePreference === opt.value ? { boxShadow: "0 2px 8px rgba(0,0,0,0.15)" } : {}}
-                                >
-                                  <span className="mr-1">{opt.flag}</span> {t(opt.labelKey)}
+                                  {opt.value === "any" ? t("profile.anywhere") : opt.label}
                                 </button>
                               ))}
                             </div>
@@ -694,7 +636,220 @@ export default function Profile() {
                       </motion.div>
                     )}
                   </AnimatePresence>
+
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
+                  <button
+                    onClick={() => setActiveSection(activeSection === "language" ? null : "language")}
+                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
+                    data-testid="button-language-section"
+                  >
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(270,50%,92%) 0%, hsl(280,45%,85%) 100%)" }}>
+                      🌐
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-[15px]">{t("profile.language_title")}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {languagePreference === "auto" ? t("profile.language_auto") : languagePreference === "th" ? "ไทย" : "English"}
+                      </p>
+                    </div>
+                    <ChevronRight className={`w-4 h-4 text-muted-foreground/40 transition-transform duration-300 ${activeSection === "language" ? "rotate-90" : ""}`} />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {activeSection === "language" && (
+                      <motion.div
+                        initial={{ height: 0 }}
+                        animate={{ height: "auto" }}
+                        exit={{ height: 0 }}
+                        transition={springConfig}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-5 pb-5">
+                          <div className="flex gap-2">
+                            {LANGUAGE_OPTIONS.map(opt => (
+                              <button
+                                key={opt.value}
+                                onClick={() => setLanguage(opt.value)}
+                                data-testid={`button-language-${opt.value}`}
+                                className={`flex-1 py-3 rounded-xl text-[12px] font-medium transition-all duration-200 active:scale-95 border ${
+                                  languagePreference === opt.value
+                                    ? "bg-foreground text-white border-foreground"
+                                    : "bg-white dark:bg-muted text-foreground/50 border-gray-100 dark:border-border"
+                                }`}
+                                style={languagePreference === opt.value ? { boxShadow: "0 2px 8px rgba(0,0,0,0.15)" } : {}}
+                              >
+                                <span className="mr-1">{opt.flag}</span> {t(opt.labelKey)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
+                  <button
+                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
+                    data-testid="button-notifications-section"
+                  >
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(40,60%,92%) 0%, hsl(35,50%,85%) 100%)" }}>
+                      🔔
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-[15px]">{t("profile.notifications")}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{t("profile.notifications_desc")}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                  </button>
                 </div>
+              </div>
+
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-2 px-1">{t("profile.section_account")}</p>
+              <div className="mb-5">
+                <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+                  {lineProfile ? (
+                    <div className="px-5 py-4 flex items-center gap-4">
+                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: "#06C755" }}>
+                        <span className="text-white text-[11px] font-bold">LINE</span>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-bold text-[15px]">LINE</p>
+                        <p className="text-[11px] text-[#06C755] font-medium mt-0.5 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#06C755] inline-block" />
+                          {t("profile.connected_via_line")}
+                        </p>
+                      </div>
+                      <button
+                        onClick={lineLogout}
+                        className="px-3 py-2 rounded-xl bg-gray-100 dark:bg-muted text-muted-foreground text-xs font-medium active:scale-95 transition-transform"
+                        data-testid="button-line-logout-section"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={liffAvailable ? lineLogin : undefined}
+                      className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 transition-colors"
+                      data-testid="button-line-connect"
+                    >
+                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: "#06C755" }}>
+                        <span className="text-white text-[11px] font-bold">LINE</span>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-bold text-[15px]">{t("profile.login_line")}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{t("profile.open_in_line")}</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                    </button>
+                  )}
+
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
+                  <PartnerRow
+                    profile={localProfile}
+                    onInvite={invitePartnerViaLine}
+                    onManualAdd={() => setShowPartnerModal(true)}
+                    onUnlink={unlinkPartner}
+                    t={t}
+                  />
+
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
+                  <SavedSection t={t} />
+                </div>
+              </div>
+
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-2 px-1">{t("profile.section_about")}</p>
+              <div className="mb-5">
+                <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+                  <button
+                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
+                    data-testid="button-privacy-policy"
+                  >
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(200,50%,92%) 0%, hsl(210,45%,85%) 100%)" }}>
+                      🔒
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-[15px]">{t("profile.privacy_policy")}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                  </button>
+
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
+                  <button
+                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
+                    data-testid="button-terms-of-service"
+                  >
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(160,50%,92%) 0%, hsl(170,45%,85%) 100%)" }}>
+                      📄
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-[15px]">{t("profile.terms_of_service")}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                  </button>
+
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
+                  <button
+                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
+                    data-testid="button-contact-support"
+                  >
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(340,50%,92%) 0%, hsl(350,45%,85%) 100%)" }}>
+                      💬
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-[15px]">{t("profile.contact_support")}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                  </button>
+
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
+                  <button
+                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
+                    data-testid="button-rate-app"
+                  >
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(45,60%,92%) 0%, hsl(40,55%,85%) 100%)" }}>
+                      ⭐
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-[15px]">{t("profile.rate_app")}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                  </button>
+
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
+                  <button
+                    onClick={() => {
+                      if (window.confirm(t("profile.clear_data_confirm"))) {
+                        localStorage.removeItem(PROFILE_STORAGE_KEY);
+                        localStorage.removeItem("toast_taste_profile");
+                        localStorage.removeItem("toast_saved_restaurants");
+                        setLocalProfile(getStoredProfile());
+                      }
+                    }}
+                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
+                    data-testid="button-clear-data"
+                  >
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(0,50%,92%) 0%, hsl(350,45%,85%) 100%)" }}>
+                      🗑️
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-[15px] text-red-500">{t("profile.clear_data")}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{t("profile.clear_data_desc")}</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <div className="text-center py-4 mb-4">
+                <p className="text-[10px] text-muted-foreground/40">Toast {t("profile.app_version")} 1.0.0</p>
+                <p className="text-[10px] text-muted-foreground/30 mt-1">{t("profile.about_app_desc")}</p>
               </div>
             </motion.div>
           )}
@@ -725,8 +880,8 @@ export default function Profile() {
                   💕
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold tracking-tight">Link Partner</h3>
-                  <p className="text-xs text-muted-foreground">Enter their display name</p>
+                  <h3 className="text-lg font-semibold tracking-tight">{t("profile.link_partner")}</h3>
+                  <p className="text-xs text-muted-foreground">{t("profile.enter_display_name")}</p>
                 </div>
               </div>
 
@@ -734,7 +889,7 @@ export default function Profile() {
                 type="text"
                 value={partnerInput}
                 onChange={(e) => setPartnerInput(e.target.value)}
-                placeholder="Partner's name"
+                placeholder={t("profile.partner_name_placeholder")}
                 className="w-full px-5 py-3.5 rounded-2xl bg-gray-50 dark:bg-muted border border-transparent focus:border-gray-200 dark:focus:border-border outline-none text-foreground font-medium placeholder:text-muted-foreground/40 mb-5 transition-colors"
                 data-testid="input-partner-name"
                 autoFocus
@@ -746,7 +901,7 @@ export default function Profile() {
                   className="flex-1 py-3.5 rounded-2xl bg-gray-100 dark:bg-muted text-foreground font-semibold text-sm active:scale-[0.97] transition-transform"
                   data-testid="button-cancel-partner"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   onClick={linkPartner}
@@ -755,7 +910,7 @@ export default function Profile() {
                   style={{ boxShadow: "0 4px 14px rgba(0,0,0,0.15)" }}
                   data-testid="button-confirm-partner"
                 >
-                  Link
+                  {t("common.link")}
                 </button>
               </div>
             </motion.div>
@@ -774,7 +929,7 @@ export default function Profile() {
           data-testid="button-owner-onboarding"
         >
           <Store className="w-4 h-4 text-[#00B14F]" />
-          Restaurant Owner?
+          {t("profile.become_owner")}
         </motion.button>
       )}
 
@@ -788,7 +943,7 @@ export default function Profile() {
           data-testid="badge-pending-approval"
         >
           <Clock className="w-4 h-4 text-amber-500 animate-pulse-soft" />
-          Claim pending approval — {ownerOnboardingStatus.restaurantName}
+          {t("profile.claim_pending")} — {ownerOnboardingStatus.restaurantName}
         </motion.div>
       )}
 
@@ -827,13 +982,13 @@ export default function Profile() {
                     </button>
                   )}
                   <h2 className="text-lg font-bold">
-                    {onboardingStep === "choice" && "Become a Restaurant Owner"}
-                    {onboardingStep === "profile" && "Your Information"}
-                    {onboardingStep === "register" && "Restaurant Details"}
-                    {onboardingStep === "claim" && "Find Your Restaurant"}
-                    {onboardingStep === "claim-confirm" && "Confirm Ownership"}
-                    {onboardingStep === "documents" && "Verification Documents"}
-                    {onboardingStep === "submitted" && "Submitted for Review"}
+                    {onboardingStep === "choice" && t("profile.become_owner_title")}
+                    {onboardingStep === "profile" && t("profile.your_info")}
+                    {onboardingStep === "register" && t("profile.restaurant_details")}
+                    {onboardingStep === "claim" && t("profile.find_restaurant")}
+                    {onboardingStep === "claim-confirm" && t("profile.confirm_ownership")}
+                    {onboardingStep === "documents" && t("profile.verification_docs")}
+                    {onboardingStep === "submitted" && t("profile.submitted_review")}
                   </h2>
                 </div>
                 <button
@@ -1341,6 +1496,7 @@ function ClaimSearchResults({ query, onSelect }: { query: string; onSelect: (res
 }
 
 function ProfileToggle({ isOwnerMode, onToggle }: { isOwnerMode: boolean; onToggle: (v: boolean) => void }) {
+  const { t } = useLanguage();
   return (
     <div
       className="relative flex items-center bg-gray-100 dark:bg-muted rounded-2xl p-1 mb-2"
@@ -1359,7 +1515,7 @@ function ProfileToggle({ isOwnerMode, onToggle }: { isOwnerMode: boolean; onTogg
         data-testid="button-user-mode"
       >
         <User className="w-4 h-4" />
-        Diner
+        {t("profile.diner")}
       </button>
       <button
         onClick={() => onToggle(true)}
@@ -1368,7 +1524,7 @@ function ProfileToggle({ isOwnerMode, onToggle }: { isOwnerMode: boolean; onTogg
         data-testid="button-owner-mode"
       >
         <Store className="w-4 h-4" />
-        Owner
+        {t("profile.owner")}
       </button>
     </div>
   );
@@ -3212,7 +3368,7 @@ function OwnerDashboard() {
   );
 }
 
-function StatsRow() {
+function StatsRow({ t }: { t: (key: string, params?: Record<string, string | number>) => string }) {
   const { mineCount, partnerCount } = useSavedRestaurants();
   const [stats, setStats] = useState({ totalSwipes: 0, likes: 0 });
 
@@ -3237,29 +3393,30 @@ function StatsRow() {
   }, []);
 
   const items = [
-    { label: "Swipes", value: stats.totalSwipes, testId: "text-total-swipes" },
-    { label: "Liked", value: stats.likes, testId: "text-total-likes" },
-    { label: "Saved", value: mineCount, testId: "text-saved-count" },
-    { label: "Shared", value: partnerCount, testId: "text-partner-saves" },
+    { labelKey: "profile.swipes", value: stats.totalSwipes, testId: "text-total-swipes" },
+    { labelKey: "profile.liked", value: stats.likes, testId: "text-total-likes" },
+    { labelKey: "profile.saved", value: mineCount, testId: "text-saved-count" },
+    { labelKey: "profile.shared", value: partnerCount, testId: "text-partner-saves" },
   ];
 
   return (
     <div className="flex items-center justify-around py-4 mb-4 border-b border-gray-100 dark:border-border">
-      {items.map((item, idx) => (
-        <div key={item.label} className="flex flex-col items-center">
+      {items.map((item) => (
+        <div key={item.labelKey} className="flex flex-col items-center">
           <p className="text-xl font-bold tracking-tight leading-none" data-testid={item.testId}>{item.value}</p>
-          <p className="text-[10px] text-muted-foreground mt-1">{item.label}</p>
+          <p className="text-[10px] text-muted-foreground mt-1">{t(item.labelKey)}</p>
         </div>
       ))}
     </div>
   );
 }
 
-function PartnerRow({ profile, onInvite, onManualAdd, onUnlink }: {
+function PartnerRow({ profile, onInvite, onManualAdd, onUnlink, t }: {
   profile: LocalProfile;
   onInvite: () => void;
   onManualAdd: () => void;
   onUnlink: () => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   const [, navigate] = useLocation();
   const { partnerCount } = useSavedRestaurants();
@@ -3271,7 +3428,7 @@ function PartnerRow({ profile, onInvite, onManualAdd, onUnlink }: {
           💕
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-[15px]">Partner</p>
+          <p className="font-bold text-[15px]">{t("profile.partner")}</p>
           {profile.partnerLinked ? (
             <div className="flex items-center gap-2 mt-0.5">
               <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-muted overflow-hidden flex items-center justify-center text-[10px]">
@@ -3281,11 +3438,11 @@ function PartnerRow({ profile, onInvite, onManualAdd, onUnlink }: {
               </div>
               <p className="text-[11px] text-muted-foreground truncate" data-testid="text-partner-name">{profile.partnerName}</p>
               {partnerCount > 0 && (
-                <span className="text-[10px] text-pink-500 font-medium ml-1">{partnerCount} shared</span>
+                <span className="text-[10px] text-pink-500 font-medium ml-1">{partnerCount} {t("profile.shared")}</span>
               )}
             </div>
           ) : (
-            <p className="text-[11px] text-muted-foreground mt-0.5">Invite or add a partner</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{t("profile.invite_partner")}</p>
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -3297,7 +3454,7 @@ function PartnerRow({ profile, onInvite, onManualAdd, onUnlink }: {
                   className="text-[11px] text-pink-500 font-semibold active:scale-95 transition-transform"
                   data-testid="button-view-partner-saves"
                 >
-                  View
+                  {t("common.view")}
                 </button>
               )}
               <button
@@ -3316,14 +3473,14 @@ function PartnerRow({ profile, onInvite, onManualAdd, onUnlink }: {
                 data-testid="button-invite-partner-line"
               >
                 <UserPlus className="w-3 h-3" />
-                Invite
+                {t("common.invite")}
               </button>
               <button
                 onClick={onManualAdd}
                 className="text-[11px] text-muted-foreground font-medium active:scale-95 transition-transform"
                 data-testid="button-add-partner-manual"
               >
-                Add
+                {t("common.add")}
               </button>
               <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
             </>
@@ -3334,7 +3491,7 @@ function PartnerRow({ profile, onInvite, onManualAdd, onUnlink }: {
   );
 }
 
-function SavedSection() {
+function SavedSection({ t }: { t: (key: string, params?: Record<string, string | number>) => string }) {
   const [, navigate] = useLocation();
   const { data, isSaved, getBucket, unsave, mineCount, partnerCount } = useSavedRestaurants();
   const [expanded, setExpanded] = useState(false);
@@ -3364,9 +3521,9 @@ function SavedSection() {
           ❤️
         </div>
         <div className="flex-1 text-left">
-          <p className="font-bold text-[15px]">Saved</p>
+          <p className="font-bold text-[15px]">{t("profile.saved_restaurants")}</p>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            {totalSaved === 0 ? "No saved restaurants" : `${mineCount} saved · ${partnerCount} shared`}
+            {totalSaved === 0 ? t("profile.no_saved") : `${mineCount} ${t("profile.saved")} · ${partnerCount} ${t("profile.shared")}`}
           </p>
         </div>
         <ChevronRight className={`w-4 h-4 text-muted-foreground/40 transition-transform duration-300 ${expanded ? "rotate-90" : ""}`} />
@@ -3384,8 +3541,8 @@ function SavedSection() {
               {savedRestaurants.length === 0 ? (
                 <div className="text-center py-6">
                   <span className="text-3xl block mb-2">🍽️</span>
-                  <p className="text-sm text-muted-foreground">No restaurants saved yet</p>
-                  <p className="text-xs text-muted-foreground/60 mt-1">Tap the heart on any restaurant to save it</p>
+                  <p className="text-sm text-muted-foreground">{t("profile.no_saved_yet")}</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">{t("profile.tap_heart_to_save")}</p>
                 </div>
               ) : (
                 <div className="space-y-2">
