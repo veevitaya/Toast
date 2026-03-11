@@ -422,18 +422,19 @@ export default function AdminOwnerDashboard() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-quick-actions">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-quick-actions">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-[3px] h-4 bg-[#00B14F] rounded-full" />
                 <h3 className="text-[15px] font-semibold text-gray-800">Quick Actions</h3>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 {[
                   { icon: Megaphone, label: "New Promotion", desc: "Create a deal", href: "/admin/owner/promotions", color: "text-[var(--admin-blue)]", bg: "bg-[var(--admin-blue-10)]" },
-                  { icon: BarChart3, label: "View Analytics", desc: "Check performance", href: "/admin/owner/performance", color: "text-[#00B14F]", bg: "bg-[#00B14F]/10" },
+                  { icon: BarChart3, label: "Decision Intel", desc: "Win rate analytics", href: "/admin/owner/decision-intelligence", color: "text-[#00B14F]", bg: "bg-[#00B14F]/10" },
                   { icon: Utensils, label: "Update Menu", desc: "Edit items & hours", href: "/admin/owner/menu", color: "text-[#FFCC02]", bg: "bg-[#FFCC02]/15" },
-                  { icon: Star, label: "Read Reviews", desc: "Reply to feedback", href: "/admin/owner/reviews", color: "text-rose-500", bg: "bg-rose-50" },
+                  { icon: ExternalLink, label: "Delivery Stats", desc: "Track conversions", href: "/admin/owner/delivery-conversions", color: "text-rose-500", bg: "bg-rose-50" },
+                  { icon: Users, label: "Customer Insights", desc: "Behavior data", href: "/admin/owner/customer-insights", color: "text-blue-500", bg: "bg-blue-50" },
+                  { icon: Star, label: "Read Reviews", desc: "Reply to feedback", href: "/admin/owner/reviews", color: "text-amber-500", bg: "bg-amber-50" },
                 ].map(({ icon: Icon, label, desc, href, color, bg }) => (
                   <a
                     key={label}
@@ -451,8 +452,9 @@ export default function AdminOwnerDashboard() {
                   </a>
                 ))}
               </div>
-            </div>
+          </div>
 
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-owner-profile">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-[3px] h-4 bg-[var(--admin-blue)] rounded-full" />
@@ -537,6 +539,47 @@ export default function AdminOwnerDashboard() {
                 <p className="text-xl font-bold text-gray-800">{restaurant.trendingScore}/100</p>
                 <p className="text-[11px] text-gray-400 mt-0.5">Your visibility rank</p>
               </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-top-insights">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-[3px] h-4 bg-[#00B14F] rounded-full" />
+              <h3 className="text-[15px] font-semibold text-gray-800">Top Insights</h3>
+              <span className="text-[10px] text-gray-400 ml-1">Actionable recommendations from your data</span>
+            </div>
+            <div className="space-y-3">
+              {[
+                {
+                  title: "Your Decision Win Rate is above average",
+                  why: "You win 32% of head-to-head comparisons vs. 28% category average. This means users actively prefer you.",
+                  action: "See full decision analytics",
+                  href: "/admin/owner/decision-intelligence",
+                  accent: "#00B14F",
+                },
+                {
+                  title: "Late-night traffic opportunity detected",
+                  why: "28% of users search after 10PM but your hours show closed. Extending hours could capture ฿8K+ monthly.",
+                  action: "Update operating hours",
+                  href: "/admin/owner/menu",
+                  accent: "#FFCC02",
+                },
+                {
+                  title: "Group sessions underperforming",
+                  why: "Solo win rate: 38% vs group: 24%. Adding shareable dishes and group-friendly tags could close this gap.",
+                  action: "View group analytics",
+                  href: "/admin/owner/customer-insights",
+                  accent: "var(--admin-blue)",
+                },
+              ].map((insight, i) => (
+                <div key={i} className="p-4 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors" data-testid={`top-insight-${i}`}>
+                  <h4 className="text-sm font-semibold text-gray-800 mb-1">{insight.title}</h4>
+                  <p className="text-[11px] text-gray-500 leading-relaxed mb-2">{insight.why}</p>
+                  <a href={insight.href} className="text-[11px] font-medium hover:opacity-80 transition-opacity flex items-center gap-1" style={{ color: insight.accent }}>
+                    {insight.action} <ChevronRight className="w-3 h-3" />
+                  </a>
+                </div>
+              ))}
             </div>
           </div>
 

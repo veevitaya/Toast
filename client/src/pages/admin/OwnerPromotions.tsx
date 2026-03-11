@@ -211,6 +211,43 @@ export default function OwnerPromotions() {
         </button>
       </div>
 
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-testid="section-campaign-analytics">
+        {[
+          { label: "Total Impressions", value: totalImpressions.toLocaleString(), trend: "+24%", icon: Eye },
+          { label: "Active Campaigns", value: activePromos.length.toString(), trend: `of ${MOCK_PROMOTIONS.length}`, icon: Megaphone },
+          { label: "Total Redemptions", value: totalRedemptions.toLocaleString(), trend: "+18%", icon: Target },
+          { label: "Avg. CTR", value: `${((MOCK_PROMOTIONS.reduce((s, p) => s + p.clicks, 0) / totalImpressions) * 100).toFixed(1)}%`, trend: "+2.3%", icon: MousePointer },
+        ].map((stat, i) => (
+          <div key={i} className="bg-white rounded-xl border border-gray-100 p-4" data-testid={`campaign-stat-${i}`}>
+            <div className="flex items-center gap-2 mb-2">
+              <stat.icon className="w-4 h-4 text-[#00B14F]" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{stat.label}</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
+            <p className="text-[11px] text-[#00B14F] font-medium mt-1">{stat.trend}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-campaign-insights">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-[3px] h-4 bg-[#00B14F] rounded-full" />
+          <h3 className="text-[15px] font-semibold text-gray-800">Campaign Insights</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="p-3 rounded-xl border border-gray-100">
+            <p className="text-xs font-medium text-gray-700">Best performing: "20% Off All Mains"</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">8.3% CTR — 2x above your category average. This deal type works well for your audience.</p>
+            <p className="text-[10px] text-[#00B14F] font-medium mt-1">Recommended: Extend this campaign through April</p>
+          </div>
+          <div className="p-3 rounded-xl border border-gray-100">
+            <p className="text-xs font-medium text-gray-700">Best time for promotions: 6-8 PM</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">72% of your promotion clicks happen during dinner hours. Consider scheduling happy hour deals.</p>
+            <p className="text-[10px] text-[#00B14F] font-medium mt-1">Opportunity: ฿3,200 estimated additional revenue</p>
+          </div>
+        </div>
+      </div>
+
       {showCreate && (
         <form
           onSubmit={handleSubmit}

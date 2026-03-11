@@ -29,6 +29,8 @@ import {
   Lightbulb,
   HelpCircle,
   UserCircle,
+  Heart,
+  Target,
 } from "lucide-react";
 import toastLogo from "@assets/toast_logo_nobg.png";
 import ButtersAssistant from "@/components/ButtersAssistant";
@@ -113,26 +115,35 @@ const ownerNavGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Management",
+    label: "Analytics",
     items: [
-      { label: "Menu & Hours", icon: UtensilsCrossed, href: "/admin/owner/menu" },
-      { label: "Reviews", icon: MessageSquare, href: "/admin/owner/reviews" },
-      { label: "Promotions", icon: Megaphone, href: "/admin/owner/promotions" },
+      { label: "Decision Intelligence", icon: Brain, href: "/admin/owner/decision-intelligence" },
+      { label: "Performance", icon: TrendingUp, href: "/admin/owner/performance" },
+      { label: "AI Recommendations", icon: Lightbulb, href: "/admin/owner/insights" },
     ],
   },
   {
-    label: "Insights",
+    label: "Management",
     items: [
-      { label: "Performance", icon: TrendingUp, href: "/admin/owner/performance" },
-      { label: "Insights", icon: Lightbulb, href: "/admin/owner/insights" },
-      { label: "Notifications", icon: Bell, href: "/admin/owner/notifications" },
+      { label: "Menu & Dishes", icon: UtensilsCrossed, href: "/admin/owner/menu" },
+      { label: "Promotions", icon: Megaphone, href: "/admin/owner/promotions" },
+      { label: "Reviews", icon: MessageSquare, href: "/admin/owner/reviews" },
+    ],
+  },
+  {
+    label: "Conversions",
+    items: [
+      { label: "Delivery Conversions", icon: ExternalLink, href: "/admin/owner/delivery-conversions" },
+      { label: "Customer Insights", icon: Heart, href: "/admin/owner/customer-insights" },
     ],
   },
   {
     label: "Account",
     items: [
+      { label: "Billing", icon: CreditCard, href: "/admin/owner/billing" },
       { label: "Support", icon: HelpCircle, href: "/admin/owner/support" },
       { label: "Settings", icon: Settings2, href: "/admin/owner/settings" },
+      { label: "Notifications", icon: Bell, href: "/admin/owner/notifications" },
     ],
   },
 ];

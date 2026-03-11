@@ -62,8 +62,8 @@ export default function OwnerInsights() {
       <div className="flex items-center gap-3">
         <Lightbulb className="w-5 h-5" style={{ color: "#00B14F" }} />
         <div>
-          <h2 className="text-xl font-semibold text-gray-800">Insights</h2>
-          <p className="text-xs text-muted-foreground">Audience analysis, recommendations, and growth opportunities</p>
+          <h2 className="text-xl font-semibold text-gray-800">AI Recommendations</h2>
+          <p className="text-xs text-muted-foreground">Personalized growth actions powered by Toast intelligence</p>
         </div>
       </div>
 

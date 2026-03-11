@@ -49,6 +49,10 @@ import OwnerInsights from "@/pages/admin/OwnerInsights";
 import OwnerNotifications from "@/pages/admin/OwnerNotifications";
 import OwnerSupport from "@/pages/admin/OwnerSupport";
 import OwnerSettings from "@/pages/admin/OwnerSettings";
+import OwnerDecisionIntelligence from "@/pages/admin/OwnerDecisionIntelligence";
+import OwnerDeliveryConversions from "@/pages/admin/OwnerDeliveryConversions";
+import OwnerCustomerInsights from "@/pages/admin/OwnerCustomerInsights";
+import OwnerBilling from "@/pages/admin/OwnerBilling";
 
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
@@ -209,6 +213,18 @@ function Router() {
         </Route>
         <Route path="/admin/owner/settings">
           <AdminLayout><OwnerSettings /></AdminLayout>
+        </Route>
+        <Route path="/admin/owner/decision-intelligence">
+          <AdminLayout><OwnerDecisionIntelligence /></AdminLayout>
+        </Route>
+        <Route path="/admin/owner/delivery-conversions">
+          <AdminLayout><OwnerDeliveryConversions /></AdminLayout>
+        </Route>
+        <Route path="/admin/owner/customer-insights">
+          <AdminLayout><OwnerCustomerInsights /></AdminLayout>
+        </Route>
+        <Route path="/admin/owner/billing">
+          <AdminLayout><OwnerBilling /></AdminLayout>
         </Route>
         <Route path="/admin">
           <Redirect to="/admin/dashboard" />

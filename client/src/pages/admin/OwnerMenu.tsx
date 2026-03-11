@@ -153,6 +153,52 @@ export default function OwnerMenu() {
         </div>
       </div>
 
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-dish-analytics">
+        <div className="flex items-center gap-2 mb-5">
+          <div className="w-[3px] h-4 bg-[#00B14F] rounded-full" />
+          <h3 className="text-[15px] font-semibold text-gray-800">Dish Performance</h3>
+          <span className="text-[10px] text-gray-400 ml-1">How your menu items perform on Toast</span>
+        </div>
+        <div className="space-y-3">
+          {[
+            { name: "Crab Omelette", views: 1842, swipeRate: "78%", orders: 234, trend: "+12%", top: true },
+            { name: "Drunken Noodles", views: 1456, swipeRate: "72%", orders: 189, trend: "+8%", top: true },
+            { name: "Pad Thai Special", views: 1123, swipeRate: "65%", orders: 156, trend: "+5%", top: false },
+            { name: "Green Curry", views: 890, swipeRate: "61%", orders: 98, trend: "-2%", top: false },
+            { name: "Thai Iced Tea", views: 567, swipeRate: "54%", orders: 67, trend: "+3%", top: false },
+          ].map((dish, i) => (
+            <div key={i} className="flex items-center gap-4 p-3 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors" data-testid={`dish-stat-${i}`}>
+              <div className="flex items-center gap-2 w-40 min-w-0">
+                {dish.top && <Sparkles className="w-3 h-3 text-[#FFCC02] flex-shrink-0" />}
+                <span className="text-sm font-medium text-gray-800 truncate">{dish.name}</span>
+              </div>
+              <div className="flex-1 grid grid-cols-4 gap-3 text-center">
+                <div>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">Views</p>
+                  <p className="text-sm font-semibold text-gray-700">{dish.views.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">Swipe Rate</p>
+                  <p className="text-sm font-semibold text-gray-700">{dish.swipeRate}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">Orders</p>
+                  <p className="text-sm font-semibold text-gray-700">{dish.orders}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">Trend</p>
+                  <p className={`text-sm font-semibold ${dish.trend.startsWith("+") ? "text-[#00B14F]" : "text-red-400"}`}>{dish.trend}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 p-3 rounded-xl bg-[#00B14F]/5 border border-[#00B14F]/10">
+          <p className="text-xs font-medium text-gray-700">Menu Opportunity Score: <span className="text-[#00B14F] font-bold">78/100</span></p>
+          <p className="text-[11px] text-gray-500 mt-0.5">Adding photos to "Green Curry" could boost its swipe rate by ~15%. Consider adding a lunch combo with Thai Iced Tea.</p>
+        </div>
+      </div>
+
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-operating-hours">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
