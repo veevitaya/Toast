@@ -35,15 +35,20 @@ import { Button } from "@/components/ui/button";
 type DateRange = "7d" | "30d" | "all";
 
 function eventDot(type: string) {
+  const base = "w-2 h-2 rounded-full inline-block flex-shrink-0";
   switch (type) {
     case "swipe_right":
-      return <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block flex-shrink-0" />;
+      return <span className={base} style={{ backgroundColor: "var(--admin-pink)" }} />;
     case "swipe_left":
-      return <span className="w-2 h-2 rounded-full bg-rose-400 inline-block flex-shrink-0" />;
+      return <span className={`${base} bg-gray-300`} />;
     case "view_detail":
-      return <span className="w-2 h-2 rounded-full bg-blue-400 inline-block flex-shrink-0" />;
+      return <span className={base} style={{ backgroundColor: "var(--admin-blue)" }} />;
+    case "quiz_start":
+      return <span className={base} style={{ backgroundColor: "var(--admin-deep-purple)" }} />;
+    case "delivery_click":
+      return <span className={base} style={{ backgroundColor: "var(--admin-teal)" }} />;
     default:
-      return <span className="w-2 h-2 rounded-full bg-muted-foreground/40 inline-block flex-shrink-0" />;
+      return <span className={`${base} bg-muted-foreground/40`} />;
   }
 }
 
