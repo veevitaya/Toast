@@ -555,12 +555,9 @@ export default function Profile() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </div>
-              </div>
 
-              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-2 px-1">{t("profile.section_app")}</p>
-              <div className="mb-5">
-                <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
                   <button
                     onClick={() => setActiveSection(activeSection === "defaults" ? null : "defaults")}
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
@@ -636,9 +633,12 @@ export default function Profile() {
                       </motion.div>
                     )}
                   </AnimatePresence>
+                </div>
+              </div>
 
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
-
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-2 px-1">{t("profile.section_app")}</p>
+              <div className="mb-5">
+                <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
                   <button
                     onClick={() => setActiveSection(activeSection === "language" ? null : "language")}
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
@@ -701,6 +701,44 @@ export default function Profile() {
                       <p className="text-[11px] text-muted-foreground mt-0.5">{t("profile.notifications_desc")}</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                  </button>
+
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
+                  <button
+                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
+                    data-testid="button-contact-support"
+                  >
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(340,50%,92%) 0%, hsl(350,45%,85%) 100%)" }}>
+                      💬
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-[15px]">{t("profile.contact_support")}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                  </button>
+
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
+                  <button
+                    onClick={() => {
+                      if (window.confirm(t("profile.clear_data_confirm"))) {
+                        localStorage.removeItem(PROFILE_STORAGE_KEY);
+                        localStorage.removeItem("toast_taste_profile");
+                        localStorage.removeItem("toast_saved_restaurants");
+                        setLocalProfile(getStoredProfile());
+                      }
+                    }}
+                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
+                    data-testid="button-clear-data"
+                  >
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(0,50%,92%) 0%, hsl(350,45%,85%) 100%)" }}>
+                      🗑️
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-[15px] text-red-500">{t("profile.clear_data")}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{t("profile.clear_data_desc")}</p>
+                    </div>
                   </button>
                 </div>
               </div>
@@ -796,13 +834,14 @@ export default function Profile() {
 
                   <button
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
-                    data-testid="button-contact-support"
+                    data-testid="button-about-app"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(340,50%,92%) 0%, hsl(350,45%,85%) 100%)" }}>
-                      💬
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(45,60%,92%) 0%, hsl(40,55%,85%) 100%)" }}>
+                      🍞
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="font-bold text-[15px]">{t("profile.contact_support")}</p>
+                      <p className="font-bold text-[15px]">{t("profile.about_app")}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{t("profile.about_app_desc")}</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                   </button>
@@ -813,36 +852,13 @@ export default function Profile() {
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-rate-app"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(45,60%,92%) 0%, hsl(40,55%,85%) 100%)" }}>
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(50,65%,92%) 0%, hsl(45,55%,85%) 100%)" }}>
                       ⭐
                     </div>
                     <div className="flex-1 text-left">
                       <p className="font-bold text-[15px]">{t("profile.rate_app")}</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
-                  </button>
-
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
-
-                  <button
-                    onClick={() => {
-                      if (window.confirm(t("profile.clear_data_confirm"))) {
-                        localStorage.removeItem(PROFILE_STORAGE_KEY);
-                        localStorage.removeItem("toast_taste_profile");
-                        localStorage.removeItem("toast_saved_restaurants");
-                        setLocalProfile(getStoredProfile());
-                      }
-                    }}
-                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
-                    data-testid="button-clear-data"
-                  >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(0,50%,92%) 0%, hsl(350,45%,85%) 100%)" }}>
-                      🗑️
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-bold text-[15px] text-red-500">{t("profile.clear_data")}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{t("profile.clear_data_desc")}</p>
-                    </div>
                   </button>
                 </div>
               </div>
