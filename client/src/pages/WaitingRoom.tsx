@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
-import { TrendingUp, Bell, Copy, Check, X, Share2 } from "lucide-react";
+import { TrendingUp, Copy, Check, X, Share2 } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import mascotImg from "@assets/toast_mascot_nobg.png";
-import { shareMessage, sendGroupInvite, getAccessToken, getGroupInviteUrl } from "@/lib/liff";
+import { sendGroupInvite, getAccessToken, getGroupInviteUrl } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
 
 interface SessionMember {
@@ -22,7 +22,6 @@ interface SessionData {
   status: string;
   sessionType: string | null;
   sourceData: string | null;
-  expectedMembers: number | null;
 }
 
 function getHostProfile(): { userId: string; displayName: string; pictureUrl?: string } | null {
@@ -46,6 +45,8 @@ export default function WaitingRoom() {
   const hostProfile = hostOfSession ? getHostProfile() : null;
   const [localGuestProfile, setLocalGuestProfile] = useState<{ userId: string; displayName: string; pictureUrl?: string } | null>(() => {
     try {
+      const sessionRaw = localStorage.getItem(`toast_guest_${sessionId}`);
+      if (sessionRaw) return JSON.parse(sessionRaw);
       const raw = sessionStorage.getItem("toast_guest_profile");
       if (raw) return JSON.parse(raw);
     } catch {}
@@ -55,7 +56,6 @@ export default function WaitingRoom() {
   const authRequired = lineAuthRequired && !localGuestProfile;
 
   const [members, setMembers] = useState<SessionMember[]>([]);
-  const [nudgedMembers, setNudgedMembers] = useState<Set<string>>(new Set());
   const [sessionCreated, setSessionCreated] = useState(false);
   const [sessionInfo, setSessionInfo] = useState<SessionData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -162,7 +162,9 @@ export default function WaitingRoom() {
 
   useEffect(() => {
     if (sessionCreated) return;
-    const ready = hostOfSession ? !!profile && !!sessionId : !profileLoading && !!profile && !!sessionId;
+    const ready = hostOfSession
+      ? !!profile && !!sessionId
+      : !profileLoading && !!profile && !!sessionId;
     if (ready) {
       createOrJoinSession();
     }
@@ -235,22 +237,23 @@ export default function WaitingRoom() {
     }
   };
 
-  const handleNudgeMember = async (nudgeKey: string = "general", memberName?: string) => {
-    const joinUrl = `${window.location.origin}/group/waiting?session=${sessionId}`;
-    const greeting = memberName ? `Hey ${memberName}! ` : "";
-    const text = `${greeting}Nudge! We're waiting for you on Toast!\n\nJoin our food swiping session now:\n${joinUrl}`;
-    const result = await shareMessage(text);
-    if (result.shared) {
-      setNudgedMembers((prev) => new Set(prev).add(nudgeKey));
-    }
-  };
-
   const handleGuestJoin = async () => {
     if (!guestName.trim() || !sessionId) return;
     setGuestJoining(true);
     setError(null);
-    const guestUserId = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const existingRaw = localStorage.getItem(`toast_guest_${sessionId}`);
+    let guestUserId: string;
+    if (existingRaw) {
+      try {
+        guestUserId = JSON.parse(existingRaw).userId;
+      } catch {
+        guestUserId = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      }
+    } else {
+      guestUserId = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    }
     const guestProf = { userId: guestUserId, displayName: guestName.trim() };
+    localStorage.setItem(`toast_guest_${sessionId}`, JSON.stringify(guestProf));
     sessionStorage.setItem("toast_guest_profile", JSON.stringify(guestProf));
     localStorage.setItem("toast_guest_profile", JSON.stringify(guestProf));
 
@@ -273,20 +276,20 @@ export default function WaitingRoom() {
         if (data.session) setSessionInfo(data.session);
       } else {
         sessionStorage.removeItem("toast_guest_profile");
+        localStorage.removeItem(`toast_guest_${sessionId}`);
         const errData = await joinRes.json().catch(() => null);
         setError(errData?.message || "Could not join session. Please try again.");
       }
     } catch (err) {
       console.error("Guest join failed:", err);
       sessionStorage.removeItem("toast_guest_profile");
+      localStorage.removeItem(`toast_guest_${sessionId}`);
       setError("Failed to connect. Check your connection and try again.");
     }
     setGuestJoining(false);
   };
 
   const memberCount = members.length;
-  const expectedCount = sessionInfo?.expectedMembers || null;
-  const remainingCount = expectedCount ? Math.max(0, expectedCount - memberCount) : 0;
   const canStart = memberCount >= 2;
 
   const handleStartSwiping = async () => {
@@ -514,16 +517,10 @@ export default function WaitingRoom() {
               className="w-2 h-2 rounded-full bg-[hsl(160,60%,45%)] transition-all duration-500"
             />
           ))}
-          {expectedCount ? (
-            Array.from({ length: remainingCount }).map((_, i) => (
-              <div key={`pending-${i}`} className="w-2 h-2 rounded-full bg-gray-200" />
-            ))
-          ) : (
-            memberCount < 2 && <div className="w-2 h-2 rounded-full bg-gray-200" />
-          )}
+          {memberCount < 2 && <div className="w-2 h-2 rounded-full bg-gray-200" />}
         </div>
         <span className="text-muted-foreground text-sm font-medium" data-testid="text-member-count">
-          {expectedCount ? `${memberCount} of ${expectedCount} joined` : `${memberCount} joined`}
+          {memberCount} joined
         </span>
       </motion.div>
 
@@ -561,35 +558,6 @@ export default function WaitingRoom() {
             </div>
             <span className="text-sm font-bold">{m.lineUserId === profile?.userId ? "You" : m.displayName}</span>
             <span className="text-[11px] font-semibold text-[hsl(160,60%,45%)]">Ready</span>
-          </motion.div>
-        ))}
-
-        {expectedCount && remainingCount > 0 && Array.from({ length: remainingCount }).map((_, i) => (
-          <motion.div
-            key={`placeholder-${i}`}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 0.5 }}
-            transition={{ delay: 0.35 + (memberCount + i) * 0.08, type: "spring", damping: 18, stiffness: 200 }}
-            className="flex flex-col items-center gap-1.5"
-            data-testid={`member-placeholder-${i}`}
-          >
-            <div className="w-[72px] h-[72px] rounded-full border-[3px] border-dashed border-gray-200 flex items-center justify-center">
-              <span className="text-gray-300 text-xl">?</span>
-            </div>
-            <span className="text-sm font-bold text-muted-foreground/40">Waiting...</span>
-            <button
-              onClick={() => handleNudgeMember()}
-              disabled={nudgedMembers.has("general")}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all active:scale-95 ${
-                nudgedMembers.has("general")
-                  ? "bg-gray-100 text-muted-foreground/40"
-                  : "bg-amber-50 text-amber-700 border border-amber-200"
-              }`}
-              data-testid={`button-nudge-placeholder-${i}`}
-            >
-              <Bell className="w-3 h-3" />
-              {nudgedMembers.has("general") ? "Sent!" : "Nudge"}
-            </button>
           </motion.div>
         ))}
 
@@ -642,7 +610,7 @@ export default function WaitingRoom() {
           style={canStart ? { boxShadow: "var(--shadow-glow-primary)" } : {}}
           disabled={!canStart}
         >
-          {canStart ? "Start Swiping!" : expectedCount && remainingCount > 0 ? `Waiting for ${remainingCount} more...` : "Waiting for more friends..."}
+          {canStart ? "Start Swiping!" : "Waiting for more friends..."}
         </motion.button>
 
         <motion.p

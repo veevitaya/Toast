@@ -6,7 +6,6 @@ import {
   Clock, Utensils, Heart, Baby, Briefcase,
   ChevronDown, Sparkles, UserPlus, Check,
 } from "lucide-react";
-import { sendGroupInvite } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
 
 const LOCATIONS = [
@@ -150,7 +149,6 @@ export default function GroupSetup() {
   const [hourPickerOpen, setHourPickerOpen] = useState(false);
   const [inviteStatus, setInviteStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
-  const [expectedMembers, setExpectedMembers] = useState<number>(3);
   const dateScrollRef = useRef<HTMLDivElement>(null);
   const hourPickerRef = useRef<HTMLDivElement>(null);
   const upcomingDays = getNext14Days();
@@ -190,7 +188,6 @@ export default function GroupSetup() {
             hostLineUserId: profile.userId,
             hostDisplayName: profile.displayName,
             hostPictureUrl: profile.pictureUrl || "",
-            expectedMembers: expectedMembers || undefined,
           }),
         });
       } catch {}
@@ -227,7 +224,7 @@ export default function GroupSetup() {
     selectedRestrictions.length > 0 ? `${selectedRestrictions.length} dietary` : null,
   ].filter(Boolean).join(" · ") || "No preferences set";
 
-  const groupSummary = `${expectedMembers} people · ${selectedGroupType ? GROUP_TYPES.find(g => g.id === selectedGroupType)?.label : "Any group"}`;
+  const groupSummary = selectedGroupType ? GROUP_TYPES.find(g => g.id === selectedGroupType)?.label || "Any group" : "Any group";
 
   const completedSteps = [
     selectedDate,
@@ -545,26 +542,6 @@ export default function GroupSetup() {
             onToggle={() => toggleSection("group")}
             testId="section-group"
           >
-            <div className="mb-4">
-              <p className="text-[11px] font-semibold text-muted-foreground mb-2">How many people? (including you)</p>
-              <div className="flex items-center gap-1.5">
-                {[2, 3, 4, 5, 6, 8, 10].map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setExpectedMembers(n)}
-                    data-testid={`chip-group-size-${n}`}
-                    className={`w-9 h-9 rounded-lg text-[13px] font-bold transition-all duration-200 ${
-                      expectedMembers === n
-                        ? "bg-foreground text-white shadow-md"
-                        : "bg-gray-50 border border-gray-100/60 text-muted-foreground"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="mb-4">
               <p className="text-[11px] font-semibold text-muted-foreground mb-2">Who are you with?</p>
               <div className="grid grid-cols-4 gap-1.5">
