@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { TrendingUp, Shield, UserCheck, Bell } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import mascotImg from "@assets/toast_mascot_nobg.png";
-import { shareMessage, sendGroupInvite, getAccessToken, isLineOAAvailable } from "@/lib/liff";
+import { shareMessage, sendGroupInvite, sendGroupInviteNoRedirect, getAccessToken, isLineOAAvailable } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -42,7 +42,7 @@ export default function WaitingRoom() {
   const [, navigate] = useLocation();
   const sessionId = new URLSearchParams(window.location.search).get("session") || "";
   const hostOfSession = isHost(sessionId);
-  const { profile: lineProfile, loading: profileLoading, isLineUser, authRequired, triggerLineLogin, continueAsGuest } = useLineProfile({ requireAuth: !hostOfSession });
+  const { profile: lineProfile, loading: profileLoading, isLineUser, authRequired, triggerLineLogin } = useLineProfile({ requireAuth: !hostOfSession });
 
   const hostProfile = hostOfSession ? getHostProfile() : null;
   const profile = lineProfile || (hostOfSession ? (hostProfile || { userId: `host_${sessionId}`, displayName: "You" }) : null);
@@ -159,7 +159,7 @@ export default function WaitingRoom() {
     if (pendingInvite === sessionId) {
       sessionStorage.removeItem("toast_group_pending_invite");
       setTimeout(() => {
-        sendGroupInvite(sessionId);
+        sendGroupInviteNoRedirect(sessionId);
       }, 400);
     }
   }, [sessionCreated, sessionId]);
@@ -187,7 +187,7 @@ export default function WaitingRoom() {
   }, [sessionCreated, sessionId, navigate]);
 
   const handleInviteMore = async () => {
-    await sendGroupInvite(sessionId);
+    await sendGroupInviteNoRedirect(sessionId);
   };
 
   const handleNudgeMember = async (nudgeKey: string = "general", memberName?: string) => {
@@ -218,9 +218,6 @@ export default function WaitingRoom() {
     navigate(`/group/swipe?session=${sessionId}`);
   };
 
-  const handleContinueAsGuest = () => {
-    continueAsGuest();
-  };
 
   if (profileLoading && !hostOfSession) {
     return (
@@ -327,13 +324,6 @@ export default function WaitingRoom() {
             data-testid="button-line-login"
           >
             Continue with LINE
-          </button>
-          <button
-            onClick={handleContinueAsGuest}
-            className="w-full py-3 rounded-full font-medium text-[13px] text-muted-foreground bg-gray-100 active:scale-[0.96] transition-transform"
-            data-testid="button-continue-guest"
-          >
-            Continue as Guest
           </button>
         </motion.div>
 

@@ -91,12 +91,7 @@ function getGroupInviteUrl(sessionId: string): string {
 }
 
 function getRedirectUri(): string {
-  const currentUrl = new URL(window.location.href);
-  if (currentUrl.hostname === "letstoast.app" || currentUrl.hostname.endsWith(".letstoast.app")) {
-    return currentUrl.href;
-  }
-  const productionUrl = new URL(currentUrl.pathname + currentUrl.search, PRODUCTION_DOMAIN);
-  return productionUrl.href;
+  return window.location.href;
 }
 
 export async function ensureLineLogin(): Promise<LineProfile | null> {
