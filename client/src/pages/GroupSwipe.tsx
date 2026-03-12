@@ -278,6 +278,8 @@ export default function GroupSwipe() {
   const [members, setMembers] = useState<SessionMember[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pollError, setPollError] = useState(false);
+  const pollFailCount = useRef(0);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [matchNotification, setMatchNotification] = useState<string | null>(null);
   const [fullMatch, setFullMatch] = useState(false);
@@ -366,7 +368,12 @@ export default function GroupSwipe() {
       if (cancelled) return;
       try {
         const res = await fetch(`/api/group/sessions/${sessionCode}`);
-        if (cancelled || !res.ok) return;
+        if (cancelled) return;
+        if (!res.ok) {
+          pollFailCount.current += 1;
+          if (pollFailCount.current >= 5) setPollError(true);
+          return;
+        }
         const data = await res.json();
         setMembers(data.members);
         if (profile && data.session?.hostLineUserId === profile.userId) {
@@ -399,7 +406,14 @@ export default function GroupSwipe() {
         if (!cancelled && data.session?.status === "completed" && !sessionEndedRef.current) {
           setSessionEnded(true);
         }
-      } catch {}
+        pollFailCount.current = 0;
+        setPollError(false);
+      } catch {
+        pollFailCount.current += 1;
+        if (pollFailCount.current >= 5 && !cancelled) {
+          setPollError(true);
+        }
+      }
     };
     fetchSession();
     const interval = setInterval(fetchSession, 5000);
@@ -414,7 +428,7 @@ export default function GroupSwipe() {
         setConfetti(true);
         setFullMatch(true);
         setMatchCount(allMatches.length);
-        updateSession(sessionCode || "group-1", { matchCount: allMatches.length });
+        if (sessionCode) updateSession(sessionCode, { matchCount: allMatches.length });
       }
     }
     prevMatchCountRef.current = allMatches.length;
@@ -422,14 +436,14 @@ export default function GroupSwipe() {
 
   const sessionInitRef = useRef<string | null>(null);
   useEffect(() => {
-    const id = sessionCode || "group-1";
-    if (sessionInitRef.current === id) return;
-    sessionInitRef.current = id;
+    if (!sessionCode) return;
+    if (sessionInitRef.current === sessionCode) return;
+    sessionInitRef.current = sessionCode;
     addSession({
-      id,
+      id: sessionCode,
       type: "group",
       label: "Group Session",
-      route: `/group/swipe${sessionCode ? `?session=${sessionCode}` : ""}`,
+      route: `/group/swipe?session=${sessionCode}`,
       memberCount: members.length,
       matchCount: 0,
       startedAt: Date.now(),
@@ -628,6 +642,23 @@ export default function GroupSwipe() {
       fetchRankedResults().then(() => setShowResults(true));
     }
   };
+
+  if (!sessionCode) {
+    return (
+      <div className="w-full h-[100dvh] flex flex-col items-center justify-center bg-[hsl(30,20%,97%)] gap-4 px-6 text-center">
+        <span className="text-4xl">😕</span>
+        <p className="font-semibold">No session found</p>
+        <p className="text-sm text-muted-foreground">You need a valid session link to join a group swipe.</p>
+        <button
+          onClick={() => navigate("/group")}
+          data-testid="button-go-group"
+          className="px-6 py-3 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-sm"
+        >
+          Start a Group
+        </button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -985,6 +1016,12 @@ export default function GroupSwipe() {
 
   return (
     <div className="w-full h-[100dvh] bg-[hsl(30,20%,97%)] flex flex-col overflow-hidden" style={{ touchAction: "none", overscrollBehavior: "none" }} data-testid="group-swipe-page">
+      {pollError && (
+        <div className="bg-red-50 border-b border-red-100 px-4 py-2 flex items-center justify-between" data-testid="poll-error-banner">
+          <span className="text-xs text-red-600 font-medium">Connection lost. Trying to reconnect...</span>
+          <button onClick={() => { pollFailCount.current = 0; setPollError(false); }} className="text-xs text-red-500 underline">Dismiss</button>
+        </div>
+      )}
       <div className="flex items-center justify-between px-6 pt-12 pb-3">
         <div className="text-left flex items-center gap-2">
           <div>
@@ -1047,7 +1084,19 @@ export default function GroupSwipe() {
       </AnimatePresence>
 
       <div className="flex-1 relative px-5 pb-4">
-        {currentIndex >= menuItems.length ? (
+        {menuItems.length === 0 && !loading ? (
+          <div className="flex flex-col items-center justify-center h-full text-center px-6">
+            <p className="text-base font-semibold mb-2">No restaurants found</p>
+            <p className="text-sm text-muted-foreground mb-4">We could not load any restaurants for this session.</p>
+            <button
+              onClick={() => window.location.reload()}
+              data-testid="button-retry-load"
+              className="px-6 py-2.5 rounded-full bg-[#FFCC02] text-[#2d2000] font-semibold text-sm"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : currentIndex >= menuItems.length ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-[#FFCC02] animate-spin" />
             <p className="text-sm text-muted-foreground mt-4">Tallying results...</p>

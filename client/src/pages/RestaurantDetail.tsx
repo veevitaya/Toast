@@ -202,7 +202,7 @@ export default function RestaurantDetail() {
   const customPhotos = RESTAURANT_PHOTOS[restaurant.id];
   const allPhotos = customPhotos
     ? [customPhotos[0], ...customPhotos.slice(1)]
-    : [restaurant.imageUrl, ...MOCK_PHOTOS];
+    : [restaurant.imageUrl, ...MOCK_PHOTOS].filter(Boolean);
 
   const DELIVERY_APPS = [
     { id: "grab", name: "Grab", emoji: "🟢", color: "#00B14F", deepLink: (name: string) => `grab://food/search?q=${encodeURIComponent(name)}`, fallback: (name: string) => `https://food.grab.com/th/en/restaurants?search=${encodeURIComponent(name)}` },
@@ -218,17 +218,31 @@ export default function RestaurantDetail() {
 
     const newWindow = window.open("", "_blank");
 
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.src = deepLink;
-    document.body.appendChild(iframe);
+    try {
+      const iframe = document.createElement("iframe");
+      iframe.style.display = "none";
+      iframe.src = deepLink;
+      document.body.appendChild(iframe);
 
-    setTimeout(() => {
-      document.body.removeChild(iframe);
+      const timer = setTimeout(() => {
+        if (document.body.contains(iframe)) document.body.removeChild(iframe);
+        if (newWindow && !newWindow.closed) {
+          newWindow.location.href = fallback;
+        }
+      }, 1500);
+
+      const handleBlur = () => {
+        clearTimeout(timer);
+        if (document.body.contains(iframe)) document.body.removeChild(iframe);
+        if (newWindow && !newWindow.closed) newWindow.close();
+      };
+      window.addEventListener("blur", handleBlur, { once: true });
+      setTimeout(() => window.removeEventListener("blur", handleBlur), 2000);
+    } catch {
       if (newWindow && !newWindow.closed) {
         newWindow.location.href = fallback;
       }
-    }, 1500);
+    }
 
     setShowDeliveryDrawer(false);
   };

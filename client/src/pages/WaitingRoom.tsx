@@ -136,7 +136,28 @@ export default function WaitingRoom() {
         if (createRes.ok) {
           setSessionCreated(true);
         } else {
-          setError("Could not create or join session. Please try again.");
+          const retryJoin = await fetch(`/api/group/sessions/${sessionId}/join`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(accessToken ? { "X-Line-Access-Token": accessToken } : {}),
+            },
+            body: JSON.stringify({
+              lineUserId: profile.userId,
+              displayName: profile.displayName,
+              pictureUrl: profile.pictureUrl || "",
+              latitude: loc?.latitude,
+              longitude: loc?.longitude,
+            }),
+          });
+          if (retryJoin.ok) {
+            setSessionCreated(true);
+            const data = await retryJoin.json();
+            if (data.members) setMembers(data.members);
+            if (data.session) setSessionInfo(data.session);
+          } else {
+            setError("Could not create or join session. Please try again.");
+          }
         }
       } else {
         const errData = await joinRes.json().catch(() => null);
