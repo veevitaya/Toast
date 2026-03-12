@@ -697,42 +697,42 @@ export default function GroupSwipe() {
                     data-testid={`result-card-${result.item.id}`}
                   >
                     <div className="relative">
-                      <img src={result.item.imageUrl} alt={result.item.name} className="w-full h-40 object-cover" />
+                      <img src={result.item.imageUrl} alt={result.item.name} className="w-full aspect-[16/9] object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                      <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-white/95 backdrop-blur-sm rounded-full px-2.5 py-1" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                      <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 bg-white/95 backdrop-blur-sm rounded-full px-2 py-0.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
                         <RankIcon className="w-3.5 h-3.5" style={{ color: RANK_COLORS[idx] }} />
                         <span className="text-[11px] font-bold">#{idx + 1}</span>
                       </div>
                       {result.isFullMatch && (
-                        <div className="absolute top-3 right-3 bg-[#FFCC02] rounded-full px-2.5 py-1 text-[10px] font-bold text-[#2d2000]" style={{ boxShadow: "0 2px 8px rgba(255,204,2,0.4)" }}>
+                        <div className="absolute top-2.5 right-2.5 bg-[#FFCC02] rounded-full px-2 py-0.5 text-[10px] font-bold text-[#2d2000]" style={{ boxShadow: "0 2px 8px rgba(255,204,2,0.4)" }}>
                           Full Match
                         </div>
                       )}
-                      <div className="absolute bottom-3 left-3 right-3">
-                        <h3 className="text-white text-lg font-bold drop-shadow-lg truncate">{result.item.name}</h3>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-white/90 text-xs">{result.item.category}</span>
-                          <span className="text-white/50 text-xs">·</span>
-                          <span className="text-white/90 text-xs">{"฿".repeat(result.item.priceLevel)}</span>
-                          <span className="text-white/50 text-xs">·</span>
-                          <span className="text-white/90 text-xs flex items-center gap-0.5">★ {result.item.rating}</span>
+                      <div className="absolute bottom-2.5 left-2.5 right-2.5">
+                        <h3 className="text-white text-base sm:text-lg font-bold drop-shadow-lg truncate">{result.item.name}</h3>
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                          <span className="text-white/90 text-[11px]">{result.item.category}</span>
+                          <span className="text-white/50 text-[11px]">·</span>
+                          <span className="text-white/90 text-[11px]">{"฿".repeat(result.item.priceLevel)}</span>
+                          <span className="text-white/50 text-[11px]">·</span>
+                          <span className="text-white/90 text-[11px] flex items-center gap-0.5">★ {result.item.rating}</span>
                         </div>
                       </div>
                     </div>
-                    <div className="px-4 py-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="flex -space-x-2">
+                    <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div className="flex -space-x-2 flex-shrink-0">
                           {result.voters.map((v) => (
                             v.pictureUrl ? (
-                              <img key={v.lineUserId} src={v.pictureUrl} alt={v.displayName} className="w-7 h-7 rounded-full border-2 border-white object-cover" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }} />
+                              <img key={v.lineUserId} src={v.pictureUrl} alt={v.displayName} className="w-6 h-6 rounded-full border-2 border-white object-cover" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }} />
                             ) : (
-                              <div key={v.lineUserId} className="w-7 h-7 rounded-full border-2 border-white bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
-                                <span className="text-[9px] font-bold text-amber-600">{v.displayName.charAt(0)}</span>
+                              <div key={v.lineUserId} className="w-6 h-6 rounded-full border-2 border-white bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+                                <span className="text-[8px] font-bold text-amber-600">{v.displayName.charAt(0)}</span>
                               </div>
                             )
                           ))}
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="text-[11px] font-semibold text-foreground/80 truncate">
                             {result.voters.map(v => v.lineUserId === profile?.userId ? "You" : v.displayName).join(", ")}
                           </p>
@@ -831,7 +831,7 @@ export default function GroupSwipe() {
 
   if (fullMatch && matchedItem) {
     return (
-      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6 relative overflow-hidden" data-testid="group-match-page">
+      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col relative overflow-hidden" data-testid="group-match-page">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[20%] left-[5%] w-48 h-48 bg-amber-50/50 rounded-full blur-3xl" />
           <div className="absolute bottom-[15%] right-[10%] w-56 h-56 bg-amber-50/50 rounded-full blur-3xl" />
@@ -840,130 +840,144 @@ export default function GroupSwipe() {
 
         {confetti && <ConfettiExplosion />}
 
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", damping: 15, stiffness: 200 }}
-          className="mb-3"
-        >
-          <div
-            className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-50 to-yellow-50 flex items-center justify-center"
-            style={{ boxShadow: "0 12px 40px -8px rgba(255,204,2,0.25)" }}
+        <div className="flex-1 overflow-y-auto flex flex-col items-center justify-start pt-[max(env(safe-area-inset-top),2.5rem)] px-5 pb-4">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", damping: 15, stiffness: 200 }}
+            className="mb-2"
           >
-            <span className="text-5xl inline-block animate-icon-wiggle gpu-accelerated">🎉</span>
-          </div>
-        </motion.div>
-
-        <motion.h1
-          initial={{ y: 16, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-          className="text-[32px] font-semibold text-center mb-2"
-        >
-          It's a match!
-        </motion.h1>
-        <motion.p
-          initial={{ y: 16, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-          className="text-muted-foreground text-center mb-4 text-[15px]"
-        >
-          Everyone agreed on {matchedItem.name}!
-        </motion.p>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.3 }}
-          className="flex flex-wrap justify-center gap-2.5 mb-7"
-        >
-          {members.map((m, i) => (
-            <motion.div
-              key={m.lineUserId}
-              initial={{ scale: 0, y: 8 }}
-              animate={{ scale: 1, y: 0 }}
-              transition={{ delay: 0.5 + i * 0.08, type: "spring", damping: 18, stiffness: 250 }}
-              className="flex items-center gap-2 bg-green-50/80 rounded-full px-4 py-2 border border-green-200/50"
-              style={{ boxShadow: "0 2px 10px rgba(0,200,100,0.08)" }}
+            <div
+              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-amber-50 to-yellow-50 flex items-center justify-center"
+              style={{ boxShadow: "0 12px 40px -8px rgba(255,204,2,0.25)" }}
             >
-              {m.pictureUrl ? (
-                <img src={m.pictureUrl} alt={m.displayName} className="w-6 h-6 rounded-full object-cover" />
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
-                  <span className="text-[9px] font-bold text-amber-600">{m.displayName.charAt(0)}</span>
-                </div>
-              )}
-              <span className="text-[hsl(160,60%,40%)] text-[11px] font-bold">✓</span>
-              <span className="text-xs font-bold">{m.lineUserId === profile?.userId ? "You" : m.displayName}</span>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        <motion.div
-          initial={{ y: 24, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-          className="w-72 rounded-[24px] overflow-hidden mb-7"
-          style={{ boxShadow: "0 20px 60px -15px rgba(0,0,0,0.18)" }}
-        >
-          <div className="relative">
-            <img src={matchedItem.imageUrl} alt={matchedItem.name} className="w-full h-48 object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-          </div>
-          <div className="p-5 bg-white">
-            <h3 className="font-semibold text-lg">{matchedItem.name}</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">{matchedItem.category}</p>
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="text-xs font-medium">★ {matchedItem.rating}</span>
-              <span className="text-xs text-muted-foreground">{"฿".repeat(matchedItem.priceLevel)}</span>
-              <span className="text-xs text-muted-foreground">· {matchedItem.address}</span>
+              <span className="text-3xl sm:text-4xl inline-block animate-icon-wiggle gpu-accelerated">🎉</span>
             </div>
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {matchedItem.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="text-[10px] bg-gray-100 rounded-full px-2.5 py-1 font-medium">{tag}</span>
-              ))}
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        <div className="flex flex-col items-center gap-3 w-full max-w-xs">
-          <motion.button
+          <motion.h1
             initial={{ y: 16, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.85, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            onClick={() => navigate(`/restaurant/${matchedItem.id}`)}
-            data-testid="button-view-restaurant"
-            className="w-full py-4 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-[15px] active:scale-[0.96] transition-transform duration-200"
-            style={{ boxShadow: "var(--shadow-glow-primary)" }}
+            transition={{ delay: 0.2, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+            className="text-[26px] sm:text-[32px] font-semibold text-center mb-1"
           >
-            View Restaurant
-          </motion.button>
+            It's a match!
+          </motion.h1>
+          <motion.p
+            initial={{ y: 16, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+            className="text-muted-foreground text-center mb-3 text-[14px] sm:text-[15px] leading-snug max-w-[260px]"
+          >
+            Everyone agreed on {matchedItem.name}!
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.3 }}
+            className="flex flex-wrap justify-center gap-2 mb-4"
+          >
+            {members.map((m, i) => (
+              <motion.div
+                key={m.lineUserId}
+                initial={{ scale: 0, y: 8 }}
+                animate={{ scale: 1, y: 0 }}
+                transition={{ delay: 0.5 + i * 0.08, type: "spring", damping: 18, stiffness: 250 }}
+                className="flex items-center gap-1.5 bg-green-50/80 rounded-full px-3 py-1.5 border border-green-200/50"
+                style={{ boxShadow: "0 2px 10px rgba(0,200,100,0.08)" }}
+              >
+                {m.pictureUrl ? (
+                  <img src={m.pictureUrl} alt={m.displayName} className="w-5 h-5 rounded-full object-cover" />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                    <span className="text-[8px] font-bold text-amber-600">{m.displayName.charAt(0)}</span>
+                  </div>
+                )}
+                <span className="text-[hsl(160,60%,40%)] text-[10px] font-bold">✓</span>
+                <span className="text-[11px] font-bold">{m.lineUserId === profile?.userId ? "You" : m.displayName}</span>
+              </motion.div>
+            ))}
+          </motion.div>
 
           <motion.div
-            initial={{ y: 12, opacity: 0 }}
+            initial={{ y: 24, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.95, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className="flex gap-2.5 w-full"
+            transition={{ delay: 0.6, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            className="w-full max-w-[280px] rounded-[20px] overflow-hidden"
+            style={{ boxShadow: "0 20px 60px -15px rgba(0,0,0,0.18)" }}
           >
-            <button
-              onClick={handleContinueSwiping}
-              data-testid="button-keep-swiping"
-              className="flex-1 py-3.5 rounded-full bg-white border border-gray-200 text-foreground font-bold text-[14px] active:scale-[0.96] transition-transform"
-              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-            >
-              {currentIndex >= menuItems.length ? "See Results" : "Keep Swiping"}
-            </button>
-
-            {isHost && (
-              <button
-                onClick={handleEndSession}
-                data-testid="button-end-session-match"
-                className="flex-1 py-3.5 rounded-full bg-red-50 border border-red-200/60 text-red-600 font-bold text-[14px] active:scale-[0.96] transition-transform"
-                style={{ boxShadow: "0 2px 8px rgba(239,68,68,0.08)" }}
-              >
-                End Session
-              </button>
-            )}
+            <div className="relative">
+              <img src={matchedItem.imageUrl} alt={matchedItem.name} className="w-full aspect-[16/10] object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+            </div>
+            <div className="p-4 bg-white">
+              <h3 className="font-semibold text-base leading-tight truncate">{matchedItem.name}</h3>
+              <p className="text-[13px] text-muted-foreground mt-0.5 truncate">{matchedItem.category}</p>
+              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                <span className="text-[11px] font-medium">★ {matchedItem.rating}</span>
+                <span className="text-[11px] text-muted-foreground">{"฿".repeat(matchedItem.priceLevel)}</span>
+                <span className="text-[11px] text-muted-foreground truncate max-w-[140px]">· {matchedItem.address}</span>
+              </div>
+              <div className="flex flex-wrap gap-1 mt-2.5">
+                {matchedItem.tags.slice(0, 3).map((tag) => (
+                  <span key={tag} className="text-[10px] bg-gray-100 rounded-full px-2 py-0.5 font-medium">{tag}</span>
+                ))}
+              </div>
+            </div>
           </motion.div>
+        </div>
+
+        <div className="flex-shrink-0 px-5 pb-[max(env(safe-area-inset-bottom),1.25rem)] pt-3 bg-white/80 backdrop-blur-sm border-t border-gray-50 relative z-10">
+          <div className="flex flex-col gap-2.5 w-full max-w-xs mx-auto">
+            <motion.button
+              initial={{ y: 16, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.85, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+              onClick={() => navigate(`/restaurant/${matchedItem.id}`)}
+              data-testid="button-view-restaurant"
+              className="w-full py-3.5 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-[14px] active:scale-[0.96] transition-transform duration-200"
+              style={{ boxShadow: "var(--shadow-glow-primary)" }}
+            >
+              View Restaurant
+            </motion.button>
+
+            <motion.div
+              initial={{ y: 12, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.95, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+              className="flex gap-2 w-full"
+            >
+              <button
+                onClick={() => { setFullMatch(false); fetchRankedResults().then(() => setShowResults(true)); }}
+                data-testid="button-view-summary"
+                className="flex-1 py-3 rounded-full bg-white border border-gray-200 text-foreground font-bold text-[13px] active:scale-[0.96] transition-transform flex items-center justify-center gap-1.5"
+                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+              >
+                <Trophy className="w-3.5 h-3.5" />
+                Top Picks
+              </button>
+
+              <button
+                onClick={handleContinueSwiping}
+                data-testid="button-keep-swiping"
+                className="flex-1 py-3 rounded-full bg-white border border-gray-200 text-foreground font-bold text-[13px] active:scale-[0.96] transition-transform"
+                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+              >
+                {currentIndex >= menuItems.length ? "Results" : "Keep Swiping"}
+              </button>
+
+              {isHost && (
+                <button
+                  onClick={handleEndSession}
+                  data-testid="button-end-session-match"
+                  className="py-3 px-4 rounded-full bg-red-50 border border-red-200/60 text-red-600 font-bold text-[13px] active:scale-[0.96] transition-transform"
+                  style={{ boxShadow: "0 2px 8px rgba(239,68,68,0.08)" }}
+                >
+                  End
+                </button>
+              )}
+            </motion.div>
+          </div>
         </div>
       </div>
     );

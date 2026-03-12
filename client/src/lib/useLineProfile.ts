@@ -3,15 +3,23 @@ import { initLiff, initLiffOA, getProfile, isLoggedIn, isLiffAvailable, isLineOA
 
 const GUEST_KEY = "toast_guest_profile";
 
+const GUEST_NAMES = [
+  "Hungry Panda", "Spicy Tiger", "Noodle Ninja", "Pad Thai Pro",
+  "Mango Bear", "Som Tam Fan", "Toast Buddy", "Rice Rebel",
+  "Curry Cat", "Satay Star", "Dim Sum Dog", "Wok Walker",
+  "Basil Boss", "Chili Champ", "Sushi Scout", "Ramen Ranger",
+];
+
 function getGuestProfile(): LineProfile {
   const stored = localStorage.getItem(GUEST_KEY);
   if (stored) {
     try { return JSON.parse(stored); } catch {}
   }
   const guestId = "guest_" + Math.random().toString(36).substring(2, 10);
+  const guestName = GUEST_NAMES[Math.floor(Math.random() * GUEST_NAMES.length)];
   const profile: LineProfile = {
     userId: guestId,
-    displayName: "You",
+    displayName: guestName,
     pictureUrl: undefined,
   };
   localStorage.setItem(GUEST_KEY, JSON.stringify(profile));

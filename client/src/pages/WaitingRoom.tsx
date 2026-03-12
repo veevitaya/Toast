@@ -52,7 +52,7 @@ export default function WaitingRoom() {
     } catch {}
     return null;
   });
-  const profile = lineProfile || localGuestProfile || (hostOfSession ? (hostProfile || { userId: `host_${sessionId}`, displayName: "You" }) : null);
+  const profile = lineProfile || localGuestProfile || (hostOfSession ? (hostProfile || { userId: `host_${sessionId}`, displayName: "Host" }) : null);
   const authRequired = lineAuthRequired && !localGuestProfile;
 
   const [members, setMembers] = useState<SessionMember[]>([]);
