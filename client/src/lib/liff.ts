@@ -78,6 +78,18 @@ export async function initLiffOA(): Promise<boolean> {
 
 const PRODUCTION_DOMAIN = "https://letstoast.app";
 
+function getAppBaseUrl(): string {
+  const hostname = window.location.hostname;
+  if (hostname === "letstoast.app" || hostname.endsWith(".letstoast.app")) {
+    return PRODUCTION_DOMAIN;
+  }
+  return window.location.origin;
+}
+
+function getGroupInviteUrl(sessionId: string): string {
+  return `${getAppBaseUrl()}/group/waiting?session=${sessionId}`;
+}
+
 function getRedirectUri(): string {
   const currentUrl = new URL(window.location.href);
   if (currentUrl.hostname === "letstoast.app" || currentUrl.hostname.endsWith(".letstoast.app")) {
@@ -219,10 +231,7 @@ export async function shareMessageNoRedirect(text: string): Promise<ShareResult>
 }
 
 export async function sendGroupInviteNoRedirect(sessionId: string): Promise<ShareResult> {
-  const oaLiffId = LINE_OA_LIFF_ID;
-  const joinUrl = oaLiffId
-    ? `https://liff.line.me/${oaLiffId}/group/waiting?session=${sessionId}`
-    : `${window.location.origin}/group/waiting?session=${sessionId}`;
+  const joinUrl = getGroupInviteUrl(sessionId);
 
   const message = `Toast Group Session!\n\nJoin our food swiping session and let's find the perfect meal together!\n\nTap to join:\n${joinUrl}`;
   return shareMessageNoRedirect(message);
@@ -235,10 +244,7 @@ export async function sendInvite(mode: string): Promise<ShareResult> {
 }
 
 export async function sendGroupInvite(sessionId: string): Promise<ShareResult> {
-  const oaLiffId = LINE_OA_LIFF_ID;
-  const joinUrl = oaLiffId
-    ? `https://liff.line.me/${oaLiffId}/group/waiting?session=${sessionId}`
-    : `${window.location.origin}/group/waiting?session=${sessionId}`;
+  const joinUrl = getGroupInviteUrl(sessionId);
 
   const message = `Toast Group Session!\n\nJoin our food swiping session and let's find the perfect meal together!\n\nTap to join:\n${joinUrl}`;
   return shareMessage(message);

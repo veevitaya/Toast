@@ -191,12 +191,9 @@ export default function WaitingRoom() {
   };
 
   const handleNudgeMember = async (nudgeKey: string = "general", memberName?: string) => {
-    const oaLiffId = isLineOAAvailable() ? import.meta.env.VITE_LINE_OA_LIFF_ID : "";
-    const joinUrl = oaLiffId
-      ? `https://liff.line.me/${oaLiffId}/group/waiting?session=${sessionId}`
-      : `${window.location.origin}/group/waiting?session=${sessionId}`;
+    const joinUrl = `${window.location.origin}/group/waiting?session=${sessionId}`;
     const greeting = memberName ? `Hey ${memberName}! ` : "";
-    const text = `${greeting}🍞 Nudge! We're waiting for you on Toast!\n\nJoin our food swiping session now:\n${joinUrl}`;
+    const text = `${greeting}Nudge! We're waiting for you on Toast!\n\nJoin our food swiping session now:\n${joinUrl}`;
     const result = await shareMessage(text);
     if (result.shared) {
       setNudgedMembers((prev) => new Set(prev).add(nudgeKey));
