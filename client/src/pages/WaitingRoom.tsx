@@ -155,6 +155,18 @@ export default function WaitingRoom() {
   useEffect(() => {
     if (!sessionCreated || !sessionId) return;
 
+    const pendingInvite = sessionStorage.getItem("toast_group_pending_invite");
+    if (pendingInvite === sessionId) {
+      sessionStorage.removeItem("toast_group_pending_invite");
+      setTimeout(() => {
+        sendGroupInvite(sessionId);
+      }, 400);
+    }
+  }, [sessionCreated, sessionId]);
+
+  useEffect(() => {
+    if (!sessionCreated || !sessionId) return;
+
     const fetchSession = async () => {
       try {
         const res = await fetch(`/api/group/sessions/${sessionId}`);

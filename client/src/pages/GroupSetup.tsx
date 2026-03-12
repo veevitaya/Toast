@@ -6,7 +6,7 @@ import {
   Clock, Utensils, Heart, Baby, Briefcase,
   ChevronRight, ChevronDown, Sparkles, UserPlus,
 } from "lucide-react";
-import { sendGroupInvite, sendGroupInviteNoRedirect } from "@/lib/liff";
+import { sendGroupInvite } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
 
 const LOCATIONS = [
@@ -143,13 +143,10 @@ export default function GroupSetup() {
       sessionStorage.setItem("toast_group_host_profile", JSON.stringify(profile));
     }
     sessionStorage.setItem("toast_group_host_session", sessionId);
-
-    const result = await sendGroupInviteNoRedirect(sessionId);
+    sessionStorage.setItem("toast_group_pending_invite", sessionId);
 
     setInviteStatus("sent");
-    setTimeout(() => {
-      navigate(`/group/waiting?session=${sessionId}`);
-    }, 300);
+    navigate(`/group/waiting?session=${sessionId}`);
   };
 
   const completedSteps = [
