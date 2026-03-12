@@ -1,12 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
-import { TrendingUp, Shield, UserCheck, Bell } from "lucide-react";
+import { TrendingUp, Bell, Copy, Check, X, Share2 } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import mascotImg from "@assets/toast_mascot_nobg.png";
-import { shareMessage, sendGroupInvite, sendGroupInviteNoRedirect, getAccessToken, isLineOAAvailable } from "@/lib/liff";
+import { shareMessage, sendGroupInvite, getAccessToken, getGroupInviteUrl } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
-import { apiRequest } from "@/lib/queryClient";
 
 interface SessionMember {
   id: number;
@@ -42,16 +41,29 @@ export default function WaitingRoom() {
   const [, navigate] = useLocation();
   const sessionId = new URLSearchParams(window.location.search).get("session") || "";
   const hostOfSession = isHost(sessionId);
-  const { profile: lineProfile, loading: profileLoading, isLineUser, authRequired, triggerLineLogin } = useLineProfile({ requireAuth: !hostOfSession });
+  const { profile: lineProfile, loading: profileLoading, isLineUser, authRequired: lineAuthRequired, triggerLineLogin } = useLineProfile({ requireAuth: !hostOfSession });
 
   const hostProfile = hostOfSession ? getHostProfile() : null;
-  const profile = lineProfile || (hostOfSession ? (hostProfile || { userId: `host_${sessionId}`, displayName: "You" }) : null);
+  const [localGuestProfile, setLocalGuestProfile] = useState<{ userId: string; displayName: string; pictureUrl?: string } | null>(() => {
+    try {
+      const raw = sessionStorage.getItem("toast_guest_profile");
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  });
+  const profile = lineProfile || localGuestProfile || (hostOfSession ? (hostProfile || { userId: `host_${sessionId}`, displayName: "You" }) : null);
+  const authRequired = lineAuthRequired && !localGuestProfile;
 
   const [members, setMembers] = useState<SessionMember[]>([]);
   const [nudgedMembers, setNudgedMembers] = useState<Set<string>>(new Set());
   const [sessionCreated, setSessionCreated] = useState(false);
   const [sessionInfo, setSessionInfo] = useState<SessionData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [guestName, setGuestName] = useState("");
+  const [guestJoining, setGuestJoining] = useState(false);
+  const joiningRef = useRef(false);
 
   const getUserLocation = useCallback(async (): Promise<{ latitude: string; longitude: string } | null> => {
     try {
@@ -65,7 +77,8 @@ export default function WaitingRoom() {
   }, []);
 
   const createOrJoinSession = useCallback(async () => {
-    if (!profile || !sessionId) return;
+    if (!profile || !sessionId || joiningRef.current) return;
+    joiningRef.current = true;
 
     const loc = await getUserLocation();
     const accessToken = getAccessToken();
@@ -142,15 +155,18 @@ export default function WaitingRoom() {
     } catch (err) {
       console.error("Session create/join failed:", err);
       setError("Failed to connect to session. Check your connection and try again.");
+    } finally {
+      joiningRef.current = false;
     }
   }, [profile, sessionId, getUserLocation, hostOfSession]);
 
   useEffect(() => {
+    if (sessionCreated) return;
     const ready = hostOfSession ? !!profile && !!sessionId : !profileLoading && !!profile && !!sessionId;
     if (ready) {
       createOrJoinSession();
     }
-  }, [profileLoading, profile, sessionId, hostOfSession]);
+  }, [profileLoading, profile, sessionId, hostOfSession, sessionCreated]);
 
   useEffect(() => {
     if (!sessionCreated || !sessionId) return;
@@ -159,7 +175,7 @@ export default function WaitingRoom() {
     if (pendingInvite === sessionId) {
       sessionStorage.removeItem("toast_group_pending_invite");
       setTimeout(() => {
-        sendGroupInvite(sessionId);
+        setShowShareModal(true);
       }, 400);
     }
   }, [sessionCreated, sessionId]);
@@ -186,8 +202,37 @@ export default function WaitingRoom() {
     return () => clearInterval(interval);
   }, [sessionCreated, sessionId, navigate]);
 
-  const handleInviteMore = async () => {
-    await sendGroupInviteNoRedirect(sessionId);
+  const handleInviteMore = () => {
+    setLinkCopied(false);
+    setShowShareModal(true);
+  };
+
+  const handleCopyLink = async () => {
+    const joinUrl = getGroupInviteUrl(sessionId);
+    try {
+      await navigator.clipboard.writeText(joinUrl);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 3000);
+    } catch {
+      const textArea = document.createElement("textarea");
+      textArea.value = joinUrl;
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 3000);
+    }
+  };
+
+  const handleShareVieLine = async () => {
+    const result = await sendGroupInvite(sessionId);
+    if (result.method === "clipboard") {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 3000);
+    }
   };
 
   const handleNudgeMember = async (nudgeKey: string = "general", memberName?: string) => {
@@ -198,6 +243,44 @@ export default function WaitingRoom() {
     if (result.shared) {
       setNudgedMembers((prev) => new Set(prev).add(nudgeKey));
     }
+  };
+
+  const handleGuestJoin = async () => {
+    if (!guestName.trim() || !sessionId) return;
+    setGuestJoining(true);
+    setError(null);
+    const guestUserId = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const guestProf = { userId: guestUserId, displayName: guestName.trim() };
+    sessionStorage.setItem("toast_guest_profile", JSON.stringify(guestProf));
+
+    try {
+      const joinRes = await fetch(`/api/group/sessions/${sessionId}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lineUserId: guestUserId,
+          displayName: guestName.trim(),
+          pictureUrl: "",
+        }),
+      });
+
+      if (joinRes.ok) {
+        setLocalGuestProfile(guestProf);
+        setSessionCreated(true);
+        const data = await joinRes.json();
+        if (data.members) setMembers(data.members);
+        if (data.session) setSessionInfo(data.session);
+      } else {
+        sessionStorage.removeItem("toast_guest_profile");
+        const errData = await joinRes.json().catch(() => null);
+        setError(errData?.message || "Could not join session. Please try again.");
+      }
+    } catch (err) {
+      console.error("Guest join failed:", err);
+      sessionStorage.removeItem("toast_guest_profile");
+      setError("Failed to connect. Check your connection and try again.");
+    }
+    setGuestJoining(false);
   };
 
   const memberCount = members.length;
@@ -255,15 +338,13 @@ export default function WaitingRoom() {
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", damping: 18, stiffness: 200 }}
-          className="mb-6"
+          className="mb-5"
         >
           <div
-            className="w-24 h-24 rounded-full bg-gradient-to-br from-[#00B900] to-[#00C300] flex items-center justify-center"
-            style={{ boxShadow: "0 8px 30px -6px rgba(0,185,0,0.3)" }}
+            className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center"
+            style={{ boxShadow: "0 8px 30px -6px rgba(234,179,8,0.15)" }}
           >
-            <svg viewBox="0 0 24 24" fill="white" className="w-14 h-14">
-              <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
-            </svg>
+            <img src={mascotImg} alt="Toast mascot" className="h-12 w-12 object-contain" draggable={false} />
           </div>
         </motion.div>
 
@@ -273,50 +354,64 @@ export default function WaitingRoom() {
           transition={{ delay: 0.15 }}
           className="text-[24px] font-bold mb-2 text-center"
         >
-          Connect with LINE
+          Join the Session
         </motion.h1>
 
         <motion.p
           initial={{ y: 16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-muted-foreground text-center text-sm mb-8 max-w-[280px]"
+          className="text-muted-foreground text-center text-sm mb-6 max-w-[280px]"
         >
-          Sign in with LINE so your friends can see your name and picture in the group session.
+          Enter your name so your friends know you've joined!
         </motion.p>
 
         <motion.div
           initial={{ y: 16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.25 }}
-          className="w-full max-w-xs space-y-4 mb-6"
+          className="w-full max-w-xs flex flex-col gap-3 mb-4"
         >
-          <div className="flex items-start gap-3 px-4">
-            <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <UserCheck className="w-4 h-4 text-[#00B900]" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Your profile photo & name</p>
-              <p className="text-xs text-muted-foreground">Shown in the waiting room so friends know you've joined</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 px-4">
-            <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Shield className="w-4 h-4 text-[#00B900]" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Secure & private</p>
-              <p className="text-xs text-muted-foreground">We only use your display name and profile picture</p>
-            </div>
-          </div>
+          <input
+            type="text"
+            value={guestName}
+            onChange={(e) => setGuestName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleGuestJoin(); }}
+            placeholder="Your name"
+            className="w-full px-5 py-4 rounded-2xl border border-gray-200 bg-white text-[15px] font-medium text-center focus:outline-none focus:border-[#FFCC02] focus:ring-2 focus:ring-[#FFCC02]/20 transition-all"
+            data-testid="input-guest-name"
+            autoFocus
+          />
+          <button
+            onClick={handleGuestJoin}
+            disabled={!guestName.trim() || guestJoining}
+            className={`w-full py-4 rounded-full font-bold text-[15px] transition-all active:scale-[0.96] ${
+              guestName.trim()
+                ? "bg-[#FFCC02] text-[#2d2000]"
+                : "bg-gray-100 text-muted-foreground"
+            }`}
+            style={guestName.trim() ? { boxShadow: "var(--shadow-glow-primary)" } : {}}
+            data-testid="button-join-session"
+          >
+            {guestJoining ? "Joining..." : "Join Session"}
+          </button>
+
+          {error && (
+            <p className="text-red-500 text-sm text-center" data-testid="text-guest-error">{error}</p>
+          )}
         </motion.div>
 
         <motion.div
           initial={{ y: 16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="w-full max-w-xs flex flex-col gap-3"
+          className="w-full max-w-xs flex flex-col items-center gap-3"
         >
+          <div className="flex items-center gap-3 w-full">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
           <button
             onClick={triggerLineLogin}
             className="w-full py-4 rounded-full font-bold text-[15px] text-white bg-[#00B900] active:scale-[0.96] transition-transform"
@@ -558,6 +653,85 @@ export default function WaitingRoom() {
           Session code: <span className="font-mono font-bold">{sessionId}</span>
         </motion.p>
       </div>
+
+      <AnimatePresence>
+        {showShareModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-black/40 flex items-end justify-center"
+            onClick={() => setShowShareModal(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="w-full max-w-md bg-white rounded-t-3xl p-6 pb-8"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-bold">Invite Friends</h3>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+                  data-testid="button-close-share-modal"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="bg-gray-50 rounded-2xl p-4 mb-4">
+                <p className="text-xs text-muted-foreground mb-2 font-medium">Share this link with your friends:</p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-white rounded-xl px-3 py-2.5 text-sm font-mono text-gray-700 truncate border border-gray-100" data-testid="text-invite-link">
+                    {getGroupInviteUrl(sessionId)}
+                  </div>
+                  <button
+                    onClick={handleCopyLink}
+                    className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-95 ${
+                      linkCopied ? "bg-green-500 text-white" : "bg-[#FFCC02] text-[#2d2000]"
+                    }`}
+                    data-testid="button-copy-link"
+                  >
+                    {linkCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                {linkCopied && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs text-green-600 font-semibold mt-2 text-center"
+                  >
+                    Link copied! Paste it in your chat.
+                  </motion.p>
+                )}
+              </div>
+
+              <button
+                onClick={handleShareVieLine}
+                className="w-full py-4 rounded-full font-bold text-[15px] text-white bg-[#00B900] active:scale-[0.96] transition-transform mb-3"
+                style={{ boxShadow: "0 6px 20px -4px rgba(0,185,0,0.3)" }}
+                data-testid="button-share-via-line"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Share2 className="w-4 h-4" />
+                  Share via LINE
+                </div>
+              </button>
+
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="w-full py-3 rounded-full font-semibold text-[14px] text-muted-foreground bg-gray-100 active:scale-[0.96] transition-transform"
+                data-testid="button-done-sharing"
+              >
+                Done
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <BottomNav />
     </div>

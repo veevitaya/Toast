@@ -86,7 +86,7 @@ function getAppBaseUrl(): string {
   return window.location.origin;
 }
 
-function getGroupInviteUrl(sessionId: string): string {
+export function getGroupInviteUrl(sessionId: string): string {
   return `${getAppBaseUrl()}/group/waiting?session=${sessionId}`;
 }
 
@@ -186,10 +186,15 @@ export async function shareMessage(text: string): Promise<ShareResult> {
   } else {
     const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.origin)}&text=${encodeURIComponent(text)}`;
     const popup = window.open(lineUrl, "_blank", "width=500,height=600");
-    if (!popup) {
-      return { shared: false, method: "line-app" };
+    if (popup) {
+      return { shared: true, method: "line-app" };
     }
-    return { shared: true, method: "line-app" };
+    try {
+      await navigator.clipboard.writeText(text);
+      return { shared: true, method: "clipboard" };
+    } catch {
+      return { shared: false, method: "clipboard" };
+    }
   }
 }
 
