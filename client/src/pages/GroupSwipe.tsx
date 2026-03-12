@@ -602,7 +602,7 @@ export default function GroupSwipe() {
   };
 
   const handleTap = (item: MenuItem) => {
-    navigate(`/restaurants?category=${encodeURIComponent(item.name)}`);
+    navigate(`/restaurant/${item.id}`);
   };
 
   const handleEndSession = async () => {
@@ -930,26 +930,40 @@ export default function GroupSwipe() {
             initial={{ y: 16, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.85, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            onClick={handleContinueSwiping}
-            data-testid="button-keep-swiping"
+            onClick={() => navigate(`/restaurant/${matchedItem.id}`)}
+            data-testid="button-view-restaurant"
             className="w-full py-4 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-[15px] active:scale-[0.96] transition-transform duration-200"
             style={{ boxShadow: "var(--shadow-glow-primary)" }}
           >
-            {currentIndex >= menuItems.length ? "See All Results" : "Keep Swiping"}
+            View Restaurant
           </motion.button>
 
-          {isHost && (
-            <motion.button
-              initial={{ y: 12, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.95, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              onClick={handleEndSession}
-              data-testid="button-end-session-match"
-              className="text-sm text-muted-foreground font-semibold hover:text-foreground transition-colors"
+          <motion.div
+            initial={{ y: 12, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.95, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            className="flex gap-2.5 w-full"
+          >
+            <button
+              onClick={handleContinueSwiping}
+              data-testid="button-keep-swiping"
+              className="flex-1 py-3.5 rounded-full bg-white border border-gray-200 text-foreground font-bold text-[14px] active:scale-[0.96] transition-transform"
+              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
             >
-              End Session ({allMatches.length} match{allMatches.length !== 1 ? "es" : ""})
-            </motion.button>
-          )}
+              {currentIndex >= menuItems.length ? "See Results" : "Keep Swiping"}
+            </button>
+
+            {isHost && (
+              <button
+                onClick={handleEndSession}
+                data-testid="button-end-session-match"
+                className="flex-1 py-3.5 rounded-full bg-red-50 border border-red-200/60 text-red-600 font-bold text-[14px] active:scale-[0.96] transition-transform"
+                style={{ boxShadow: "0 2px 8px rgba(239,68,68,0.08)" }}
+              >
+                End Session
+              </button>
+            )}
+          </motion.div>
         </div>
       </div>
     );
