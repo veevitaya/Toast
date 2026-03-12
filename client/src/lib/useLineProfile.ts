@@ -68,21 +68,19 @@ export function useLineProfile(options?: { requireAuth?: boolean }) {
     init();
   }, [requireAuth]);
 
-  const triggerLineLogin = () => {
+  const triggerLineLogin = async (): Promise<boolean> => {
     const useOA = requireAuth && isLineOAAvailable();
-    if (useOA) {
-      initLiffOA().then((ready) => {
-        if (ready) {
-          login();
-        }
-      });
-    } else {
-      initLiff().then((ready) => {
-        if (ready) {
-          login();
-        }
-      });
+    try {
+      const ready = useOA ? await initLiffOA() : await initLiff();
+      if (ready) {
+        login();
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        return false;
+      }
+    } catch (err) {
+      console.error("LINE login trigger failed:", err);
     }
+    return false;
   };
 
   const continueAsGuest = () => {

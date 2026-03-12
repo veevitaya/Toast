@@ -63,6 +63,8 @@ export default function WaitingRoom() {
   const [linkCopied, setLinkCopied] = useState(false);
   const [guestName, setGuestName] = useState("");
   const [guestJoining, setGuestJoining] = useState(false);
+  const [lineLoginPending, setLineLoginPending] = useState(false);
+  const [lineLoginError, setLineLoginError] = useState<string | null>(null);
   const joiningRef = useRef(false);
 
   const getUserLocation = useCallback(async (): Promise<{ latitude: string; longitude: string } | null> => {
@@ -417,13 +419,25 @@ export default function WaitingRoom() {
             <div className="flex-1 h-px bg-gray-200" />
           </div>
           <button
-            onClick={triggerLineLogin}
-            className="w-full py-4 rounded-full font-bold text-[15px] text-white bg-[#00B900] active:scale-[0.96] transition-transform"
+            onClick={async () => {
+              setLineLoginPending(true);
+              setLineLoginError(null);
+              const success = await triggerLineLogin();
+              if (!success) {
+                setLineLoginPending(false);
+                setLineLoginError("LINE login is not available right now. Please enter your name above to join.");
+              }
+            }}
+            disabled={lineLoginPending}
+            className={`w-full py-4 rounded-full font-bold text-[15px] text-white active:scale-[0.96] transition-all ${lineLoginPending ? "bg-[#00B900]/60" : "bg-[#00B900]"}`}
             style={{ boxShadow: "0 6px 20px -4px rgba(0,185,0,0.3)" }}
             data-testid="button-line-login"
           >
-            Continue with LINE
+            {lineLoginPending ? "Connecting to LINE..." : "Continue with LINE"}
           </button>
+          {lineLoginError && (
+            <p className="text-amber-600 text-xs text-center mt-1" data-testid="text-line-login-error">{lineLoginError}</p>
+          )}
         </motion.div>
 
         <motion.p
