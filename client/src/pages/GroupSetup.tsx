@@ -4,24 +4,24 @@ import { useLocation } from "wouter";
 import {
   ArrowLeft, Users, MapPin, Calendar as CalendarIcon,
   Clock, Utensils, Heart, Baby, Briefcase,
-  ChevronDown, Sparkles, UserPlus, Check,
+  ChevronDown, Sparkles, UserPlus, Check, Share2,
 } from "lucide-react";
 import { useLineProfile } from "@/lib/useLineProfile";
 
 const LOCATIONS = [
-  { id: "bts", icon: "🚇", label: "Near BTS", sub: "Easy access" },
-  { id: "mall", icon: "🏬", label: "At the mall", sub: "Indoor vibes" },
-  { id: "street", icon: "🍢", label: "Street food", sub: "Local flavor" },
-  { id: "rooftop", icon: "🏙️", label: "Rooftop", sub: "Sky high" },
-  { id: "riverside", icon: "🌊", label: "Riverside", sub: "Scenic views" },
-  { id: "latenight", icon: "🌙", label: "Late night", sub: "After hours" },
+  { id: "bts", icon: "\u{1F687}", label: "Near BTS", sub: "Easy access" },
+  { id: "mall", icon: "\u{1F3EC}", label: "At the mall", sub: "Indoor vibes" },
+  { id: "street", icon: "\u{1F362}", label: "Street food", sub: "Local flavor" },
+  { id: "rooftop", icon: "\u{1F3D9}\u{FE0F}", label: "Rooftop", sub: "Sky high" },
+  { id: "riverside", icon: "\u{1F30A}", label: "Riverside", sub: "Scenic views" },
+  { id: "latenight", icon: "\u{1F319}", label: "Late night", sub: "After hours" },
 ];
 
 const BUDGETS = [
-  { id: "1", icon: "฿", label: "Cheap eats", color: "#00B14F" },
-  { id: "2", icon: "฿฿", label: "Mid range", color: "#FFCC02" },
-  { id: "3", icon: "฿฿฿", label: "Fancy", color: "#6C2BD9" },
-  { id: "4", icon: "฿฿฿฿", label: "Splurge", color: "#E11D48" },
+  { id: "1", icon: "\u{0E3F}", label: "Cheap eats", color: "#00B14F" },
+  { id: "2", icon: "\u{0E3F}\u{0E3F}", label: "Mid range", color: "#FFCC02" },
+  { id: "3", icon: "\u{0E3F}\u{0E3F}\u{0E3F}", label: "Fancy", color: "#6C2BD9" },
+  { id: "4", icon: "\u{0E3F}\u{0E3F}\u{0E3F}\u{0E3F}", label: "Splurge", color: "#E11D48" },
 ];
 
 const GROUP_TYPES = [
@@ -32,14 +32,14 @@ const GROUP_TYPES = [
 ];
 
 const RESTRICTIONS = [
-  { id: "halal", icon: "🕌", label: "Halal" },
-  { id: "vegan", icon: "🥬", label: "Vegan" },
-  { id: "vegetarian", icon: "🥗", label: "Vegetarian" },
-  { id: "gluten-free", icon: "🌾", label: "Gluten-Free" },
-  { id: "no-pork", icon: "🐷", label: "No Pork" },
-  { id: "keto", icon: "🥓", label: "Keto" },
-  { id: "dairy-free", icon: "🥛", label: "Dairy-Free" },
-  { id: "nut-free", icon: "🥜", label: "Nut-Free" },
+  { id: "halal", icon: "\u{1F54C}", label: "Halal" },
+  { id: "vegan", icon: "\u{1F96C}", label: "Vegan" },
+  { id: "vegetarian", icon: "\u{1F957}", label: "Vegetarian" },
+  { id: "gluten-free", icon: "\u{1F33E}", label: "Gluten-Free" },
+  { id: "no-pork", icon: "\u{1F437}", label: "No Pork" },
+  { id: "keto", icon: "\u{1F953}", label: "Keto" },
+  { id: "dairy-free", icon: "\u{1F95B}", label: "Dairy-Free" },
+  { id: "nut-free", icon: "\u{1F95C}", label: "Nut-Free" },
 ];
 
 const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -220,18 +220,10 @@ export default function GroupSetup() {
 
   const prefsSummary = [
     selectedBudget ? BUDGETS.find(b => b.id === selectedBudget)?.label : null,
-    selectedGroupType ? GROUP_TYPES.find(g => g.id === selectedGroupType)?.label : null,
     selectedRestrictions.length > 0 ? `${selectedRestrictions.length} dietary` : null,
-  ].filter(Boolean).join(" · ") || "No preferences set";
+  ].filter(Boolean).join(" \u00B7 ") || "No preferences set";
 
   const groupSummary = selectedGroupType ? GROUP_TYPES.find(g => g.id === selectedGroupType)?.label || "Any group" : "Any group";
-
-  const completedSteps = [
-    selectedDate,
-    selectedLocations.length > 0,
-    selectedBudget,
-    selectedGroupType,
-  ].filter(Boolean).length;
 
   return (
     <div className="w-full h-[100dvh] bg-[#F8F8F7] flex flex-col overflow-hidden" data-testid="group-setup-page">
@@ -247,18 +239,6 @@ export default function GroupSetup() {
           <div className="flex-1">
             <h1 className="text-[17px] font-bold text-foreground" data-testid="text-page-title">New Session</h1>
             <p className="text-[11px] text-muted-foreground">Customize your group experience</p>
-          </div>
-          <div className="flex items-center gap-1">
-            {[0, 1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-1.5 rounded-full transition-all duration-300"
-                style={{
-                  width: i < completedSteps ? 16 : 6,
-                  background: i < completedSteps ? "#FFCC02" : "#e5e5e5",
-                }}
-              />
-            ))}
           </div>
         </div>
       </div>
@@ -542,7 +522,7 @@ export default function GroupSetup() {
             onToggle={() => toggleSection("group")}
             testId="section-group"
           >
-            <div className="mb-4">
+            <div>
               <p className="text-[11px] font-semibold text-muted-foreground mb-2">Who are you with?</p>
               <div className="grid grid-cols-4 gap-1.5">
                 {GROUP_TYPES.map((g) => {
@@ -570,51 +550,39 @@ export default function GroupSetup() {
                 })}
               </div>
             </div>
-
-            <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-100/60">
-              <button
-                onClick={handleInvite}
-                data-testid="button-invite-line"
-                className="w-full flex items-center gap-3 px-3.5 py-3 active:bg-gray-100 transition-colors"
-              >
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: "#00C300" }}
-                >
-                  <UserPlus className="w-4.5 h-4.5 text-white" />
-                </div>
-                <div className="flex-1 text-left">
-                  <span className="text-[13px] font-bold text-foreground">
-                    {inviteStatus === "sending" ? "Opening LINE..." : inviteStatus === "sent" ? "Invite Sent!" : "Invite via LINE"}
-                  </span>
-                  <p className="text-[10px] text-muted-foreground">
-                    {inviteStatus === "sending" ? "Select friends to invite" : "Send to friends or group chat"}
-                  </p>
-                </div>
-              </button>
-            </div>
           </SectionCard>
         </div>
       </div>
 
-      <div className="flex-shrink-0 bg-white/80 backdrop-blur-md border-t border-gray-100/60 px-5 py-3.5 pb-5 safe-bottom">
-        <button
-          onClick={async () => {
-            const sessionId = await getOrCreateSessionId();
-            if (profile) {
-              sessionStorage.setItem("toast_group_host_profile", JSON.stringify(profile));
-              localStorage.setItem("toast_guest_profile", JSON.stringify(profile));
-            }
-            sessionStorage.setItem("toast_group_host_session", sessionId);
-            navigate(`/group/waiting?session=${sessionId}`);
-          }}
-          data-testid="button-start-session"
-          className="w-full py-4 rounded-2xl bg-[#FFCC02] text-[#2d2000] font-bold text-[15px] active:scale-[0.97] transition-transform duration-200 flex items-center justify-center gap-2"
-          style={{ boxShadow: "0 8px 25px -5px rgba(255,204,2,0.4)" }}
-        >
-          <Sparkles className="w-4 h-4" />
-          Start Session
-        </button>
+      <div className="flex-shrink-0 bg-white/90 backdrop-blur-md border-t border-gray-100/60 px-5 py-3 pb-5 safe-bottom">
+        <div className="flex gap-2.5">
+          <button
+            onClick={handleInvite}
+            data-testid="button-invite-line"
+            className="flex-1 py-3.5 rounded-2xl font-bold text-[14px] text-white bg-[#00C300] active:scale-[0.97] transition-transform duration-200 flex items-center justify-center gap-2"
+            style={{ boxShadow: "0 6px 20px -4px rgba(0,195,0,0.35)" }}
+          >
+            <Share2 className="w-4 h-4" />
+            {inviteStatus === "sending" ? "Opening..." : inviteStatus === "sent" ? "Sent!" : "Invite via LINE"}
+          </button>
+          <button
+            onClick={async () => {
+              const sessionId = await getOrCreateSessionId();
+              if (profile) {
+                sessionStorage.setItem("toast_group_host_profile", JSON.stringify(profile));
+                localStorage.setItem("toast_guest_profile", JSON.stringify(profile));
+              }
+              sessionStorage.setItem("toast_group_host_session", sessionId);
+              navigate(`/group/waiting?session=${sessionId}`);
+            }}
+            data-testid="button-start-session"
+            className="flex-1 py-3.5 rounded-2xl bg-[#FFCC02] text-[#2d2000] font-bold text-[14px] active:scale-[0.97] transition-transform duration-200 flex items-center justify-center gap-2"
+            style={{ boxShadow: "0 6px 20px -4px rgba(255,204,2,0.4)" }}
+          >
+            <Sparkles className="w-4 h-4" />
+            Start Session
+          </button>
+        </div>
       </div>
     </div>
   );
