@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { initLiff, initLiffOA, getProfile, isLoggedIn, isLiffAvailable, isLineOAAvailable, login, isInLiff, syncProfileToServer, type LineProfile } from "./liff";
+import { initLiff, initLiffOA, getProfile, isLoggedIn, isLiffAvailable, isLineOAAvailable, login, isInLiff, syncProfileToServer, getLineOALiffId, type LineProfile } from "./liff";
 
 const GUEST_KEY = "toast_guest_profile";
 
@@ -83,11 +83,20 @@ export function useLineProfile(options?: { requireAuth?: boolean }) {
       if (ready) {
         login();
         await new Promise((resolve) => setTimeout(resolve, 3000));
-        return false;
+        return true;
       }
     } catch (err) {
       console.error("LINE login trigger failed:", err);
     }
+
+    const liffId = useOA ? getLineOALiffId() : (import.meta.env.VITE_LIFF_ID || "");
+    if (liffId) {
+      const currentPath = window.location.pathname + window.location.search;
+      window.location.href = `https://liff.line.me/${liffId}${currentPath}`;
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      return true;
+    }
+
     return false;
   };
 

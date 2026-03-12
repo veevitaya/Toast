@@ -44,15 +44,14 @@ export default function WaitingRoom() {
 
   const hostProfile = hostOfSession ? getHostProfile() : null;
   const [localGuestProfile, setLocalGuestProfile] = useState<{ userId: string; displayName: string; pictureUrl?: string } | null>(() => {
+    if (!sessionId) return null;
     try {
       const sessionRaw = localStorage.getItem(`toast_guest_${sessionId}`);
       if (sessionRaw) return JSON.parse(sessionRaw);
-      const raw = sessionStorage.getItem("toast_guest_profile");
-      if (raw) return JSON.parse(raw);
     } catch {}
     return null;
   });
-  const profile = lineProfile || localGuestProfile || (hostOfSession ? (hostProfile || { userId: `host_${sessionId}`, displayName: "Host" }) : null);
+  const profile = localGuestProfile || lineProfile || (hostOfSession ? (hostProfile || { userId: `host_${sessionId}`, displayName: "Host" }) : null);
   const authRequired = lineAuthRequired && !localGuestProfile;
 
   const [members, setMembers] = useState<SessionMember[]>([]);
@@ -446,7 +445,7 @@ export default function WaitingRoom() {
               const success = await triggerLineLogin();
               if (!success) {
                 setLineLoginPending(false);
-                setLineLoginError("LINE login is not available right now. Please enter your name above to join.");
+                setLineLoginError("LINE login is not available in this environment. Please enter your name above to join.");
               }
             }}
             disabled={lineLoginPending}
@@ -454,7 +453,7 @@ export default function WaitingRoom() {
             style={{ boxShadow: "0 6px 20px -4px rgba(0,185,0,0.3)" }}
             data-testid="button-line-login"
           >
-            {lineLoginPending ? "Connecting to LINE..." : "Continue with LINE"}
+            {lineLoginPending ? "Redirecting to LINE..." : "Continue with LINE"}
           </button>
           {lineLoginError && (
             <p className="text-amber-600 text-xs text-center mt-1" data-testid="text-line-login-error">{lineLoginError}</p>

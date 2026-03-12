@@ -273,8 +273,17 @@ function buildTagsFromCategory(category: string): string[] {
 
 export default function GroupSwipe() {
   const [, navigate] = useLocation();
-  const { profile } = useLineProfile();
+  const { profile: lineProfile } = useLineProfile();
   const sessionCode = new URLSearchParams(window.location.search).get("session") || "";
+  const profile = useMemo(() => {
+    if (sessionCode) {
+      const sessionGuest = localStorage.getItem(`toast_guest_${sessionCode}`);
+      if (sessionGuest) {
+        try { return JSON.parse(sessionGuest); } catch {}
+      }
+    }
+    return lineProfile;
+  }, [sessionCode, lineProfile]);
   const [members, setMembers] = useState<SessionMember[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
