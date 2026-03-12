@@ -7,7 +7,7 @@ import { Sparkles, Clock, Wallet, TrendingUp, MapPin, Search, UtensilsCrossed, X
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { VIBE_LABELS, VIBE_EMOJI } from "@shared/vibeConfig";
 import type { VibeTag } from "@shared/vibeConfig";
-import mascotPath from "@assets/image_1772011321697.png";
+import mascotPath from "@assets/toast_mascot_nobg.png";
 import drunkToastPath from "@assets/drunk_toast_nobg.png";
 
 const ALL_MENUS = [
