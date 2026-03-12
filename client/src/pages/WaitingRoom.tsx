@@ -252,6 +252,7 @@ export default function WaitingRoom() {
     const guestUserId = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const guestProf = { userId: guestUserId, displayName: guestName.trim() };
     sessionStorage.setItem("toast_guest_profile", JSON.stringify(guestProf));
+    localStorage.setItem("toast_guest_profile", JSON.stringify(guestProf));
 
     try {
       const joinRes = await fetch(`/api/group/sessions/${sessionId}/join`, {

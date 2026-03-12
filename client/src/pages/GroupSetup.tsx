@@ -141,6 +141,7 @@ export default function GroupSetup() {
 
     if (profile) {
       sessionStorage.setItem("toast_group_host_profile", JSON.stringify(profile));
+      localStorage.setItem("toast_guest_profile", JSON.stringify(profile));
     }
     sessionStorage.setItem("toast_group_host_session", sessionId);
     sessionStorage.setItem("toast_group_pending_invite", sessionId);

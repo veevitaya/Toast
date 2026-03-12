@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo, useAnimate } from "framer-motion";
 import { useLocation } from "wouter";
 import { addSession, updateSession } from "@/lib/sessionStore";
@@ -280,6 +280,7 @@ export default function GroupSwipe() {
   const [liked, setLiked] = useState<Set<number>>(new Set());
   const [matchCount, setMatchCount] = useState(0);
   const [allMatches, setAllMatches] = useState<MenuItem[]>([]);
+  const prevMatchCountRef = useRef(0);
   const [likedCount, setLikedCount] = useState(0);
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [notifiedPartials, setNotifiedPartials] = useState<Set<number>>(new Set());
@@ -341,32 +342,37 @@ export default function GroupSwipe() {
     const fetchSession = async () => {
       try {
         const res = await fetch(`/api/group/sessions/${sessionCode}`);
-        if (res.ok) {
-          const data = await res.json();
-          setMembers(data.members);
-          if (profile && data.session?.hostLineUserId === profile.userId) {
-            setIsHost(true);
-          }
-          if (data.session?.status === "completed" && !sessionEnded) {
-            const matchRes = await fetch(`/api/group/sessions/${sessionCode}/matches`);
-            if (matchRes.ok) {
-              const matchData = await matchRes.json();
-              if (matchData.matches && menuItems.length > 0) {
-                const matchedItems = matchData.matches
-                  .filter((m: MatchInfo) => m.voters.length >= data.members.length)
-                  .map((m: MatchInfo) => menuItems.find(item => item.id === m.menuItemId))
-                  .filter(Boolean) as MenuItem[];
-                if (matchedItems.length > 0) {
-                  setAllMatches(prev => {
-                    const existing = new Set(prev.map(p => p.id));
-                    const newItems = matchedItems.filter((i: MenuItem) => !existing.has(i.id));
-                    return [...prev, ...newItems];
-                  });
+        if (!res.ok) return;
+        const data = await res.json();
+        setMembers(data.members);
+        if (profile && data.session?.hostLineUserId === profile.userId) {
+          setIsHost(true);
+        }
+
+        if (menuItems.length > 0) {
+          const matchRes = await fetch(`/api/group/sessions/${sessionCode}/matches`);
+          if (matchRes.ok) {
+            const matchData = await matchRes.json();
+            if (matchData.matches) {
+              const fullMatches = matchData.matches
+                .filter((m: MatchInfo) => m.voters.length >= data.members.length)
+                .map((m: MatchInfo) => menuItems.find(item => item.id === m.menuItemId))
+                .filter(Boolean) as MenuItem[];
+
+              setAllMatches(prev => {
+                const existing = new Set(prev.map(p => p.id));
+                const newItems = fullMatches.filter((i: MenuItem) => !existing.has(i.id));
+                if (newItems.length > 0) {
+                  return [...prev, ...newItems];
                 }
-              }
+                return prev;
+              });
             }
-            setSessionEnded(true);
           }
+        }
+
+        if (data.session?.status === "completed" && !sessionEnded) {
+          setSessionEnded(true);
         }
       } catch {}
     };
@@ -374,6 +380,20 @@ export default function GroupSwipe() {
     const interval = setInterval(fetchSession, 3000);
     return () => clearInterval(interval);
   }, [sessionCode, profile, sessionEnded, menuItems]);
+
+  useEffect(() => {
+    if (allMatches.length > prevMatchCountRef.current) {
+      const latestMatch = allMatches[allMatches.length - 1];
+      if (latestMatch) {
+        setMatchedItem(latestMatch);
+        setConfetti(true);
+        setFullMatch(true);
+        setMatchCount(allMatches.length);
+        updateSession(sessionCode || "group-1", { matchCount: allMatches.length });
+      }
+    }
+    prevMatchCountRef.current = allMatches.length;
+  }, [allMatches, sessionCode]);
 
   useEffect(() => {
     addSession({
@@ -432,22 +452,20 @@ export default function GroupSwipe() {
       const { matches, memberCount } = result;
 
       if (matches && matches.length > 0) {
+        const newMatches: MenuItem[] = [];
         for (const match of matches) {
           const matchedMenuItem = menuItems.find(m => m.id === match.menuItemId);
           if (matchedMenuItem && match.voters.length >= memberCount) {
-            if (!allMatches.find(am => am.id === matchedMenuItem.id)) {
-              setAllMatches(prev => [...prev, matchedMenuItem]);
-            }
-            setMatchedItem(matchedMenuItem);
-            setConfetti(true);
-            setFullMatch(true);
-            setMatchCount(c => {
-              const newCount = c + 1;
-              updateSession(sessionCode || "group-1", { matchCount: newCount });
-              return newCount;
-            });
-            return;
+            newMatches.push(matchedMenuItem);
           }
+        }
+        if (newMatches.length > 0) {
+          setAllMatches(prev => {
+            const existing = new Set(prev.map(p => p.id));
+            const unique = newMatches.filter(i => !existing.has(i.id));
+            return unique.length > 0 ? [...prev, ...unique] : prev;
+          });
+          return;
         }
       }
 
