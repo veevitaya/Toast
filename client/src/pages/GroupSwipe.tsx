@@ -5,7 +5,7 @@ import { addSession, updateSession } from "@/lib/sessionStore";
 import { BottomNav } from "@/components/BottomNav";
 import { trackEvent } from "@/lib/analytics";
 import { useLineProfile } from "@/lib/useLineProfile";
-import { Square, X } from "lucide-react";
+import { Square, X, Trophy, ChevronRight, Crown, Medal, Award } from "lucide-react";
 
 interface MenuItem {
   id: number;
@@ -32,6 +32,13 @@ interface SessionMember {
 interface MatchInfo {
   menuItemId: number;
   voters: string[];
+}
+
+interface RankedResult {
+  item: MenuItem;
+  voters: SessionMember[];
+  voteCount: number;
+  isFullMatch: boolean;
 }
 
 function ConfettiExplosion() {
@@ -287,6 +294,9 @@ export default function GroupSwipe() {
   const [isHost, setIsHost] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [sessionEnded, setSessionEnded] = useState(false);
+  const [rankedResults, setRankedResults] = useState<RankedResult[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const [loadingResults, setLoadingResults] = useState(false);
 
   useEffect(() => {
     const loadRestaurants = async () => {
@@ -512,6 +522,56 @@ export default function GroupSwipe() {
     } catch {}
   }, [sessionCode, profile, notifiedPartials, menuItems]);
 
+  const fetchRankedResults = useCallback(async () => {
+    if (!sessionCode || loadingResults) return;
+    setLoadingResults(true);
+    try {
+      const res = await fetch(`/api/group/sessions/${sessionCode}/swipes`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const { swipes, members: memberList } = data;
+
+      const voteMap = new Map<number, Set<string>>();
+      for (const s of swipes) {
+        if (s.direction === "right" || s.direction === "super") {
+          if (!voteMap.has(s.menuItemId)) voteMap.set(s.menuItemId, new Set());
+          voteMap.get(s.menuItemId)!.add(s.lineUserId);
+        }
+      }
+
+      const ranked: RankedResult[] = [];
+      for (const [menuItemId, voterIds] of voteMap) {
+        if (voterIds.size < 2) continue;
+        const item = menuItems.find(m => m.id === menuItemId);
+        if (!item) continue;
+        const voters = memberList.filter((m: SessionMember) => voterIds.has(m.lineUserId));
+        ranked.push({
+          item,
+          voters,
+          voteCount: voterIds.size,
+          isFullMatch: voterIds.size >= memberList.length,
+        });
+      }
+
+      ranked.sort((a, b) => b.voteCount - a.voteCount);
+      setRankedResults(ranked);
+    } catch {} finally {
+      setLoadingResults(false);
+    }
+  }, [sessionCode, menuItems, loadingResults]);
+
+  useEffect(() => {
+    if (currentIndex >= menuItems.length && menuItems.length > 0 && !showResults && !fullMatch && !loadingResults) {
+      fetchRankedResults().then(() => setShowResults(true));
+    }
+  }, [currentIndex, menuItems.length, showResults, fullMatch, loadingResults]);
+
+  useEffect(() => {
+    if (sessionEnded && !showResults && !loadingResults) {
+      fetchRankedResults().then(() => setShowResults(true));
+    }
+  }, [sessionEnded, showResults, loadingResults]);
+
   const handleButtonSwipe = (dir: "left" | "right" | "super") => {
     if (currentIndex < menuItems.length) {
       handleSwipe(menuItems[currentIndex].id, dir);
@@ -541,6 +601,9 @@ export default function GroupSwipe() {
     setFullMatch(false);
     setConfetti(false);
     setMatchedItem(null);
+    if (currentIndex >= menuItems.length) {
+      fetchRankedResults().then(() => setShowResults(true));
+    }
   };
 
   if (loading) {
@@ -551,77 +614,193 @@ export default function GroupSwipe() {
     );
   }
 
-  if (sessionEnded) {
+  if (showResults || sessionEnded) {
+    const RANK_ICONS = [Crown, Medal, Award];
+    const RANK_COLORS = ["#FFCC02", "#94A3B8", "#CD7F32"];
+    const RANK_BG = ["linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)", "linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)", "linear-gradient(135deg, #FDF4E7 0%, #FDECD0 100%)"];
+    const top3 = rankedResults.slice(0, 3);
+    const rest = rankedResults.slice(3);
+
     return (
       <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col overflow-hidden" data-testid="group-summary-page">
-        <div className="flex-shrink-0 px-6 pt-12 pb-4 border-b border-gray-100">
-          <h1 className="text-[22px] font-bold" data-testid="text-summary-title">Session Summary</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {members.length} people swiped · {allMatches.length} match{allMatches.length !== 1 ? "es" : ""}
-          </p>
-          <div className="flex items-center gap-2 mt-3">
+        <div className="flex-shrink-0 px-6 pt-12 pb-5">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#FFCC02]/15 flex items-center justify-center">
+              <Trophy className="w-5 h-5 text-[#FFCC02]" />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-[22px] font-bold" data-testid="text-summary-title">
+                {sessionEnded ? "Session Results" : "Your Top Picks"}
+              </h1>
+              <p className="text-[12px] text-muted-foreground">
+                {members.length} people swiped · {rankedResults.filter(r => r.isFullMatch).length} full match{rankedResults.filter(r => r.isFullMatch).length !== 1 ? "es" : ""}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
             {members.map((m) => (
-              <div key={m.lineUserId} className="flex items-center gap-1.5 bg-gray-50 rounded-full px-3 py-1.5">
+              <div key={m.lineUserId} className="flex items-center gap-1.5 bg-white rounded-full pl-1 pr-3 py-1 border border-gray-100" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
                 {m.pictureUrl ? (
-                  <img src={m.pictureUrl} alt={m.displayName} className="w-5 h-5 rounded-full object-cover" />
+                  <img src={m.pictureUrl} alt={m.displayName} className="w-6 h-6 rounded-full object-cover" />
                 ) : (
-                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
-                    <span className="text-[8px] font-bold text-amber-600">{m.displayName.charAt(0)}</span>
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                    <span className="text-[9px] font-bold text-amber-600">{m.displayName.charAt(0)}</span>
                   </div>
                 )}
-                <span className="text-xs font-semibold">{m.lineUserId === profile?.userId ? "You" : m.displayName}</span>
+                <span className="text-[11px] font-semibold">{m.lineUserId === profile?.userId ? "You" : m.displayName}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          {allMatches.length > 0 ? (
-            <div className="space-y-4">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Group Matches</h2>
-              {allMatches.map((item, idx) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  className="bg-white rounded-2xl overflow-hidden border border-gray-100"
-                  style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}
-                  data-testid={`match-card-${item.id}`}
-                >
-                  <div className="flex">
-                    <img src={item.imageUrl} alt={item.name} className="w-28 h-28 object-cover flex-shrink-0" />
-                    <div className="p-3 flex-1 min-w-0">
-                      <h3 className="font-bold text-[15px] truncate">{item.name}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">{item.category}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs font-medium">★ {item.rating}</span>
-                        <span className="text-xs text-muted-foreground">{"฿".repeat(item.priceLevel)}</span>
+        <div className="flex-1 overflow-y-auto px-5 pb-4 hide-scrollbar">
+          {loadingResults ? (
+            <div className="flex items-center justify-center h-40">
+              <div className="w-7 h-7 rounded-full border-2 border-gray-200 border-t-[#FFCC02] animate-spin" />
+            </div>
+          ) : top3.length > 0 ? (
+            <div className="space-y-3">
+              {top3.map((result, idx) => {
+                const RankIcon = RANK_ICONS[idx] || Award;
+                return (
+                  <motion.div
+                    key={result.item.id}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.12, ease: [0.4, 0, 0.2, 1] }}
+                    onClick={() => navigate(`/restaurant/${result.item.id}`)}
+                    className="rounded-[20px] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+                    style={{ boxShadow: idx === 0 ? "0 8px 32px -6px rgba(255,204,2,0.25), 0 4px 16px rgba(0,0,0,0.06)" : "0 4px 20px rgba(0,0,0,0.06)", background: RANK_BG[idx] }}
+                    data-testid={`result-card-${result.item.id}`}
+                  >
+                    <div className="relative">
+                      <img src={result.item.imageUrl} alt={result.item.name} className="w-full h-40 object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-white/95 backdrop-blur-sm rounded-full px-2.5 py-1" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                        <RankIcon className="w-3.5 h-3.5" style={{ color: RANK_COLORS[idx] }} />
+                        <span className="text-[11px] font-bold">#{idx + 1}</span>
                       </div>
-                      <p className="text-[11px] text-muted-foreground mt-1 truncate">{item.address}</p>
+                      {result.isFullMatch && (
+                        <div className="absolute top-3 right-3 bg-[#FFCC02] rounded-full px-2.5 py-1 text-[10px] font-bold text-[#2d2000]" style={{ boxShadow: "0 2px 8px rgba(255,204,2,0.4)" }}>
+                          Full Match
+                        </div>
+                      )}
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <h3 className="text-white text-lg font-bold drop-shadow-lg truncate">{result.item.name}</h3>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-white/90 text-xs">{result.item.category}</span>
+                          <span className="text-white/50 text-xs">·</span>
+                          <span className="text-white/90 text-xs">{"฿".repeat(result.item.priceLevel)}</span>
+                          <span className="text-white/50 text-xs">·</span>
+                          <span className="text-white/90 text-xs flex items-center gap-0.5">★ {result.item.rating}</span>
+                        </div>
+                      </div>
                     </div>
+                    <div className="px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="flex -space-x-2">
+                          {result.voters.map((v) => (
+                            v.pictureUrl ? (
+                              <img key={v.lineUserId} src={v.pictureUrl} alt={v.displayName} className="w-7 h-7 rounded-full border-2 border-white object-cover" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }} />
+                            ) : (
+                              <div key={v.lineUserId} className="w-7 h-7 rounded-full border-2 border-white bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+                                <span className="text-[9px] font-bold text-amber-600">{v.displayName.charAt(0)}</span>
+                              </div>
+                            )
+                          ))}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-semibold text-foreground/80 truncate">
+                            {result.voters.map(v => v.lineUserId === profile?.userId ? "You" : v.displayName).join(", ")}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {result.voteCount}/{members.length} liked this
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                    </div>
+                  </motion.div>
+                );
+              })}
+
+              {rest.length > 0 && (
+                <div className="pt-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 mb-2.5 px-1">Also Popular</p>
+                  <div className="space-y-2">
+                    {rest.map((result, idx) => (
+                      <motion.div
+                        key={result.item.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 + idx * 0.06 }}
+                        onClick={() => navigate(`/restaurant/${result.item.id}`)}
+                        className="flex items-center gap-3 bg-white rounded-2xl p-2.5 pr-3 border border-gray-100 cursor-pointer active:scale-[0.98] transition-transform"
+                        style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}
+                        data-testid={`result-card-${result.item.id}`}
+                      >
+                        <img src={result.item.imageUrl} alt={result.item.name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-[13px] truncate">{result.item.name}</h4>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <div className="flex -space-x-1.5">
+                              {result.voters.slice(0, 3).map((v) => (
+                                v.pictureUrl ? (
+                                  <img key={v.lineUserId} src={v.pictureUrl} alt={v.displayName} className="w-4 h-4 rounded-full border border-white object-cover" />
+                                ) : (
+                                  <div key={v.lineUserId} className="w-4 h-4 rounded-full border border-white bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                                    <span className="text-[6px] font-bold text-amber-600">{v.displayName.charAt(0)}</span>
+                                  </div>
+                                )
+                              ))}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground ml-1">{result.voteCount}/{members.length}</span>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 flex-shrink-0" />
+                      </motion.div>
+                    ))}
                   </div>
-                </motion.div>
-              ))}
+                </div>
+              )}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <span className="text-5xl mb-4">🤔</span>
-              <h2 className="text-lg font-semibold mb-2">No matches yet</h2>
-              <p className="text-sm text-muted-foreground">Your group didn't agree on any restaurants this time. Try again with different preferences!</p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center h-full text-center px-4"
+            >
+              <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mb-5">
+                <span className="text-4xl">🤷</span>
+              </div>
+              <h2 className="text-lg font-bold mb-2">No shared picks yet</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">Nobody in your group agreed on the same spot. Try again with different preferences!</p>
+            </motion.div>
           )}
         </div>
 
-        <div className="flex-shrink-0 px-6 py-4 pb-6 border-t border-gray-100 safe-bottom">
-          <button
-            onClick={() => navigate("/")}
-            data-testid="button-home-summary"
-            className="w-full py-4 rounded-2xl bg-foreground text-white font-bold text-[15px] active:scale-[0.97] transition-transform"
-            style={{ boxShadow: "0 8px 25px -5px rgba(0,0,0,0.25)" }}
-          >
-            Back to Home
-          </button>
+        <div className="flex-shrink-0 px-5 py-4 pb-6 border-t border-gray-50 safe-bottom bg-white/80 backdrop-blur-sm">
+          {!sessionEnded && isHost ? (
+            <div className="flex gap-3">
+              <button
+                onClick={handleEndSession}
+                data-testid="button-end-done"
+                className="flex-1 py-3.5 rounded-2xl bg-[#FFCC02] text-[#2d2000] font-bold text-[14px] active:scale-[0.97] transition-transform"
+                style={{ boxShadow: "0 6px 20px -4px rgba(255,204,2,0.4)" }}
+              >
+                End Session
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => navigate("/")}
+              data-testid="button-home-summary"
+              className="w-full py-4 rounded-2xl bg-foreground text-white font-bold text-[15px] active:scale-[0.97] transition-transform"
+              style={{ boxShadow: "0 8px 25px -5px rgba(0,0,0,0.25)" }}
+            >
+              Back to Home
+            </button>
+          )}
         </div>
       </div>
     );
@@ -733,7 +912,7 @@ export default function GroupSwipe() {
             className="w-full py-4 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-[15px] active:scale-[0.96] transition-transform duration-200"
             style={{ boxShadow: "var(--shadow-glow-primary)" }}
           >
-            Keep Swiping
+            {currentIndex >= menuItems.length ? "See All Results" : "Keep Swiping"}
           </motion.button>
 
           {isHost && (
@@ -819,30 +998,8 @@ export default function GroupSwipe() {
       <div className="flex-1 relative px-5 pb-4">
         {currentIndex >= menuItems.length ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <motion.div
-              className="relative mb-6"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", damping: 15, stiffness: 200 }}
-            >
-              <span className="text-6xl block">🎉</span>
-              <span className="absolute -top-2 -right-3 text-2xl inline-block animate-icon-wiggle gpu-accelerated">✨</span>
-            </motion.div>
-            <h2 className="text-2xl font-semibold mb-2" data-testid="text-all-done">All done!</h2>
-            <p className="text-muted-foreground mb-2 text-sm">Your group liked {likedCount} out of {menuItems.length} options</p>
-            <p className="text-muted-foreground mb-4 text-xs">{allMatches.length} group match{allMatches.length !== 1 ? "es" : ""} found</p>
-            {isHost ? (
-              <button
-                onClick={handleEndSession}
-                data-testid="button-end-done"
-                className="px-8 py-3.5 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-sm active:scale-[0.96] transition-transform duration-200"
-                style={{ boxShadow: "var(--shadow-glow-primary)" }}
-              >
-                See Results ({allMatches.length} match{allMatches.length !== 1 ? "es" : ""})
-              </button>
-            ) : (
-              <p className="text-sm text-muted-foreground">Waiting for the host to end the session...</p>
-            )}
+            <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-[#FFCC02] animate-spin" />
+            <p className="text-sm text-muted-foreground mt-4">Tallying results...</p>
           </div>
         ) : (
           <div className="relative w-full h-full max-w-sm mx-auto">
