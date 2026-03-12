@@ -6,7 +6,7 @@ import {
   Clock, Utensils, Heart, Baby, Briefcase,
   ChevronRight, ChevronDown, Sparkles, UserPlus,
 } from "lucide-react";
-import { sendGroupInvite } from "@/lib/liff";
+import { sendGroupInvite, sendGroupInviteNoRedirect } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
 
 const LOCATIONS = [
@@ -139,18 +139,17 @@ export default function GroupSetup() {
     setInviteStatus("sending");
     const sessionId = await getOrCreateSessionId();
 
-    const result = await sendGroupInvite(sessionId);
-
-    if (result.method === "line-app" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-      setInviteStatus("sent");
-      setTimeout(() => {
-        navigate(`/group/waiting?session=${sessionId}`);
-      }, 500);
-      return;
+    if (profile) {
+      sessionStorage.setItem("toast_group_host_profile", JSON.stringify(profile));
     }
+    sessionStorage.setItem("toast_group_host_session", sessionId);
+
+    const result = await sendGroupInviteNoRedirect(sessionId);
 
     setInviteStatus("sent");
-    navigate(`/group/waiting?session=${sessionId}`);
+    setTimeout(() => {
+      navigate(`/group/waiting?session=${sessionId}`);
+    }, 300);
   };
 
   const completedSteps = [

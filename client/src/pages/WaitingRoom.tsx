@@ -26,16 +26,32 @@ interface SessionData {
   expectedMembers: number | null;
 }
 
+function getHostProfile(): { userId: string; displayName: string; pictureUrl?: string } | null {
+  try {
+    const raw = sessionStorage.getItem("toast_group_host_profile");
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return null;
+}
+
+function isHost(sessionId: string): boolean {
+  return sessionStorage.getItem("toast_group_host_session") === sessionId;
+}
+
 export default function WaitingRoom() {
   const [, navigate] = useLocation();
-  const { profile, loading: profileLoading, isLineUser, authRequired, triggerLineLogin, continueAsGuest } = useLineProfile({ requireAuth: true });
+  const sessionId = new URLSearchParams(window.location.search).get("session") || "";
+  const hostOfSession = isHost(sessionId);
+  const { profile: lineProfile, loading: profileLoading, isLineUser, authRequired, triggerLineLogin, continueAsGuest } = useLineProfile({ requireAuth: !hostOfSession });
+
+  const hostProfile = hostOfSession ? getHostProfile() : null;
+  const profile = lineProfile || (hostOfSession ? (hostProfile || { userId: `host_${sessionId}`, displayName: "You" }) : null);
+
   const [members, setMembers] = useState<SessionMember[]>([]);
   const [nudgedMembers, setNudgedMembers] = useState<Set<string>>(new Set());
   const [sessionCreated, setSessionCreated] = useState(false);
   const [sessionInfo, setSessionInfo] = useState<SessionData | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const sessionId = new URLSearchParams(window.location.search).get("session") || "";
 
   const getUserLocation = useCallback(async (): Promise<{ latitude: string; longitude: string } | null> => {
     try {
@@ -55,42 +71,61 @@ export default function WaitingRoom() {
     const accessToken = getAccessToken();
 
     try {
-      const createRes = await fetch("/api/group/sessions", {
+      if (hostOfSession) {
+        const checkRes = await fetch(`/api/group/sessions/${sessionId}`);
+        if (checkRes.ok) {
+          setSessionCreated(true);
+          const data = await checkRes.json();
+          if (data.members) setMembers(data.members);
+          if (data.session) setSessionInfo(data.session);
+          return;
+        }
+      }
+
+      const joinRes = await fetch(`/api/group/sessions/${sessionId}/join`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(accessToken ? { "X-Line-Access-Token": accessToken } : {}),
         },
         body: JSON.stringify({
-          sessionCode: sessionId,
-          hostLineUserId: profile.userId,
-          hostDisplayName: profile.displayName,
-          hostPictureUrl: profile.pictureUrl || "",
+          lineUserId: profile.userId,
+          displayName: profile.displayName,
+          pictureUrl: profile.pictureUrl || "",
           latitude: loc?.latitude,
           longitude: loc?.longitude,
         }),
       });
 
-      if (createRes.ok) {
+      if (joinRes.ok) {
         setSessionCreated(true);
-      } else if (createRes.status === 409) {
-        const joinRes = await fetch(`/api/group/sessions/${sessionId}/join`, {
+        const data = await joinRes.json();
+        if (data.members) setMembers(data.members);
+        if (data.session) setSessionInfo(data.session);
+      } else if (joinRes.status === 404) {
+        const createRes = await fetch("/api/group/sessions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             ...(accessToken ? { "X-Line-Access-Token": accessToken } : {}),
           },
           body: JSON.stringify({
-            lineUserId: profile.userId,
-            displayName: profile.displayName,
-            pictureUrl: profile.pictureUrl || "",
+            sessionCode: sessionId,
+            hostLineUserId: profile.userId,
+            hostDisplayName: profile.displayName,
+            hostPictureUrl: profile.pictureUrl || "",
             latitude: loc?.latitude,
             longitude: loc?.longitude,
           }),
         });
-        if (joinRes.ok) {
+        if (createRes.ok) {
           setSessionCreated(true);
+        } else {
+          setError("Could not create or join session. Please try again.");
         }
+      } else {
+        const errData = await joinRes.json().catch(() => null);
+        setError(errData?.message || "Failed to join session. Please try again.");
       }
 
       if (loc && sessionId) {
@@ -106,15 +141,16 @@ export default function WaitingRoom() {
       }
     } catch (err) {
       console.error("Session create/join failed:", err);
-      setError("Failed to connect to session");
+      setError("Failed to connect to session. Check your connection and try again.");
     }
-  }, [profile, sessionId, getUserLocation]);
+  }, [profile, sessionId, getUserLocation, hostOfSession]);
 
   useEffect(() => {
-    if (!profileLoading && profile && sessionId) {
+    const ready = hostOfSession ? !!profile && !!sessionId : !profileLoading && !!profile && !!sessionId;
+    if (ready) {
       createOrJoinSession();
     }
-  }, [profileLoading, profile, sessionId]);
+  }, [profileLoading, profile, sessionId, hostOfSession]);
 
   useEffect(() => {
     if (!sessionCreated || !sessionId) return;
@@ -177,7 +213,7 @@ export default function WaitingRoom() {
     continueAsGuest();
   };
 
-  if (profileLoading) {
+  if (profileLoading && !hostOfSession) {
     return (
       <div className="w-full h-[100dvh] bg-[#FCFCFC] flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-gray-300 border-t-foreground animate-spin" />
@@ -201,7 +237,7 @@ export default function WaitingRoom() {
     );
   }
 
-  if (authRequired) {
+  if (authRequired && !hostOfSession) {
     return (
       <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6" data-testid="line-permission-gate">
         <div className="absolute inset-0 pointer-events-none">
@@ -484,7 +520,16 @@ export default function WaitingRoom() {
       </div>
 
       {error && (
-        <p className="text-red-500 text-sm mb-4" data-testid="text-error">{error}</p>
+        <div className="flex flex-col items-center gap-2 mb-4">
+          <p className="text-red-500 text-sm" data-testid="text-error">{error}</p>
+          <button
+            onClick={() => { setError(null); createOrJoinSession(); }}
+            className="px-4 py-2 rounded-full bg-gray-100 text-sm font-semibold text-foreground active:scale-95 transition-transform"
+            data-testid="button-retry-join"
+          >
+            Try Again
+          </button>
+        </div>
       )}
 
       <div className="flex flex-col items-center gap-3 w-full max-w-xs">
