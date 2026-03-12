@@ -104,6 +104,8 @@ export interface IStorage {
   getGroupMatches(sessionCode: string): Promise<{ menuItemId: number; voters: string[] }[]>;
   getPopularRestaurants(days: number, limit: number): Promise<{ restaurantId: number; score: number }[]>;
   getRestaurantsByVibe(vibe: string): Promise<Restaurant[]>;
+  getRestaurantByGooglePlaceId(placeId: string): Promise<Restaurant | undefined>;
+  getRestaurantsForSwipe(filters?: { vibes?: string[]; priceLevel?: number[]; category?: string; district?: string; limit?: number }): Promise<Restaurant[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -483,6 +485,56 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(restaurants)
       .where(sql`${restaurants.vibes} @> ARRAY[${vibe}]::text[]`)
       .orderBy(desc(restaurants.trendingScore));
+  }
+
+  async getRestaurantByGooglePlaceId(placeId: string): Promise<Restaurant | undefined> {
+    const [restaurant] = await db.select().from(restaurants)
+      .where(eq(restaurants.googlePlaceId, placeId))
+      .limit(1);
+    return restaurant;
+  }
+
+  async getRestaurantsForSwipe(filters?: {
+    vibes?: string[];
+    priceLevel?: number[];
+    category?: string;
+    district?: string;
+    limit?: number;
+  }): Promise<Restaurant[]> {
+    const conditions: any[] = [];
+
+    if (filters?.vibes && filters.vibes.length > 0) {
+      const vibeConditions = filters.vibes.map(v =>
+        sql`${restaurants.vibes} @> ARRAY[${v}]::text[]`
+      );
+      conditions.push(sql`(${sql.join(vibeConditions, sql` OR `)})`);
+    }
+
+    if (filters?.priceLevel && filters.priceLevel.length > 0) {
+      const pricePlaceholders = filters.priceLevel.map(p => sql`${p}`);
+      conditions.push(sql`${restaurants.priceLevel} IN (${sql.join(pricePlaceholders, sql`, `)})`);
+    }
+
+    if (filters?.category) {
+      conditions.push(sql`LOWER(${restaurants.category}) LIKE ${'%' + filters.category.toLowerCase() + '%'}`);
+    }
+
+    if (filters?.district) {
+      conditions.push(eq(restaurants.district, filters.district));
+    }
+
+    const limit = filters?.limit || 50;
+
+    if (conditions.length === 0) {
+      return await db.select().from(restaurants)
+        .orderBy(desc(restaurants.trendingScore))
+        .limit(limit);
+    }
+
+    return await db.select().from(restaurants)
+      .where(sql`${sql.join(conditions, sql` AND `)}`)
+      .orderBy(desc(restaurants.trendingScore))
+      .limit(limit);
   }
 }
 

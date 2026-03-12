@@ -345,6 +345,41 @@ export default function SoloResults() {
     enabled: !!vibeParam,
   });
 
+  const quizSwipeParams = useMemo(() => {
+    const p = new URLSearchParams();
+    const budgetToPrice: Record<string, string> = { Cheap: "1,2", Moderate: "2,3", Expensive: "3,4", Fancy: "4" };
+    if (quizAnswers.budget.length > 0) {
+      const prices = quizAnswers.budget.map(b => budgetToPrice[b] || "").join(",").split(",").filter(Boolean);
+      if (prices.length) p.set("priceLevel", [...new Set(prices)].join(","));
+    }
+    const interestToVibe: Record<string, string> = {
+      "Hot & spicy": "spicy", "Healthy": "healthy", "Budget-friendly": "budget",
+      "Fine dining": "date_night", "Coffee": "cafe", "Dessert": "sweets",
+      "Brunch": "brunch", "Outdoor dining": "outdoor", "Drinks": "drinks",
+      "Sweets": "sweets",
+    };
+    const vibeSet = new Set<string>();
+    for (const i of quizAnswers.interests) {
+      if (interestToVibe[i]) vibeSet.add(interestToVibe[i]);
+    }
+    if (vibeSet.size > 0) p.set("vibes", [...vibeSet].join(","));
+    p.set("limit", "30");
+    return p.toString();
+  }, [quizAnswers]);
+
+  const hasQuizFilters = !vibeParam && (quizAnswers.cuisines.length > 0 || quizAnswers.budget.length > 0 || quizAnswers.interests.length > 0);
+
+  const { data: quizDbRestaurants } = useQuery<VibeRestaurant[]>({
+    queryKey: ["/api/restaurants/for-swipe", "solo-quiz", quizSwipeParams],
+    queryFn: async () => {
+      const res = await fetch(`/api/restaurants/for-swipe?${quizSwipeParams}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: hasQuizFilters,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const vibeMenuItems = useMemo(() => {
     if (!vibeRestaurants || vibeRestaurants.length === 0) return null;
     return vibeRestaurants.map((r, i) => mapVibeRestaurantToMenuItem(r, i));
@@ -356,8 +391,11 @@ export default function SoloResults() {
       if (vibeMenuItems && vibeMenuItems.length > 0) return vibeMenuItems;
       return [];
     }
+    if (quizDbRestaurants && quizDbRestaurants.length >= 4) {
+      return quizDbRestaurants.map((r, i) => mapVibeRestaurantToMenuItem(r, i));
+    }
     return filterMenus(quizAnswers);
-  }, [quizAnswers, vibeMenuItems, vibeParam]);
+  }, [quizAnswers, vibeMenuItems, vibeParam, quizDbRestaurants]);
 
   const isDrinksMode = vibeParam === "drinks" || quizAnswers.interests.includes("Drinks");
 

@@ -899,6 +899,49 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/restaurants/for-swipe", async (req, res) => {
+    try {
+      const vibes = req.query.vibes ? String(req.query.vibes).split(",").filter(Boolean) : undefined;
+      const priceLevel = req.query.priceLevel
+        ? String(req.query.priceLevel).split(",").map(Number).filter(n => !isNaN(n))
+        : undefined;
+      const category = req.query.category ? String(req.query.category) : undefined;
+      const district = req.query.district ? String(req.query.district) : undefined;
+      const parsedLimit = req.query.limit ? Number(req.query.limit) : 50;
+      const limit = Number.isFinite(parsedLimit) ? Math.min(100, Math.max(1, parsedLimit)) : 50;
+
+      const results = await storage.getRestaurantsForSwipe({
+        vibes,
+        priceLevel,
+        category,
+        district,
+        limit,
+      });
+
+      const mapped = results.map(r => ({
+        id: r.id,
+        name: r.name,
+        category: r.category,
+        description: r.description,
+        priceLevel: r.priceLevel,
+        rating: r.rating,
+        address: r.address,
+        imageUrl: r.imageUrl,
+        isNew: r.isNew,
+        vibes: r.vibes || [],
+        district: r.district,
+        trendingScore: r.trendingScore,
+        lat: r.lat,
+        lng: r.lng,
+      }));
+
+      res.json(mapped);
+    } catch (err) {
+      console.error("Swipe restaurants error:", err);
+      res.status(500).json({ message: "Failed to fetch restaurants for swipe" });
+    }
+  });
+
   app.get("/api/restaurants/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -2004,25 +2047,61 @@ export async function registerRoutes(
           isNew: z.boolean().optional(),
           trendingScore: z.number().optional(),
           googlePlaceId: z.string().optional(),
+          operatingHours: z.string().optional(),
         })),
-        replaceExisting: z.boolean().default(false),
+        autoAssign: z.boolean().default(true),
+        skipDuplicates: z.boolean().default(true),
       });
       const input = schema.parse(req.body);
 
-      if (input.replaceExisting) {
-        await storage.seedRestaurants(input.restaurants);
-      } else {
-        for (const r of input.restaurants) {
-          await storage.addRestaurant(r);
+      let imported = 0;
+      let skipped = 0;
+      let updated = 0;
+
+      for (const r of input.restaurants) {
+        if (input.skipDuplicates && r.googlePlaceId) {
+          const existing = await storage.getRestaurantByGooglePlaceId(r.googlePlaceId);
+          if (existing) {
+            await storage.updateRestaurant(existing.id, {
+              rating: r.rating,
+              trendingScore: r.trendingScore,
+              imageUrl: r.imageUrl || existing.imageUrl,
+            });
+            updated++;
+            continue;
+          }
         }
+
+        let vibes: string[] = [];
+        let district: string | null = null;
+
+        if (input.autoAssign) {
+          vibes = autoAssignVibes({
+            category: r.category,
+            priceLevel: r.priceLevel,
+            address: r.address,
+            operatingHours: r.operatingHours || null,
+            description: r.description,
+          });
+          district = autoDetectDistrict(r.address);
+        }
+
+        await storage.addRestaurant({
+          ...r,
+          vibes: vibes.length > 0 ? vibes : [],
+          district: district || undefined,
+          operatingHours: r.operatingHours || undefined,
+        });
+        imported++;
       }
 
-      res.json({ imported: input.restaurants.length, success: true });
+      res.json({ imported, skipped, updated, total: input.restaurants.length, success: true });
     } catch (err) {
       console.error("Import error:", err);
       res.status(500).json({ message: "Failed to import restaurants" });
     }
   });
+
 
   app.post("/api/group/sessions", async (req, res) => {
     try {
@@ -2290,27 +2369,67 @@ export async function registerRoutes(
           if (placesRes.ok) {
             const placesData = await placesRes.json();
             if (placesData.results && placesData.results.length > 0) {
-              const restaurants = placesData.results.slice(0, 30).map((place: any, idx: number) => {
+              const restaurantsOut = [];
+              for (const place of placesData.results.slice(0, 30)) {
                 let imageUrl = "";
                 if (place.photos && place.photos.length > 0) {
                   imageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${place.photos[0].photo_reference}&key=${apiKey}`;
                 }
-                return {
-                  id: 10000 + idx,
+
+                const classified = classifyRestaurant(place);
+                const vibes = autoAssignVibes({
+                  category: classified.category,
+                  priceLevel: classified.priceLevel,
+                  address: place.vicinity || "",
+                  description: classified.description,
+                });
+                const district = autoDetectDistrict(place.vicinity || "");
+
+                let existingId: number | undefined;
+                if (place.place_id) {
+                  const existing = await storage.getRestaurantByGooglePlaceId(place.place_id);
+                  if (existing) {
+                    existingId = existing.id;
+                  } else {
+                    const created = await storage.addRestaurant({
+                      name: place.name,
+                      description: classified.description,
+                      imageUrl: imageUrl || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=60",
+                      lat: place.geometry?.location?.lat?.toString() || centerLat.toString(),
+                      lng: place.geometry?.location?.lng?.toString() || centerLng.toString(),
+                      category: classified.category,
+                      priceLevel: classified.priceLevel,
+                      rating: (place.rating || 4.0).toString(),
+                      address: place.vicinity || "",
+                      isNew: classified.isNew,
+                      trendingScore: classified.trendingScore,
+                      googlePlaceId: place.place_id,
+                      vibes,
+                      district: district || undefined,
+                    });
+                    existingId = created.id;
+                  }
+                }
+
+                restaurantsOut.push({
+                  id: existingId || 10000 + restaurantsOut.length,
                   name: place.name,
-                  category: (place.types || []).filter((t: string) => !["point_of_interest", "establishment", "food"].includes(t)).slice(0, 3).join(" • ") || "Restaurant",
-                  description: place.vicinity || "",
-                  priceLevel: place.price_level || 2,
+                  category: classified.category,
+                  description: classified.description,
+                  priceLevel: classified.priceLevel,
                   rating: (place.rating || 4.0).toString(),
                   address: place.vicinity || "",
                   imageUrl,
-                  isNew: place.business_status === "OPERATIONAL",
+                  isNew: classified.isNew,
                   lat: place.geometry?.location?.lat?.toString() || centerLat.toString(),
                   lng: place.geometry?.location?.lng?.toString() || centerLng.toString(),
                   googlePlaceId: place.place_id || null,
-                };
-              });
-              return res.json({ restaurants, center: { lat: centerLat, lng: centerLng }, source: "google_places" });
+                  vibes,
+                  district,
+                  trendingScore: classified.trendingScore,
+                });
+              }
+              return res.json({ restaurants: restaurantsOut, center: { lat: centerLat, lng: centerLng }, source: "google_places" });
             }
           }
         } catch (err) {

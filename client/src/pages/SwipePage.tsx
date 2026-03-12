@@ -1,12 +1,62 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, useMotionValue, useTransform, PanInfo, AnimatePresence, useAnimate } from "framer-motion";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { sendInvite } from "@/lib/liff";
 import { BottomNav } from "@/components/BottomNav";
 import { MOCK_HOME_CAMPAIGNS, MOCK_RESTAURANT_CAMPAIGNS, getDealLabel as getCampaignDealLabel } from "@/components/CampaignBanner";
 import { Share2 } from "lucide-react";
 import drunkToastImg from "@assets/drunk_toast_nobg.png";
+
+function buildSwipeTags(category: string, vibes: string[], priceLevel: number): string[] {
+  const tags: string[] = [];
+  const catParts = category.split(/[·•]/);
+  if (catParts[0]) tags.push(catParts[0].trim());
+  if (catParts[1]) tags.push(catParts[1].trim());
+  if (vibes.includes("spicy")) tags.push("Spicy");
+  if (vibes.includes("healthy")) tags.push("Healthy");
+  if (vibes.includes("late_night")) tags.push("Late Night");
+  if (vibes.includes("date_night")) tags.push("Date Night");
+  if (vibes.includes("street_food")) tags.push("Street Food");
+  if (vibes.includes("rooftop")) tags.push("Rooftop");
+  if (priceLevel >= 4) tags.push("Premium");
+  else if (priceLevel <= 1) tags.push("Budget");
+  return tags.slice(0, 3);
+}
+
+function dbToSwipeMenu(r: any): typeof SWIPE_MENUS[0] & { _fromDb?: boolean } {
+  return {
+    id: r.id,
+    name: r.name,
+    category: r.category || "Restaurant",
+    tags: buildSwipeTags(r.category || "", r.vibes || [], r.priceLevel),
+    description: r.description || "",
+    priceLevel: r.priceLevel || 2,
+    rating: r.rating || "4.0",
+    address: r.address || "Bangkok",
+    imageUrl: r.imageUrl || r.image_url || "",
+    isNew: r.isNew || r.is_new || false,
+    sponsored: false,
+    _fromDb: true,
+  };
+}
+
+function dbToRestaurantCard(r: any): RestaurantCard {
+  return {
+    id: r.id,
+    name: r.name,
+    category: r.category || "Restaurant",
+    tags: buildSwipeTags(r.category || "", r.vibes || [], r.priceLevel),
+    description: r.description || "",
+    imageUrl: r.imageUrl || r.image_url || "",
+    priceLevel: r.priceLevel || 2,
+    rating: r.rating || "4.0",
+    address: r.address || "Bangkok",
+    isNew: r.isNew || r.is_new || false,
+    matchChance: 0,
+  };
+}
 
 const SWIPE_MENUS = [
   { id: 101, name: "Pad Thai", category: "🇹🇭 Thai", tags: ["🍜 Noodles", "🌶️ Spicy", "🦐 Shrimp"], description: "Wok-fried rice noodles with tamarind sauce, crushed peanuts, and fresh lime", imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=800&auto=format&fit=crop&q=60", priceLevel: 1, rating: "4.8", address: "All over Bangkok", isNew: true, sponsored: false },
@@ -520,8 +570,48 @@ export default function SwipePage() {
   const isCampaignMode = mode === "campaigns";
   const isDrinksMode = mode === "drinks";
   const isRestaurantMode = RESTAURANT_MODES.has(mode);
-  const menuItems = isDrinksMode ? DRINKS_SWIPE_MENUS : SWIPE_MENUS;
-  const restaurantItems = isCampaignMode ? CAMPAIGN_SWIPE_CARDS : RESTAURANT_SWIPE_CARDS;
+
+  const modeToVibeFilter: Record<string, string> = {
+    hot: "spicy", spicy: "spicy", cheap: "budget", healthy: "healthy",
+    late: "late_night", outdoor: "outdoor", partner: "date_night",
+    coffee: "cafe", fancy: "date_night", delivery: "delivery",
+    sweets: "sweets",
+  };
+  const modeToPriceFilter: Record<string, number[]> = {
+    cheap: [1, 2], fancy: [3, 4],
+  };
+
+  const swipeQueryParams = new URLSearchParams();
+  if (modeToVibeFilter[mode]) swipeQueryParams.set("vibes", modeToVibeFilter[mode]);
+  if (modeToPriceFilter[mode]) swipeQueryParams.set("priceLevel", modeToPriceFilter[mode].join(","));
+  swipeQueryParams.set("limit", "50");
+
+  const { data: dbRestaurants } = useQuery<any[]>({
+    queryKey: ["/api/restaurants/for-swipe", mode],
+    queryFn: async () => {
+      const res = await fetch(`/api/restaurants/for-swipe?${swipeQueryParams.toString()}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const menuItems = useMemo(() => {
+    if (isDrinksMode) return DRINKS_SWIPE_MENUS;
+    if (dbRestaurants && dbRestaurants.length >= 5) {
+      return dbRestaurants.map(dbToSwipeMenu).sort(() => Math.random() - 0.5);
+    }
+    return SWIPE_MENUS;
+  }, [isDrinksMode, dbRestaurants]);
+
+  const restaurantItems = useMemo(() => {
+    if (isCampaignMode) return CAMPAIGN_SWIPE_CARDS;
+    if (dbRestaurants && dbRestaurants.length >= 5) {
+      return dbRestaurants.map(dbToRestaurantCard).sort(() => Math.random() - 0.5);
+    }
+    return RESTAURANT_SWIPE_CARDS;
+  }, [isCampaignMode, dbRestaurants]);
+
   const items = isRestaurantMode ? restaurantItems : menuItems;
 
   const modeLabels: Record<string, string> = {
@@ -590,7 +680,7 @@ export default function SwipePage() {
     if (isCampaignMode) {
       const campaignId = CAMPAIGN_CARD_IDS[item.id];
       if (campaignId) navigate(`/campaign/${campaignId}`);
-    } else if (isRestaurantMode) {
+    } else if (isRestaurantMode || item._fromDb) {
       navigate(`/restaurant/${item.id}`);
     } else {
       navigate(`/restaurants?category=${encodeURIComponent(item.name)}`);
