@@ -431,19 +431,12 @@ export class DatabaseStorage implements IStorage {
     const memberCount = members.length;
     if (memberCount === 0) return [];
 
-    const swipes = await db.select().from(groupSwipes)
+    const allPositive = await db.select().from(groupSwipes)
       .where(and(
         eq(groupSwipes.sessionCode, sessionCode),
-        eq(groupSwipes.direction, "right")
+        sql`${groupSwipes.direction} IN ('right', 'super')`
       ));
 
-    const superSwipes = await db.select().from(groupSwipes)
-      .where(and(
-        eq(groupSwipes.sessionCode, sessionCode),
-        eq(groupSwipes.direction, "super")
-      ));
-
-    const allPositive = [...swipes, ...superSwipes];
     const voteMap = new Map<number, Set<string>>();
     for (const s of allPositive) {
       if (!voteMap.has(s.menuItemId)) voteMap.set(s.menuItemId, new Set());
@@ -461,27 +454,35 @@ export class DatabaseStorage implements IStorage {
 
   async getPopularRestaurants(days: number, limit: number): Promise<{ restaurantId: number; score: number }[]> {
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
-    const events = await db.select().from(analyticsEvents)
-      .where(gte(analyticsEvents.timestamp, since));
+    const results = await db
+      .select({
+        restaurantId: analyticsEvents.restaurantId,
+        score: sql<number>`SUM(CASE
+          WHEN ${analyticsEvents.eventType} = 'save' THEN 3
+          WHEN ${analyticsEvents.eventType} = 'swipe_right' THEN 2
+          WHEN ${analyticsEvents.eventType} = 'view_detail' THEN 1
+          ELSE 0
+        END)`.as("score"),
+      })
+      .from(analyticsEvents)
+      .where(and(
+        gte(analyticsEvents.timestamp, since),
+        sql`${analyticsEvents.restaurantId} IS NOT NULL`,
+        sql`${analyticsEvents.eventType} IN ('save', 'swipe_right', 'view_detail')`
+      ))
+      .groupBy(analyticsEvents.restaurantId)
+      .orderBy(sql`score DESC`)
+      .limit(limit);
 
-    const scores = new Map<number, number>();
-    for (const evt of events) {
-      if (!evt.restaurantId) continue;
-      const weight = evt.eventType === "save" ? 3 : evt.eventType === "swipe_right" ? 2 : evt.eventType === "view_detail" ? 1 : 0;
-      if (weight > 0) {
-        scores.set(evt.restaurantId, (scores.get(evt.restaurantId) || 0) + weight);
-      }
-    }
-
-    return Array.from(scores.entries())
-      .map(([restaurantId, score]) => ({ restaurantId, score }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
+    return results
+      .filter(r => r.restaurantId !== null)
+      .map(r => ({ restaurantId: r.restaurantId!, score: Number(r.score) }));
   }
 
   async getRestaurantsByVibe(vibe: string): Promise<Restaurant[]> {
-    const all = await db.select().from(restaurants).orderBy(desc(restaurants.trendingScore));
-    return all.filter(r => r.vibes && r.vibes.includes(vibe));
+    return await db.select().from(restaurants)
+      .where(sql`${restaurants.vibes} @> ARRAY[${vibe}]::text[]`)
+      .orderBy(desc(restaurants.trendingScore));
   }
 }
 

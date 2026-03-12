@@ -299,16 +299,19 @@ export default function GroupSwipe() {
   const [loadingResults, setLoadingResults] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const loadRestaurants = async () => {
       try {
         let data: any[] = [];
 
         if (sessionCode) {
           const sessionRes = await fetch(`/api/group/sessions/${sessionCode}`);
+          if (cancelled) return;
           if (sessionRes.ok) {
             const sessionData = await sessionRes.json();
             if (sessionData.session?.sessionType === "trending") {
               const trendingRes = await fetch(`/api/group/sessions/${sessionCode}/trending-restaurants`);
+              if (cancelled) return;
               if (trendingRes.ok) {
                 const trendingData = await trendingRes.json();
                 data = trendingData.restaurants || [];
@@ -319,11 +322,13 @@ export default function GroupSwipe() {
 
         if (data.length === 0) {
           const res = await fetch("/api/restaurants");
+          if (cancelled) return;
           if (res.ok) {
             data = await res.json();
           }
         }
 
+        if (cancelled) return;
         const items: MenuItem[] = data.map((r: any) => ({
           id: r.id,
           name: r.name,
@@ -341,55 +346,65 @@ export default function GroupSwipe() {
       } catch (err) {
         console.error("Failed to load restaurants:", err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     loadRestaurants();
+    return () => { cancelled = true; };
   }, [sessionCode]);
+
+  const menuItemsRef = useRef<MenuItem[]>([]);
+  menuItemsRef.current = menuItems;
+  const sessionEndedRef = useRef(false);
+  sessionEndedRef.current = sessionEnded;
 
   useEffect(() => {
     if (!sessionCode) return;
+    let cancelled = false;
+
     const fetchSession = async () => {
+      if (cancelled) return;
       try {
         const res = await fetch(`/api/group/sessions/${sessionCode}`);
-        if (!res.ok) return;
+        if (cancelled || !res.ok) return;
         const data = await res.json();
         setMembers(data.members);
         if (profile && data.session?.hostLineUserId === profile.userId) {
           setIsHost(true);
         }
 
-        if (menuItems.length > 0) {
-          const matchRes = await fetch(`/api/group/sessions/${sessionCode}/matches`);
-          if (matchRes.ok) {
-            const matchData = await matchRes.json();
-            if (matchData.matches) {
-              const fullMatches = matchData.matches
-                .filter((m: MatchInfo) => m.voters.length >= data.members.length)
-                .map((m: MatchInfo) => menuItems.find(item => item.id === m.menuItemId))
-                .filter(Boolean) as MenuItem[];
+        const items = menuItemsRef.current;
+        if (items.length > 0 && !cancelled) {
+          try {
+            const matchRes = await fetch(`/api/group/sessions/${sessionCode}/matches`);
+            if (!cancelled && matchRes.ok) {
+              const matchData = await matchRes.json();
+              if (matchData.matches) {
+                const fullMatches = matchData.matches
+                  .filter((m: MatchInfo) => m.voters.length >= data.members.length)
+                  .map((m: MatchInfo) => items.find(item => item.id === m.menuItemId))
+                  .filter(Boolean) as MenuItem[];
 
-              setAllMatches(prev => {
-                const existing = new Set(prev.map(p => p.id));
-                const newItems = fullMatches.filter((i: MenuItem) => !existing.has(i.id));
-                if (newItems.length > 0) {
-                  return [...prev, ...newItems];
-                }
-                return prev;
-              });
+                setAllMatches(prev => {
+                  const existing = new Set(prev.map(p => p.id));
+                  const newItems = fullMatches.filter((i: MenuItem) => !existing.has(i.id));
+                  if (newItems.length > 0) return [...prev, ...newItems];
+                  return prev;
+                });
+              }
             }
-          }
+          } catch {}
         }
 
-        if (data.session?.status === "completed" && !sessionEnded) {
+        if (!cancelled && data.session?.status === "completed" && !sessionEndedRef.current) {
           setSessionEnded(true);
         }
       } catch {}
     };
     fetchSession();
     const interval = setInterval(fetchSession, 3000);
-    return () => clearInterval(interval);
-  }, [sessionCode, profile, sessionEnded, menuItems]);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [sessionCode, profile]);
 
   useEffect(() => {
     if (allMatches.length > prevMatchCountRef.current) {
@@ -405,9 +420,13 @@ export default function GroupSwipe() {
     prevMatchCountRef.current = allMatches.length;
   }, [allMatches, sessionCode]);
 
+  const sessionInitRef = useRef<string | null>(null);
   useEffect(() => {
+    const id = sessionCode || "group-1";
+    if (sessionInitRef.current === id) return;
+    sessionInitRef.current = id;
     addSession({
-      id: sessionCode || "group-1",
+      id,
       type: "group",
       label: "Group Session",
       route: `/group/swipe${sessionCode ? `?session=${sessionCode}` : ""}`,
@@ -522,14 +541,17 @@ export default function GroupSwipe() {
     } catch {}
   }, [sessionCode, profile, notifiedPartials, menuItems]);
 
+  const fetchRankedResultsRef = useRef(false);
   const fetchRankedResults = useCallback(async () => {
-    if (!sessionCode || loadingResults) return;
+    if (!sessionCode || fetchRankedResultsRef.current) return;
+    fetchRankedResultsRef.current = true;
     setLoadingResults(true);
     try {
       const res = await fetch(`/api/group/sessions/${sessionCode}/swipes`);
       if (!res.ok) return;
       const data = await res.json();
       const { swipes, members: memberList } = data;
+      const items = menuItemsRef.current;
 
       const voteMap = new Map<number, Set<string>>();
       for (const s of swipes) {
@@ -542,7 +564,7 @@ export default function GroupSwipe() {
       const ranked: RankedResult[] = [];
       for (const [menuItemId, voterIds] of voteMap) {
         if (voterIds.size < 2) continue;
-        const item = menuItems.find(m => m.id === menuItemId);
+        const item = items.find(m => m.id === menuItemId);
         if (!item) continue;
         const voters = memberList.filter((m: SessionMember) => voterIds.has(m.lineUserId));
         ranked.push({
@@ -556,9 +578,10 @@ export default function GroupSwipe() {
       ranked.sort((a, b) => b.voteCount - a.voteCount);
       setRankedResults(ranked);
     } catch {} finally {
+      fetchRankedResultsRef.current = false;
       setLoadingResults(false);
     }
-  }, [sessionCode, menuItems, loadingResults]);
+  }, [sessionCode]);
 
   useEffect(() => {
     if (currentIndex >= menuItems.length && menuItems.length > 0 && !showResults && !fullMatch && !loadingResults) {
