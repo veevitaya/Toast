@@ -159,7 +159,7 @@ export default function WaitingRoom() {
     if (pendingInvite === sessionId) {
       sessionStorage.removeItem("toast_group_pending_invite");
       setTimeout(() => {
-        sendGroupInviteNoRedirect(sessionId);
+        sendGroupInvite(sessionId);
       }, 400);
     }
   }, [sessionCreated, sessionId]);
