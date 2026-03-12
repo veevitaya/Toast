@@ -5,54 +5,57 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AnimatePresence, motion } from "framer-motion";
 import { LanguageProvider } from "@/i18n/LanguageProvider";
+import { lazy, Suspense } from "react";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
-import SoloQuiz from "@/pages/SoloQuiz";
-import SoloResults from "@/pages/SoloResults";
-import RestaurantList from "@/pages/RestaurantList";
-import GroupSetup from "@/pages/GroupSetup";
-import WaitingRoom from "@/pages/WaitingRoom";
-import GroupSwipe from "@/pages/GroupSwipe";
-import SwipePage from "@/pages/SwipePage";
-import TrendingFeed from "@/pages/TrendingFeed";
-import RestaurantDetail from "@/pages/RestaurantDetail";
-import Profile from "@/pages/Profile";
-import ToastPicks from "@/pages/ToastPicks";
-import CampaignDetail from "@/pages/CampaignDetail";
-import AdminLogin from "@/pages/admin/AdminLogin";
-import AdminLayout from "@/pages/admin/AdminLayout";
-import AdminDashboard from "@/pages/admin/AdminDashboard";
-import AdminUsers from "@/pages/admin/AdminUsers";
-import AdminRestaurants from "@/pages/admin/AdminRestaurants";
-import AdminCampaigns from "@/pages/admin/AdminCampaigns";
-import AdminBanners from "@/pages/admin/AdminBanners";
-import AdminAnalytics from "@/pages/admin/AdminAnalytics";
-import AdminConfig from "@/pages/admin/AdminConfig";
-import AdminPayments from "@/pages/admin/AdminPayments";
-import AdminSwipeSessions from "@/pages/admin/AdminSwipeSessions";
-import AdminMenus from "@/pages/admin/AdminMenus";
-import AdminOwners from "@/pages/admin/AdminOwners";
-import AdminPartnerClickouts from "@/pages/admin/AdminPartnerClickouts";
-import AdminFoodTrends from "@/pages/admin/AdminFoodTrends";
-import AdminGeography from "@/pages/admin/AdminGeography";
-import AdminPredictiveIntelligence from "@/pages/admin/AdminPredictiveIntelligence";
-import AdminDataOps from "@/pages/admin/AdminDataOps";
-import AdminIntegrations from "@/pages/admin/AdminIntegrations";
-import AdminReports from "@/pages/admin/AdminReports";
-import AdminAuditLogs from "@/pages/admin/AdminAuditLogs";
-import AdminOwnerDashboard from "@/pages/admin/AdminOwnerDashboard";
-import OwnerMenu from "@/pages/admin/OwnerMenu";
-import OwnerReviews from "@/pages/admin/OwnerReviews";
-import OwnerPromotions from "@/pages/admin/OwnerPromotions";
-import OwnerPerformance from "@/pages/admin/OwnerPerformance";
-import OwnerInsights from "@/pages/admin/OwnerInsights";
-import OwnerNotifications from "@/pages/admin/OwnerNotifications";
-import OwnerSupport from "@/pages/admin/OwnerSupport";
-import OwnerSettings from "@/pages/admin/OwnerSettings";
-import OwnerDecisionIntelligence from "@/pages/admin/OwnerDecisionIntelligence";
-import OwnerDeliveryConversions from "@/pages/admin/OwnerDeliveryConversions";
-import OwnerCustomerInsights from "@/pages/admin/OwnerCustomerInsights";
-import OwnerBilling from "@/pages/admin/OwnerBilling";
+
+const SoloQuiz = lazy(() => import("@/pages/SoloQuiz"));
+const SoloResults = lazy(() => import("@/pages/SoloResults"));
+const RestaurantList = lazy(() => import("@/pages/RestaurantList"));
+const GroupSetup = lazy(() => import("@/pages/GroupSetup"));
+const WaitingRoom = lazy(() => import("@/pages/WaitingRoom"));
+const GroupSwipe = lazy(() => import("@/pages/GroupSwipe"));
+const SwipePage = lazy(() => import("@/pages/SwipePage"));
+const TrendingFeed = lazy(() => import("@/pages/TrendingFeed"));
+const RestaurantDetail = lazy(() => import("@/pages/RestaurantDetail"));
+const Profile = lazy(() => import("@/pages/Profile"));
+const ToastPicks = lazy(() => import("@/pages/ToastPicks"));
+const CampaignDetail = lazy(() => import("@/pages/CampaignDetail"));
+
+const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
+const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout"));
+const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
+const AdminUsers = lazy(() => import("@/pages/admin/AdminUsers"));
+const AdminRestaurants = lazy(() => import("@/pages/admin/AdminRestaurants"));
+const AdminCampaigns = lazy(() => import("@/pages/admin/AdminCampaigns"));
+const AdminBanners = lazy(() => import("@/pages/admin/AdminBanners"));
+const AdminAnalytics = lazy(() => import("@/pages/admin/AdminAnalytics"));
+const AdminConfig = lazy(() => import("@/pages/admin/AdminConfig"));
+const AdminPayments = lazy(() => import("@/pages/admin/AdminPayments"));
+const AdminSwipeSessions = lazy(() => import("@/pages/admin/AdminSwipeSessions"));
+const AdminMenus = lazy(() => import("@/pages/admin/AdminMenus"));
+const AdminOwners = lazy(() => import("@/pages/admin/AdminOwners"));
+const AdminPartnerClickouts = lazy(() => import("@/pages/admin/AdminPartnerClickouts"));
+const AdminFoodTrends = lazy(() => import("@/pages/admin/AdminFoodTrends"));
+const AdminGeography = lazy(() => import("@/pages/admin/AdminGeography"));
+const AdminPredictiveIntelligence = lazy(() => import("@/pages/admin/AdminPredictiveIntelligence"));
+const AdminDataOps = lazy(() => import("@/pages/admin/AdminDataOps"));
+const AdminIntegrations = lazy(() => import("@/pages/admin/AdminIntegrations"));
+const AdminReports = lazy(() => import("@/pages/admin/AdminReports"));
+const AdminAuditLogs = lazy(() => import("@/pages/admin/AdminAuditLogs"));
+const AdminOwnerDashboard = lazy(() => import("@/pages/admin/AdminOwnerDashboard"));
+const OwnerMenu = lazy(() => import("@/pages/admin/OwnerMenu"));
+const OwnerReviews = lazy(() => import("@/pages/admin/OwnerReviews"));
+const OwnerPromotions = lazy(() => import("@/pages/admin/OwnerPromotions"));
+const OwnerPerformance = lazy(() => import("@/pages/admin/OwnerPerformance"));
+const OwnerInsights = lazy(() => import("@/pages/admin/OwnerInsights"));
+const OwnerNotifications = lazy(() => import("@/pages/admin/OwnerNotifications"));
+const OwnerSupport = lazy(() => import("@/pages/admin/OwnerSupport"));
+const OwnerSettings = lazy(() => import("@/pages/admin/OwnerSettings"));
+const OwnerDecisionIntelligence = lazy(() => import("@/pages/admin/OwnerDecisionIntelligence"));
+const OwnerDeliveryConversions = lazy(() => import("@/pages/admin/OwnerDeliveryConversions"));
+const OwnerCustomerInsights = lazy(() => import("@/pages/admin/OwnerCustomerInsights"));
+const OwnerBilling = lazy(() => import("@/pages/admin/OwnerBilling"));
 
 const pageVariants = {
   initial: { opacity: 0, y: 8 },
@@ -82,158 +85,168 @@ function AnimatedPage({ children }: { children: React.ReactNode }) {
   );
 }
 
+function PageLoader() {
+  return (
+    <div className="w-full h-[100dvh] flex items-center justify-center bg-[#FCFCFC]">
+      <div className="w-7 h-7 rounded-full border-2 border-gray-200 border-t-[#FFCC02] animate-spin" />
+    </div>
+  );
+}
+
 function Router() {
   const [location] = useLocation();
 
   return (
-    <AnimatePresence mode="wait">
-      <Switch location={location} key={location}>
-        <Route path="/">
-          <AnimatedPage><Home /></AnimatedPage>
-        </Route>
-        <Route path="/solo/quiz">
-          <AnimatedPage><SoloQuiz /></AnimatedPage>
-        </Route>
-        <Route path="/solo/results">
-          <AnimatedPage><SoloResults /></AnimatedPage>
-        </Route>
-        <Route path="/restaurants">
-          <AnimatedPage><RestaurantList /></AnimatedPage>
-        </Route>
-        <Route path="/restaurant/:id">
-          <AnimatedPage><RestaurantDetail /></AnimatedPage>
-        </Route>
-        <Route path="/campaign/:id">
-          <AnimatedPage><CampaignDetail /></AnimatedPage>
-        </Route>
-        <Route path="/group/setup">
-          <AnimatedPage><GroupSetup /></AnimatedPage>
-        </Route>
-        <Route path="/group/waiting">
-          <AnimatedPage><WaitingRoom /></AnimatedPage>
-        </Route>
-        <Route path="/group/swipe">
-          <AnimatedPage><GroupSwipe /></AnimatedPage>
-        </Route>
-        <Route path="/trending">
-          <TrendingFeed />
-        </Route>
-        <Route path="/swipe">
-          <AnimatedPage><SwipePage /></AnimatedPage>
-        </Route>
-        <Route path="/profile">
-          <AnimatedPage><Profile /></AnimatedPage>
-        </Route>
-        <Route path="/toast-picks">
-          <AnimatedPage><ToastPicks /></AnimatedPage>
-        </Route>
-        <Route path="/admin/login">
-          <AdminLogin />
-        </Route>
-        <Route path="/admin/dashboard">
-          <AdminLayout><AdminDashboard /></AdminLayout>
-        </Route>
-        <Route path="/admin/users">
-          <AdminLayout><AdminUsers /></AdminLayout>
-        </Route>
-        <Route path="/admin/restaurants">
-          <AdminLayout><AdminRestaurants /></AdminLayout>
-        </Route>
-        <Route path="/admin/campaigns">
-          <AdminLayout><AdminCampaigns /></AdminLayout>
-        </Route>
-        <Route path="/admin/banners">
-          <AdminLayout><AdminBanners /></AdminLayout>
-        </Route>
-        <Route path="/admin/analytics">
-          <AdminLayout><AdminAnalytics /></AdminLayout>
-        </Route>
-        <Route path="/admin/payments">
-          <AdminLayout><AdminPayments /></AdminLayout>
-        </Route>
-        <Route path="/admin/config">
-          <AdminLayout><AdminConfig /></AdminLayout>
-        </Route>
-        <Route path="/admin/swipe-sessions">
-          <AdminLayout><AdminSwipeSessions /></AdminLayout>
-        </Route>
-        <Route path="/admin/menus">
-          <AdminLayout><AdminMenus /></AdminLayout>
-        </Route>
-        <Route path="/admin/owners">
-          <AdminLayout><AdminOwners /></AdminLayout>
-        </Route>
-        <Route path="/admin/partner-clickouts">
-          <AdminLayout><AdminPartnerClickouts /></AdminLayout>
-        </Route>
-        <Route path="/admin/food-trends">
-          <AdminLayout><AdminFoodTrends /></AdminLayout>
-        </Route>
-        <Route path="/admin/geography">
-          <AdminLayout><AdminGeography /></AdminLayout>
-        </Route>
-        <Route path="/admin/predictive">
-          <AdminLayout><AdminPredictiveIntelligence /></AdminLayout>
-        </Route>
-        <Route path="/admin/data-ops">
-          <AdminLayout><AdminDataOps /></AdminLayout>
-        </Route>
-        <Route path="/admin/integrations">
-          <AdminLayout><AdminIntegrations /></AdminLayout>
-        </Route>
-        <Route path="/admin/reports">
-          <AdminLayout><AdminReports /></AdminLayout>
-        </Route>
-        <Route path="/admin/audit-logs">
-          <AdminLayout><AdminAuditLogs /></AdminLayout>
-        </Route>
-        <Route path="/admin/my-restaurant">
-          <AdminLayout><AdminOwnerDashboard /></AdminLayout>
-        </Route>
-        <Route path="/admin/owner/menu">
-          <AdminLayout><OwnerMenu /></AdminLayout>
-        </Route>
-        <Route path="/admin/owner/reviews">
-          <AdminLayout><OwnerReviews /></AdminLayout>
-        </Route>
-        <Route path="/admin/owner/promotions">
-          <AdminLayout><OwnerPromotions /></AdminLayout>
-        </Route>
-        <Route path="/admin/owner/performance">
-          <AdminLayout><OwnerPerformance /></AdminLayout>
-        </Route>
-        <Route path="/admin/owner/insights">
-          <AdminLayout><OwnerInsights /></AdminLayout>
-        </Route>
-        <Route path="/admin/owner/notifications">
-          <AdminLayout><OwnerNotifications /></AdminLayout>
-        </Route>
-        <Route path="/admin/owner/support">
-          <AdminLayout><OwnerSupport /></AdminLayout>
-        </Route>
-        <Route path="/admin/owner/settings">
-          <AdminLayout><OwnerSettings /></AdminLayout>
-        </Route>
-        <Route path="/admin/owner/decision-intelligence">
-          <AdminLayout><OwnerDecisionIntelligence /></AdminLayout>
-        </Route>
-        <Route path="/admin/owner/delivery-conversions">
-          <AdminLayout><OwnerDeliveryConversions /></AdminLayout>
-        </Route>
-        <Route path="/admin/owner/customer-insights">
-          <AdminLayout><OwnerCustomerInsights /></AdminLayout>
-        </Route>
-        <Route path="/admin/owner/billing">
-          <AdminLayout><OwnerBilling /></AdminLayout>
-        </Route>
-        <Route path="/admin">
-          <Redirect to="/admin/dashboard" />
-        </Route>
-        <Route>
-          <AnimatedPage><NotFound /></AnimatedPage>
-        </Route>
-      </Switch>
-    </AnimatePresence>
+    <Suspense fallback={<PageLoader />}>
+      <AnimatePresence mode="wait">
+        <Switch location={location} key={location}>
+          <Route path="/">
+            <AnimatedPage><Home /></AnimatedPage>
+          </Route>
+          <Route path="/solo/quiz">
+            <AnimatedPage><SoloQuiz /></AnimatedPage>
+          </Route>
+          <Route path="/solo/results">
+            <AnimatedPage><SoloResults /></AnimatedPage>
+          </Route>
+          <Route path="/restaurants">
+            <AnimatedPage><RestaurantList /></AnimatedPage>
+          </Route>
+          <Route path="/restaurant/:id">
+            <AnimatedPage><RestaurantDetail /></AnimatedPage>
+          </Route>
+          <Route path="/campaign/:id">
+            <AnimatedPage><CampaignDetail /></AnimatedPage>
+          </Route>
+          <Route path="/group/setup">
+            <AnimatedPage><GroupSetup /></AnimatedPage>
+          </Route>
+          <Route path="/group/waiting">
+            <AnimatedPage><WaitingRoom /></AnimatedPage>
+          </Route>
+          <Route path="/group/swipe">
+            <AnimatedPage><GroupSwipe /></AnimatedPage>
+          </Route>
+          <Route path="/trending">
+            <TrendingFeed />
+          </Route>
+          <Route path="/swipe">
+            <AnimatedPage><SwipePage /></AnimatedPage>
+          </Route>
+          <Route path="/profile">
+            <AnimatedPage><Profile /></AnimatedPage>
+          </Route>
+          <Route path="/toast-picks">
+            <AnimatedPage><ToastPicks /></AnimatedPage>
+          </Route>
+          <Route path="/admin/login">
+            <AdminLogin />
+          </Route>
+          <Route path="/admin/dashboard">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminDashboard /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/users">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminUsers /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/restaurants">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminRestaurants /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/campaigns">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminCampaigns /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/banners">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminBanners /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/analytics">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminAnalytics /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/payments">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminPayments /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/config">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminConfig /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/swipe-sessions">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminSwipeSessions /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/menus">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminMenus /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/owners">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminOwners /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/partner-clickouts">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminPartnerClickouts /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/food-trends">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminFoodTrends /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/geography">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminGeography /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/predictive">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminPredictiveIntelligence /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/data-ops">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminDataOps /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/integrations">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminIntegrations /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/reports">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminReports /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/audit-logs">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminAuditLogs /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/my-restaurant">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminOwnerDashboard /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/owner/menu">
+            <Suspense fallback={<PageLoader />}><AdminLayout><OwnerMenu /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/owner/reviews">
+            <Suspense fallback={<PageLoader />}><AdminLayout><OwnerReviews /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/owner/promotions">
+            <Suspense fallback={<PageLoader />}><AdminLayout><OwnerPromotions /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/owner/performance">
+            <Suspense fallback={<PageLoader />}><AdminLayout><OwnerPerformance /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/owner/insights">
+            <Suspense fallback={<PageLoader />}><AdminLayout><OwnerInsights /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/owner/notifications">
+            <Suspense fallback={<PageLoader />}><AdminLayout><OwnerNotifications /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/owner/support">
+            <Suspense fallback={<PageLoader />}><AdminLayout><OwnerSupport /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/owner/settings">
+            <Suspense fallback={<PageLoader />}><AdminLayout><OwnerSettings /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/owner/decision-intelligence">
+            <Suspense fallback={<PageLoader />}><AdminLayout><OwnerDecisionIntelligence /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/owner/delivery-conversions">
+            <Suspense fallback={<PageLoader />}><AdminLayout><OwnerDeliveryConversions /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/owner/customer-insights">
+            <Suspense fallback={<PageLoader />}><AdminLayout><OwnerCustomerInsights /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/owner/billing">
+            <Suspense fallback={<PageLoader />}><AdminLayout><OwnerBilling /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin">
+            <Redirect to="/admin/dashboard" />
+          </Route>
+          <Route>
+            <AnimatedPage><NotFound /></AnimatedPage>
+          </Route>
+        </Switch>
+      </AnimatePresence>
+    </Suspense>
   );
 }
 

@@ -202,7 +202,7 @@ export default function WaitingRoom() {
     };
 
     fetchSession();
-    const interval = setInterval(fetchSession, 2000);
+    const interval = setInterval(fetchSession, 4000);
     return () => clearInterval(interval);
   }, [sessionCreated, sessionId, navigate]);
 

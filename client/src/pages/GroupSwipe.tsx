@@ -45,7 +45,7 @@ function ConfettiExplosion() {
   const colors = ["#FF385C", "#FFD700", "#00A699", "#FC642D", "#7B61FF", "#00D1C1", "#FF6B6B", "#4ECDC4", "#FFE66D", "#A855F7"];
   const shapes = ["circle", "rect", "star", "strip"];
   const pieces = useMemo(() =>
-    Array.from({ length: 120 }).map((_, i) => {
+    Array.from({ length: 40 }).map((_, i) => {
       const angle = (Math.random() * 360) * (Math.PI / 180);
       const velocity = 200 + Math.random() * 500;
       return {
@@ -402,7 +402,7 @@ export default function GroupSwipe() {
       } catch {}
     };
     fetchSession();
-    const interval = setInterval(fetchSession, 3000);
+    const interval = setInterval(fetchSession, 5000);
     return () => { cancelled = true; clearInterval(interval); };
   }, [sessionCode, profile]);
 

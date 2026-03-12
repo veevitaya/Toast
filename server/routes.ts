@@ -11,6 +11,24 @@ function hashPassword(password: string): string {
   return createHash("sha256").update(password).digest("hex");
 }
 
+const CACHE_MAX_ENTRIES = 200;
+const cache = new Map<string, { data: any; expiry: number }>();
+function getCached<T>(key: string, ttlMs: number, fetcher: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const cached = cache.get(key);
+  if (cached && cached.expiry > now) return Promise.resolve(cached.data as T);
+  if (cache.size >= CACHE_MAX_ENTRIES) {
+    let oldest = "";
+    let oldestTime = Infinity;
+    for (const [k, v] of cache) { if (v.expiry < oldestTime) { oldest = k; oldestTime = v.expiry; } }
+    if (oldest) cache.delete(oldest);
+  }
+  return fetcher().then(data => { cache.set(key, { data, expiry: now + ttlMs }); return data; });
+}
+function invalidateCache(prefix: string) {
+  for (const key of cache.keys()) { if (key.startsWith(prefix)) cache.delete(key); }
+}
+
 interface VerifiedLineProfile {
   userId: string;
   displayName: string;
@@ -719,7 +737,7 @@ export async function registerRoutes(
   app.post("/api/restaurants/personalized", async (req, res) => {
     try {
       const { userId, tasteProfile, hour, dayOfWeek } = req.body;
-      const allRestaurants = await storage.getRestaurants();
+      const allRestaurants = await getCached("restaurants:all", 30000, () => storage.getRestaurants());
 
       let userEvents: any[] = [];
       if (userId) {
@@ -957,11 +975,9 @@ export async function registerRoutes(
   app.get(api.restaurants.list.path, async (req, res) => {
     try {
       const input = api.restaurants.list.input ? api.restaurants.list.input.parse(req.query) : {};
-      const restaurants = await storage.getRestaurants(
-        input.mode,
-        input.lat,
-        input.lng,
-        input.query
+      const cacheKey = `restaurants:${input.mode || ''}:${input.query || ''}`;
+      const restaurants = await getCached(cacheKey, 30000, () =>
+        storage.getRestaurants(input.mode, input.lat, input.lng, input.query)
       );
       res.json(restaurants);
     } catch (err) {
@@ -1417,7 +1433,7 @@ export async function registerRoutes(
   // Ad Banner routes
   app.get("/api/banners", async (_req, res) => {
     try {
-      const banners = await storage.getBanners();
+      const banners = await getCached("banners", 60000, () => storage.getBanners());
       res.json(banners);
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
@@ -1437,6 +1453,7 @@ export async function registerRoutes(
       });
       const input = schema.parse(req.body);
       const banner = await storage.createBanner(input);
+      invalidateCache("banners");
       res.status(201).json(banner);
     } catch (err) {
       if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
@@ -1450,6 +1467,7 @@ export async function registerRoutes(
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const updated = await storage.updateBanner(id, req.body);
       if (!updated) return res.status(404).json({ message: "Not found" });
+      invalidateCache("banners");
       res.json(updated);
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
@@ -1461,6 +1479,7 @@ export async function registerRoutes(
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       await storage.deleteBanner(id);
+      invalidateCache("banners");
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
@@ -1898,6 +1917,7 @@ export async function registerRoutes(
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const updated = await storage.updateRestaurant(id, req.body);
       if (!updated) return res.status(404).json({ message: "Not found" });
+      invalidateCache("restaurants");
       res.json(updated);
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
@@ -1909,6 +1929,7 @@ export async function registerRoutes(
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       await storage.deleteRestaurant(id);
+      invalidateCache("restaurants");
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
@@ -1934,6 +1955,7 @@ export async function registerRoutes(
           updated++;
         }
       }
+      invalidateCache("restaurants");
       res.json({ success: true, totalRestaurants: all.length, updated });
     } catch (err) {
       console.error("Auto-assign vibes error:", err);
@@ -1952,6 +1974,7 @@ export async function registerRoutes(
       const updates: Record<string, any> = { vibes };
       if (district) updates.district = district;
       const updated = await storage.updateRestaurant(id, updates);
+      invalidateCache("restaurants");
       res.json(updated);
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
@@ -2095,6 +2118,7 @@ export async function registerRoutes(
         imported++;
       }
 
+      invalidateCache("restaurants");
       res.json({ imported, skipped, updated, total: input.restaurants.length, success: true });
     } catch (err) {
       console.error("Import error:", err);
