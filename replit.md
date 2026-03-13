@@ -27,7 +27,7 @@ The design adopts an Airbnb-inspired aesthetic with a #FFCC02 golden yellow bran
 - **Analytics Tracking:** Client-side event tracking for user behavior analysis, batched for efficiency.
 - **Internationalization (i18n):** Full Thai/English language support with locale detection and `t()` function for UI text, stored in `localStorage`.
 - **Search Functionality:** Matches restaurant names, categories, and menu keywords.
-- **Performance Optimizations:** Lazy loading, critical asset preloading, database indexing, optimized backend queries, server-side in-memory caching, and frontend route lazy-loading.
+- **Performance Optimizations:** Lazy loading, critical asset preloading, database indexing, optimized backend queries, server-side in-memory caching, and frontend route lazy-loading. Toast Decides uses bootstrap-first rendering (sessionStorage cached), idle-callback API enrichment, optimized Unsplash image sizing (hero=400, secondary=200), sendBeacon analytics with batch fallback, and shared server-side event processing for single/batch endpoints.
 
 **Technical Implementations:**
 - **LINE LIFF Integration:** Deep integration for user authentication, profile retrieval, and social sharing, including server-side token verification and group session invites with mandatory LINE permission flow.

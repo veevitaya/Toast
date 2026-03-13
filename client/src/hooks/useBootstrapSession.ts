@@ -12,6 +12,7 @@ interface BootstrapSession {
   daypart: string;
   serverTime: string;
   locationUsed: boolean;
+  sessionId: number | null;
 }
 
 interface TasteDnaSummary {
@@ -48,16 +49,16 @@ export interface BootstrapPayload {
   alternatives: BootstrapPick[];
 }
 
-const CACHE_KEY = "toast_bootstrap_cache";
+const CACHE_KEY = "toast_bootstrap_v2";
 const CACHE_TTL = 5 * 60 * 1000;
 
 function getCachedBootstrap(): BootstrapPayload | null {
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
+    const raw = sessionStorage.getItem(CACHE_KEY);
     if (!raw) return null;
-    const { data, expiry } = JSON.parse(raw);
-    if (Date.now() > expiry) {
-      localStorage.removeItem(CACHE_KEY);
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) {
+      sessionStorage.removeItem(CACHE_KEY);
       return null;
     }
     return data;
@@ -68,63 +69,91 @@ function getCachedBootstrap(): BootstrapPayload | null {
 
 function setCachedBootstrap(data: BootstrapPayload) {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({
-      data,
-      expiry: Date.now() + CACHE_TTL,
-    }));
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
   } catch {}
 }
 
-export function useBootstrapSession() {
-  const [payload, setPayload] = useState<BootstrapPayload | null>(() => getCachedBootstrap());
-  const [loading, setLoading] = useState(!getCachedBootstrap());
-  const [error, setError] = useState<string | null>(null);
-  const fetchedRef = useRef(false);
+const bootstrapState = {
+  payload: getCachedBootstrap(),
+  loading: !getCachedBootstrap(),
+  error: null as string | null,
+  promise: null as Promise<BootstrapPayload | null> | null,
+  fetched: false,
+};
 
-  const fetchBootstrap = useCallback(async (accessToken?: string | null) => {
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
+function doFetch(accessToken?: string | null): Promise<BootstrapPayload | null> {
+  if (bootstrapState.promise) return bootstrapState.promise;
 
-    try {
-      setLoading(true);
-      const res = await fetch("/api/session/bootstrap", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          accessToken: accessToken || null,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          locale: navigator.language,
-        }),
-      });
-
+  bootstrapState.promise = fetch("/api/session/bootstrap", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      accessToken: accessToken || null,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      locale: navigator.language,
+    }),
+  })
+    .then(res => {
       if (!res.ok) throw new Error("Bootstrap failed");
-
-      const data: BootstrapPayload = await res.json();
-      setPayload(data);
+      return res.json();
+    })
+    .then((data: BootstrapPayload) => {
+      bootstrapState.payload = data;
+      bootstrapState.loading = false;
+      bootstrapState.error = null;
+      bootstrapState.fetched = true;
       setCachedBootstrap(data);
-      setError(null);
-    } catch (e) {
-      setError("Failed to load session");
-      const cached = getCachedBootstrap();
-      if (cached) setPayload(cached);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return data;
+    })
+    .catch(() => {
+      bootstrapState.error = "Failed to load session";
+      bootstrapState.loading = false;
+      bootstrapState.fetched = true;
+      return bootstrapState.payload;
+    })
+    .finally(() => {
+      bootstrapState.promise = null;
+    });
+
+  return bootstrapState.promise;
+}
+
+export function prefetchBootstrap(accessToken?: string | null) {
+  if (bootstrapState.fetched || bootstrapState.promise) return;
+  doFetch(accessToken);
+}
+
+export function useBootstrapSession() {
+  const [, forceUpdate] = useState(0);
+  const subRef = useRef(false);
 
   useEffect(() => {
-    if (!fetchedRef.current) {
-      fetchBootstrap();
+    subRef.current = true;
+    if (!bootstrapState.fetched && !bootstrapState.promise) {
+      doFetch().then(() => {
+        if (subRef.current) forceUpdate(n => n + 1);
+      });
+    } else if (bootstrapState.promise) {
+      bootstrapState.promise.then(() => {
+        if (subRef.current) forceUpdate(n => n + 1);
+      });
     }
-  }, [fetchBootstrap]);
+    return () => { subRef.current = false; };
+  }, []);
+
+  const refetch = useCallback((accessToken?: string | null) => {
+    bootstrapState.fetched = false;
+    bootstrapState.promise = null;
+    sessionStorage.removeItem(CACHE_KEY);
+    doFetch(accessToken).then(() => {
+      if (subRef.current) forceUpdate(n => n + 1);
+    });
+  }, []);
 
   return {
-    payload,
-    loading,
-    error,
-    refetch: () => {
-      fetchedRef.current = false;
-      fetchBootstrap();
-    },
+    payload: bootstrapState.payload,
+    loading: bootstrapState.loading && !bootstrapState.payload,
+    error: bootstrapState.error,
+    refetch,
   };
 }

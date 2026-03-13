@@ -20,21 +20,38 @@ interface DecisionEventPayload {
 
 const EVENT_QUEUE: DecisionEventPayload[] = [];
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
-const FLUSH_INTERVAL = 3000;
-const MAX_BATCH = 10;
+const FLUSH_INTERVAL = 5000;
+const MAX_BATCH = 20;
 
 function flushEvents() {
   if (EVENT_QUEUE.length === 0) return;
 
   const batch = EVENT_QUEUE.splice(0, MAX_BATCH);
 
-  for (const evt of batch) {
-    fetch("/api/toast-decides/event", {
+  const sendViaFetch = (url: string, body: any) => {
+    fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(evt),
+      body: JSON.stringify(body),
       keepalive: true,
     }).catch(() => {});
+  };
+
+  if (batch.length === 1) {
+    const payload = batch[0];
+    if (typeof navigator.sendBeacon === "function") {
+      const sent = navigator.sendBeacon(
+        "/api/toast-decides/event",
+        new Blob([JSON.stringify(payload)], { type: "application/json" })
+      );
+      if (!sent) {
+        sendViaFetch("/api/toast-decides/event", payload);
+      }
+    } else {
+      sendViaFetch("/api/toast-decides/event", payload);
+    }
+  } else {
+    sendViaFetch("/api/toast-decides/events", { events: batch });
   }
 
   if (EVENT_QUEUE.length > 0) {
@@ -48,6 +65,26 @@ function scheduleFlush() {
     flushTimer = null;
     flushEvents();
   }, FLUSH_INTERVAL);
+}
+
+let _cachedUserId: string | null | undefined = undefined;
+
+function getStoredUserId(): string | null {
+  if (_cachedUserId !== undefined) return _cachedUserId;
+  try {
+    const raw = localStorage.getItem("toast_guest_profile");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      _cachedUserId = parsed.lineUserId || parsed.userId || null;
+      return _cachedUserId;
+    }
+  } catch {}
+  _cachedUserId = null;
+  return null;
+}
+
+export function setTrackedUserId(id: string | null) {
+  _cachedUserId = id;
 }
 
 export function trackDecisionEvent(
@@ -72,17 +109,6 @@ export function trackDecisionEvent(
   } else {
     scheduleFlush();
   }
-}
-
-function getStoredUserId(): string | null {
-  try {
-    const raw = localStorage.getItem("toast_guest_profile");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      return parsed.lineUserId || parsed.userId || null;
-    }
-  } catch {}
-  return null;
 }
 
 if (typeof window !== "undefined") {

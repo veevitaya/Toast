@@ -1199,87 +1199,93 @@ export async function registerRoutes(
     }
   });
 
+  const VALID_DECISION_EVENTS = [
+    "hero_impression", "primary_cta_clicked", "alternative_requested",
+    "refine_opened", "refine_applied", "recommendation_accepted",
+    "recommendation_rejected", "detail_viewed", "saved", "session_abandoned",
+  ];
+
+  async function processDecisionEvent(evt: { userId?: string; eventType: string; restaurantId?: number | null; metadata?: any; sessionId?: string | number }) {
+    const userId = evt.userId || "anonymous";
+    const { eventType, restaurantId, metadata, sessionId } = evt;
+
+    await storage.logEvent({
+      eventType,
+      userId,
+      restaurantId: restaurantId || null,
+      metadata: metadata ? JSON.stringify(metadata) : null,
+      timestamp: new Date().toISOString(),
+    });
+
+    if (eventType === "recommendation_accepted" && sessionId && restaurantId) {
+      try {
+        const meta = typeof metadata === "object" ? metadata : {};
+        await storage.updateDecisionSession(Number(sessionId), {
+          chosenRestaurantId: restaurantId,
+          timeToDecisionMs: meta?.timeToDecisionMs || null,
+        });
+      } catch {}
+    }
+
+    if (userId && userId !== "anonymous") {
+      const posEvents = ["recommendation_accepted", "primary_cta_clicked", "saved", "detail_viewed"];
+      const negEvents = ["recommendation_rejected", "alternative_requested", "session_abandoned"];
+
+      if (posEvents.includes(eventType) || negEvents.includes(eventType)) {
+        const isPositive = posEvents.includes(eventType);
+        const dna = await storage.getTasteDna(userId);
+        if (dna && metadata) {
+          const meta = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
+          const category = (meta.category || "").toLowerCase();
+
+          const delta = isPositive ? 2 : -1;
+          const updates: Record<string, number> = {};
+
+          if (category.includes("comfort") || category.includes("curry") || category.includes("ramen") || category.includes("noodles")) {
+            updates.comfortScore = Math.max(0, Math.min(100, (dna.comfortScore || 50) + delta));
+          }
+          if (category.includes("healthy") || category.includes("salad") || category.includes("vegan")) {
+            updates.healthyScore = Math.max(0, Math.min(100, (dna.healthyScore || 50) + delta));
+          }
+          if (category.includes("spicy") || category.includes("isaan")) {
+            updates.spiceScore = Math.max(0, Math.min(100, (dna.spiceScore || 50) + delta));
+          }
+          if (category.includes("fine dining") || category.includes("premium") || category.includes("dessert")) {
+            updates.indulgentScore = Math.max(0, Math.min(100, (dna.indulgentScore || 50) + delta));
+          }
+          if (category.includes("new") || meta.isNew) {
+            updates.noveltyScore = Math.max(0, Math.min(100, (dna.noveltyScore || 50) + delta));
+            updates.explorationScore = Math.max(0, Math.min(100, (dna.explorationScore || 50) + delta));
+          }
+
+          if (Object.keys(updates).length > 0) {
+            await storage.upsertTasteDna({
+              userId,
+              ...updates,
+              updatedAt: new Date().toISOString(),
+            } as any);
+          }
+        } else if (!dna) {
+          await storage.upsertTasteDna({
+            userId,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      }
+    }
+  }
+
   app.post("/api/toast-decides/event", async (req, res) => {
     try {
-      const { userId, eventType, restaurantId, metadata, sessionId } = req.body;
+      const { eventType } = req.body;
       if (!eventType) return res.status(400).json({ message: "eventType required" });
-
-      const validEvents = [
-        "hero_impression", "primary_cta_clicked", "alternative_requested",
-        "refine_opened", "refine_applied", "recommendation_accepted",
-        "recommendation_rejected", "detail_viewed", "saved", "session_abandoned",
-      ];
-
-      if (!validEvents.includes(eventType)) {
+      if (!VALID_DECISION_EVENTS.includes(eventType)) {
         return res.status(400).json({ message: "Invalid event type" });
       }
 
       setImmediate(async () => {
         try {
-          await storage.logEvent({
-            eventType,
-            userId: userId || "anonymous",
-            restaurantId: restaurantId || null,
-            metadata: metadata ? JSON.stringify(metadata) : null,
-            timestamp: new Date().toISOString(),
-          });
-
-          if (eventType === "recommendation_accepted" && sessionId && restaurantId) {
-            try {
-              const meta = typeof metadata === "object" ? metadata : {};
-              await storage.updateDecisionSession(Number(sessionId), {
-                chosenRestaurantId: restaurantId,
-                timeToDecisionMs: meta?.timeToDecisionMs || null,
-              });
-            } catch {}
-          }
-
-          if (userId && userId !== "anonymous") {
-            const posEvents = ["recommendation_accepted", "primary_cta_clicked", "saved", "detail_viewed"];
-            const negEvents = ["recommendation_rejected", "alternative_requested", "session_abandoned"];
-
-            if (posEvents.includes(eventType) || negEvents.includes(eventType)) {
-              const isPositive = posEvents.includes(eventType);
-              const dna = await storage.getTasteDna(userId);
-              if (dna && metadata) {
-                const meta = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
-                const category = (meta.category || "").toLowerCase();
-
-                const delta = isPositive ? 2 : -1;
-                const updates: Record<string, number> = {};
-
-                if (category.includes("comfort") || category.includes("curry") || category.includes("ramen") || category.includes("noodles")) {
-                  updates.comfortScore = Math.max(0, Math.min(100, (dna.comfortScore || 50) + delta));
-                }
-                if (category.includes("healthy") || category.includes("salad") || category.includes("vegan")) {
-                  updates.healthyScore = Math.max(0, Math.min(100, (dna.healthyScore || 50) + delta));
-                }
-                if (category.includes("spicy") || category.includes("isaan")) {
-                  updates.spiceScore = Math.max(0, Math.min(100, (dna.spiceScore || 50) + delta));
-                }
-                if (category.includes("fine dining") || category.includes("premium") || category.includes("dessert")) {
-                  updates.indulgentScore = Math.max(0, Math.min(100, (dna.indulgentScore || 50) + delta));
-                }
-                if (category.includes("new") || meta.isNew) {
-                  updates.noveltyScore = Math.max(0, Math.min(100, (dna.noveltyScore || 50) + delta));
-                  updates.explorationScore = Math.max(0, Math.min(100, (dna.explorationScore || 50) + delta));
-                }
-
-                if (Object.keys(updates).length > 0) {
-                  await storage.upsertTasteDna({
-                    userId,
-                    ...updates,
-                    updatedAt: new Date().toISOString(),
-                  } as any);
-                }
-              } else if (!dna) {
-                await storage.upsertTasteDna({
-                  userId,
-                  updatedAt: new Date().toISOString(),
-                });
-              }
-            }
-          }
+          await processDecisionEvent(req.body);
         } catch (e) {
           console.error("Async event processing error:", e);
         }
@@ -1288,6 +1294,30 @@ export async function registerRoutes(
       res.status(202).json({ ok: true });
     } catch (err) {
       console.error("Event tracking error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/toast-decides/events", async (req, res) => {
+    try {
+      const { events } = req.body;
+      if (!Array.isArray(events) || events.length === 0) {
+        return res.status(400).json({ message: "events array required" });
+      }
+
+      setImmediate(async () => {
+        for (const evt of events.slice(0, 50)) {
+          try {
+            if (!evt.eventType || !VALID_DECISION_EVENTS.includes(evt.eventType)) continue;
+            await processDecisionEvent(evt);
+          } catch (e) {
+            console.error("Batch event processing error:", e);
+          }
+        }
+      });
+
+      res.status(202).json({ ok: true, count: events.length });
+    } catch {
       res.status(500).json({ message: "Internal server error" });
     }
   });

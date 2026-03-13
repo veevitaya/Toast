@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo, memo } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo, memo, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
@@ -6,9 +6,9 @@ import {
   MapPin, Star, Check, TrendingUp, Clock, Heart, Brain,
   Footprints, Car, Globe,
 } from "lucide-react";
-import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { trackDecisionEvent } from "@/lib/decisionEvents";
+import { useBootstrapSession, type BootstrapPayload } from "@/hooks/useBootstrapSession";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 
 interface RecScores {
@@ -37,9 +37,9 @@ interface PersonalizedRec {
 }
 
 const FALLBACK_RECOMMENDATIONS: PersonalizedRec[] = [
-  { id: 244, name: "Jay Fai", category: "Thai", rating: "4.9", imageUrl: "https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=600&auto=format&fit=crop&q=60", address: "Maha Chai Rd", priceLevel: 3, match: 88, reasonChips: ["Highly rated", "Perfect for dinner"], confidenceText: "Strong match based on your preferences and timing", scores: { taste: 85, daypart: 78, popularity: 92, value: 70 } },
-  { id: 201, name: "Thipsamai", category: "Thai", rating: "4.9", imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600&auto=format&fit=crop&q=60", address: "Maha Chai Rd", priceLevel: 1, match: 82, reasonChips: ["Good value", "Trending nearby"], confidenceText: "Good match for this moment", scores: { taste: 75, daypart: 80, popularity: 88, value: 90 } },
-  { id: 231, name: "Peppina", category: "Pizza", rating: "4.8", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=60", address: "Sukhumvit 33", priceLevel: 2, match: 75, reasonChips: ["Highly rated"], confidenceText: "Worth trying based on what's popular now", scores: { taste: 65, daypart: 60, popularity: 85, value: 75 } },
+  { id: 244, name: "Jay Fai", category: "Thai", rating: "4.9", imageUrl: "https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=400&auto=format&fit=crop&q=60", address: "Maha Chai Rd", priceLevel: 3, match: 88, reasonChips: ["Highly rated", "Perfect for dinner"], confidenceText: "Strong match based on your preferences and timing", scores: { taste: 85, daypart: 78, popularity: 92, value: 70 } },
+  { id: 201, name: "Thipsamai", category: "Thai", rating: "4.9", imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=400&auto=format&fit=crop&q=60", address: "Maha Chai Rd", priceLevel: 1, match: 82, reasonChips: ["Good value", "Trending nearby"], confidenceText: "Good match for this moment", scores: { taste: 75, daypart: 80, popularity: 88, value: 90 } },
+  { id: 231, name: "Peppina", category: "Pizza", rating: "4.8", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&auto=format&fit=crop&q=60", address: "Sukhumvit 33", priceLevel: 2, match: 75, reasonChips: ["Highly rated"], confidenceText: "Worth trying based on what's popular now", scores: { taste: 65, daypart: 60, popularity: 85, value: 75 } },
 ];
 
 type UIState = "home" | "refine_open" | "results" | "decision_flow";
@@ -110,6 +110,11 @@ function getMealPeriod(): string {
   return "late night";
 }
 
+function optimizeImageUrl(url: string, width: number): string {
+  if (!url || !url.includes("unsplash.com")) return url;
+  return url.replace(/w=\d+/, `w=${width}`).replace(/q=\d+/, "q=55");
+}
+
 const ScoreBar = memo(function ScoreBar({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div className="flex items-center gap-3">
@@ -132,6 +137,7 @@ const InsightCard = memo(function InsightCard({ rec, rank }: { rec: Personalized
   const [, navigate] = useLocation();
   const scores = rec.scores || { taste: 60, daypart: 50, popularity: 70, value: 65 };
   const isTop = rank === 0;
+  const imgWidth = isTop ? 400 : 300;
 
   return (
     <motion.div
@@ -149,10 +155,11 @@ const InsightCard = memo(function InsightCard({ rec, rank }: { rec: Personalized
       >
         <div className={`relative w-full ${isTop ? "h-[200px]" : "h-[140px]"}`}>
           <img
-            src={rec.imageUrl}
+            src={optimizeImageUrl(rec.imageUrl, imgWidth)}
             alt={rec.name}
             className="w-full h-full object-cover"
             loading={isTop ? "eager" : "lazy"}
+            decoding={isTop ? "sync" : "async"}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
@@ -312,14 +319,78 @@ const TasteDNAPanel = memo(function TasteDNAPanel({ recs }: { recs: Personalized
   );
 });
 
+function bootstrapToRecs(payload: BootstrapPayload): PersonalizedRec[] {
+  const picks: PersonalizedRec[] = [];
+  if (payload.dailyPick) {
+    const p = payload.dailyPick;
+    picks.push({
+      id: p.restaurantId,
+      name: p.name,
+      category: p.category,
+      rating: p.rating,
+      imageUrl: p.imageUrl,
+      address: p.address,
+      priceLevel: p.priceLevel,
+      match: p.match,
+      reasonChips: p.reasonChips,
+      confidenceText: p.confidenceLabel,
+      district: p.district,
+    });
+  }
+  for (const a of payload.alternatives) {
+    picks.push({
+      id: a.restaurantId,
+      name: a.name,
+      category: a.category,
+      rating: a.rating,
+      imageUrl: a.imageUrl,
+      address: a.address,
+      priceLevel: a.priceLevel,
+      match: a.match,
+      reasonChips: a.reasonChips,
+      confidenceText: a.confidenceLabel,
+      district: a.district,
+    });
+  }
+  return picks.length > 0 ? picks : FALLBACK_RECOMMENDATIONS;
+}
+
+const HeroSkeleton = memo(function HeroSkeleton() {
+  return (
+    <div className="p-5">
+      <div className="animate-pulse space-y-3">
+        <div className="h-4 bg-gray-100 rounded w-1/3" />
+        <div className="h-[180px] bg-gray-100 rounded-2xl" />
+        <div className="flex gap-2">
+          <div className="h-[80px] bg-gray-50 rounded-xl flex-1" />
+          <div className="h-[80px] bg-gray-50 rounded-xl flex-1" />
+        </div>
+      </div>
+    </div>
+  );
+});
+
 export function ToastDecides() {
   const [, navigate] = useLocation();
-  const { profile: tasteProfile } = useTasteProfile();
   const { profile: userProfile } = useLineProfile();
+  const { payload: bootstrap, loading: bootstrapLoading } = useBootstrapSession();
 
   const [uiState, setUIState] = useState<UIState>("home");
-  const [recs, setRecs] = useState<PersonalizedRec[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const bootstrapRecs = useMemo(() => {
+    if (!bootstrap) return FALLBACK_RECOMMENDATIONS;
+    return bootstrapToRecs(bootstrap);
+  }, [bootstrap]);
+
+  const [recs, setRecs] = useState<PersonalizedRec[]>(() => bootstrapRecs);
+  const [loading, setLoading] = useState(false);
+  const [apiRecsLoaded, setApiRecsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (bootstrapRecs !== FALLBACK_RECOMMENDATIONS && !apiRecsLoaded) {
+      setRecs(bootstrapRecs);
+    }
+  }, [bootstrapRecs, apiRecsLoaded]);
 
   const [selectedCraving, setSelectedCraving] = useState<string | null>(null);
   const [distancePill, setDistancePill] = useState<string>("flexible");
@@ -361,7 +432,6 @@ export function ToastDecides() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: userProfile?.userId || null,
-          tasteProfile,
           hour: now.getHours(),
           dayOfWeek: now.getDay(),
           craving: opts?.craving || null,
@@ -376,6 +446,7 @@ export function ToastDecides() {
         const data = await res.json();
         if (data.length > 0) {
           setRecs(data);
+          setApiRecsLoaded(true);
           return data;
         }
       }
@@ -388,11 +459,29 @@ export function ToastDecides() {
     } finally {
       if (mountedRef.current && thisId === fetchIdRef.current) setLoading(false);
     }
-  }, [userProfile?.userId, tasteProfile]);
+  }, [userProfile?.userId]);
 
+  const enrichFetchRef = useRef(false);
   useEffect(() => {
-    fetchRecs();
-  }, [fetchRecs]);
+    if (!bootstrapLoading && bootstrap && !enrichFetchRef.current && userProfile?.userId) {
+      enrichFetchRef.current = true;
+      let cancelled = false;
+      const doEnrich = () => { if (!cancelled && mountedRef.current) fetchRecs(); };
+      let handle: number;
+      if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+        handle = (window as any).requestIdleCallback(doEnrich);
+      } else {
+        handle = window.setTimeout(doEnrich, 2000) as unknown as number;
+      }
+      return () => {
+        cancelled = true;
+        if (typeof window !== "undefined" && "cancelIdleCallback" in window) {
+          (window as any).cancelIdleCallback(handle);
+        }
+        clearTimeout(handle);
+      };
+    }
+  }, [bootstrapLoading, bootstrap, userProfile?.userId, fetchRecs]);
 
   const primaryRec = recs[0] || FALLBACK_RECOMMENDATIONS[0];
   const secondaryRecs = recs.slice(1, 3);
@@ -494,7 +583,7 @@ export function ToastDecides() {
 
   const trackedImpressionRef = useRef(false);
   useEffect(() => {
-    if (!loading && recs.length > 0 && !trackedImpressionRef.current) {
+    if (recs.length > 0 && recs !== FALLBACK_RECOMMENDATIONS && !trackedImpressionRef.current) {
       trackedImpressionRef.current = true;
       trackDecisionEvent("hero_impression", {
         userId: userProfile?.userId,
@@ -502,7 +591,9 @@ export function ToastDecides() {
         metadata: { count: recs.length },
       });
     }
-  }, [loading, recs, userProfile?.userId]);
+  }, [recs, userProfile?.userId]);
+
+  const showSkeleton = bootstrapLoading && recs === FALLBACK_RECOMMENDATIONS && !bootstrap;
 
   return (
     <div className="px-6 pt-4 pb-2" data-testid="toast-decides-section">
@@ -523,27 +614,17 @@ export function ToastDecides() {
       </div>
 
       <motion.div
-        layout
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, type: "spring", stiffness: 280, damping: 22 }}
+        transition={{ delay: 0.15, type: "spring", stiffness: 280, damping: 22 }}
         className="rounded-[20px] overflow-hidden bg-white border border-gray-100 relative"
         style={{ boxShadow: "0 6px 24px -6px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03)" }}
         data-testid="card-toast-decides"
       >
         <div className="absolute top-0 left-0 right-0 h-1" style={{ background: "linear-gradient(90deg, #FFCC02, hsl(45, 90%, 65%))" }} />
 
-        {loading ? (
-          <div className="p-5">
-            <div className="animate-pulse space-y-3">
-              <div className="h-4 bg-gray-100 rounded w-1/3" />
-              <div className="h-[180px] bg-gray-100 rounded-2xl" />
-              <div className="flex gap-2">
-                <div className="h-[80px] bg-gray-50 rounded-xl flex-1" />
-                <div className="h-[80px] bg-gray-50 rounded-xl flex-1" />
-              </div>
-            </div>
-          </div>
+        {showSkeleton ? (
+          <HeroSkeleton />
         ) : (
           <div className="p-5">
             <div className="flex items-start justify-between mb-2">
@@ -573,16 +654,17 @@ export function ToastDecides() {
             <motion.button
               onClick={() => { trackDecisionEvent("detail_viewed", { userId: userProfile?.userId, restaurantId: primaryRec.id, metadata: { category: primaryRec.category } }); navigate(`/restaurant/${primaryRec.id}`); }}
               className="relative w-full rounded-2xl overflow-hidden mb-3 group"
-              whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
               data-testid={`card-primary-rec-${primaryRec.id}`}
             >
               <div className="relative w-full h-[180px]">
                 <img
-                  src={primaryRec.imageUrl}
+                  src={optimizeImageUrl(primaryRec.imageUrl, 400)}
                   alt={primaryRec.name}
                   className="w-full h-full object-cover"
                   loading="eager"
+                  decoding="sync"
+                  fetchPriority="high"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
@@ -626,7 +708,6 @@ export function ToastDecides() {
 
             <div className="flex gap-2 mb-3">
               <motion.button
-                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={() => navigate(`/restaurant/${primaryRec.id}`)}
                 className="flex-1 h-11 rounded-xl bg-[#FFCC02] flex items-center justify-center gap-2 font-semibold text-sm text-foreground"
@@ -635,7 +716,6 @@ export function ToastDecides() {
                 Looks great <ArrowRight className="w-4 h-4" />
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={tryAnother}
                 className="h-11 px-4 rounded-xl border border-gray-200 bg-white flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground"
@@ -653,14 +733,13 @@ export function ToastDecides() {
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.1 + idx * 0.05 }}
-                    whileHover={{ scale: 1.03, y: -2 }}
                     whileTap={{ scale: 0.96 }}
                     onClick={() => promoteSecondary(idx)}
                     className="flex-1 group"
                     data-testid={`card-secondary-rec-${rec.id}`}
                   >
                     <div className="relative w-full h-[80px] rounded-xl overflow-hidden mb-1.5 border border-gray-100">
-                      <img src={rec.imageUrl} alt={rec.name} className="w-full h-full object-cover" loading="lazy" />
+                      <img src={optimizeImageUrl(rec.imageUrl, 200)} alt={rec.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                       <div className="absolute top-1.5 right-1.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[9px] font-bold rounded-full px-1.5 py-0.5">
                         {rec.match}%
@@ -684,7 +763,7 @@ export function ToastDecides() {
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${primaryRec.match}%` }}
-                  transition={{ delay: 0.4, duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+                  transition={{ delay: 0.2, duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
                   className="h-full rounded-full"
                   style={{ background: `linear-gradient(90deg, ${primaryRec.match >= 80 ? "#22c55e" : primaryRec.match >= 60 ? "#FFCC02" : "#f59e0b"}, ${primaryRec.match >= 80 ? "#16a34a" : primaryRec.match >= 60 ? "hsl(45, 90%, 55%)" : "#d97706"})` }}
                 />
@@ -695,7 +774,6 @@ export function ToastDecides() {
             </div>
 
             <motion.button
-              whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => { setUIState("refine_open"); trackDecisionEvent("refine_opened", { userId: userProfile?.userId }); }}
               className="mt-3 w-full h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground"
@@ -910,7 +988,6 @@ function RefineSheet({
           style={{ paddingBottom: "max(env(safe-area-inset-bottom, 16px), 80px)" }}
         >
           <motion.button
-            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             onClick={onUpdate}
             className="w-full h-[48px] rounded-2xl bg-[#FFCC02] font-bold text-[15px] text-foreground flex items-center justify-center gap-2"
@@ -1101,13 +1178,12 @@ function DecisionFlow({
                   {CRAVING_OPTIONS.map((opt) => (
                     <motion.button
                       key={opt.key}
-                      whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.96 }}
                       onClick={() => onCravingSelect(opt.key)}
                       className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all ${
                         craving === opt.key
                           ? "bg-[#FFCC02]/10 border-[#FFCC02] shadow-sm"
-                          : "bg-white border-gray-100 hover:border-gray-200"
+                          : "bg-white border-gray-100"
                       }`}
                       data-testid={`decision-craving-${opt.key}`}
                     >
@@ -1135,13 +1211,12 @@ function DecisionFlow({
                   {DISTANCE_OPTIONS.map((opt) => (
                     <motion.button
                       key={opt.value}
-                      whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => onDistanceChange(opt.value)}
                       className={`w-full p-4 rounded-2xl border-2 text-left flex items-center justify-between transition-all ${
                         distance === opt.value
                           ? "bg-[#FFCC02]/10 border-[#FFCC02] shadow-sm"
-                          : "bg-white border-gray-100 hover:border-gray-200"
+                          : "bg-white border-gray-100"
                       }`}
                       data-testid={`decision-distance-${opt.value}`}
                     >
@@ -1168,13 +1243,12 @@ function DecisionFlow({
                   {AVOID_OPTIONS.map((tag) => (
                     <motion.button
                       key={tag}
-                      whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.93 }}
                       onClick={() => onAvoidToggle(tag)}
                       className={`px-4 py-2.5 rounded-full text-[13px] font-medium border-2 transition-all ${
                         avoid.includes(tag)
                           ? "bg-red-50 border-red-300 text-red-600"
-                          : "bg-white border-gray-100 text-muted-foreground hover:border-gray-200"
+                          : "bg-white border-gray-100 text-muted-foreground"
                       }`}
                       data-testid={`decision-avoid-${tag.toLowerCase().replace(/\s/g, "-")}`}
                     >
@@ -1216,7 +1290,6 @@ function DecisionFlow({
         {step !== "results" && (
           <div className="px-5 py-4 border-t border-gray-100">
             <motion.button
-              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.96 }}
               onClick={goNext}
               disabled={step === "mood" && !craving}
