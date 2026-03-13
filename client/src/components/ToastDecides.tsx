@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
   Sparkles, ArrowRight, X, ChevronRight, RotateCcw, Zap,
-  MapPin, Star, Check,
+  MapPin, Star, Check, ChevronLeft,
 } from "lucide-react";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { useLineProfile } from "@/lib/useLineProfile";
