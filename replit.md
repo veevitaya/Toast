@@ -25,7 +25,7 @@ The design adopts an Airbnb-inspired aesthetic, featuring a #FFCC02 golden yello
 - **Campaign System:** Enables restaurant owners to create and manage promotional campaigns, displayed as banners on the home screen and detail pages.
 - **Analytics Tracking:** Client-side event tracking for user behavior analysis.
 - **Toast Picks:** A personalized predictive recommendation system leveraging user preferences and context.
-- **Toast Decides (Personalized):** A home page section offering personalized restaurant recommendations based on server-side analytics, client-side taste profile, time-of-day/day-of-week context, and restaurant ratings/trending scores.
+- **Toast Decides (Personalized):** A home page section offering personalized restaurant recommendations based on server-side analytics, client-side taste profile, time-of-day/day-of-week context, and restaurant ratings/trending scores. Features: (1) "Refine my picks" bottom sheet with craving selector, 3-pill distance toggle (Walking/Short ride/Anywhere), and avoid tags; (2) "Show my picks" triggers a full-screen results view with InsightCards (score breakdowns for taste match, timing, popularity, value), reasoning chips, and a TasteDNA panel showing aggregate scoring signals; (3) "Help me decide" wizard (mood → distance → avoid → results) with the same rich InsightCard results. Backend returns enriched response with `insight` text, `scores` object (taste/daypart/popularity/value), `description`, and `vibes` array.
 - **Save Bucket System:** Users can save restaurants into "mine" or "partner" buckets.
 - **Icon Style:** Uses clean, plain `lucide-react` icons, colored with Tailwind text classes. Bottom navigation icons are brand-colored when active.
 

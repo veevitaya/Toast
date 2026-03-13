@@ -950,6 +950,23 @@ export async function registerRoutes(
           score >= 55 ? "Worth trying based on what's popular now" :
           "Something new to explore";
 
+        const insightParts: string[] = [];
+        if (hasTimeBoost) insightParts.push(`fits your ${timeSlot} routine`);
+        if (hasAffinityMatch) insightParts.push("aligns with your taste profile");
+        if (rating >= 4.7) insightParts.push(`rated ${r.rating} by diners`);
+        if ((r.trendingScore || 0) > 80) insightParts.push("trending this week");
+        if (r.isNew) insightParts.push("recently opened");
+        if (swipeRightIds.has(r.id)) insightParts.push("you liked this before");
+        if (savedIds.has(r.id)) insightParts.push("in your saved list");
+        if (r.priceLevel <= 1) insightParts.push("easy on the wallet");
+
+        const tasteScore = Math.min(100, Math.max(0, Math.round(50 + Object.entries(categoryAffinities).reduce((sum, [cat, s]) => {
+          return sum + (rCats.some(rc => rc.includes(cat) || cat.includes(rc)) ? s * 2 : 0);
+        }, 0))));
+
+        const nameHash = r.name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 25;
+        const daypartScore = hasTimeBoost ? Math.min(100, 70 + nameHash) : Math.round(30 + nameHash);
+
         return {
           id: r.id,
           name: r.name,
@@ -960,8 +977,17 @@ export async function registerRoutes(
           priceLevel: r.priceLevel,
           district: r.district || null,
           match: score,
-          reasonChips: reasons.slice(0, 2),
+          reasonChips: reasons.slice(0, 3),
           confidenceText,
+          insight: insightParts.length > 0 ? insightParts.slice(0, 3).join(" · ") : null,
+          scores: {
+            taste: Math.min(99, tasteScore),
+            daypart: daypartScore,
+            popularity: Math.min(99, Math.round((r.trendingScore || 50) * 0.99)),
+            value: Math.min(99, Math.round(100 - (r.priceLevel - 1) * 20 + (parseFloat(r.rating) || 4) * 3)),
+          },
+          description: r.description || null,
+          vibes: r.vibes || [],
         };
       });
 
