@@ -1000,6 +1000,327 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/session/bootstrap", async (req, res) => {
+    try {
+      const { accessToken, lat, lng, timezone, locale } = req.body;
+      const now = new Date();
+      const hour = now.getHours();
+      const dayOfWeek = now.getDay();
+      const daypart = hour >= 6 && hour < 11 ? "morning" :
+        hour >= 11 && hour < 14 ? "lunch" :
+        hour >= 14 && hour < 17 ? "afternoon" :
+        hour >= 17 && hour < 21 ? "dinner" : "latenight";
+
+      let lineProfile: VerifiedLineProfile | null = null;
+      let userProfile: any = null;
+      let isFirstVisit = true;
+
+      if (accessToken) {
+        lineProfile = await verifyLineAccessToken(accessToken);
+        if (lineProfile) {
+          userProfile = await storage.getProfile(lineProfile.userId);
+          if (userProfile) {
+            isFirstVisit = false;
+          } else {
+            userProfile = await storage.upsertProfile({
+              lineUserId: lineProfile.userId,
+              displayName: lineProfile.displayName,
+              pictureUrl: lineProfile.pictureUrl,
+            });
+          }
+        }
+      }
+
+      const userId = lineProfile?.userId || "anonymous";
+      let tasteDnaSummary = null;
+      if (userId !== "anonymous") {
+        const dna = await storage.getTasteDna(userId);
+        if (dna) {
+          tasteDnaSummary = {
+            comfort: dna.comfortScore || 50,
+            exploration: dna.explorationScore || 50,
+            healthy: dna.healthyScore || 50,
+            indulgent: dna.indulgentScore || 50,
+            spicy: dna.spiceScore || 50,
+            distance: dna.distanceScore || 50,
+            budget: dna.budgetScore || 50,
+            novelty: dna.noveltyScore || 50,
+          };
+        }
+      }
+
+      const allRestaurants = await getCached("restaurants:all", 30000, () => storage.getRestaurants());
+
+      let userEvents: any[] = [];
+      if (userId !== "anonymous") {
+        userEvents = await storage.getUserEvents(userId, 100);
+      }
+
+      const swipeRightIds = new Set<number>();
+      const swipeLeftIds = new Set<number>();
+      const savedIds = new Set<number>();
+      const categoryAffinities: Record<string, number> = {};
+
+      for (const evt of userEvents) {
+        if (evt.eventType === "swipe_right" && evt.restaurantId) swipeRightIds.add(evt.restaurantId);
+        if (evt.eventType === "swipe_left" && evt.restaurantId) swipeLeftIds.add(evt.restaurantId);
+        if (evt.eventType === "save" && evt.restaurantId) savedIds.add(evt.restaurantId);
+        if (evt.metadata) {
+          try {
+            const meta = JSON.parse(evt.metadata);
+            if (meta.category) {
+              const cats = meta.category.split(/[,\u00B7\u2022]/).map((c: string) => c.trim().toLowerCase());
+              for (const cat of cats) {
+                if (!cat) continue;
+                const weight = evt.eventType === "swipe_right" ? 2 : evt.eventType === "save" ? 3 : evt.eventType === "swipe_left" ? -1 : 0.5;
+                categoryAffinities[cat] = (categoryAffinities[cat] || 0) + weight;
+              }
+            }
+          } catch {}
+        }
+      }
+
+      const recentDecisions = userId !== "anonymous"
+        ? await storage.getRecentDecisionSessions(userId, 10)
+        : [];
+      const recentRecIds = new Set<number>();
+      for (const ds of recentDecisions) {
+        if (ds.recommendationIdsJson) {
+          try { JSON.parse(ds.recommendationIdsJson).forEach((id: number) => recentRecIds.add(id)); } catch {}
+        }
+      }
+
+      const TIME_BOOSTS: Record<string, string[]> = {
+        morning: ["cafe", "brunch", "coffee", "bakery", "breakfast"],
+        lunch: ["thai", "japanese", "noodles", "street food", "quick"],
+        afternoon: ["cafe", "dessert", "tea", "boba", "snack"],
+        dinner: ["bbq", "fine dining", "sushi", "italian", "korean", "seafood"],
+        latenight: ["street food", "ramen", "noodles", "thai", "bar"],
+      };
+
+      const timeBoostCats = TIME_BOOSTS[daypart] || [];
+
+      const scored = allRestaurants.map(r => {
+        let score = 50;
+        const rCats = r.category.toLowerCase().split(/[,\u00B7\u2022]/).map((c: string) => c.trim());
+        const reasons: string[] = [];
+
+        for (const cat of rCats) {
+          if (categoryAffinities[cat]) score += categoryAffinities[cat] * 3;
+        }
+
+        if (swipeRightIds.has(r.id)) { score += 15; reasons.push("You liked this before"); }
+        if (savedIds.has(r.id)) { score += 20; reasons.push("In your saved list"); }
+        if (swipeLeftIds.has(r.id)) score -= 25;
+        if (recentRecIds.has(r.id)) score -= 15;
+
+        let hasTimeBoost = false;
+        for (const cat of rCats) {
+          for (const tb of timeBoostCats) {
+            if (cat.includes(tb) || tb.includes(cat)) { score += 8; hasTimeBoost = true; }
+          }
+        }
+
+        const rating = parseFloat(r.rating) || 4.0;
+        score += (rating - 4.0) * 10;
+        if (r.trendingScore) score += r.trendingScore * 0.1;
+
+        if (hasTimeBoost) reasons.push(`Great for ${daypart}`);
+        if ((r.trendingScore || 0) > 80) reasons.push("Trending nearby");
+        if (rating >= 4.7) reasons.push("Highly rated");
+        if (r.priceLevel <= 1) reasons.push("Good value");
+
+        score = Math.max(0, Math.min(99, Math.round(score)));
+
+        const confidenceLabel = score >= 85 ? "Strong fit for right now" :
+          score >= 70 ? "Good match for this moment" :
+          score >= 55 ? "Worth trying based on what's popular" :
+          "Something new to explore";
+
+        return {
+          restaurantId: r.id,
+          name: r.name,
+          imageUrl: r.imageUrl,
+          distanceText: null,
+          confidenceLabel,
+          reasonChips: reasons.slice(0, 3),
+          match: score,
+          rating: r.rating,
+          priceLevel: r.priceLevel,
+          category: r.category,
+          address: r.address,
+          district: r.district,
+        };
+      });
+
+      scored.sort((a, b) => b.match - a.match);
+
+      const dailyPick = scored[0] || null;
+      const alternatives = scored.slice(1, 3);
+
+      let sessionId: number | null = null;
+      if (userId !== "anonymous" && dailyPick) {
+        try {
+          const recIds = [dailyPick.restaurantId, ...alternatives.map(a => a.restaurantId)];
+          const session = await storage.createDecisionSession({
+            userId,
+            daypart,
+            createdAt: now.toISOString(),
+            recommendationIdsJson: JSON.stringify(recIds),
+          });
+          sessionId = session.id;
+        } catch {}
+      }
+
+      res.json({
+        user: lineProfile ? {
+          id: userProfile?.id || null,
+          lineUserId: lineProfile.userId,
+          displayName: lineProfile.displayName,
+          avatarUrl: lineProfile.pictureUrl,
+        } : null,
+        session: {
+          isFirstVisit,
+          daypart,
+          serverTime: now.toISOString(),
+          locationUsed: !!(lat && lng),
+          sessionId,
+        },
+        tasteDnaSummary: tasteDnaSummary || {
+          comfort: 50, exploration: 50, healthy: 50, indulgent: 50,
+          spicy: 50, distance: 50, budget: 50, novelty: 50,
+        },
+        dailyPick,
+        alternatives,
+      });
+    } catch (err) {
+      console.error("Bootstrap error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/toast-decides/event", async (req, res) => {
+    try {
+      const { userId, eventType, restaurantId, metadata, sessionId } = req.body;
+      if (!eventType) return res.status(400).json({ message: "eventType required" });
+
+      const validEvents = [
+        "hero_impression", "primary_cta_clicked", "alternative_requested",
+        "refine_opened", "refine_applied", "recommendation_accepted",
+        "recommendation_rejected", "detail_viewed", "saved", "session_abandoned",
+      ];
+
+      if (!validEvents.includes(eventType)) {
+        return res.status(400).json({ message: "Invalid event type" });
+      }
+
+      setImmediate(async () => {
+        try {
+          await storage.logEvent({
+            eventType,
+            userId: userId || "anonymous",
+            restaurantId: restaurantId || null,
+            metadata: metadata ? JSON.stringify(metadata) : null,
+            timestamp: new Date().toISOString(),
+          });
+
+          if (eventType === "recommendation_accepted" && sessionId && restaurantId) {
+            try {
+              const meta = typeof metadata === "object" ? metadata : {};
+              await storage.updateDecisionSession(Number(sessionId), {
+                chosenRestaurantId: restaurantId,
+                timeToDecisionMs: meta?.timeToDecisionMs || null,
+              });
+            } catch {}
+          }
+
+          if (userId && userId !== "anonymous") {
+            const posEvents = ["recommendation_accepted", "primary_cta_clicked", "saved", "detail_viewed"];
+            const negEvents = ["recommendation_rejected", "alternative_requested", "session_abandoned"];
+
+            if (posEvents.includes(eventType) || negEvents.includes(eventType)) {
+              const isPositive = posEvents.includes(eventType);
+              const dna = await storage.getTasteDna(userId);
+              if (dna && metadata) {
+                const meta = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
+                const category = (meta.category || "").toLowerCase();
+
+                const delta = isPositive ? 2 : -1;
+                const updates: Record<string, number> = {};
+
+                if (category.includes("comfort") || category.includes("curry") || category.includes("ramen") || category.includes("noodles")) {
+                  updates.comfortScore = Math.max(0, Math.min(100, (dna.comfortScore || 50) + delta));
+                }
+                if (category.includes("healthy") || category.includes("salad") || category.includes("vegan")) {
+                  updates.healthyScore = Math.max(0, Math.min(100, (dna.healthyScore || 50) + delta));
+                }
+                if (category.includes("spicy") || category.includes("isaan")) {
+                  updates.spiceScore = Math.max(0, Math.min(100, (dna.spiceScore || 50) + delta));
+                }
+                if (category.includes("fine dining") || category.includes("premium") || category.includes("dessert")) {
+                  updates.indulgentScore = Math.max(0, Math.min(100, (dna.indulgentScore || 50) + delta));
+                }
+                if (category.includes("new") || meta.isNew) {
+                  updates.noveltyScore = Math.max(0, Math.min(100, (dna.noveltyScore || 50) + delta));
+                  updates.explorationScore = Math.max(0, Math.min(100, (dna.explorationScore || 50) + delta));
+                }
+
+                if (Object.keys(updates).length > 0) {
+                  await storage.upsertTasteDna({
+                    userId,
+                    ...updates,
+                    updatedAt: new Date().toISOString(),
+                  } as any);
+                }
+              } else if (!dna) {
+                await storage.upsertTasteDna({
+                  userId,
+                  updatedAt: new Date().toISOString(),
+                });
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Async event processing error:", e);
+        }
+      });
+
+      res.status(202).json({ ok: true });
+    } catch (err) {
+      console.error("Event tracking error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/toast-decides/taste-dna-summary", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      if (!userId) return res.status(400).json({ message: "userId required" });
+
+      const dna = await storage.getTasteDna(userId);
+      if (!dna) {
+        return res.json({
+          comfort: 50, exploration: 50, healthy: 50, indulgent: 50,
+          spicy: 50, distance: 50, budget: 50, novelty: 50,
+        });
+      }
+
+      res.json({
+        comfort: dna.comfortScore || 50,
+        exploration: dna.explorationScore || 50,
+        healthy: dna.healthyScore || 50,
+        indulgent: dna.indulgentScore || 50,
+        spicy: dna.spiceScore || 50,
+        distance: dna.distanceScore || 50,
+        budget: dna.budgetScore || 50,
+        novelty: dna.noveltyScore || 50,
+      });
+    } catch (err) {
+      console.error("Taste DNA error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.post("/api/restaurants/by-vibe", async (req, res) => {
     try {
       const { vibe, limit = 20 } = req.body;

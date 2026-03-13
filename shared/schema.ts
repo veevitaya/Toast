@@ -212,6 +212,41 @@ export const insertGroupSessionMemberSchema = createInsertSchema(groupSessionMem
 export type GroupSessionMember = typeof groupSessionMembers.$inferSelect;
 export type InsertGroupSessionMember = z.infer<typeof insertGroupSessionMemberSchema>;
 
+export const tasteDna = pgTable("taste_dna", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  comfortScore: integer("comfort_score").default(50),
+  explorationScore: integer("exploration_score").default(50),
+  healthyScore: integer("healthy_score").default(50),
+  indulgentScore: integer("indulgent_score").default(50),
+  spiceScore: integer("spice_score").default(50),
+  distanceScore: integer("distance_score").default(50),
+  budgetScore: integer("budget_score").default(50),
+  noveltyScore: integer("novelty_score").default(50),
+  contextPatternsJson: text("context_patterns_json"),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const insertTasteDnaSchema = createInsertSchema(tasteDna).omit({ id: true });
+export type TasteDna = typeof tasteDna.$inferSelect;
+export type InsertTasteDna = z.infer<typeof insertTasteDnaSchema>;
+
+export const decisionSessions = pgTable("decision_sessions", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  daypart: text("daypart").notNull(),
+  selectedCraving: text("selected_craving"),
+  selectedRefinementsJson: text("selected_refinements_json"),
+  recommendationIdsJson: text("recommendation_ids_json"),
+  chosenRestaurantId: integer("chosen_restaurant_id"),
+  timeToDecisionMs: integer("time_to_decision_ms"),
+  createdAt: text("created_at").notNull(),
+});
+
+export const insertDecisionSessionSchema = createInsertSchema(decisionSessions).omit({ id: true });
+export type DecisionSession = typeof decisionSessions.$inferSelect;
+export type InsertDecisionSession = z.infer<typeof insertDecisionSessionSchema>;
+
 export const groupSwipes = pgTable("group_swipes", {
   id: serial("id").primaryKey(),
   sessionCode: text("session_code").notNull(),

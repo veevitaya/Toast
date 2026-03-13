@@ -12,6 +12,8 @@ import {
   groupSessions,
   groupSessionMembers,
   groupSwipes,
+  tasteDna,
+  decisionSessions,
   type Restaurant,
   type InsertRestaurant,
   type UserPreference,
@@ -36,6 +38,10 @@ import {
   type InsertGroupSessionMember,
   type GroupSwipe,
   type InsertGroupSwipe,
+  type TasteDna,
+  type InsertTasteDna,
+  type DecisionSession,
+  type InsertDecisionSession,
 } from "@shared/schema";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -106,6 +112,13 @@ export interface IStorage {
   getRestaurantsByVibe(vibe: string): Promise<Restaurant[]>;
   getRestaurantByGooglePlaceId(placeId: string): Promise<Restaurant | undefined>;
   getRestaurantsForSwipe(filters?: { vibes?: string[]; priceLevel?: number[]; category?: string; district?: string; limit?: number }): Promise<Restaurant[]>;
+
+  getTasteDna(userId: string): Promise<TasteDna | undefined>;
+  upsertTasteDna(data: InsertTasteDna): Promise<TasteDna>;
+
+  createDecisionSession(data: InsertDecisionSession): Promise<DecisionSession>;
+  getRecentDecisionSessions(userId: string, limit?: number): Promise<DecisionSession[]>;
+  updateDecisionSession(id: number, updates: Partial<InsertDecisionSession>): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -535,6 +548,39 @@ export class DatabaseStorage implements IStorage {
       .where(sql`${sql.join(conditions, sql` AND `)}`)
       .orderBy(desc(restaurants.trendingScore))
       .limit(limit);
+  }
+  async getTasteDna(userId: string): Promise<TasteDna | undefined> {
+    const [row] = await db.select().from(tasteDna).where(eq(tasteDna.userId, userId)).limit(1);
+    return row;
+  }
+
+  async upsertTasteDna(data: InsertTasteDna): Promise<TasteDna> {
+    const existing = await this.getTasteDna(data.userId);
+    if (existing) {
+      const [updated] = await db.update(tasteDna)
+        .set({ ...data })
+        .where(eq(tasteDna.userId, data.userId))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(tasteDna).values(data).returning();
+    return created;
+  }
+
+  async createDecisionSession(data: InsertDecisionSession): Promise<DecisionSession> {
+    const [created] = await db.insert(decisionSessions).values(data).returning();
+    return created;
+  }
+
+  async getRecentDecisionSessions(userId: string, limit = 20): Promise<DecisionSession[]> {
+    return await db.select().from(decisionSessions)
+      .where(eq(decisionSessions.userId, userId))
+      .orderBy(desc(decisionSessions.id))
+      .limit(limit);
+  }
+
+  async updateDecisionSession(id: number, updates: Partial<InsertDecisionSession>): Promise<void> {
+    await db.update(decisionSessions).set(updates).where(eq(decisionSessions.id, id));
   }
 }
 

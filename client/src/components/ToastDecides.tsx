@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { useLineProfile } from "@/lib/useLineProfile";
+import { trackDecisionEvent } from "@/lib/decisionEvents";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 
 interface RecScores {
@@ -414,15 +415,24 @@ export function ToastDecides() {
       const next = [...prev];
       const first = next.shift()!;
       next.push(first);
+      trackDecisionEvent("alternative_requested", {
+        userId: userProfile?.userId,
+        restaurantId: first.id,
+        metadata: { category: first.category },
+      });
       return next;
     });
-  }, []);
+  }, [userProfile?.userId]);
 
   const refineActiveRef = useRef(false);
 
   const handleRefineUpdate = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     refineActiveRef.current = true;
+    trackDecisionEvent("refine_applied", {
+      userId: userProfile?.userId,
+      metadata: { craving: selectedCraving, avoidTags, distancePill },
+    });
     debounceRef.current = setTimeout(async () => {
       const pill = DISTANCE_PILLS.find(p => p.key === distancePill);
       const distCat = pill ? kmToCategory(pill.km) : "flexible";
@@ -440,7 +450,7 @@ export function ToastDecides() {
       }
       setUIState("results");
     }, 100);
-  }, [selectedCraving, avoidTags, distancePill, fetchRecs]);
+  }, [selectedCraving, avoidTags, distancePill, fetchRecs, userProfile?.userId]);
 
   const handleDecisionSubmit = useCallback(async () => {
     setDecisionLoading(true);
@@ -464,7 +474,8 @@ export function ToastDecides() {
     setDecisionAvoid([]);
     setDecisionResults([]);
     setUIState("decision_flow");
-  }, []);
+    trackDecisionEvent("primary_cta_clicked", { userId: userProfile?.userId });
+  }, [userProfile?.userId]);
 
   const toggleAvoid = useCallback((tag: string) => {
     setAvoidTags(prev =>
@@ -480,6 +491,18 @@ export function ToastDecides() {
 
   const headline = useMemo(getTimeBasedHeadline, []);
   const subheadline = useMemo(getTimeBasedSub, []);
+
+  const trackedImpressionRef = useRef(false);
+  useEffect(() => {
+    if (!loading && recs.length > 0 && !trackedImpressionRef.current) {
+      trackedImpressionRef.current = true;
+      trackDecisionEvent("hero_impression", {
+        userId: userProfile?.userId,
+        restaurantId: recs[0]?.id,
+        metadata: { count: recs.length },
+      });
+    }
+  }, [loading, recs, userProfile?.userId]);
 
   return (
     <div className="px-6 pt-4 pb-2" data-testid="toast-decides-section">
@@ -548,7 +571,7 @@ export function ToastDecides() {
             <p className="text-[11px] text-muted-foreground mb-4">{subheadline}</p>
 
             <motion.button
-              onClick={() => navigate(`/restaurant/${primaryRec.id}`)}
+              onClick={() => { trackDecisionEvent("detail_viewed", { userId: userProfile?.userId, restaurantId: primaryRec.id, metadata: { category: primaryRec.category } }); navigate(`/restaurant/${primaryRec.id}`); }}
               className="relative w-full rounded-2xl overflow-hidden mb-3 group"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
@@ -674,7 +697,7 @@ export function ToastDecides() {
             <motion.button
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setUIState("refine_open")}
+              onClick={() => { setUIState("refine_open"); trackDecisionEvent("refine_opened", { userId: userProfile?.userId }); }}
               className="mt-3 w-full h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground"
               data-testid="button-refine"
             >
