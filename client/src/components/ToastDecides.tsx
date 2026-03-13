@@ -77,9 +77,9 @@ const CRAVING_ICONS: Record<string, string> = {
 };
 
 const DISTANCE_SLIDER_OPTIONS = [
-  { value: "close", label: "Within 1 km", km: 1 },
-  { value: "medium", label: "Within 2.5 km", km: 2.5 },
-  { value: "flexible", label: "Anywhere", km: 10 },
+  { value: "close", label: "Nearby", desc: "Under 1 km", icon: "pin" },
+  { value: "medium", label: "A short ride", desc: "Within 2.5 km", icon: "bike" },
+  { value: "flexible", label: "Anywhere", desc: "Distance no limit", icon: "globe" },
 ];
 
 export function ToastDecides() {
@@ -495,9 +495,6 @@ function RefineSheet({
   distancePref, onDistanceChange,
   avoidTags, onAvoidToggle, onUpdate, onClose,
 }: RefineSheetProps) {
-  const distIdx = DISTANCE_SLIDER_OPTIONS.findIndex(o => o.value === distancePref);
-  const activeDistOpt = DISTANCE_SLIDER_OPTIONS[distIdx >= 0 ? distIdx : 2];
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -584,32 +581,56 @@ function RefineSheet({
 
           <div className="mb-8">
             <h3 className="text-[16px] font-bold text-foreground mb-4">Set your distance</h3>
-            <div
-              className="bg-white rounded-2xl p-4 border border-gray-100"
-              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 rounded-full bg-[#FFCC02]/15 flex items-center justify-center">
-                  <MapPin className="w-4 h-4 text-[#FFCC02]" />
-                </div>
-                <span className="text-[14px] font-semibold text-foreground">{activeDistOpt.label}</span>
-              </div>
-              <div className="relative">
-                <input
-                  type="range"
-                  min={0}
-                  max={2}
-                  step={1}
-                  value={distIdx >= 0 ? distIdx : 2}
-                  onChange={(e) => onDistanceChange(DISTANCE_SLIDER_OPTIONS[parseInt(e.target.value)].value)}
-                  className="w-full h-2 rounded-full appearance-none cursor-pointer refine-slider"
-                  aria-label="Distance preference"
-                  data-testid="distance-slider"
-                  style={{
-                    background: `linear-gradient(to right, #FFCC02 ${(distIdx >= 0 ? distIdx : 2) * 50}%, #E5E7EB ${(distIdx >= 0 ? distIdx : 2) * 50}%)`,
-                  }}
-                />
-              </div>
+            <div className="space-y-2.5">
+              {DISTANCE_SLIDER_OPTIONS.map((opt) => {
+                const isSelected = distancePref === opt.value;
+                return (
+                  <motion.button
+                    key={opt.value}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => onDistanceChange(opt.value)}
+                    className={`w-full flex items-center gap-3.5 p-3.5 rounded-2xl border-2 text-left transition-all ${
+                      isSelected
+                        ? "bg-[#FFCC02]/10 border-[#FFCC02]"
+                        : "bg-white border-gray-100"
+                    }`}
+                    style={isSelected
+                      ? { boxShadow: "0 2px 12px rgba(255,204,2,0.18)" }
+                      : { boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }
+                    }
+                    data-testid={`distance-${opt.value}`}
+                    aria-label={`${opt.label} - ${opt.desc}`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      isSelected ? "bg-[#FFCC02]" : "bg-gray-50"
+                    }`}>
+                      {opt.icon === "pin" && <MapPin className={`w-5 h-5 ${isSelected ? "text-white" : "text-muted-foreground"}`} />}
+                      {opt.icon === "bike" && (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                          className={`w-5 h-5 ${isSelected ? "text-white" : "text-muted-foreground"}`}>
+                          <circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/>
+                          <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"/>
+                        </svg>
+                      )}
+                      {opt.icon === "globe" && (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                          className={`w-5 h-5 ${isSelected ? "text-white" : "text-muted-foreground"}`}>
+                          <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[14px] font-semibold ${isSelected ? "text-foreground" : "text-foreground"}`}>{opt.label}</p>
+                      <p className="text-[12px] text-muted-foreground">{opt.desc}</p>
+                    </div>
+                    {isSelected && (
+                      <div className="w-6 h-6 rounded-full bg-[#FFCC02] flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    )}
+                  </motion.button>
+                );
+              })}
             </div>
           </div>
 
