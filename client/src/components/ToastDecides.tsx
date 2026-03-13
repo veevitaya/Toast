@@ -522,36 +522,41 @@ function RefineSheet({
         style={{ boxShadow: "0 -12px 40px rgba(0,0,0,0.12)" }}
         data-testid="refine-sheet"
       >
-        <div className="pt-3 pb-2 px-6 z-10 flex-shrink-0">
-          <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-[17px] font-bold text-foreground">
-                What are you in{" "}
-                <span className="relative inline-block">
-                  the mood for?
-                  <span
-                    className="absolute bottom-0.5 left-0 right-0 h-2 bg-[#FFCC02]/25 rounded-full -z-10"
-                    style={{ transform: "skewX(-2deg)" }}
-                  />
-                </span>
-              </h3>
-              <p className="text-[12px] text-muted-foreground mt-0.5">Tell us the vibe you're feeling</p>
-            </div>
+        <div className="px-5 pt-3 pb-2 flex-shrink-0">
+          <div className="w-12 h-1.5 rounded-full bg-[#FFCC02] mx-auto mb-3" />
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-9" />
+            <span className="text-[13px] font-medium text-muted-foreground" />
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center"
+              className="text-[13px] font-medium text-muted-foreground"
               data-testid="button-close-refine"
             >
-              <X className="w-4 h-4 text-muted-foreground" />
+              Skip
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
-          <div>
-            <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-[0.1em] mb-3">Craving</p>
-            <div className="flex gap-3 overflow-x-auto pb-1 -mx-6 px-6 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto px-6 pb-32">
+          <div className="mb-8">
+            <h2 className="text-[26px] font-extrabold text-foreground leading-tight">
+              What are you in
+              <br />
+              <span className="relative inline-block">
+                the mood for?
+                <span
+                  className="absolute bottom-1 left-0 right-0 h-2.5 bg-[#FFCC02]/30 rounded-full -z-10"
+                  style={{ transform: "skewX(-2deg)" }}
+                />
+              </span>
+            </h2>
+            <p className="text-[14px] text-muted-foreground mt-2">
+              Tell us the vibe you're feeling
+            </p>
+          </div>
+
+          <div className="mb-8">
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
               {CRAVING_OPTIONS.map((opt) => {
                 const isSelected = selectedCraving === opt.key;
                 return (
@@ -563,16 +568,16 @@ function RefineSheet({
                     data-testid={`craving-${opt.key}`}
                   >
                     <div
-                      className={`w-[56px] h-[56px] rounded-2xl flex items-center justify-center text-xl transition-all duration-200 ${
+                      className={`w-[60px] h-[60px] rounded-2xl flex items-center justify-center text-2xl transition-all ${
                         isSelected
-                          ? "bg-[#FFCC02]/15 border-2 border-[#FFCC02] ring-2 ring-[#FFCC02]/20"
-                          : "bg-gray-50/80 border border-gray-100"
+                          ? "bg-[#FFCC02] shadow-md"
+                          : "bg-white border border-gray-100"
                       }`}
-                      style={isSelected ? { boxShadow: "0 2px 12px rgba(255,204,2,0.25)" } : {}}
+                      style={isSelected ? { boxShadow: "0 4px 16px rgba(255,204,2,0.35)" } : { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
                     >
                       {CRAVING_ICONS[opt.icon]}
                     </div>
-                    <span className={`text-[10px] font-semibold transition-colors ${isSelected ? "text-foreground" : "text-muted-foreground/70"}`}>
+                    <span className={`text-[11px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
                       {opt.shortLabel}
                     </span>
                   </motion.button>
@@ -581,37 +586,40 @@ function RefineSheet({
             </div>
           </div>
 
-          <div>
-            <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-[0.1em] mb-3">Distance</p>
+          <div className="mb-8">
+            <h3 className="text-[16px] font-bold text-foreground mb-4">Set your distance</h3>
             <div
-              className="bg-gray-50/60 rounded-2xl p-3.5 border border-gray-100/80"
+              className="bg-white rounded-2xl p-4 border border-gray-100"
+              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
             >
-              <div className="flex items-center gap-2.5 mb-2.5">
-                <div className="w-7 h-7 rounded-full bg-[#FFCC02]/12 flex items-center justify-center">
-                  <MapPin className="w-3.5 h-3.5 text-[#FFCC02]" />
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-full bg-[#FFCC02]/15 flex items-center justify-center">
+                  <MapPin className="w-4 h-4 text-[#FFCC02]" />
                 </div>
-                <span className="text-[13px] font-semibold text-foreground">{activeDistOpt.label}</span>
+                <span className="text-[14px] font-semibold text-foreground">{activeDistOpt.label}</span>
               </div>
-              <input
-                type="range"
-                min={0}
-                max={2}
-                step={1}
-                value={distIdx >= 0 ? distIdx : 2}
-                onChange={(e) => onDistanceChange(DISTANCE_SLIDER_OPTIONS[parseInt(e.target.value)].value)}
-                className="w-full h-1.5 rounded-full appearance-none cursor-pointer refine-slider"
-                aria-label="Distance preference"
-                data-testid="distance-slider"
-                style={{
-                  background: `linear-gradient(to right, #FFCC02 ${(distIdx >= 0 ? distIdx : 2) * 50}%, #E5E7EB ${(distIdx >= 0 ? distIdx : 2) * 50}%)`,
-                }}
-              />
+              <div className="relative">
+                <input
+                  type="range"
+                  min={0}
+                  max={2}
+                  step={1}
+                  value={distIdx >= 0 ? distIdx : 2}
+                  onChange={(e) => onDistanceChange(DISTANCE_SLIDER_OPTIONS[parseInt(e.target.value)].value)}
+                  className="w-full h-2 rounded-full appearance-none cursor-pointer refine-slider"
+                  aria-label="Distance preference"
+                  data-testid="distance-slider"
+                  style={{
+                    background: `linear-gradient(to right, #FFCC02 ${(distIdx >= 0 ? distIdx : 2) * 50}%, #E5E7EB ${(distIdx >= 0 ? distIdx : 2) * 50}%)`,
+                  }}
+                />
+              </div>
             </div>
           </div>
 
-          <div>
-            <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-[0.1em] mb-3">Anything to avoid?</p>
-            <div className="flex flex-wrap gap-2">
+          <div className="mb-8">
+            <h3 className="text-[16px] font-bold text-foreground mb-4">Anything you want to avoid?</h3>
+            <div className="flex flex-wrap gap-2.5">
               {AVOID_OPTIONS.map((tag) => {
                 const isAvoided = avoidTags.includes(tag);
                 return (
@@ -619,11 +627,12 @@ function RefineSheet({
                     key={tag}
                     whileTap={{ scale: 0.93 }}
                     onClick={() => onAvoidToggle(tag)}
-                    className={`px-3.5 py-1.5 rounded-full text-[12px] font-medium border-[1.5px] transition-all duration-200 ${
+                    className={`px-4 py-2 rounded-full text-[13px] font-medium border-2 transition-all ${
                       isAvoided
-                        ? "bg-[#FFCC02]/10 border-[#FFCC02] text-foreground ring-1 ring-[#FFCC02]/20"
-                        : "bg-white border-gray-200/80 text-muted-foreground hover:border-gray-300"
+                        ? "bg-[#FFCC02]/10 border-[#FFCC02] text-foreground"
+                        : "bg-white border-gray-200 text-muted-foreground"
                     }`}
+                    style={isAvoided ? {} : { boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
                     data-testid={`avoid-${tag.toLowerCase().replace(/\s/g, "-")}`}
                   >
                     {tag}
@@ -632,18 +641,30 @@ function RefineSheet({
               })}
             </div>
           </div>
+
+          <div
+            className="rounded-2xl bg-[#FFCC02]/8 border border-[#FFCC02]/20 p-4 flex items-start gap-3"
+            data-testid="refine-preview-card"
+          >
+            <div className="flex-1">
+              <p className="text-[13px] font-semibold text-foreground leading-snug">
+                You'll get 3 curated picks with reasons, confidence & quick actions.
+              </p>
+            </div>
+            <img src={mascotPath} alt="" className="w-14 h-14 object-contain flex-shrink-0" />
+          </div>
         </div>
 
         <div
-          className="flex-shrink-0 border-t border-gray-100/60 px-6 py-4"
+          className="absolute bottom-0 left-0 right-0 px-6 pt-3 bg-white rounded-b-none z-10"
           style={{ paddingBottom: "max(env(safe-area-inset-bottom, 16px), 20px)" }}
         >
           <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.96 }}
             onClick={onUpdate}
-            className="w-full h-[50px] rounded-2xl bg-[#FFCC02] font-bold text-[14px] text-foreground flex items-center justify-center gap-2"
-            style={{ boxShadow: "0 4px 16px rgba(255,204,2,0.3)" }}
+            className="w-full h-[52px] rounded-2xl bg-[#FFCC02] font-bold text-[15px] text-foreground flex items-center justify-center gap-2"
+            style={{ boxShadow: "0 4px 16px rgba(255,204,2,0.35)" }}
             data-testid="button-update-picks"
           >
             Show my picks <Sparkles className="w-4 h-4" />
