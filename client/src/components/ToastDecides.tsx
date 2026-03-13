@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
   Sparkles, ArrowRight, X, ChevronRight, RotateCcw, Zap,
-  MapPin, Star, Check,
+  MapPin, Star, Check, ChevronLeft,
 } from "lucide-react";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { useLineProfile } from "@/lib/useLineProfile";
@@ -33,31 +33,20 @@ type UIState = "home" | "refine_open" | "decision_flow";
 type DecisionStep = "mood" | "distance" | "avoid" | "results";
 
 const CRAVING_OPTIONS = [
-  { key: "warm", label: "Warm & comforting", icon: "bowl" },
-  { key: "spicy", label: "Bold & spicy", icon: "fire" },
-  { key: "fresh", label: "Light & fresh", icon: "leaf" },
-  { key: "balanced", label: "Balanced", icon: "scale" },
-  { key: "indulgent", label: "Indulgent", icon: "cake" },
-  { key: "quick", label: "Quick & healthy", icon: "clock" },
-  { key: "familiar", label: "Familiar favorite", icon: "heart" },
-  { key: "surprise", label: "Surprise me", icon: "sparkle" },
-];
-
-const QUICK_PREF_CHIPS = [
-  "Cheaper", "More popular", "Healthier", "More indulgent", "New for me",
+  { key: "warm", label: "Warm & comforting", shortLabel: "Comfort", icon: "bowl" },
+  { key: "spicy", label: "Bold & spicy", shortLabel: "Spicy", icon: "fire" },
+  { key: "fresh", label: "Light & fresh", shortLabel: "Fresh", icon: "leaf" },
+  { key: "balanced", label: "Balanced", shortLabel: "Balanced", icon: "scale" },
+  { key: "indulgent", label: "Indulgent", shortLabel: "Indulgent", icon: "cake" },
+  { key: "quick", label: "Quick & healthy", shortLabel: "Simple", icon: "clock" },
+  { key: "familiar", label: "Familiar favorite", shortLabel: "Fun", icon: "heart" },
+  { key: "surprise", label: "Surprise me", shortLabel: "Surprise", icon: "sparkle" },
 ];
 
 const DISTANCE_OPTIONS = [
   { value: "close", label: "Under 10 min" },
   { value: "medium", label: "Within 2 km" },
   { value: "flexible", label: "Flexible" },
-];
-
-const PRICE_OPTIONS = [
-  { value: "any", label: "Any" },
-  { value: "$", label: "$" },
-  { value: "$$", label: "$$" },
-  { value: "$$$", label: "$$$" },
 ];
 
 const AVOID_OPTIONS = [
@@ -87,9 +76,15 @@ const CRAVING_ICONS: Record<string, string> = {
   cake: "\u{1F370}", clock: "\u23F1\uFE0F", heart: "\u2764\uFE0F", sparkle: "\u2728",
 };
 
+const DISTANCE_SLIDER_OPTIONS = [
+  { value: "close", label: "Within 1 km", km: 1 },
+  { value: "medium", label: "Within 2.5 km", km: 2.5 },
+  { value: "flexible", label: "Anywhere", km: 10 },
+];
+
 export function ToastDecides() {
   const [, navigate] = useLocation();
-  const { profile: tasteProfile, topPreference } = useTasteProfile();
+  const { profile: tasteProfile } = useTasteProfile();
   const { profile: userProfile } = useLineProfile();
 
   const [uiState, setUIState] = useState<UIState>("home");
@@ -97,9 +92,7 @@ export function ToastDecides() {
   const [loading, setLoading] = useState(true);
 
   const [selectedCraving, setSelectedCraving] = useState<string | null>(null);
-  const [selectedPrefs, setSelectedPrefs] = useState<string[]>([]);
   const [distancePref, setDistancePref] = useState("flexible");
-  const [pricePref, setPricePref] = useState("any");
   const [avoidTags, setAvoidTags] = useState<string[]>([]);
 
   const [decisionStep, setDecisionStep] = useState<DecisionStep>("mood");
@@ -199,22 +192,12 @@ export function ToastDecides() {
     debounceRef.current = setTimeout(() => {
       fetchRecs({
         craving: selectedCraving,
-        preferences: selectedPrefs,
         avoidTags,
-        pricePref,
         distancePref,
       });
       setUIState("home");
     }, 100);
-  }, [selectedCraving, selectedPrefs, avoidTags, pricePref, distancePref, fetchRecs]);
-
-  const handleRefineReset = useCallback(() => {
-    setSelectedCraving(null);
-    setSelectedPrefs([]);
-    setDistancePref("flexible");
-    setPricePref("any");
-    setAvoidTags([]);
-  }, []);
+  }, [selectedCraving, avoidTags, distancePref, fetchRecs]);
 
   const handleDecisionSubmit = useCallback(async () => {
     setDecisionLoading(true);
@@ -239,12 +222,6 @@ export function ToastDecides() {
     setDecisionResults([]);
     setUIState("decision_flow");
   }, []);
-
-  const togglePref = (pref: string) => {
-    setSelectedPrefs(prev =>
-      prev.includes(pref) ? prev.filter(p => p !== pref) : [...prev, pref]
-    );
-  };
 
   const toggleAvoid = (tag: string) => {
     setAvoidTags(prev =>
@@ -469,16 +446,11 @@ export function ToastDecides() {
           <RefineSheet
             selectedCraving={selectedCraving}
             onCravingSelect={setSelectedCraving}
-            selectedPrefs={selectedPrefs}
-            onPrefToggle={togglePref}
             distancePref={distancePref}
             onDistanceChange={setDistancePref}
-            pricePref={pricePref}
-            onPriceChange={setPricePref}
             avoidTags={avoidTags}
             onAvoidToggle={toggleAvoid}
             onUpdate={handleRefineUpdate}
-            onReset={handleRefineReset}
             onClose={() => setUIState("home")}
           />
         )}
@@ -510,180 +482,191 @@ export function ToastDecides() {
 interface RefineSheetProps {
   selectedCraving: string | null;
   onCravingSelect: (c: string) => void;
-  selectedPrefs: string[];
-  onPrefToggle: (p: string) => void;
   distancePref: string;
   onDistanceChange: (d: string) => void;
-  pricePref: string;
-  onPriceChange: (p: string) => void;
   avoidTags: string[];
   onAvoidToggle: (t: string) => void;
   onUpdate: () => void;
-  onReset: () => void;
   onClose: () => void;
 }
 
 function RefineSheet({
-  selectedCraving, onCravingSelect, selectedPrefs, onPrefToggle,
-  distancePref, onDistanceChange, pricePref, onPriceChange,
-  avoidTags, onAvoidToggle, onUpdate, onReset, onClose,
+  selectedCraving, onCravingSelect,
+  distancePref, onDistanceChange,
+  avoidTags, onAvoidToggle, onUpdate, onClose,
 }: RefineSheetProps) {
+  const distIdx = DISTANCE_SLIDER_OPTIONS.findIndex(o => o.value === distancePref);
+  const activeDistOpt = DISTANCE_SLIDER_OPTIONS[distIdx >= 0 ? distIdx : 2];
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm"
-      onClick={onClose}
+      className="fixed inset-0 z-[100] bg-[#FAF9F6]"
       data-testid="refine-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Refine your picks"
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
-      <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 28, stiffness: 300 }}
-        onClick={(e) => e.stopPropagation()}
-        className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[24px] max-h-[85vh] overflow-y-auto"
-        style={{ boxShadow: "0 -8px 30px rgba(0,0,0,0.12)" }}
-        data-testid="refine-sheet"
-      >
-        <div className="sticky top-0 bg-white pt-3 pb-2 px-6 z-10 border-b border-gray-50">
-          <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-3" />
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-[16px] font-bold text-foreground">What sounds better right now?</h3>
-              <p className="text-[12px] text-muted-foreground mt-0.5">We'll update your picks instantly.</p>
-            </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center" data-testid="button-close-refine">
-              <X className="w-4 h-4 text-muted-foreground" />
+      <div className="h-full flex flex-col safe-top" data-testid="refine-sheet">
+        <div className="px-5 pt-4 pb-2">
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={onClose}
+              className="w-9 h-9 rounded-full bg-white border border-gray-100 flex items-center justify-center"
+              style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
+              data-testid="button-close-refine"
+            >
+              <ChevronLeft className="w-5 h-5 text-foreground" />
+            </button>
+            <div className="w-16 h-1.5 rounded-full bg-[#FFCC02]" />
+            <button
+              onClick={onClose}
+              className="text-[13px] font-medium text-muted-foreground"
+              data-testid="button-skip-refine"
+            >
+              Skip
             </button>
           </div>
         </div>
 
-        <div className="px-6 py-4 space-y-5">
-          <div>
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Craving</p>
-            <div className="grid grid-cols-2 gap-2">
-              {CRAVING_OPTIONS.map((opt) => (
-                <button
-                  key={opt.key}
-                  onClick={() => onCravingSelect(opt.key)}
-                  className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-colors ${
-                    selectedCraving === opt.key
-                      ? "bg-[#FFCC02]/10 border-[#FFCC02] text-foreground"
-                      : "bg-white border-gray-100 text-muted-foreground hover:border-gray-200"
-                  }`}
-                  data-testid={`craving-${opt.key}`}
-                >
-                  <span className="text-base">{CRAVING_ICONS[opt.icon]}</span>
-                  <span className="text-[12px] font-medium">{opt.label}</span>
-                </button>
-              ))}
+        <div className="flex-1 overflow-y-auto px-6 pb-32">
+          <div className="mb-8">
+            <h2 className="text-[26px] font-extrabold text-foreground leading-tight">
+              What are you in
+              <br />
+              <span className="relative inline-block">
+                the mood for?
+                <span
+                  className="absolute bottom-1 left-0 right-0 h-2.5 bg-[#FFCC02]/30 rounded-full -z-10"
+                  style={{ transform: "skewX(-2deg)" }}
+                />
+              </span>
+            </h2>
+            <p className="text-[14px] text-muted-foreground mt-2">
+              Tell us the vibe you're feeling
+            </p>
+          </div>
+
+          <div className="mb-8">
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
+              {CRAVING_OPTIONS.map((opt) => {
+                const isSelected = selectedCraving === opt.key;
+                return (
+                  <motion.button
+                    key={opt.key}
+                    whileTap={{ scale: 0.93 }}
+                    onClick={() => onCravingSelect(opt.key)}
+                    className="flex flex-col items-center gap-1.5 flex-shrink-0"
+                    data-testid={`craving-${opt.key}`}
+                  >
+                    <div
+                      className={`w-[60px] h-[60px] rounded-2xl flex items-center justify-center text-2xl transition-all ${
+                        isSelected
+                          ? "bg-[#FFCC02] shadow-md"
+                          : "bg-white border border-gray-100"
+                      }`}
+                      style={isSelected ? { boxShadow: "0 4px 16px rgba(255,204,2,0.35)" } : { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                    >
+                      {CRAVING_ICONS[opt.icon]}
+                    </div>
+                    <span className={`text-[11px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
+                      {opt.shortLabel}
+                    </span>
+                  </motion.button>
+                );
+              })}
             </div>
           </div>
 
-          <div>
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Quick Preferences</p>
-            <div className="flex flex-wrap gap-2">
-              {QUICK_PREF_CHIPS.map((pref) => (
-                <button
-                  key={pref}
-                  onClick={() => onPrefToggle(pref)}
-                  className={`px-3 py-1.5 rounded-full text-[11px] font-medium border transition-colors ${
-                    selectedPrefs.includes(pref)
-                      ? "bg-foreground text-white border-foreground"
-                      : "bg-white border-gray-200 text-muted-foreground hover:border-gray-300"
-                  }`}
-                  data-testid={`pref-${pref.toLowerCase().replace(/\s/g, "-")}`}
-                >
-                  {pref}
-                </button>
-              ))}
+          <div className="mb-8">
+            <h3 className="text-[16px] font-bold text-foreground mb-4">Set your distance</h3>
+            <div
+              className="bg-white rounded-2xl p-4 border border-gray-100"
+              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-full bg-[#FFCC02]/15 flex items-center justify-center">
+                  <MapPin className="w-4 h-4 text-[#FFCC02]" />
+                </div>
+                <span className="text-[14px] font-semibold text-foreground">{activeDistOpt.label}</span>
+              </div>
+              <div className="relative">
+                <input
+                  type="range"
+                  min={0}
+                  max={2}
+                  step={1}
+                  value={distIdx >= 0 ? distIdx : 2}
+                  onChange={(e) => onDistanceChange(DISTANCE_SLIDER_OPTIONS[parseInt(e.target.value)].value)}
+                  className="w-full h-2 rounded-full appearance-none cursor-pointer refine-slider"
+                  aria-label="Distance preference"
+                  data-testid="distance-slider"
+                  style={{
+                    background: `linear-gradient(to right, #FFCC02 ${(distIdx >= 0 ? distIdx : 2) * 50}%, #E5E7EB ${(distIdx >= 0 ? distIdx : 2) * 50}%)`,
+                  }}
+                />
+              </div>
             </div>
           </div>
 
-          <div>
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Distance</p>
-            <div className="flex gap-2">
-              {DISTANCE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => onDistanceChange(opt.value)}
-                  className={`flex-1 py-2.5 rounded-xl text-[11px] font-medium border text-center transition-colors ${
-                    distancePref === opt.value
-                      ? "bg-[#FFCC02]/10 border-[#FFCC02] text-foreground"
-                      : "bg-white border-gray-100 text-muted-foreground"
-                  }`}
-                  data-testid={`distance-${opt.value}`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+          <div className="mb-8">
+            <h3 className="text-[16px] font-bold text-foreground mb-4">Anything you want to avoid?</h3>
+            <div className="flex flex-wrap gap-2.5">
+              {AVOID_OPTIONS.map((tag) => {
+                const isAvoided = avoidTags.includes(tag);
+                return (
+                  <motion.button
+                    key={tag}
+                    whileTap={{ scale: 0.93 }}
+                    onClick={() => onAvoidToggle(tag)}
+                    className={`px-4 py-2 rounded-full text-[13px] font-medium border-2 transition-all ${
+                      isAvoided
+                        ? "bg-[#FFCC02]/10 border-[#FFCC02] text-foreground"
+                        : "bg-white border-gray-200 text-muted-foreground"
+                    }`}
+                    style={isAvoided ? {} : { boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+                    data-testid={`avoid-${tag.toLowerCase().replace(/\s/g, "-")}`}
+                  >
+                    {tag}
+                  </motion.button>
+                );
+              })}
             </div>
           </div>
 
-          <div>
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Price</p>
-            <div className="flex gap-2">
-              {PRICE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => onPriceChange(opt.value)}
-                  className={`flex-1 py-2.5 rounded-xl text-[12px] font-medium border text-center transition-colors ${
-                    pricePref === opt.value
-                      ? "bg-[#FFCC02]/10 border-[#FFCC02] text-foreground"
-                      : "bg-white border-gray-100 text-muted-foreground"
-                  }`}
-                  data-testid={`price-${opt.value.replace(/\$/g, "d")}`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+          <div
+            className="rounded-2xl bg-[#FFCC02]/8 border border-[#FFCC02]/20 p-4 flex items-start gap-3"
+            data-testid="refine-preview-card"
+          >
+            <div className="flex-1">
+              <p className="text-[13px] font-semibold text-foreground leading-snug">
+                You'll get 3 curated picks with reasons, confidence & quick actions.
+              </p>
             </div>
-          </div>
-
-          <div>
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Avoid</p>
-            <div className="flex flex-wrap gap-2">
-              {AVOID_OPTIONS.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => onAvoidToggle(tag)}
-                  className={`px-3 py-1.5 rounded-full text-[11px] font-medium border transition-colors ${
-                    avoidTags.includes(tag)
-                      ? "bg-red-50 border-red-200 text-red-600"
-                      : "bg-white border-gray-200 text-muted-foreground hover:border-gray-300"
-                  }`}
-                  data-testid={`avoid-${tag.toLowerCase().replace(/\s/g, "-")}`}
-                >
-                  {avoidTags.includes(tag) && <span className="mr-1">&#10005;</span>}
-                  {tag}
-                </button>
-              ))}
-            </div>
+            <img src={mascotPath} alt="" className="w-14 h-14 object-contain flex-shrink-0" />
           </div>
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t border-gray-100 px-6 py-4 flex gap-3 safe-bottom">
-          <button
-            onClick={onReset}
-            className="h-12 px-5 rounded-xl border border-gray-200 text-sm font-medium text-muted-foreground"
-            data-testid="button-reset-refine"
-          >
-            Reset
-          </button>
+        <div
+          className="fixed bottom-0 left-0 right-0 px-6 pt-3 bg-[#FAF9F6] z-10"
+          style={{ paddingBottom: "max(env(safe-area-inset-bottom, 16px), 80px)" }}
+        >
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             onClick={onUpdate}
-            className="flex-1 h-12 rounded-xl bg-[#FFCC02] font-semibold text-sm text-foreground flex items-center justify-center gap-2"
+            className="w-full h-[52px] rounded-2xl bg-[#FFCC02] font-bold text-[15px] text-foreground flex items-center justify-center gap-2"
+            style={{ boxShadow: "0 4px 16px rgba(255,204,2,0.35)" }}
             data-testid="button-update-picks"
           >
-            Update picks <ArrowRight className="w-4 h-4" />
+            Show my picks <Sparkles className="w-4 h-4" />
           </motion.button>
         </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }
