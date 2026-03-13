@@ -855,7 +855,7 @@ function RefineSheet({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[100]"
+      className="fixed inset-0 z-[200]"
       data-testid="refine-overlay"
       role="dialog"
       aria-modal="true"
@@ -869,32 +869,35 @@ function RefineSheet({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        className="absolute bottom-0 left-0 right-0 bg-[#FAF9F6] rounded-t-3xl max-h-[90vh] flex flex-col"
+        className="absolute bottom-0 left-0 right-0 bg-[#FAF9F6] rounded-t-3xl flex flex-col"
+        style={{ maxHeight: "92dvh" }}
         data-testid="refine-sheet"
       >
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-gray-300" />
+        <div className="flex-shrink-0">
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 rounded-full bg-gray-300" />
+          </div>
+
+          <div className="px-5 pb-3 flex items-center justify-between">
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+              data-testid="button-back-refine"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <h2 className="text-[17px] font-bold text-foreground">Refine your picks</h2>
+            <button
+              onClick={onClose}
+              className="text-[13px] font-medium text-muted-foreground"
+              data-testid="button-skip-refine"
+            >
+              Skip
+            </button>
+          </div>
         </div>
 
-        <div className="px-5 pb-2 flex items-center justify-between">
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
-            data-testid="button-back-refine"
-          >
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
-          <h2 className="text-[17px] font-bold text-foreground">Refine your picks</h2>
-          <button
-            onClick={onClose}
-            className="text-[13px] font-medium text-muted-foreground"
-            data-testid="button-skip-refine"
-          >
-            Skip
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 pb-40">
+        <div className="flex-1 overflow-y-auto min-h-0 px-5 pb-4">
           <div className="mb-6">
             <h3 className="text-[14px] font-semibold text-foreground mb-3">What's the vibe?</h3>
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
@@ -990,9 +993,7 @@ function RefineSheet({
           </div>
         </div>
 
-        <div
-          className="absolute bottom-0 left-0 right-0 px-5 pt-3 pb-5 bg-[#FAF9F6] border-t border-gray-100"
-        >
+        <div className="flex-shrink-0 px-5 pt-3 pb-6 bg-[#FAF9F6] border-t border-gray-100">
           <motion.button
             whileTap={{ scale: 0.96 }}
             onClick={onUpdate}
