@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
   Sparkles, ArrowRight, X, ChevronRight, RotateCcw, Zap,
-  MapPin, Star, Check, ChevronLeft,
+  MapPin, Star, Check,
 } from "lucide-react";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { useLineProfile } from "@/lib/useLineProfile";
@@ -76,11 +76,21 @@ const CRAVING_ICONS: Record<string, string> = {
   cake: "\u{1F370}", clock: "\u23F1\uFE0F", heart: "\u2764\uFE0F", sparkle: "\u2728",
 };
 
-const DISTANCE_SLIDER_OPTIONS = [
-  { value: "close", label: "Nearby", desc: "Under 1 km", icon: "pin" },
-  { value: "medium", label: "A short ride", desc: "Within 2.5 km", icon: "bike" },
-  { value: "flexible", label: "Anywhere", desc: "Distance no limit", icon: "globe" },
-];
+const DISTANCE_KM_TICKS = [0.5, 1, 2, 3, 5, 10];
+const DISTANCE_KM_MIN = 0.5;
+const DISTANCE_KM_MAX = 10;
+const DISTANCE_KM_DEFAULT = 10;
+
+function kmToCategory(km: number): string {
+  if (km <= 1) return "close";
+  if (km <= 3) return "medium";
+  return "flexible";
+}
+
+function kmLabel(km: number): string {
+  if (km >= 10) return "Anywhere";
+  return `${km} km`;
+}
 
 export function ToastDecides() {
   const [, navigate] = useLocation();
@@ -92,7 +102,7 @@ export function ToastDecides() {
   const [loading, setLoading] = useState(true);
 
   const [selectedCraving, setSelectedCraving] = useState<string | null>(null);
-  const [distancePref, setDistancePref] = useState("flexible");
+  const [distanceKm, setDistanceKm] = useState(DISTANCE_KM_DEFAULT);
   const [avoidTags, setAvoidTags] = useState<string[]>([]);
 
   const [decisionStep, setDecisionStep] = useState<DecisionStep>("mood");
@@ -193,11 +203,11 @@ export function ToastDecides() {
       fetchRecs({
         craving: selectedCraving,
         avoidTags,
-        distancePref,
+        distancePref: kmToCategory(distanceKm),
       });
       setUIState("home");
     }, 100);
-  }, [selectedCraving, avoidTags, distancePref, fetchRecs]);
+  }, [selectedCraving, avoidTags, distanceKm, fetchRecs]);
 
   const handleDecisionSubmit = useCallback(async () => {
     setDecisionLoading(true);
@@ -446,8 +456,8 @@ export function ToastDecides() {
           <RefineSheet
             selectedCraving={selectedCraving}
             onCravingSelect={setSelectedCraving}
-            distancePref={distancePref}
-            onDistanceChange={setDistancePref}
+            distanceKm={distanceKm}
+            onDistanceChange={setDistanceKm}
             avoidTags={avoidTags}
             onAvoidToggle={toggleAvoid}
             onUpdate={handleRefineUpdate}
@@ -482,8 +492,8 @@ export function ToastDecides() {
 interface RefineSheetProps {
   selectedCraving: string | null;
   onCravingSelect: (c: string) => void;
-  distancePref: string;
-  onDistanceChange: (d: string) => void;
+  distanceKm: number;
+  onDistanceChange: (km: number) => void;
   avoidTags: string[];
   onAvoidToggle: (t: string) => void;
   onUpdate: () => void;
@@ -492,64 +502,63 @@ interface RefineSheetProps {
 
 function RefineSheet({
   selectedCraving, onCravingSelect,
-  distancePref, onDistanceChange,
+  distanceKm, onDistanceChange,
   avoidTags, onAvoidToggle, onUpdate, onClose,
 }: RefineSheetProps) {
+  const sliderPercent = ((distanceKm - DISTANCE_KM_MIN) / (DISTANCE_KM_MAX - DISTANCE_KM_MIN)) * 100;
+
+  const snapToTick = (raw: number) => {
+    let closest = DISTANCE_KM_TICKS[0];
+    let minDiff = Math.abs(raw - closest);
+    for (const t of DISTANCE_KM_TICKS) {
+      const diff = Math.abs(raw - t);
+      if (diff < minDiff) { closest = t; minDiff = diff; }
+    }
+    return closest;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[100] bg-[#FAF9F6]"
+      className="fixed inset-0 z-[100]"
       data-testid="refine-overlay"
       role="dialog"
       aria-modal="true"
       aria-label="Refine your picks"
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
-      <div className="h-full flex flex-col safe-top" data-testid="refine-sheet">
-        <div className="px-5 pt-4 pb-2">
-          <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={onClose}
-              className="w-9 h-9 rounded-full bg-white border border-gray-100 flex items-center justify-center"
-              style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
-              data-testid="button-close-refine"
-            >
-              <ChevronLeft className="w-5 h-5 text-foreground" />
-            </button>
-            <div className="w-16 h-1.5 rounded-full bg-[#FFCC02]" />
-            <button
-              onClick={onClose}
-              className="text-[13px] font-medium text-muted-foreground"
-              data-testid="button-skip-refine"
-            >
-              Skip
-            </button>
-          </div>
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        className="absolute bottom-0 left-0 right-0 bg-[#FAF9F6] rounded-t-3xl max-h-[85vh] flex flex-col"
+        data-testid="refine-sheet"
+      >
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full bg-gray-300" />
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 pb-32">
-          <div className="mb-8">
-            <h2 className="text-[26px] font-extrabold text-foreground leading-tight">
-              What are you in
-              <br />
-              <span className="relative inline-block">
-                the mood for?
-                <span
-                  className="absolute bottom-1 left-0 right-0 h-2.5 bg-[#FFCC02]/30 rounded-full -z-10"
-                  style={{ transform: "skewX(-2deg)" }}
-                />
-              </span>
-            </h2>
-            <p className="text-[14px] text-muted-foreground mt-2">
-              Tell us the vibe you're feeling
-            </p>
-          </div>
+        <div className="px-5 pb-2 flex items-center justify-between">
+          <h2 className="text-[20px] font-bold text-foreground">Refine your picks</h2>
+          <button
+            onClick={onClose}
+            className="text-[13px] font-medium text-muted-foreground"
+            data-testid="button-skip-refine"
+          >
+            Skip
+          </button>
+        </div>
 
-          <div className="mb-8">
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto px-5 pb-36">
+          <div className="mb-6">
+            <h3 className="text-[14px] font-semibold text-foreground mb-3">What's the vibe?</h3>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
               {CRAVING_OPTIONS.map((opt) => {
                 const isSelected = selectedCraving === opt.key;
                 return (
@@ -561,7 +570,7 @@ function RefineSheet({
                     data-testid={`craving-${opt.key}`}
                   >
                     <div
-                      className={`w-[60px] h-[60px] rounded-2xl flex items-center justify-center text-2xl transition-all ${
+                      className={`w-[56px] h-[56px] rounded-2xl flex items-center justify-center text-xl transition-all ${
                         isSelected
                           ? "bg-[#FFCC02] shadow-md"
                           : "bg-white border border-gray-100"
@@ -570,7 +579,7 @@ function RefineSheet({
                     >
                       {CRAVING_ICONS[opt.icon]}
                     </div>
-                    <span className={`text-[11px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
+                    <span className={`text-[10px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
                       {opt.shortLabel}
                     </span>
                   </motion.button>
@@ -579,64 +588,73 @@ function RefineSheet({
             </div>
           </div>
 
-          <div className="mb-8">
-            <h3 className="text-[16px] font-bold text-foreground mb-4">Set your distance</h3>
-            <div className="space-y-2.5">
-              {DISTANCE_SLIDER_OPTIONS.map((opt) => {
-                const isSelected = distancePref === opt.value;
-                return (
-                  <motion.button
-                    key={opt.value}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => onDistanceChange(opt.value)}
-                    className={`w-full flex items-center gap-3.5 p-3.5 rounded-2xl border-2 text-left transition-all ${
-                      isSelected
-                        ? "bg-[#FFCC02]/10 border-[#FFCC02]"
-                        : "bg-white border-gray-100"
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[14px] font-semibold text-foreground">How far?</h3>
+              <span className="text-[14px] font-bold text-[#FFCC02]" data-testid="distance-value">
+                {kmLabel(distanceKm)}
+              </span>
+            </div>
+            <div
+              className="bg-white rounded-2xl px-5 pt-5 pb-4 border border-gray-100"
+              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+            >
+              <div className="relative mb-1" data-testid="distance-slider-container">
+                <div className="relative h-2 rounded-full bg-gray-100">
+                  <div
+                    className="absolute left-0 top-0 h-full rounded-full bg-[#FFCC02]"
+                    style={{ width: `${sliderPercent}%` }}
+                  />
+                  {DISTANCE_KM_TICKS.map((tick) => {
+                    const pct = ((tick - DISTANCE_KM_MIN) / (DISTANCE_KM_MAX - DISTANCE_KM_MIN)) * 100;
+                    const isActive = tick <= distanceKm;
+                    return (
+                      <button
+                        key={tick}
+                        onClick={() => onDistanceChange(tick)}
+                        className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 transition-all ${
+                          isActive
+                            ? "bg-[#FFCC02] border-[#FFCC02]"
+                            : "bg-white border-gray-300"
+                        }`}
+                        style={{ left: `${pct}%`, transform: "translate(-50%, -50%)" }}
+                        data-testid={`distance-tick-${tick}`}
+                      />
+                    );
+                  })}
+                </div>
+                <input
+                  type="range"
+                  min={DISTANCE_KM_MIN}
+                  max={DISTANCE_KM_MAX}
+                  step={0.1}
+                  value={distanceKm}
+                  onChange={(e) => onDistanceChange(snapToTick(parseFloat(e.target.value)))}
+                  className="absolute inset-0 w-full opacity-0 cursor-pointer"
+                  style={{ height: "32px", top: "-12px" }}
+                  aria-label="Distance preference"
+                  data-testid="distance-slider"
+                />
+              </div>
+              <div className="flex justify-between mt-2 px-0.5">
+                {DISTANCE_KM_TICKS.map((tick) => (
+                  <button
+                    key={tick}
+                    onClick={() => onDistanceChange(tick)}
+                    className={`text-[10px] font-medium transition-colors ${
+                      tick === distanceKm ? "text-foreground font-bold" : "text-muted-foreground"
                     }`}
-                    style={isSelected
-                      ? { boxShadow: "0 2px 12px rgba(255,204,2,0.18)" }
-                      : { boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }
-                    }
-                    data-testid={`distance-${opt.value}`}
-                    aria-label={`${opt.label} - ${opt.desc}`}
                   >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      isSelected ? "bg-[#FFCC02]" : "bg-gray-50"
-                    }`}>
-                      {opt.icon === "pin" && <MapPin className={`w-5 h-5 ${isSelected ? "text-white" : "text-muted-foreground"}`} />}
-                      {opt.icon === "bike" && (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                          className={`w-5 h-5 ${isSelected ? "text-white" : "text-muted-foreground"}`}>
-                          <circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/>
-                          <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"/>
-                        </svg>
-                      )}
-                      {opt.icon === "globe" && (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                          className={`w-5 h-5 ${isSelected ? "text-white" : "text-muted-foreground"}`}>
-                          <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                        </svg>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-[14px] font-semibold ${isSelected ? "text-foreground" : "text-foreground"}`}>{opt.label}</p>
-                      <p className="text-[12px] text-muted-foreground">{opt.desc}</p>
-                    </div>
-                    {isSelected && (
-                      <div className="w-6 h-6 rounded-full bg-[#FFCC02] flex items-center justify-center flex-shrink-0">
-                        <Check className="w-3.5 h-3.5 text-white" />
-                      </div>
-                    )}
-                  </motion.button>
-                );
-              })}
+                    {tick >= 10 ? "Any" : `${tick}km`}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="mb-8">
-            <h3 className="text-[16px] font-bold text-foreground mb-4">Anything you want to avoid?</h3>
-            <div className="flex flex-wrap gap-2.5">
+          <div className="mb-6">
+            <h3 className="text-[14px] font-semibold text-foreground mb-3">Anything to avoid?</h3>
+            <div className="flex flex-wrap gap-2">
               {AVOID_OPTIONS.map((tag) => {
                 const isAvoided = avoidTags.includes(tag);
                 return (
@@ -644,7 +662,7 @@ function RefineSheet({
                     key={tag}
                     whileTap={{ scale: 0.93 }}
                     onClick={() => onAvoidToggle(tag)}
-                    className={`px-4 py-2 rounded-full text-[13px] font-medium border-2 transition-all ${
+                    className={`px-3.5 py-1.5 rounded-full text-[12px] font-medium border-2 transition-all ${
                       isAvoided
                         ? "bg-[#FFCC02]/10 border-[#FFCC02] text-foreground"
                         : "bg-white border-gray-200 text-muted-foreground"
@@ -658,36 +676,24 @@ function RefineSheet({
               })}
             </div>
           </div>
-
-          <div
-            className="rounded-2xl bg-[#FFCC02]/8 border border-[#FFCC02]/20 p-4 flex items-start gap-3"
-            data-testid="refine-preview-card"
-          >
-            <div className="flex-1">
-              <p className="text-[13px] font-semibold text-foreground leading-snug">
-                You'll get 3 curated picks with reasons, confidence & quick actions.
-              </p>
-            </div>
-            <img src={mascotPath} alt="" className="w-14 h-14 object-contain flex-shrink-0" />
-          </div>
         </div>
 
         <div
-          className="fixed bottom-0 left-0 right-0 px-6 pt-3 bg-[#FAF9F6] z-10"
+          className="absolute bottom-0 left-0 right-0 px-5 pt-3 bg-[#FAF9F6] border-t border-gray-100"
           style={{ paddingBottom: "max(env(safe-area-inset-bottom, 16px), 80px)" }}
         >
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             onClick={onUpdate}
-            className="w-full h-[52px] rounded-2xl bg-[#FFCC02] font-bold text-[15px] text-foreground flex items-center justify-center gap-2"
+            className="w-full h-[48px] rounded-2xl bg-[#FFCC02] font-bold text-[15px] text-foreground flex items-center justify-center gap-2"
             style={{ boxShadow: "0 4px 16px rgba(255,204,2,0.35)" }}
             data-testid="button-update-picks"
           >
             Show my picks <Sparkles className="w-4 h-4" />
           </motion.button>
         </div>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
