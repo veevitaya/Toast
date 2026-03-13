@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
-  Sparkles, ArrowRight, X, ChevronRight, RotateCcw, Zap,
+  Sparkles, ArrowRight, X, ChevronRight, ChevronLeft, RotateCcw, Zap,
   MapPin, Star, Check,
 } from "lucide-react";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
@@ -522,15 +522,21 @@ function RefineSheet({
         style={{ boxShadow: "0 -12px 40px rgba(0,0,0,0.12)" }}
         data-testid="refine-sheet"
       >
-        <div className="px-5 pt-3 pb-2 flex-shrink-0">
-          <div className="w-12 h-1.5 rounded-full bg-[#FFCC02] mx-auto mb-3" />
+        <div className="px-5 pt-4 pb-2 flex-shrink-0">
           <div className="flex items-center justify-between mb-3">
-            <div className="w-9" />
-            <span className="text-[13px] font-medium text-muted-foreground" />
+            <button
+              onClick={onClose}
+              className="w-9 h-9 rounded-full bg-white border border-gray-100 flex items-center justify-center"
+              style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
+              data-testid="button-close-refine"
+            >
+              <ChevronLeft className="w-5 h-5 text-foreground" />
+            </button>
+            <div className="w-16 h-1.5 rounded-full bg-[#FFCC02]" />
             <button
               onClick={onClose}
               className="text-[13px] font-medium text-muted-foreground"
-              data-testid="button-close-refine"
+              data-testid="button-skip-refine"
             >
               Skip
             </button>
@@ -656,8 +662,8 @@ function RefineSheet({
         </div>
 
         <div
-          className="absolute bottom-0 left-0 right-0 px-6 pt-3 bg-white rounded-b-none z-10"
-          style={{ paddingBottom: "max(env(safe-area-inset-bottom, 16px), 20px)" }}
+          className="absolute bottom-0 left-0 right-0 px-6 pt-3 bg-white z-10"
+          style={{ paddingBottom: "max(env(safe-area-inset-bottom, 16px), 80px)" }}
         >
           <motion.button
             whileHover={{ scale: 1.02 }}
