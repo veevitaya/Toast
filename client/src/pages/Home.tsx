@@ -17,6 +17,7 @@ import { FoodIconFromEmoji, FoodIcon, emojiToIconName, getAnimClass } from "@/co
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { MODE_TO_VIBE } from "@shared/vibeConfig";
+import { ToastDecides } from "@/components/ToastDecides";
 import toastLogoPath from "@assets/toast_logo_nobg.png";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import toastCharPath from "@assets/IMG_9345_1772899599160.png";
@@ -165,22 +166,6 @@ const BANGKOK_LOCATIONS = [
   { name: "Thonglor", lat: 13.7320, lng: 100.5783 },
 ];
 
-interface PersonalizedRec {
-  id: number;
-  name: string;
-  category: string;
-  rating: string;
-  imageUrl: string;
-  address: string;
-  priceLevel: number;
-  match: number;
-}
-
-const FALLBACK_RECOMMENDATIONS: PersonalizedRec[] = [
-  { id: 5, name: "Pad Thai Plus", category: "Thai", rating: "4.8", imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=300&auto=format&fit=crop&q=60", address: "Central World", priceLevel: 1, match: 72 },
-  { id: 12, name: "Ramen Champ", category: "Japanese", rating: "4.6", imageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=300&auto=format&fit=crop&q=60", address: "Thonglor", priceLevel: 2, match: 65 },
-  { id: 8, name: "Pizza Paradise", category: "Italian", rating: "4.6", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300&auto=format&fit=crop&q=60", address: "Silom", priceLevel: 2, match: 60 },
-];
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -205,42 +190,6 @@ export default function Home() {
   const { data: suggestions = [], isLoading: suggestionsLoading } = useSuggestions();
   const { data: nearbyRestaurants = [], isLoading: nearbyLoading } = useRestaurants("new");
   const { profile: userProfile } = useLineProfile();
-
-  const [personalizedRecs, setPersonalizedRecs] = useState<PersonalizedRec[]>([]);
-  const [recsLoading, setRecsLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchPersonalized() {
-      try {
-        const now = new Date();
-        const res = await fetch("/api/restaurants/personalized", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: userProfile?.userId || null,
-            tasteProfile: tasteProfile,
-            hour: now.getHours(),
-            dayOfWeek: now.getDay(),
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.length > 0) {
-            setPersonalizedRecs(data);
-          } else {
-            setPersonalizedRecs(FALLBACK_RECOMMENDATIONS);
-          }
-        } else {
-          setPersonalizedRecs(FALLBACK_RECOMMENDATIONS);
-        }
-      } catch {
-        setPersonalizedRecs(FALLBACK_RECOMMENDATIONS);
-      } finally {
-        setRecsLoading(false);
-      }
-    }
-    fetchPersonalized();
-  }, [userProfile?.userId, topPreference.key]);
 
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -389,8 +338,6 @@ export default function Home() {
     handleVibeClick(mode);
     vibeClickPending.current = false;
   }, [handleVibeClick]);
-
-  const topMatch = personalizedRecs.length > 0 ? personalizedRecs[0] : FALLBACK_RECOMMENDATIONS[0];
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden" data-testid="home-page">
@@ -841,102 +788,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="px-6 pt-4 pb-2">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#FFCC02]" />
-                <h2 className="text-[11px] font-bold text-foreground uppercase tracking-[0.12em]" data-testid="text-toast-decides">Toast Decides</h2>
-              </div>
-              <button onClick={() => navigate("/toast-picks")} className="text-xs font-medium text-muted-foreground" data-testid="link-why-this">
-                Why this? <span className="text-muted-foreground/40">&#8250;</span>
-              </button>
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, type: "spring", stiffness: 280, damping: 22 }}
-              className="rounded-[20px] p-5 overflow-hidden bg-white border border-gray-100 relative"
-              style={{
-                boxShadow: "0 6px 24px -6px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03)",
-              }}
-              data-testid="card-toast-decides"
-            >
-              <div className="absolute top-0 left-0 right-0 h-1" style={{ background: "linear-gradient(90deg, #FFCC02, hsl(45, 90%, 65%))" }} />
-              <div className="flex items-start justify-between mb-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 rounded-full px-2.5 py-1 flex items-center gap-1.5 border border-emerald-100">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Just for you
-                </span>
-                <motion.button
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => navigate("/toast-picks")}
-                  className="w-8 h-8 rounded-full bg-[#FFCC02] flex items-center justify-center"
-                  data-testid="button-toast-decides-go"
-                >
-                  <ArrowRight className="w-4 h-4 text-foreground" />
-                </motion.button>
-              </div>
-
-              <p className="text-[18px] font-bold text-foreground leading-snug mb-1" data-testid="text-ai-quote">
-                "{getSuggestionTitle}"
-              </p>
-              <p className="text-xs text-muted-foreground mb-4">
-                Based on your recent activity and taste profile
-              </p>
-
-              <div className="flex gap-2.5 overflow-x-auto hide-scrollbar -mx-1 px-1 pb-2">
-                {recsLoading ? (
-                  [0, 1, 2].map((i) => (
-                    <div key={i} className="flex-shrink-0 w-[110px] animate-pulse">
-                      <div className="w-full h-[80px] rounded-xl bg-gray-100 mb-1.5" />
-                      <div className="h-3 bg-gray-100 rounded w-3/4 mb-1" />
-                      <div className="h-2.5 bg-gray-50 rounded w-1/2" />
-                    </div>
-                  ))
-                ) : (
-                  personalizedRecs.map((rec, idx) => (
-                    <motion.button
-                      key={rec.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.45 + idx * 0.08, type: "spring", stiffness: 280, damping: 22 }}
-                      whileHover={{ scale: 1.04, y: -2 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => navigate(`/restaurant/${rec.id}`)}
-                      className="flex-shrink-0 w-[110px] group"
-                      data-testid={`card-ai-rec-${rec.id}`}
-                    >
-                      <div className="relative w-full h-[80px] rounded-xl overflow-hidden mb-1.5 border border-gray-100">
-                        <img src={rec.imageUrl} alt={rec.name} className="w-full h-full object-cover" />
-                        <div className="absolute top-1.5 right-1.5 bg-emerald-500 text-white text-[9px] font-bold rounded-full px-1.5 py-0.5">
-                          {rec.match}%
-                        </div>
-                      </div>
-                      <p className="text-xs font-semibold text-foreground truncate">{rec.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{rec.address} &middot; ★{rec.rating}</p>
-                    </motion.button>
-                  ))
-                )}
-              </div>
-
-              <div className="mt-3 pt-3 border-t border-gray-100">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider">Match Confidence</span>
-                  <span className="text-sm font-bold text-foreground">{topMatch.match}%</span>
-                </div>
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${topMatch.match}%` }}
-                    transition={{ delay: 0.6, duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
-                    className="h-full rounded-full"
-                    style={{ background: "linear-gradient(90deg, #FFCC02, hsl(45, 90%, 60%))" }}
-                  />
-                </div>
-              </div>
-            </motion.div>
-          </div>
+          <ToastDecides />
 
           <div className="px-6 pt-6 pb-2">
             <div className="flex items-center justify-between mb-4">

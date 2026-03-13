@@ -736,7 +736,7 @@ export async function registerRoutes(
 
   app.post("/api/restaurants/personalized", async (req, res) => {
     try {
-      const { userId, tasteProfile, hour, dayOfWeek } = req.body;
+      const { userId, tasteProfile, hour, dayOfWeek, craving, preferences, avoidTags, pricePref, distancePref } = req.body;
       const allRestaurants = await getCached("restaurants:all", 30000, () => storage.getRestaurants());
 
       let userEvents: any[] = [];
@@ -804,9 +804,30 @@ export async function registerRoutes(
         latenight: ["street food", "ramen", "noodles", "thai", "bar"],
       };
 
+      const CRAVING_MAP: Record<string, string[]> = {
+        "warm": ["thai", "ramen", "noodles", "curry", "soup"],
+        "spicy": ["thai", "isaan", "korean", "mexican", "indian"],
+        "fresh": ["salad", "healthy", "poke", "smoothie", "vegan"],
+        "balanced": ["thai", "japanese", "brunch", "western"],
+        "indulgent": ["bbq", "burger", "pizza", "dessert", "fine dining"],
+        "quick": ["street food", "noodles", "fast", "quick"],
+        "familiar": [],
+        "surprise": [],
+      };
+
+      const avoidSet = new Set((avoidTags || []).map((t: string) => t.toLowerCase()));
+      const prefSet = new Set((preferences || []).map((p: string) => p.toLowerCase()));
+
       const scored = allRestaurants.map((r) => {
         let score = 50;
         const rCats = r.category.toLowerCase().split(/[,·•]/).map(c => c.trim());
+        const reasons: string[] = [];
+
+        for (const cat of rCats) {
+          if (avoidSet.has(cat)) {
+            score -= 100;
+          }
+        }
 
         for (const cat of rCats) {
           if (categoryAffinities[cat]) {
@@ -819,16 +840,26 @@ export async function registerRoutes(
           }
         }
 
-        if (swipeRightIds.has(r.id)) score += 15;
-        if (savedIds.has(r.id)) score += 20;
+        let hasAffinityMatch = false;
+        for (const cat of rCats) {
+          if (categoryAffinities[cat] && categoryAffinities[cat] > 2) {
+            hasAffinityMatch = true;
+            break;
+          }
+        }
+
+        if (swipeRightIds.has(r.id)) { score += 15; reasons.push("You liked this before"); }
+        if (savedIds.has(r.id)) { score += 20; reasons.push("In your saved list"); }
         if (swipeLeftIds.has(r.id)) score -= 25;
         if (viewedIds.has(r.id)) score += 5;
 
         const timeBoostCats = TIME_BOOSTS[timeSlot] || [];
+        let hasTimeBoost = false;
         for (const cat of rCats) {
           for (const tb of timeBoostCats) {
             if (cat.includes(tb) || tb.includes(cat)) {
               score += 8;
+              hasTimeBoost = true;
             }
           }
         }
@@ -841,13 +872,83 @@ export async function registerRoutes(
           }
         }
 
+        if (craving) {
+          const cravingKey = craving.toLowerCase();
+          const cravingCats = CRAVING_MAP[cravingKey] || [];
+          if (cravingKey === "surprise") {
+            score += Math.random() * 20;
+            reasons.push("Something different");
+          } else if (cravingKey === "familiar" && hasAffinityMatch) {
+            score += 15;
+            reasons.push("Familiar favorite");
+          } else {
+            for (const cat of rCats) {
+              for (const cc of cravingCats) {
+                if (cat.includes(cc) || cc.includes(cat)) {
+                  score += 12;
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        if (prefSet.has("cheaper") && r.priceLevel <= 1) score += 10;
+        if (prefSet.has("more popular") && (r.trendingScore || 0) > 50) score += 8;
+        if (prefSet.has("new for me")) {
+          if (r.isNew) score += 12;
+          if (!viewedIds.has(r.id) && !swipeRightIds.has(r.id) && !savedIds.has(r.id)) score += 8;
+        }
+        if (prefSet.has("healthier")) {
+          for (const cat of rCats) {
+            if (["healthy", "salad", "vegan", "smoothie"].some(h => cat.includes(h))) {
+              score += 10;
+            }
+          }
+        }
+        if (prefSet.has("more indulgent")) {
+          for (const cat of rCats) {
+            if (["bbq", "burger", "pizza", "dessert", "fine dining"].some(h => cat.includes(h))) {
+              score += 10;
+            }
+          }
+        }
+
+        if (distancePref === "close") {
+          if (r.priceLevel <= 2) score += 5;
+        } else if (distancePref === "medium") {
+          score += 2;
+        }
+
+        if (pricePref && pricePref !== "any") {
+          const priceNum = pricePref === "$" ? 1 : pricePref === "$$" ? 2 : 3;
+          if (r.priceLevel <= priceNum) score += 8;
+          else score -= 10;
+        }
+
         const rating = parseFloat(r.rating) || 4.0;
         score += (rating - 4.0) * 10;
-
         if (r.trendingScore) score += r.trendingScore * 0.1;
-        if (r.isNew) score += 3;
+        if (r.isNew) { score += 3; reasons.push("New near you"); }
+
+        if (hasTimeBoost) {
+          const timeLabels: Record<string, string> = {
+            morning: "Great for morning", lunch: "Perfect for lunch",
+            afternoon: "Afternoon pick", dinner: "Great for dinner", latenight: "Late night pick",
+          };
+          reasons.push(timeLabels[timeSlot] || "Good timing");
+        }
+        if (hasAffinityMatch && reasons.length < 3) reasons.push("Matches your taste");
+        if ((r.trendingScore || 0) > 60 && reasons.length < 3) reasons.push("Trending nearby");
+        if (rating >= 4.7 && reasons.length < 3) reasons.push("Highly rated");
+        if (r.priceLevel <= 1 && reasons.length < 3) reasons.push("Good value");
 
         score = Math.max(0, Math.min(99, Math.round(score)));
+
+        const confidenceText = score >= 85 ? "Strong match based on your preferences and timing" :
+          score >= 70 ? "Good match for this moment" :
+          score >= 55 ? "Worth trying based on what's popular now" :
+          "Something new to explore";
 
         return {
           id: r.id,
@@ -857,7 +958,10 @@ export async function registerRoutes(
           imageUrl: r.imageUrl,
           address: r.address,
           priceLevel: r.priceLevel,
+          district: r.district || null,
           match: score,
+          reasonChips: reasons.slice(0, 2),
+          confidenceText,
         };
       });
 
