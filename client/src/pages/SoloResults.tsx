@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { BottomNav } from "@/components/BottomNav";
-import { Sparkles, Clock, Wallet, TrendingUp, MapPin, Search, UtensilsCrossed, X, Check } from "lucide-react";
+import { Sparkles, Clock, Wallet, TrendingUp, MapPin, Search, UtensilsCrossed, X, Check, ChevronDown, Star, Footprints, Car, Globe } from "lucide-react";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { VIBE_LABELS, VIBE_EMOJI } from "@shared/vibeConfig";
 import type { VibeTag } from "@shared/vibeConfig";
@@ -432,8 +432,19 @@ export default function SoloResults() {
   const [selectedSide, setSelectedSide] = useState<"left" | "right" | null>(null);
   const [replacingSide, setReplacingSide] = useState<"left" | "right" | null>(null);
   const [showDecideForMe, setShowDecideForMe] = useState(false);
-  const [decideStep, setDecideStep] = useState<"analyzing" | "result">("analyzing");
+  const [decideStep, setDecideStep] = useState<"refine" | "thinking" | "result">("refine");
   const [aiRecommendation, setAiRecommendation] = useState<MenuItem | null>(null);
+  const [refineExpanded, setRefineExpanded] = useState(true);
+  const [refineCraving, setRefineCraving] = useState<string | null>(null);
+  const [refineDistance, setRefineDistance] = useState("medium");
+  const [refineAvoid, setRefineAvoid] = useState<string[]>([]);
+  const thinkingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (thinkingTimerRef.current) clearTimeout(thinkingTimerRef.current);
+    };
+  }, []);
 
   const getNextMenu = () => {
     const currentIds = new Set([leftOption.id, rightOption.id]);
@@ -508,6 +519,17 @@ export default function SoloResults() {
     const timeCtx = getTimeContext();
     const dayCtx = getDayContext();
 
+    const cravingTagMap: Record<string, string[]> = {
+      warm: ["Comfort", "Soup", "Curry", "Noodle"],
+      spicy: ["Spicy", "Thai", "Isaan", "Chili"],
+      healthy: ["Healthy", "Salad", "Light"],
+      balanced: ["Thai", "Rice"],
+      sweet: ["Dessert", "Cake", "Sweet", "Pancake"],
+      quick: ["Fast", "Street food", "Grab & go"],
+      fancy: ["Fine dining", "Upscale", "Premium"],
+      surprise: [],
+    };
+
     const scored = filteredMenus.map((item) => {
       let score = Math.random() * 5;
 
@@ -525,6 +547,17 @@ export default function SoloResults() {
       if (item.interests.includes("Popular spots")) score += 3;
       if (item.interests.includes("Comfort food")) score += 2;
 
+      if (refineCraving && refineCraving !== "surprise") {
+        const matchTags = cravingTagMap[refineCraving] || [];
+        const nameAndTags = [item.name, item.type, ...item.tags].join(" ").toLowerCase();
+        if (matchTags.some(t => nameAndTags.includes(t.toLowerCase()))) score += 20;
+      }
+
+      if (refineAvoid.length > 0) {
+        const nameAndTags = [item.name, item.type, ...item.tags].join(" ").toLowerCase();
+        if (refineAvoid.some(a => nameAndTags.includes(a.toLowerCase()))) score -= 50;
+      }
+
       return { item, score };
     });
 
@@ -533,15 +566,29 @@ export default function SoloResults() {
   };
 
   const handleDecideForMe = () => {
+    if (thinkingTimerRef.current) clearTimeout(thinkingTimerRef.current);
     setShowDecideForMe(true);
-    setDecideStep("analyzing");
+    setDecideStep("refine");
+    setRefineExpanded(true);
+    setRefineCraving(null);
+    setRefineDistance("medium");
+    setRefineAvoid([]);
+    setAiRecommendation(null);
+  };
 
+  const handleRefineConfirm = () => {
+    if (thinkingTimerRef.current) clearTimeout(thinkingTimerRef.current);
+    setDecideStep("thinking");
     const recommendation = generateAiRecommendation();
     setAiRecommendation(recommendation);
-
-    setTimeout(() => {
+    thinkingTimerRef.current = setTimeout(() => {
       setDecideStep("result");
-    }, 3400);
+      thinkingTimerRef.current = null;
+    }, 2800);
+  };
+
+  const toggleRefineAvoid = (tag: string) => {
+    setRefineAvoid(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
   };
 
   const handleAcceptRecommendation = () => {
@@ -727,14 +774,14 @@ export default function SoloResults() {
           <span className="text-foreground">Decide for me</span>
         </motion.button>
         <motion.button
-          onClick={() => navigate("/swipe")}
-          data-testid="button-swipe-mode"
+          onClick={() => navigate("/trending")}
+          data-testid="button-trending-mode"
           whileTap={{ scale: 0.95 }}
           className="flex-1 flex flex-col items-center gap-1.5 py-3.5 rounded-2xl bg-white border border-gray-200/80 text-xs font-medium text-muted-foreground"
           style={{ boxShadow: "0 2px 8px -2px rgba(0,0,0,0.04)" }}
         >
-          <UtensilsCrossed className="w-4 h-4" />
-          Swipe
+          <TrendingUp className="w-4 h-4" />
+          Trending
         </motion.button>
       </div>
 
@@ -748,66 +795,192 @@ export default function SoloResults() {
             data-testid="decide-for-me-screen"
           >
             <button
-              onClick={() => { setShowDecideForMe(false); setDecideStep("analyzing"); }}
-              className="absolute top-14 right-5 z-10 w-8 h-8 rounded-full bg-gray-100 dark:bg-muted flex items-center justify-center hover:bg-gray-200 dark:hover:bg-muted/80 transition-colors"
+              onClick={() => { if (thinkingTimerRef.current) { clearTimeout(thinkingTimerRef.current); thinkingTimerRef.current = null; } setShowDecideForMe(false); setDecideStep("refine"); }}
+              className="absolute top-14 right-5 z-10 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
               data-testid="button-close-decide"
             >
               <X className="w-4 h-4 text-muted-foreground" />
             </button>
-            {decideStep === "analyzing" ? (
+
+            {decideStep === "refine" && (
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex-shrink-0 pt-14 px-5 pb-3">
+                  <div
+                    className="flex justify-center cursor-pointer pb-2"
+                    onClick={() => setRefineExpanded(prev => !prev)}
+                    data-testid="solo-refine-toggle"
+                  >
+                    <motion.div animate={{ rotate: refineExpanded ? 0 : 180 }} transition={{ type: "spring", damping: 20, stiffness: 300 }}>
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                    </motion.div>
+                  </div>
+                  <h2 className="text-[19px] font-bold text-foreground text-center">What's your mood?</h2>
+                </div>
+
+                <AnimatePresence initial={false}>
+                  {refineExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ type: "spring", damping: 26, stiffness: 240, mass: 1 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-5 pb-4 overflow-y-auto" style={{ maxHeight: "60vh" }}>
+                        <div className="mb-6">
+                          <h3 className="text-[14px] font-semibold text-foreground mb-3">What's the vibe?</h3>
+                          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                            {[
+                              { key: "warm", label: "Comfort", icon: "\u{1F35C}" },
+                              { key: "spicy", label: "Spicy", icon: "\u{1F525}" },
+                              { key: "healthy", label: "Healthy", icon: "\u{1F33F}" },
+                              { key: "balanced", label: "Balanced", icon: "\u2696\uFE0F" },
+                              { key: "sweet", label: "Sweet", icon: "\u{1F370}" },
+                              { key: "quick", label: "Quick", icon: "\u23F1\uFE0F" },
+                              { key: "fancy", label: "Treat", icon: "\u2764\uFE0F" },
+                              { key: "surprise", label: "Surprise", icon: "\u2728" },
+                            ].map((opt) => {
+                              const isSelected = refineCraving === opt.key;
+                              return (
+                                <motion.button
+                                  key={opt.key}
+                                  whileTap={{ scale: 0.93 }}
+                                  onClick={() => setRefineCraving(isSelected ? null : opt.key)}
+                                  className="flex flex-col items-center gap-1.5 flex-shrink-0"
+                                  data-testid={`solo-craving-${opt.key}`}
+                                >
+                                  <div
+                                    className={`w-[56px] h-[56px] rounded-2xl flex items-center justify-center text-xl transition-all ${isSelected ? "bg-[#FFCC02] shadow-md" : "bg-white border border-gray-100"}`}
+                                    style={isSelected ? { boxShadow: "0 4px 16px rgba(255,204,2,0.35)" } : { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                                  >
+                                    {opt.icon}
+                                  </div>
+                                  <span className={`text-[10px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>{opt.label}</span>
+                                </motion.button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="mb-6">
+                          <h3 className="text-[14px] font-semibold text-foreground mb-3">How far?</h3>
+                          <div className="flex gap-2.5" data-testid="solo-distance-pills">
+                            {([
+                              { key: "close", km: 1, label: "Walking", sub: "Under 1 km", Icon: Footprints },
+                              { key: "medium", km: 3, label: "Short ride", sub: "Under 3 km", Icon: Car },
+                              { key: "flexible", km: 10, label: "Anywhere", sub: "Any distance", Icon: Globe },
+                            ] as const).map((pill) => {
+                              const isSelected = refineDistance === pill.key;
+                              const PillIcon = pill.Icon;
+                              return (
+                                <motion.button
+                                  key={pill.key}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => setRefineDistance(pill.key)}
+                                  className={`flex-1 flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border-2 transition-all ${isSelected ? "bg-[#FFCC02]/10 border-[#FFCC02]" : "bg-white border-gray-100"}`}
+                                  style={isSelected ? { boxShadow: "0 4px 16px rgba(255,204,2,0.2)" } : { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                                  data-testid={`solo-distance-${pill.key}`}
+                                >
+                                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isSelected ? "bg-[#FFCC02]" : "bg-gray-50"}`}>
+                                    <PillIcon className={`w-4 h-4 ${isSelected ? "text-foreground" : "text-muted-foreground"}`} />
+                                  </div>
+                                  <span className={`text-[11px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>{pill.label}</span>
+                                  <span className={`text-[10px] ${isSelected ? "text-foreground/60" : "text-muted-foreground/60"}`}>{pill.sub}</span>
+                                  {isSelected && <Check className="w-3.5 h-3.5 text-[#FFCC02]" />}
+                                </motion.button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="mb-2">
+                          <h3 className="text-[14px] font-semibold text-foreground mb-3">Anything to avoid?</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {["Spicy", "Seafood", "Pork", "Gluten", "Dairy", "Nuts"].map((tag) => {
+                              const isAvoided = refineAvoid.includes(tag);
+                              return (
+                                <motion.button
+                                  key={tag}
+                                  whileTap={{ scale: 0.93 }}
+                                  onClick={() => toggleRefineAvoid(tag)}
+                                  className={`px-3.5 py-1.5 rounded-full text-[12px] font-medium border-2 transition-all ${isAvoided ? "bg-[#FFCC02]/10 border-[#FFCC02] text-foreground" : "bg-white border-gray-200 text-muted-foreground"}`}
+                                  data-testid={`solo-avoid-${tag.toLowerCase()}`}
+                                >
+                                  {tag}
+                                </motion.button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex-shrink-0 px-5 pt-3 pb-6 border-t border-gray-100">
+                        <motion.button
+                          whileTap={{ scale: 0.96 }}
+                          onClick={handleRefineConfirm}
+                          className="w-full h-[48px] rounded-2xl bg-[#FFCC02] font-bold text-[15px] text-foreground flex items-center justify-center gap-2"
+                          style={{ boxShadow: "0 4px 16px rgba(255,204,2,0.35)" }}
+                          data-testid="solo-button-show-picks"
+                        >
+                          Show my picks <Sparkles className="w-4 h-4" />
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
+            {decideStep === "thinking" && (
               <motion.div
                 className="flex-1 flex flex-col items-center justify-center px-8"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
+                <motion.p
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="text-[20px] font-bold text-foreground mb-4"
+                  data-testid="text-analyzing"
+                >
+                  Toast is thinking...
+                </motion.p>
                 <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                  className="w-16 h-16 rounded-full border-[3px] border-gray-100 dark:border-border border-t-[#FFCC02] mb-8"
-                />
-                <motion.img
-                  src={isDrinksMode ? drunkToastPath : mascotPath}
-                  alt={isDrinksMode ? "Drunk toast thinking" : "Toast thinking"}
-                  className={`h-28 w-auto object-contain mb-6 ${isDrinksMode ? "animate-drunk-stumble" : ""}`}
-                  animate={isDrinksMode ? undefined : { y: [0, -8, 0], rotate: [0, 5, -5, 0] }}
-                  transition={isDrinksMode ? undefined : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                />
-                <h2 className="text-xl font-bold text-foreground mb-2" data-testid="text-analyzing">{isDrinksMode ? "Toast is mixing..." : "Toast is thinking..."}</h2>
-                <div className="space-y-3 w-full max-w-xs">
-                  {getPersonalizedThinkingSteps(
-                    { topKey: topPreference.key, topLabel: topPreference.label, score: topPreference.score },
-                    quizAnswers.budget,
-                    quizAnswers.interests,
-                  ).map((step, idx) => (
-                    <motion.div
-                      key={step.label}
-                      initial={{ opacity: 0, x: -15 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: step.delay, duration: 0.4 }}
-                      className="flex items-center gap-3"
-                    >
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: step.delay + 0.2, type: "spring", damping: 12 }}
-                        className="w-8 h-8 rounded-xl bg-gray-50 dark:bg-muted flex items-center justify-center flex-shrink-0"
-                      >
-                        <step.icon className="w-4 h-4 text-muted-foreground" />
-                      </motion.div>
-                      <span className="text-sm text-muted-foreground">{step.label}</span>
-                      <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: step.delay + 0.5 }}
-                        className="ml-auto text-emerald-500"
-                      >
-                        <Check className="w-3 h-3" />
-                      </motion.span>
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
+                  className="relative mb-4"
+                >
+                  <img src={mascotPath} alt="Toast mascot thinking" className="w-[120px] h-[120px] object-contain" />
+                  <motion.div className="absolute -top-1 -right-1" animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}>
+                    <Sparkles className="w-5 h-5 text-[#FFCC02]" />
+                  </motion.div>
+                  <motion.div className="absolute -bottom-1 -left-2" animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.15, 1] }} transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut", delay: 0.3 }}>
+                    <Star className="w-4 h-4 text-[#FFCC02]/60" />
+                  </motion.div>
+                </motion.div>
+                <div className="flex gap-1.5 mb-5">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <motion.div key={i} className="w-2 h-2 rounded-full bg-[#FFCC02]" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.15 }} />
+                  ))}
+                </div>
+                <div className="w-full max-w-xs space-y-3">
+                  {[
+                    { text: "Analyzing your taste profile", delay: 0 },
+                    { text: "Checking what\u2019s popular nearby", delay: 0.6 },
+                    { text: "Finding something you\u2019ll love\u2026", delay: 1.2 },
+                  ].map((step, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: step.delay, duration: 0.4 }} className="flex items-center gap-3">
+                      <motion.div className="w-2 h-2 rounded-full bg-[#FFCC02] flex-shrink-0" animate={{ scale: [1, 1.3, 1] }} transition={{ repeat: Infinity, duration: 1.5, delay: step.delay }} />
+                      <span className="text-[14px] text-foreground/80">{step.text}</span>
                     </motion.div>
                   ))}
                 </div>
               </motion.div>
-            ) : (
+            )}
+
+            {decideStep === "result" && aiRecommendation && (
               <motion.div
                 className="flex-1 flex flex-col items-center pt-16 px-6 pb-32 overflow-y-auto"
                 initial={{ opacity: 0, y: 20 }}
@@ -826,75 +999,34 @@ export default function SoloResults() {
                 <h2 className="text-xl font-bold text-foreground mb-1" data-testid="text-toast-suggests">Toast suggests</h2>
                 <p className="text-sm text-muted-foreground mb-6">Based on your taste, time & trends</p>
 
-                {(() => {
-                  const timeCtx = getTimeContext();
-                  const dayCtx = getDayContext();
-                  return (
-                    <div className="flex flex-wrap gap-2 mb-6 justify-center">
-                      <span className="text-xs bg-gray-100 dark:bg-muted rounded-full px-3 py-1 font-medium text-muted-foreground flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {timeCtx.label}
-                      </span>
-                      {dayCtx.isWeekend && (
-                        <span className="text-xs bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 rounded-full px-3 py-1 font-medium">Weekend vibes</span>
-                      )}
-                      {dayCtx.isPayday && (
-                        <span className="text-xs bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 rounded-full px-3 py-1 font-medium">Treat yourself</span>
-                      )}
-                      {quizAnswers.budget.length > 0 && (
-                        <span className="text-xs bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-full px-3 py-1 font-medium flex items-center gap-1">
-                          <Wallet className="w-3 h-3" />{quizAnswers.budget[0]}
-                        </span>
-                      )}
+                <motion.div
+                  initial={{ y: 30, opacity: 0, scale: 0.95 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", damping: 18, stiffness: 200 }}
+                  className="w-full max-w-sm bg-white rounded-2xl overflow-hidden ring-2 ring-[#FFCC02] mb-6"
+                  style={{ boxShadow: "0 12px 40px -8px rgba(255,204,2,0.25)" }}
+                  data-testid="card-ai-recommendation"
+                >
+                  <div className="w-full aspect-[16/10] overflow-hidden relative">
+                    <img src={aiRecommendation.imageUrl} alt={aiRecommendation.name} className="w-full h-full object-cover" />
+                    <div className="absolute top-3 left-3 bg-[#FFCC02] text-[#2d2000] text-xs font-bold rounded-full px-3 py-1 flex items-center gap-1" style={{ boxShadow: "0 2px 8px rgba(255,204,2,0.4)" }}>
+                      <Sparkles className="w-3 h-3" /> Toast Pick
                     </div>
-                  );
-                })()}
-
-                {aiRecommendation && (
-                  <motion.div
-                    initial={{ y: 30, opacity: 0, scale: 0.95 }}
-                    animate={{ y: 0, opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.2, type: "spring", damping: 18, stiffness: 200 }}
-                    className={`w-full max-w-sm bg-white dark:bg-card rounded-2xl overflow-hidden ring-2 ring-[#FFCC02] mb-6 ${isDrinksMode ? "animate-drunk-sway" : ""}`}
-                    style={{ boxShadow: "0 12px 40px -8px rgba(255,204,2,0.25)" }}
-                    data-testid="card-ai-recommendation"
-                  >
-                    <div className="w-full aspect-[16/10] overflow-hidden relative">
-                      <img src={aiRecommendation.imageUrl} alt={aiRecommendation.name} className="w-full h-full object-cover" />
-                      <div className="absolute top-3 left-3 bg-[#FFCC02] text-[#2d2000] text-xs font-bold rounded-full px-3 py-1 flex items-center gap-1" style={{ boxShadow: "0 2px 8px rgba(255,204,2,0.4)" }}>
-                        <Sparkles className="w-3 h-3" /> Toast Pick
-                      </div>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-xl font-bold text-foreground mb-1" data-testid="text-recommendation-name">{aiRecommendation.name}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">{aiRecommendation.type}</p>
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {aiRecommendation.tags.map((tag) => (
+                        <span key={tag} className="text-xs bg-gray-100 rounded-full px-2.5 py-0.5 font-medium text-muted-foreground">{tag}</span>
+                      ))}
                     </div>
-                    <div className="p-5">
-                      <h3 className="text-xl font-bold text-foreground mb-1" data-testid="text-recommendation-name">{aiRecommendation.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-3">{aiRecommendation.type}</p>
-                      <div className="flex flex-wrap gap-1.5 mb-3">
-                        {aiRecommendation.tags.map((tag) => (
-                          <span key={tag} className="text-xs bg-gray-100 dark:bg-muted rounded-full px-2.5 py-0.5 font-medium text-muted-foreground">{tag}</span>
-                        ))}
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {aiRecommendation.restaurantCount} places nearby</span>
-                        <span className="flex items-center gap-1"><Wallet className="w-3 h-3" /> {aiRecommendation.budget}</span>
-                      </div>
-
-                      <div className="mt-4 pt-3 border-t border-gray-100 dark:border-border">
-                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-2">Why this pick</p>
-                        <p className="text-xs text-muted-foreground leading-relaxed" data-testid="text-recommendation-reason">
-                          {(() => {
-                            const timeCtx = getTimeContext();
-                            const reasons: string[] = [];
-                            reasons.push(`Perfect for ${timeCtx.label.toLowerCase()}`);
-                            if (aiRecommendation.interests.includes("Popular spots")) reasons.push("trending in Bangkok right now");
-                            if (aiRecommendation.interests.includes("Comfort food")) reasons.push("matches your comfort food mood");
-                            if (aiRecommendation.restaurantCount > 8) reasons.push(`${aiRecommendation.restaurantCount} great options nearby`);
-                            if (quizAnswers.budget.length > 0 && quizAnswers.budget.includes(aiRecommendation.budget)) reasons.push("fits your budget perfectly");
-                            return reasons.slice(0, 3).join(" · ");
-                          })()}
-                        </p>
-                      </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {aiRecommendation.restaurantCount} places nearby</span>
+                      <span className="flex items-center gap-1"><Wallet className="w-3 h-3" /> {aiRecommendation.budget}</span>
                     </div>
-                  </motion.div>
-                )}
+                  </div>
+                </motion.div>
 
                 <motion.button
                   onClick={handleAcceptRecommendation}
@@ -906,11 +1038,11 @@ export default function SoloResults() {
                   className="w-full max-w-sm py-4 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-sm mb-3"
                   style={{ boxShadow: "0 6px 20px -4px rgba(255,204,2,0.4)" }}
                 >
-                  Let's go — {aiRecommendation?.name}
+                  Let's go — {aiRecommendation.name}
                 </motion.button>
 
                 <motion.button
-                  onClick={() => { setShowDecideForMe(false); setDecideStep("analyzing"); }}
+                  onClick={() => { setShowDecideForMe(false); setDecideStep("refine"); }}
                   data-testid="button-back-to-choosing"
                   whileTap={{ scale: 0.95 }}
                   initial={{ y: 10, opacity: 0 }}

@@ -336,7 +336,7 @@ export default function SoloQuiz() {
           style={{ boxShadow: "0 8px 25px -5px rgba(255,204,2,0.4)" }}
         >
           <Sparkles className="w-4 h-4" />
-          {totalSelected > 0 ? `Let's go! (${totalSelected} selected)` : "Start Swiping"}
+          {totalSelected > 0 ? `Let's Go! (${totalSelected} selected)` : "Let's Go!"}
         </button>
       </div>
     </div>
