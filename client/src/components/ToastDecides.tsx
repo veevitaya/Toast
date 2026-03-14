@@ -514,6 +514,7 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
     });
     onRefineToggle?.(false);
     setUIState("thinking");
+    const thinkingStart = Date.now();
     debounceRef.current = setTimeout(async () => {
       const pill = DISTANCE_PILLS.find(p => p.key === distancePill);
       const distCat = pill ? kmToCategory(pill.km) : "flexible";
@@ -529,7 +530,9 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
       } else {
         setResultsRecs(FALLBACK_RECOMMENDATIONS);
       }
-      setTimeout(() => setUIState("results"), 2500);
+      const elapsed = Date.now() - thinkingStart;
+      const remaining = Math.max(0, 2800 - elapsed);
+      setTimeout(() => setUIState("results"), remaining);
     }, 100);
   }, [selectedCraving, avoidTags, distancePill, fetchRecs, userProfile?.userId, onRefineToggle]);
 
@@ -617,6 +620,8 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
 
         {showSkeleton ? (
           <HeroSkeleton />
+        ) : uiState === "thinking" ? (
+          <ThinkingScreenInline />
         ) : (
           <div className="p-5">
             <div className="flex items-center justify-between mb-2">
@@ -792,12 +797,6 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
       </AnimatePresence>
 
       <AnimatePresence>
-        {uiState === "thinking" && (
-          <ThinkingScreen />
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
         {uiState === "results" && (
           <ResultsScreen
             recs={resultsRecs}
@@ -836,19 +835,15 @@ const THINKING_STEPS = [
   { text: "Finding something you\u2019ll love\u2026", delay: 1.2 },
 ];
 
-function ThinkingScreen() {
+function ThinkingScreenInline() {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="mt-2 rounded-[20px] overflow-hidden bg-white border border-gray-100 relative"
-      style={{ boxShadow: "0 6px 24px -6px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03)" }}
       data-testid="thinking-screen"
     >
-      <div className="absolute top-0 left-0 right-0 h-1" style={{ background: "linear-gradient(90deg, #FFCC02, hsl(45, 90%, 65%))" }} />
-
       <div className="p-6 flex flex-col items-center text-center">
         <motion.p
           initial={{ opacity: 0, y: 8 }}
