@@ -42,7 +42,7 @@ const FALLBACK_RECOMMENDATIONS: PersonalizedRec[] = [
   { id: 231, name: "Peppina", category: "Pizza", rating: "4.8", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&auto=format&fit=crop&q=60", address: "Sukhumvit 33", priceLevel: 2, match: 75, reasonChips: ["Highly rated"], confidenceText: "Worth trying based on what's popular now", scores: { taste: 65, daypart: 60, popularity: 85, value: 75 } },
 ];
 
-type UIState = "home" | "refine_open" | "results" | "decision_flow";
+type UIState = "home" | "refine_open" | "thinking" | "results" | "decision_flow";
 type DecisionStep = "mood" | "distance" | "avoid" | "results";
 
 const CRAVING_OPTIONS = [
@@ -73,21 +73,11 @@ const DISTANCE_PILLS = [
 ] as const;
 
 function getTimeBasedHeadline(): string {
-  const h = new Date().getHours();
-  if (h < 11) return "Your best breakfast pick right now";
-  if (h < 14) return "Your best lunch option right now";
-  if (h < 17) return "Best pick for this afternoon";
-  if (h < 21) return "Best match for dinner tonight";
-  return "Your late night craving, solved";
+  return "Toast\u2019s picks for today";
 }
 
 function getTimeBasedSub(): string {
-  const h = new Date().getHours();
-  if (h < 11) return "Based on your morning habits and what's trending";
-  if (h < 14) return "Built from your recent choices and what's popular now";
-  if (h < 17) return "Curated from your taste and nearby favourites";
-  if (h < 21) return "Picked from your dinner patterns and top spots";
-  return "Matched to your late-night preferences";
+  return "I think you\u2019ll love this!";
 }
 
 const CRAVING_ICONS: Record<string, string> = {
@@ -522,6 +512,8 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
       userId: userProfile?.userId,
       metadata: { craving: selectedCraving, avoidTags, distancePill },
     });
+    onRefineToggle?.(false);
+    setUIState("thinking");
     debounceRef.current = setTimeout(async () => {
       const pill = DISTANCE_PILLS.find(p => p.key === distancePill);
       const distCat = pill ? kmToCategory(pill.km) : "flexible";
@@ -532,13 +524,12 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
       });
       if (!refineActiveRef.current) return;
       refineActiveRef.current = false;
-      onRefineToggle?.(false);
       if (results !== FALLBACK_RECOMMENDATIONS && results.length > 0) {
         setResultsRecs(results.slice(0, 3));
       } else {
         setResultsRecs(FALLBACK_RECOMMENDATIONS);
       }
-      setUIState("results");
+      setTimeout(() => setUIState("results"), 2500);
     }, 100);
   }, [selectedCraving, avoidTags, distancePill, fetchRecs, userProfile?.userId, onRefineToggle]);
 
@@ -628,29 +619,28 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
           <HeroSkeleton />
         ) : (
           <div className="p-5">
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 rounded-full px-2.5 py-1 flex items-center gap-1.5 border border-emerald-100">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Just for you
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <motion.button
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={openDecisionFlow}
-                  className="text-[10px] font-semibold text-muted-foreground bg-gray-50 border border-gray-100 rounded-full px-2.5 py-1.5 flex items-center gap-1"
-                  data-testid="button-help-decide"
-                >
-                  <Zap className="w-3 h-3" /> Help me decide
-                </motion.button>
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold text-amber-700 bg-amber-50 rounded-full px-2.5 py-1 flex items-center gap-1.5 border border-amber-100" data-testid="badge-streak">
+                {"\uD83D\uDD25"} 5-day streak
+              </span>
+              <motion.button
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={openDecisionFlow}
+                className="text-[10px] font-semibold text-muted-foreground bg-gray-50 border border-gray-100 rounded-full px-2.5 py-1.5 flex items-center gap-1"
+                data-testid="button-help-decide"
+              >
+                <Zap className="w-3 h-3" /> Help me decide
+              </motion.button>
             </div>
 
-            <p className="text-[17px] font-bold text-foreground leading-snug mb-0.5" data-testid="text-hero-headline">
-              {headline}
-            </p>
-            <p className="text-[11px] text-muted-foreground mb-4">{subheadline}</p>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-[20px]">{"\uD83C\uDF5E"}</span>
+              <p className="text-[19px] font-bold text-foreground leading-snug" data-testid="text-hero-headline">
+                {headline}
+              </p>
+            </div>
+            <p className="text-[13px] text-muted-foreground mb-4">{subheadline}</p>
 
             <motion.button
               onClick={() => { trackDecisionEvent("detail_viewed", { userId: userProfile?.userId, restaurantId: primaryRec.id, metadata: { category: primaryRec.category } }); navigate(`/restaurant/${primaryRec.id}`); }}
@@ -802,6 +792,12 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
       </AnimatePresence>
 
       <AnimatePresence>
+        {uiState === "thinking" && (
+          <ThinkingScreen />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {uiState === "results" && (
           <ResultsScreen
             recs={resultsRecs}
@@ -831,6 +827,98 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+const THINKING_STEPS = [
+  { text: "Analyzing your taste profile", delay: 0 },
+  { text: "Checking what\u2019s popular nearby", delay: 0.6 },
+  { text: "Finding something you\u2019ll love\u2026", delay: 1.2 },
+];
+
+function ThinkingScreen() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="mt-2 rounded-[20px] overflow-hidden bg-white border border-gray-100 relative"
+      style={{ boxShadow: "0 6px 24px -6px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03)" }}
+      data-testid="thinking-screen"
+    >
+      <div className="absolute top-0 left-0 right-0 h-1" style={{ background: "linear-gradient(90deg, #FFCC02, hsl(45, 90%, 65%))" }} />
+
+      <div className="p-6 flex flex-col items-center text-center">
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="text-[20px] font-bold text-foreground mb-4"
+          data-testid="text-thinking-title"
+        >
+          Toast is thinking...
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
+          className="relative mb-4"
+        >
+          <img
+            src={mascotPath}
+            alt="Toast mascot thinking"
+            className="w-[120px] h-[120px] object-contain"
+            data-testid="img-thinking-mascot"
+          />
+          <motion.div
+            className="absolute -top-1 -right-1"
+            animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
+            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+          >
+            <Sparkles className="w-5 h-5 text-[#FFCC02]" />
+          </motion.div>
+          <motion.div
+            className="absolute -bottom-1 -left-2"
+            animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.15, 1] }}
+            transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut", delay: 0.3 }}
+          >
+            <Star className="w-4 h-4 text-[#FFCC02]/60" />
+          </motion.div>
+        </motion.div>
+
+        <div className="flex gap-1.5 mb-5">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <motion.div
+              key={i}
+              className="w-2 h-2 rounded-full bg-[#FFCC02]"
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.15 }}
+            />
+          ))}
+        </div>
+
+        <div className="w-full space-y-3">
+          {THINKING_STEPS.map((step, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: step.delay, duration: 0.4 }}
+              className="flex items-center gap-3"
+            >
+              <motion.div
+                className="w-2 h-2 rounded-full bg-[#FFCC02] flex-shrink-0"
+                animate={{ scale: [1, 1.3, 1] }}
+                transition={{ repeat: Infinity, duration: 1.5, delay: step.delay }}
+              />
+              <span className="text-[14px] text-foreground/80 text-left">{step.text}</span>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
