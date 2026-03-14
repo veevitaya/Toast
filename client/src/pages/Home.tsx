@@ -195,6 +195,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showMapCards, setShowMapCards] = useState(false);
   const [moreVibesOpen, setMoreVibesOpen] = useState(false);
+  const [refineOpen, setRefineOpen] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [currentLocationName, setCurrentLocationName] = useState("Current");
   const [actualGpsLocation, setActualGpsLocation] = useState<[number, number]>([DEFAULT_LAT, DEFAULT_LNG]);
@@ -788,7 +789,7 @@ export default function Home() {
             </div>
           </div>
 
-          <ToastDecides />
+          <ToastDecides onRefineToggle={setRefineOpen} />
 
           <div className="px-6 pt-6 pb-2">
             <div className="flex items-center justify-between mb-4">
@@ -1213,7 +1214,7 @@ export default function Home() {
       </AnimatePresence>
 
       <SessionBar />
-      <BottomNav showBack={false} hidden={searchOpen || moreVibesOpen} />
+      <BottomNav showBack={false} hidden={searchOpen || moreVibesOpen || refineOpen} />
     </div>
   );
 }
