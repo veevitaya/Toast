@@ -848,7 +848,7 @@ function ThinkingScreenFullscreen({ onComplete: _ }: { onComplete: () => void })
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-[100] bg-white"
+      className="fixed inset-0 z-[100] bg-[#F5F5F5]"
       data-testid="thinking-screen"
     >
       <div className="h-full flex flex-col items-center justify-center px-8 text-center safe-top safe-bottom">
@@ -1112,7 +1112,7 @@ function ResultsScreen({ recs, onClose, onRefineAgain }: ResultsScreenProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-[#FAF9F6]"
+      className="fixed inset-0 z-[100] bg-[#F5F5F5]"
       data-testid="results-screen"
     >
       <div className="h-full flex flex-col safe-top safe-bottom">
