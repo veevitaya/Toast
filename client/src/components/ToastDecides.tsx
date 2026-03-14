@@ -850,7 +850,7 @@ function ThinkingScreenFullscreen({ onComplete: _ }: { onComplete: () => void })
       data-testid="thinking-screen"
     >
       <div className="h-full flex flex-col items-center justify-center px-8 text-center safe-top safe-bottom">
-        <div className="px-5 pt-4 pb-3 absolute top-0 left-0 right-0">
+        <div className="px-5 pt-14 pb-3 absolute top-0 left-0 right-0">
           <div className="flex items-center justify-center gap-2">
             <img src={mascotPath} alt="" className="w-6 h-6 object-contain" />
             <span className="text-[12px] font-bold text-foreground">Toast Decides</span>
