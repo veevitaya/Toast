@@ -620,7 +620,7 @@ export default function Home() {
       </AnimatePresence>
 
       <motion.div
-        animate={{ bottom: drawerOpen ? "0px" : "0px", height: drawerOpen ? "82%" : "240px" }}
+        animate={{ bottom: drawerOpen || refineOpen ? "0px" : "0px", height: drawerOpen || refineOpen ? "82%" : "240px" }}
         transition={{ type: "spring", damping: 26, stiffness: 240, mass: 1 }}
         className="absolute left-0 right-0 rounded-t-[28px] z-50 flex flex-col gpu-accelerated"
         style={{
@@ -632,13 +632,11 @@ export default function Home() {
       >
         <div
           className="w-full flex-shrink-0"
-          onClick={() => setDrawerOpen(prev => !prev)}
+          onClick={() => { if (!refineOpen) setDrawerOpen(prev => !prev); }}
         >
-          {!refineOpen && (
-            <div className="pt-3 pb-2 flex justify-center cursor-pointer" data-testid="drawer-toggle">
-              <div className="w-10 h-[5px] rounded-full bg-gray-300/60" />
-            </div>
-          )}
+          <div className="pt-3 pb-2 flex justify-center cursor-pointer" data-testid="drawer-toggle">
+            <div className="w-10 h-[5px] rounded-full bg-gray-300/60" />
+          </div>
           <AnimatePresence>
             {!drawerOpen && (
               <motion.div
@@ -691,8 +689,8 @@ export default function Home() {
           </AnimatePresence>
         </div>
 
-        <div className="flex-1 overflow-y-auto hide-scrollbar pb-24 relative" style={{ overscrollBehavior: "contain" }}>
-          <div className="px-6 pt-2 pb-3">
+        <div className={`flex-1 min-h-0 hide-scrollbar relative ${refineOpen ? "flex flex-col overflow-hidden" : "overflow-y-auto pb-24"}`} style={{ overscrollBehavior: "contain" }}>
+          <div className="px-6 pt-2 pb-3" style={refineOpen ? { display: "none" } : undefined}>
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -742,7 +740,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="px-6 pt-2 pb-4">
+          <div className="px-6 pt-2 pb-4" style={refineOpen ? { display: "none" } : undefined}>
             <motion.h2
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -793,7 +791,7 @@ export default function Home() {
 
           <ToastDecides onRefineToggle={setRefineOpen} />
 
-          <div className="px-6 pt-6 pb-2">
+          <div className="px-6 pt-6 pb-2" style={refineOpen ? { display: "none" } : undefined}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[11px] font-bold text-foreground uppercase tracking-[0.12em]" data-testid="text-pick-vibe">Pick a Vibe</h2>
               <span className="text-xs font-medium text-muted-foreground">Opens a world <span className="text-muted-foreground/40">&#8250;</span></span>
@@ -847,50 +845,54 @@ export default function Home() {
             </div>
           </div>
 
-          <RestaurantRow
-            title="Your Usuals"
-            subtitle="Places you keep coming back to"
-            restaurants={suggestions}
-            isLoading={suggestionsLoading}
-            size="default"
-            category="Suggestions"
-          />
+          {!refineOpen && (
+            <>
+              <RestaurantRow
+                title="Your Usuals"
+                subtitle="Places you keep coming back to"
+                restaurants={suggestions}
+                isLoading={suggestionsLoading}
+                size="default"
+                category="Suggestions"
+              />
 
-          <RestaurantRow
-            title="New near you"
-            restaurants={nearbyRestaurants}
-            isLoading={nearbyLoading}
-            size="xl"
-            category="New"
-          />
+              <RestaurantRow
+                title="New near you"
+                restaurants={nearbyRestaurants}
+                isLoading={nearbyLoading}
+                size="xl"
+                category="New"
+              />
 
-          <div className="px-6 pt-5 pb-2">
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="rounded-2xl px-5 py-4 flex items-center gap-4 bg-white border border-gray-100"
-              style={{ boxShadow: "0 2px 12px -3px rgba(0,0,0,0.05)" }}
-              data-testid="card-streak"
-            >
-              <span className="text-3xl flex-shrink-0">🔥</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-[15px] font-bold text-foreground">12-week decision streak!</p>
-                <p className="text-xs text-muted-foreground mt-0.5">You & your crew keep showing up -- keep it going</p>
+              <div className="px-6 pt-5 pb-2">
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="rounded-2xl px-5 py-4 flex items-center gap-4 bg-white border border-gray-100"
+                  style={{ boxShadow: "0 2px 12px -3px rgba(0,0,0,0.05)" }}
+                  data-testid="card-streak"
+                >
+                  <span className="text-3xl flex-shrink-0">{"\uD83D\uDD25"}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-bold text-foreground">12-week decision streak!</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">You & your crew keep showing up -- keep it going</p>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => navigate("/profile")}
+                    className="w-8 h-8 rounded-full bg-[#FFCC02] flex items-center justify-center flex-shrink-0"
+                    data-testid="button-streak-go"
+                  >
+                    <ArrowRight className="w-4 h-4 text-foreground" />
+                  </motion.button>
+                </motion.div>
               </div>
-              <motion.button
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => navigate("/profile")}
-                className="w-8 h-8 rounded-full bg-[#FFCC02] flex items-center justify-center flex-shrink-0"
-                data-testid="button-streak-go"
-              >
-                <ArrowRight className="w-4 h-4 text-foreground" />
-              </motion.button>
-            </motion.div>
-          </div>
 
-          <div className="h-8" />
+              <div className="h-8" />
+            </>
+          )}
         </div>
       </motion.div>
 

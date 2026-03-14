@@ -590,9 +590,11 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
 
   const showSkeleton = bootstrapLoading && recs === FALLBACK_RECOMMENDATIONS && !bootstrap;
 
+  const isRefineOpen = uiState === "refine_open";
+
   return (
-    <div className="px-6 pt-4 pb-2" data-testid="toast-decides-section">
-      <div className="flex items-center justify-between mb-3">
+    <div className={isRefineOpen ? "flex flex-col flex-1 min-h-0" : "px-6 pt-4 pb-2"} data-testid="toast-decides-section">
+      {!isRefineOpen && <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-[#FFCC02]" />
           <h2 className="text-[11px] font-bold text-foreground uppercase tracking-[0.12em]" data-testid="text-toast-decides">
@@ -606,9 +608,9 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
         >
           Why this? <span className="text-muted-foreground/40">&#8250;</span>
         </button>
-      </div>
+      </div>}
 
-      <motion.div
+      {!isRefineOpen && <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15, type: "spring", stiffness: 280, damping: 22 }}
@@ -777,7 +779,7 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
             </motion.button>
           </div>
         )}
-      </motion.div>
+      </motion.div>}
 
       <AnimatePresence>
         {uiState === "refine_open" && (
@@ -953,183 +955,144 @@ function RefineSheet({
   distancePill, onDistancePillChange,
   avoidTags, onAvoidToggle, onUpdate, onClose,
 }: RefineSheetProps) {
-  const [expanded, setExpanded] = useState(true);
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[200]"
-      data-testid="refine-overlay"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 30 }}
+      transition={{ type: "spring", damping: 26, stiffness: 240, mass: 1 }}
+      className="flex flex-col h-full"
+      data-testid="refine-sheet"
       role="dialog"
-      aria-modal="true"
       aria-label="What's your mood?"
-      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-
-      <motion.div
-        initial={{ y: "100%" }}
-        animate={{ y: 0, height: expanded ? "auto" : "auto" }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 26, stiffness: 240, mass: 1 }}
-        className="absolute bottom-0 left-0 right-0 bg-[#F5F5F5] rounded-t-3xl flex flex-col"
-        style={{ maxHeight: expanded ? "92dvh" : "auto" }}
-        data-testid="refine-sheet"
-      >
-        <div className="flex-shrink-0">
-          <div
-            className="pt-3 pb-1 flex justify-center cursor-pointer"
-            onClick={() => setExpanded(prev => !prev)}
-            data-testid="refine-toggle"
+      <div className="flex-shrink-0">
+        <div className="px-5 pb-3 pt-1 flex items-center justify-between">
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-gray-200/60 flex items-center justify-center"
+            data-testid="button-back-refine"
           >
-            <motion.div
-              animate={{ rotate: expanded ? 0 : 180 }}
-              transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            >
-              <ChevronDown className="w-5 h-5 text-gray-400" />
-            </motion.div>
-          </div>
-          <div className="px-5 pb-3 flex items-center justify-between">
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
-              data-testid="button-back-refine"
-            >
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
-            <h2 className="text-[17px] font-bold text-foreground">What's your mood?</h2>
-            <button
-              onClick={onClose}
-              className="text-[13px] font-medium text-muted-foreground"
-              data-testid="button-skip-refine"
-            >
-              Skip
-            </button>
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
+          <h2 className="text-[17px] font-bold text-foreground">What's your mood?</h2>
+          <button
+            onClick={onClose}
+            className="text-[13px] font-medium text-muted-foreground"
+            data-testid="button-skip-refine"
+          >
+            Skip
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-4">
+        <div className="mb-6">
+          <h3 className="text-[14px] font-semibold text-foreground mb-3">What's the vibe?</h3>
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
+            {CRAVING_OPTIONS.map((opt) => {
+              const isSelected = selectedCraving === opt.key;
+              return (
+                <motion.button
+                  key={opt.key}
+                  whileTap={{ scale: 0.93 }}
+                  onClick={() => onCravingSelect(opt.key)}
+                  className="flex flex-col items-center gap-1.5 flex-shrink-0"
+                  data-testid={`craving-${opt.key}`}
+                >
+                  <div
+                    className={`w-[56px] h-[56px] rounded-2xl flex items-center justify-center text-xl transition-all ${
+                      isSelected
+                        ? "bg-[#FFCC02] shadow-md"
+                        : "bg-white border border-gray-100"
+                    }`}
+                    style={isSelected ? { boxShadow: "0 4px 16px rgba(255,204,2,0.35)" } : { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                  >
+                    {CRAVING_ICONS[opt.icon]}
+                  </div>
+                  <span className={`text-[10px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
+                    {opt.shortLabel}
+                  </span>
+                </motion.button>
+              );
+            })}
           </div>
         </div>
 
-        <AnimatePresence initial={false}>
-          {expanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ type: "spring", damping: 26, stiffness: 240, mass: 1 }}
-              className="overflow-hidden"
-            >
-              <div className="px-5 pb-4">
-                <div className="mb-6">
-                  <h3 className="text-[14px] font-semibold text-foreground mb-3">What's the vibe?</h3>
-                  <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
-                    {CRAVING_OPTIONS.map((opt) => {
-                      const isSelected = selectedCraving === opt.key;
-                      return (
-                        <motion.button
-                          key={opt.key}
-                          whileTap={{ scale: 0.93 }}
-                          onClick={() => onCravingSelect(opt.key)}
-                          className="flex flex-col items-center gap-1.5 flex-shrink-0"
-                          data-testid={`craving-${opt.key}`}
-                        >
-                          <div
-                            className={`w-[56px] h-[56px] rounded-2xl flex items-center justify-center text-xl transition-all ${
-                              isSelected
-                                ? "bg-[#FFCC02] shadow-md"
-                                : "bg-white border border-gray-100"
-                            }`}
-                            style={isSelected ? { boxShadow: "0 4px 16px rgba(255,204,2,0.35)" } : { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-                          >
-                            {CRAVING_ICONS[opt.icon]}
-                          </div>
-                          <span className={`text-[10px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
-                            {opt.shortLabel}
-                          </span>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <h3 className="text-[14px] font-semibold text-foreground mb-3">How far?</h3>
-                  <div className="flex gap-2.5" data-testid="distance-pills">
-                    {DISTANCE_PILLS.map((pill) => {
-                      const isSelected = distancePill === pill.key;
-                      const PillIcon = pill.Icon;
-                      return (
-                        <motion.button
-                          key={pill.key}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => onDistancePillChange(pill.key)}
-                          className={`flex-1 flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border-2 transition-all ${
-                            isSelected
-                              ? "bg-[#FFCC02]/10 border-[#FFCC02]"
-                              : "bg-white border-gray-100"
-                          }`}
-                          style={isSelected ? { boxShadow: "0 4px 16px rgba(255,204,2,0.2)" } : { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-                          data-testid={`distance-pill-${pill.key}`}
-                        >
-                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                            isSelected ? "bg-[#FFCC02]" : "bg-gray-50"
-                          }`}>
-                            <PillIcon className={`w-4 h-4 ${isSelected ? "text-foreground" : "text-muted-foreground"}`} />
-                          </div>
-                          <span className={`text-[11px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
-                            {pill.label}
-                          </span>
-                          <span className={`text-[10px] ${isSelected ? "text-foreground/60" : "text-muted-foreground/60"}`}>
-                            {pill.sub}
-                          </span>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-[#FFCC02]" />}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="mb-2">
-                  <h3 className="text-[14px] font-semibold text-foreground mb-3">Anything to avoid?</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {AVOID_OPTIONS.map((tag) => {
-                      const isAvoided = avoidTags.includes(tag);
-                      return (
-                        <motion.button
-                          key={tag}
-                          whileTap={{ scale: 0.93 }}
-                          onClick={() => onAvoidToggle(tag)}
-                          className={`px-3.5 py-1.5 rounded-full text-[12px] font-medium border-2 transition-all ${
-                            isAvoided
-                              ? "bg-[#FFCC02]/10 border-[#FFCC02] text-foreground"
-                              : "bg-white border-gray-200 text-muted-foreground"
-                          }`}
-                          style={isAvoided ? {} : { boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
-                          data-testid={`avoid-${tag.toLowerCase().replace(/\s/g, "-")}`}
-                        >
-                          {tag}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex-shrink-0 px-5 pt-3 pb-6 bg-[#F5F5F5] border-t border-gray-100">
+        <div className="mb-6">
+          <h3 className="text-[14px] font-semibold text-foreground mb-3">How far?</h3>
+          <div className="flex gap-2.5" data-testid="distance-pills">
+            {DISTANCE_PILLS.map((pill) => {
+              const isSelected = distancePill === pill.key;
+              const PillIcon = pill.Icon;
+              return (
                 <motion.button
-                  whileTap={{ scale: 0.96 }}
-                  onClick={onUpdate}
-                  className="w-full h-[48px] rounded-2xl bg-[#FFCC02] font-bold text-[15px] text-foreground flex items-center justify-center gap-2"
-                  style={{ boxShadow: "0 4px 16px rgba(255,204,2,0.35)" }}
-                  data-testid="button-update-picks"
+                  key={pill.key}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => onDistancePillChange(pill.key)}
+                  className={`flex-1 flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border-2 transition-all ${
+                    isSelected
+                      ? "bg-[#FFCC02]/10 border-[#FFCC02]"
+                      : "bg-white border-gray-100"
+                  }`}
+                  style={isSelected ? { boxShadow: "0 4px 16px rgba(255,204,2,0.2)" } : { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                  data-testid={`distance-pill-${pill.key}`}
                 >
-                  Show my picks <Sparkles className="w-4 h-4" />
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                    isSelected ? "bg-[#FFCC02]" : "bg-gray-50"
+                  }`}>
+                    <PillIcon className={`w-4 h-4 ${isSelected ? "text-foreground" : "text-muted-foreground"}`} />
+                  </div>
+                  <span className={`text-[11px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
+                    {pill.label}
+                  </span>
+                  <span className={`text-[10px] ${isSelected ? "text-foreground/60" : "text-muted-foreground/60"}`}>
+                    {pill.sub}
+                  </span>
+                  {isSelected && <Check className="w-3.5 h-3.5 text-[#FFCC02]" />}
                 </motion.button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mb-2">
+          <h3 className="text-[14px] font-semibold text-foreground mb-3">Anything to avoid?</h3>
+          <div className="flex flex-wrap gap-2">
+            {AVOID_OPTIONS.map((tag) => {
+              const isAvoided = avoidTags.includes(tag);
+              return (
+                <motion.button
+                  key={tag}
+                  whileTap={{ scale: 0.93 }}
+                  onClick={() => onAvoidToggle(tag)}
+                  className={`px-3.5 py-1.5 rounded-full text-[12px] font-medium border-2 transition-all ${
+                    isAvoided
+                      ? "bg-[#FFCC02]/10 border-[#FFCC02] text-foreground"
+                      : "bg-white border-gray-200 text-muted-foreground"
+                  }`}
+                  style={isAvoided ? {} : { boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+                  data-testid={`avoid-${tag.toLowerCase().replace(/\s/g, "-")}`}
+                >
+                  {tag}
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-shrink-0 px-5 pt-3 pb-6 border-t border-gray-100">
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={onUpdate}
+          className="w-full h-[48px] rounded-2xl bg-[#FFCC02] font-bold text-[15px] text-foreground flex items-center justify-center gap-2"
+          style={{ boxShadow: "0 4px 16px rgba(255,204,2,0.35)" }}
+          data-testid="button-update-picks"
+        >
+          Show my picks <Sparkles className="w-4 h-4" />
+        </motion.button>
+      </div>
     </motion.div>
   );
 }
