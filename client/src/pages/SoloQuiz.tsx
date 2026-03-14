@@ -4,6 +4,8 @@ import { useLocation } from "wouter";
 import { ArrowLeft, Utensils, MapPin, Sparkles, ChevronDown } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { trackEvent } from "@/lib/analytics";
+import { isOnboardingComplete } from "@/hooks/use-onboarding";
+import { InlineOnboarding } from "@/pages/Onboarding";
 
 const CUISINES = [
   { emoji: "\u{1F35C}", label: "Thai" },
@@ -154,10 +156,11 @@ function ChipGrid({ items, selected, onToggle, testIdPrefix, maxSelect }: {
 export default function SoloQuiz() {
   const [, navigate] = useLocation();
   const [expandedSection, setExpandedSection] = useState<string>("cravings");
+  const [onboarded, setOnboarded] = useState(() => isOnboardingComplete());
 
   useEffect(() => {
-    trackEvent("quiz_start");
-  }, []);
+    if (onboarded) trackEvent("quiz_start");
+  }, [onboarded]);
 
   const [selections, setSelections] = useState<{ cuisines: string[]; diet: string[]; locations: string[]; budget: string; interests: string[] }>({
     cuisines: [],
@@ -203,6 +206,12 @@ export default function SoloQuiz() {
   const cravingsBadge = selections.cuisines.length + selections.diet.length;
   const settingBadge = selections.locations.length + (selections.budget ? 1 : 0);
   const interestsBadge = selections.interests.length;
+
+  if (!onboarded) {
+    return (
+      <InlineOnboarding onComplete={() => setOnboarded(true)} />
+    );
+  }
 
   return (
     <div className="w-full h-[100dvh] bg-[#F8F8F7] flex flex-col overflow-hidden" data-testid="solo-quiz-page">

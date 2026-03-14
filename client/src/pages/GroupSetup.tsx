@@ -7,6 +7,8 @@ import {
   ChevronDown, Sparkles, UserPlus, Check, Share2,
 } from "lucide-react";
 import { useLineProfile } from "@/lib/useLineProfile";
+import { isOnboardingComplete } from "@/hooks/use-onboarding";
+import { InlineOnboarding } from "@/pages/Onboarding";
 
 const LOCATIONS = [
   { id: "bts", icon: "\u{1F687}", label: "Near BTS", sub: "Easy access" },
@@ -137,6 +139,7 @@ function SectionCard({ title, icon: Icon, iconColor, summary, expanded, onToggle
 export default function GroupSetup() {
   const [, navigate] = useLocation();
   const { profile } = useLineProfile();
+  const [onboarded, setOnboarded] = useState(() => isOnboardingComplete());
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<string>("");
   const [selectedGroupType, setSelectedGroupType] = useState<string>("");
@@ -229,6 +232,12 @@ export default function GroupSetup() {
   ].filter(Boolean).join(" \u00B7 ") || "No preferences set";
 
   const groupSummary = selectedGroupType ? GROUP_TYPES.find(g => g.id === selectedGroupType)?.label || "Any group" : "Any group";
+
+  if (!onboarded) {
+    return (
+      <InlineOnboarding onComplete={() => setOnboarded(true)} />
+    );
+  }
 
   return (
     <div className="w-full h-[100dvh] bg-[#F8F8F7] flex flex-col overflow-hidden" data-testid="group-setup-page">

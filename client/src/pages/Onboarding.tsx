@@ -20,20 +20,11 @@ const CUISINE_OPTIONS = [
   { id: "street", emoji: "\u{1F362}", label: "Street Food" },
 ];
 
-export default function Onboarding() {
-  const [, navigate] = useLocation();
+export function InlineOnboarding({ onComplete }: { onComplete: () => void }) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [isExiting, setIsExiting] = useState(false);
-
-  const rawReturnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
-  const returnTo = rawReturnTo.startsWith("/") && !rawReturnTo.startsWith("//") ? rawReturnTo : "/";
-
-  if (isOnboardingComplete()) {
-    navigate(returnTo, { replace: true });
-    return null;
-  }
 
   const toggleCuisine = (id: string) => {
     setSelectedCuisines(prev =>
@@ -49,12 +40,18 @@ export default function Onboarding() {
 
     setIsExiting(true);
     setTimeout(() => {
-      navigate(returnTo);
+      onComplete();
     }, 300);
   };
 
   return (
-    <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col overflow-hidden" data-testid="onboarding-page">
+    <motion.div
+      className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col overflow-hidden absolute inset-0 z-50"
+      initial={{ opacity: 1 }}
+      animate={{ opacity: isExiting ? 0 : 1 }}
+      transition={{ duration: 0.3 }}
+      data-testid="onboarding-page"
+    >
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[10%] left-[5%] w-40 h-40 bg-[#FFCC02]/8 rounded-full blur-3xl" />
         <div className="absolute bottom-[15%] right-[8%] w-48 h-48 bg-[#FFCC02]/6 rounded-full blur-3xl" />
@@ -81,7 +78,7 @@ export default function Onboarding() {
           {step === 0 && (
             <motion.div
               key="step-name"
-              initial={{ opacity: 0, x: isExiting ? -40 : 40 }}
+              initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -40 }}
               transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
@@ -255,6 +252,22 @@ export default function Onboarding() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
+  );
+}
+
+export default function Onboarding() {
+  const [, navigate] = useLocation();
+
+  const rawReturnTo = new URLSearchParams(window.location.search).get("returnTo") || "/";
+  const returnTo = rawReturnTo.startsWith("/") && !rawReturnTo.startsWith("//") ? rawReturnTo : "/";
+
+  if (isOnboardingComplete()) {
+    navigate(returnTo, { replace: true });
+    return null;
+  }
+
+  return (
+    <InlineOnboarding onComplete={() => navigate(returnTo, { replace: true })} />
   );
 }
