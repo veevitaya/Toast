@@ -22,6 +22,8 @@ const RestaurantDetail = lazy(() => import("@/pages/RestaurantDetail"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const ToastPicks = lazy(() => import("@/pages/ToastPicks"));
 const CampaignDetail = lazy(() => import("@/pages/CampaignDetail"));
+const LegalCenter = lazy(() => import("@/pages/LegalCenter"));
+const LegalDocumentViewer = lazy(() => import("@/pages/LegalDocumentViewer"));
 
 const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
 const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout"));
@@ -139,6 +141,12 @@ function Router() {
           </Route>
           <Route path="/profile">
             <AnimatedPage><Profile /></AnimatedPage>
+          </Route>
+          <Route path="/legal">
+            <AnimatedPage><LegalCenter /></AnimatedPage>
+          </Route>
+          <Route path="/legal/:slug">
+            <AnimatedPage><LegalDocumentViewer /></AnimatedPage>
           </Route>
           <Route path="/toast-picks">
             <AnimatedPage><ToastPicks /></AnimatedPage>

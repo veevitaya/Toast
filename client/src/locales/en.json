@@ -285,5 +285,28 @@
     "vietnamese": "Vietnamese",
     "middle_eastern": "Middle Eastern",
     "street_food": "Street Food"
+  },
+  "legal": {
+    "title": "Legal Center",
+    "subtitle": "Policies and terms for Toast",
+    "privacy_policy": "Privacy Policy",
+    "privacy_policy_desc": "How we collect, use, and protect your data",
+    "terms_of_service": "Terms of Service",
+    "terms_of_service_desc": "Rules and conditions for using Toast",
+    "restaurant_partner_terms": "Restaurant Partner Terms",
+    "restaurant_partner_terms_desc": "Terms for restaurant owners and operators",
+    "ai_transparency_policy": "AI Recommendation Transparency",
+    "ai_transparency_policy_desc": "How our AI-powered recommendations work",
+    "platform_liability": "Platform Liability & Food Safety",
+    "platform_liability_desc": "Disclaimers about food safety and restaurant info",
+    "cookie_policy": "Cookie Policy",
+    "cookie_policy_desc": "How we use cookies and similar technologies",
+    "acceptable_use_policy": "Acceptable Use Policy",
+    "acceptable_use_policy_desc": "Guidelines for acceptable behavior on Toast",
+    "effective_date_label": "Effective",
+    "contact_heading": "Contact Us",
+    "consent_label": "I agree to the",
+    "consent_and": "and",
+    "settings_row": "Legal & Privacy"
   }
 }

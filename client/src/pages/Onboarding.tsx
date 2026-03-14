@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { ArrowRight, Check } from "lucide-react";
 import mascotImg from "@assets/toast_mascot_nobg.png";
 import { saveOnboardingProfile, isOnboardingComplete } from "@/hooks/use-onboarding";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 const CUISINE_OPTIONS = [
   { id: "thai", emoji: "\u{1F1F9}\u{1F1ED}", label: "Thai" },
@@ -21,6 +22,7 @@ const CUISINE_OPTIONS = [
 ];
 
 export function InlineOnboarding({ onComplete }: { onComplete: () => void }) {
+  const { t } = useLanguage();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
@@ -247,6 +249,12 @@ export function InlineOnboarding({ onComplete }: { onComplete: () => void }) {
                     : "Skip & start exploring"
                   }
                 </motion.button>
+                <p className="text-center text-[11px] text-muted-foreground/60 mt-3 leading-relaxed">
+                  {t("legal.consent_label")}{" "}
+                  <a href="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline text-muted-foreground hover:text-foreground transition-colors" data-testid="link-consent-privacy">{t("legal.privacy_policy")}</a>
+                  {" "}{t("legal.consent_and")}{" "}
+                  <a href="/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline text-muted-foreground hover:text-foreground transition-colors" data-testid="link-consent-terms">{t("legal.terms_of_service")}</a>
+                </p>
               </div>
             </motion.div>
           )}

@@ -732,6 +732,22 @@ export default function Profile() {
                   <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
 
                   <button
+                    onClick={() => navigate("/legal")}
+                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
+                    data-testid="button-legal-settings"
+                  >
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(45,80%,90%) 0%, hsl(40,70%,82%) 100%)" }}>
+                      {"\u{1F6E1}\u{FE0F}"}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-[15px]">{t("legal.settings_row")}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                  </button>
+
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
+                  <button
                     onClick={() => {
                       if (window.confirm(t("profile.clear_data_confirm"))) {
                         localStorage.removeItem(PROFILE_STORAGE_KEY);
