@@ -389,10 +389,10 @@ export default function WaitingRoom() {
           className="mb-5"
         >
           <div
-            className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center"
+            className="w-28 h-28 rounded-full bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center"
             style={{ boxShadow: "0 8px 30px -6px rgba(234,179,8,0.15)" }}
           >
-            <img src={mascotImg} alt="Toast mascot" className="h-12 w-12 object-contain" draggable={false} />
+            <img src={mascotImg} alt="Toast mascot" className="h-20 w-20 object-contain" draggable={false} />
           </div>
         </motion.div>
 
@@ -510,10 +510,10 @@ export default function WaitingRoom() {
         className="mb-5"
       >
         <div
-          className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center"
+          className="w-28 h-28 rounded-full bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center"
           style={{ boxShadow: "0 8px 30px -6px rgba(234,179,8,0.15)" }}
         >
-          <img src={mascotImg} alt="Toast mascot" className="h-12 w-12 object-contain animate-soft-bob gpu-accelerated" draggable={false} />
+          <img src={mascotImg} alt="Toast mascot" className="h-20 w-20 object-contain animate-soft-bob gpu-accelerated" draggable={false} />
         </div>
       </motion.div>
 
