@@ -889,7 +889,7 @@ export default function Profile() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end justify-center"
+            className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm flex items-end justify-center"
             onClick={() => setShowPartnerModal(false)}
           >
             <motion.div
@@ -980,7 +980,7 @@ export default function Profile() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center"
+            className="fixed inset-0 z-[200] bg-black/40 flex items-end justify-center"
             onClick={(e) => { if (e.target === e.currentTarget) setShowOnboarding(false); }}
           >
             <motion.div
