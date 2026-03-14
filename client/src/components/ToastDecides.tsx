@@ -855,139 +855,156 @@ function RefineSheet({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-[200] bg-[#FAF9F6] flex flex-col"
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-[200]"
       data-testid="refine-overlay"
       role="dialog"
       aria-modal="true"
       aria-label="Refine your picks"
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
-      <div className="flex-shrink-0 px-5 pt-4 pb-3 flex items-center justify-between border-b border-gray-100">
-        <button
-          onClick={onClose}
-          className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
-          data-testid="button-back-refine"
-        >
-          <X className="w-4 h-4 text-muted-foreground" />
-        </button>
-        <h2 className="text-[17px] font-bold text-foreground">Refine your picks</h2>
-        <button
-          onClick={onClose}
-          className="text-[13px] font-medium text-muted-foreground"
-          data-testid="button-skip-refine"
-        >
-          Skip
-        </button>
-      </div>
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-      <div className="flex-1 overflow-y-auto min-h-0 px-5 pt-5 pb-4">
-        <div className="mb-6">
-          <h3 className="text-[14px] font-semibold text-foreground mb-3">What's the vibe?</h3>
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
-            {CRAVING_OPTIONS.map((opt) => {
-              const isSelected = selectedCraving === opt.key;
-              return (
-                <motion.button
-                  key={opt.key}
-                  whileTap={{ scale: 0.93 }}
-                  onClick={() => onCravingSelect(opt.key)}
-                  className="flex flex-col items-center gap-1.5 flex-shrink-0"
-                  data-testid={`craving-${opt.key}`}
-                >
-                  <div
-                    className={`w-[56px] h-[56px] rounded-2xl flex items-center justify-center text-xl transition-all ${
-                      isSelected
-                        ? "bg-[#FFCC02] shadow-md"
-                        : "bg-white border border-gray-100"
-                    }`}
-                    style={isSelected ? { boxShadow: "0 4px 16px rgba(255,204,2,0.35)" } : { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        className="absolute bottom-0 left-0 right-0 bg-[#FAF9F6] rounded-t-3xl flex flex-col"
+        style={{ maxHeight: "92dvh" }}
+        data-testid="refine-sheet"
+      >
+        <div className="flex-shrink-0">
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 rounded-full bg-gray-300" />
+          </div>
+          <div className="px-5 pb-3 flex items-center justify-between">
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+              data-testid="button-back-refine"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <h2 className="text-[17px] font-bold text-foreground">Refine your picks</h2>
+            <button
+              onClick={onClose}
+              className="text-[13px] font-medium text-muted-foreground"
+              data-testid="button-skip-refine"
+            >
+              Skip
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto min-h-0 px-5 pb-4">
+          <div className="mb-6">
+            <h3 className="text-[14px] font-semibold text-foreground mb-3">What's the vibe?</h3>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
+              {CRAVING_OPTIONS.map((opt) => {
+                const isSelected = selectedCraving === opt.key;
+                return (
+                  <motion.button
+                    key={opt.key}
+                    whileTap={{ scale: 0.93 }}
+                    onClick={() => onCravingSelect(opt.key)}
+                    className="flex flex-col items-center gap-1.5 flex-shrink-0"
+                    data-testid={`craving-${opt.key}`}
                   >
-                    {CRAVING_ICONS[opt.icon]}
-                  </div>
-                  <span className={`text-[10px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
-                    {opt.shortLabel}
-                  </span>
-                </motion.button>
-              );
-            })}
+                    <div
+                      className={`w-[56px] h-[56px] rounded-2xl flex items-center justify-center text-xl transition-all ${
+                        isSelected
+                          ? "bg-[#FFCC02] shadow-md"
+                          : "bg-white border border-gray-100"
+                      }`}
+                      style={isSelected ? { boxShadow: "0 4px 16px rgba(255,204,2,0.35)" } : { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                    >
+                      {CRAVING_ICONS[opt.icon]}
+                    </div>
+                    <span className={`text-[10px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
+                      {opt.shortLabel}
+                    </span>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <h3 className="text-[14px] font-semibold text-foreground mb-3">How far?</h3>
+            <div className="flex gap-2.5" data-testid="distance-pills">
+              {DISTANCE_PILLS.map((pill) => {
+                const isSelected = distancePill === pill.key;
+                const PillIcon = pill.Icon;
+                return (
+                  <motion.button
+                    key={pill.key}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => onDistancePillChange(pill.key)}
+                    className={`flex-1 flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border-2 transition-all ${
+                      isSelected
+                        ? "bg-[#FFCC02]/10 border-[#FFCC02]"
+                        : "bg-white border-gray-100"
+                    }`}
+                    style={isSelected ? { boxShadow: "0 4px 16px rgba(255,204,2,0.2)" } : { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+                    data-testid={`distance-pill-${pill.key}`}
+                  >
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                      isSelected ? "bg-[#FFCC02]" : "bg-gray-50"
+                    }`}>
+                      <PillIcon className={`w-4 h-4 ${isSelected ? "text-foreground" : "text-muted-foreground"}`} />
+                    </div>
+                    <span className={`text-[11px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
+                      {pill.label}
+                    </span>
+                    <span className={`text-[10px] ${isSelected ? "text-foreground/60" : "text-muted-foreground/60"}`}>
+                      {pill.sub}
+                    </span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-[#FFCC02]" />}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mb-2">
+            <h3 className="text-[14px] font-semibold text-foreground mb-3">Anything to avoid?</h3>
+            <div className="flex flex-wrap gap-2">
+              {AVOID_OPTIONS.map((tag) => {
+                const isAvoided = avoidTags.includes(tag);
+                return (
+                  <motion.button
+                    key={tag}
+                    whileTap={{ scale: 0.93 }}
+                    onClick={() => onAvoidToggle(tag)}
+                    className={`px-3.5 py-1.5 rounded-full text-[12px] font-medium border-2 transition-all ${
+                      isAvoided
+                        ? "bg-[#FFCC02]/10 border-[#FFCC02] text-foreground"
+                        : "bg-white border-gray-200 text-muted-foreground"
+                    }`}
+                    style={isAvoided ? {} : { boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+                    data-testid={`avoid-${tag.toLowerCase().replace(/\s/g, "-")}`}
+                  >
+                    {tag}
+                  </motion.button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        <div className="mb-6">
-          <h3 className="text-[14px] font-semibold text-foreground mb-3">How far?</h3>
-          <div className="flex gap-2.5" data-testid="distance-pills">
-            {DISTANCE_PILLS.map((pill) => {
-              const isSelected = distancePill === pill.key;
-              const PillIcon = pill.Icon;
-              return (
-                <motion.button
-                  key={pill.key}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => onDistancePillChange(pill.key)}
-                  className={`flex-1 flex flex-col items-center gap-1.5 py-3.5 px-2 rounded-2xl border-2 transition-all ${
-                    isSelected
-                      ? "bg-[#FFCC02]/10 border-[#FFCC02]"
-                      : "bg-white border-gray-100"
-                  }`}
-                  style={isSelected ? { boxShadow: "0 4px 16px rgba(255,204,2,0.2)" } : { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-                  data-testid={`distance-pill-${pill.key}`}
-                >
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                    isSelected ? "bg-[#FFCC02]" : "bg-gray-50"
-                  }`}>
-                    <PillIcon className={`w-4 h-4 ${isSelected ? "text-foreground" : "text-muted-foreground"}`} />
-                  </div>
-                  <span className={`text-[12px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
-                    {pill.label}
-                  </span>
-                  <span className={`text-[10px] ${isSelected ? "text-foreground/60" : "text-muted-foreground/60"}`}>
-                    {pill.sub}
-                  </span>
-                  {isSelected && <Check className="w-3.5 h-3.5 text-[#FFCC02]" />}
-                </motion.button>
-              );
-            })}
-          </div>
+        <div className="flex-shrink-0 px-5 pt-3 pb-6 bg-[#FAF9F6] border-t border-gray-100">
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={onUpdate}
+            className="w-full h-[48px] rounded-2xl bg-[#FFCC02] font-bold text-[15px] text-foreground flex items-center justify-center gap-2"
+            style={{ boxShadow: "0 4px 16px rgba(255,204,2,0.35)" }}
+            data-testid="button-update-picks"
+          >
+            Show my picks <Sparkles className="w-4 h-4" />
+          </motion.button>
         </div>
-
-        <div className="mb-6">
-          <h3 className="text-[14px] font-semibold text-foreground mb-3">Anything to avoid?</h3>
-          <div className="flex flex-wrap gap-2">
-            {AVOID_OPTIONS.map((tag) => {
-              const isAvoided = avoidTags.includes(tag);
-              return (
-                <motion.button
-                  key={tag}
-                  whileTap={{ scale: 0.93 }}
-                  onClick={() => onAvoidToggle(tag)}
-                  className={`px-3.5 py-1.5 rounded-full text-[12px] font-medium border-2 transition-all ${
-                    isAvoided
-                      ? "bg-[#FFCC02]/10 border-[#FFCC02] text-foreground"
-                      : "bg-white border-gray-200 text-muted-foreground"
-                  }`}
-                  style={isAvoided ? {} : { boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
-                  data-testid={`avoid-${tag.toLowerCase().replace(/\s/g, "-")}`}
-                >
-                  {tag}
-                </motion.button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-shrink-0 px-5 pt-3 pb-6 bg-[#FAF9F6] border-t border-gray-100">
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          onClick={onUpdate}
-          className="w-full h-[48px] rounded-2xl bg-[#FFCC02] font-bold text-[15px] text-foreground flex items-center justify-center gap-2"
-          style={{ boxShadow: "0 4px 16px rgba(255,204,2,0.35)" }}
-          data-testid="button-update-picks"
-        >
-          Show my picks <Sparkles className="w-4 h-4" />
-        </motion.button>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
