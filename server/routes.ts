@@ -2736,7 +2736,13 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Session not found" });
       }
       const members = await storage.getGroupMembers(code);
-      res.json({ session, members });
+      const hostMember = members.find(m => m.lineUserId === session.hostLineUserId);
+      const enrichedSession = {
+        ...session,
+        hostDisplayName: hostMember?.displayName || "Host",
+        hostPictureUrl: hostMember?.pictureUrl || null,
+      };
+      res.json({ session: enrichedSession, members });
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
     }

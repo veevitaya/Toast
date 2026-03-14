@@ -141,7 +141,11 @@ export default function GroupSetup() {
   const [selectedBudget, setSelectedBudget] = useState<string>("");
   const [selectedGroupType, setSelectedGroupType] = useState<string>("");
   const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  });
   const now = new Date();
   const defaultTime = roundToNearest15(now);
   const [selectedHour, setSelectedHour] = useState<number>(defaultTime.hour);

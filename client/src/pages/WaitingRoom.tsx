@@ -22,6 +22,7 @@ interface SessionData {
   status: string;
   sessionType: string | null;
   sourceData: string | null;
+  hostDisplayName?: string;
 }
 
 function getHostProfile(): { userId: string; displayName: string; pictureUrl?: string } | null {
@@ -44,14 +45,26 @@ export default function WaitingRoom() {
 
   const hostProfile = hostOfSession ? getHostProfile() : null;
   const [localGuestProfile, setLocalGuestProfile] = useState<{ userId: string; displayName: string; pictureUrl?: string } | null>(() => {
-    if (!sessionId) return null;
+    if (!sessionId || hostOfSession) return null;
     try {
       const sessionRaw = localStorage.getItem(`toast_guest_${sessionId}`);
-      if (sessionRaw) return JSON.parse(sessionRaw);
+      if (sessionRaw) {
+        const parsed = JSON.parse(sessionRaw);
+        const hostRaw = sessionStorage.getItem("toast_group_host_profile");
+        if (hostRaw) {
+          try {
+            const hostData = JSON.parse(hostRaw);
+            if (hostData.userId === parsed.userId) return null;
+          } catch {}
+        }
+        return parsed;
+      }
     } catch {}
     return null;
   });
-  const profile = localGuestProfile || lineProfile || (hostOfSession ? (hostProfile || { userId: `host_${sessionId}`, displayName: "Host" }) : null);
+  const profile = hostOfSession
+    ? (lineProfile || hostProfile || { userId: `host_${sessionId}`, displayName: "Host" })
+    : (localGuestProfile || lineProfile || null);
   const authRequired = lineAuthRequired && !localGuestProfile;
 
   const [members, setMembers] = useState<SessionMember[]>([]);
@@ -198,8 +211,19 @@ export default function WaitingRoom() {
     const pendingInvite = sessionStorage.getItem("toast_group_pending_invite");
     if (pendingInvite === sessionId) {
       sessionStorage.removeItem("toast_group_pending_invite");
-      setTimeout(() => {
-        setShowShareModal(true);
+      setTimeout(async () => {
+        try {
+          const result = await sendGroupInvite(sessionId);
+          if (result.method === "clipboard" || !result.shared) {
+            if (result.method === "clipboard") {
+              setLinkCopied(true);
+              setTimeout(() => setLinkCopied(false), 3000);
+            }
+            setShowShareModal(true);
+          }
+        } catch {
+          setShowShareModal(true);
+        }
       }, 400);
     }
   }, [sessionCreated, sessionId]);
@@ -559,41 +583,54 @@ export default function WaitingRoom() {
       </motion.div>
 
       <div className="flex flex-wrap justify-center gap-6 mb-8 max-w-sm">
-        {members.map((m, idx) => (
-          <motion.div
-            key={m.lineUserId}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.3 + idx * 0.08, type: "spring", damping: 18, stiffness: 200 }}
-            className="flex flex-col items-center gap-2"
-            data-testid={`member-${m.lineUserId}`}
-          >
-            <div className="relative">
-              <div
-                className="w-[72px] h-[72px] rounded-full overflow-hidden border-[3px] border-[hsl(160,60%,45%)] transition-all duration-500"
-                style={{ boxShadow: "0 6px 20px -4px rgba(0,200,100,0.15)" }}
-              >
-                {m.pictureUrl ? (
-                  <img src={m.pictureUrl} alt={m.displayName} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
-                    <span className="text-xl font-bold text-amber-600">{m.displayName.charAt(0)}</span>
-                  </div>
-                )}
+        {members.map((m, idx) => {
+          const isMe = m.lineUserId === profile?.userId;
+          const isMemberHost = sessionInfo ? m.lineUserId === sessionInfo.hostLineUserId : idx === 0;
+          const displayLabel = isMe ? "You" : m.displayName;
+          return (
+            <motion.div
+              key={m.lineUserId}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3 + idx * 0.08, type: "spring", damping: 18, stiffness: 200 }}
+              className="flex flex-col items-center gap-2"
+              data-testid={`member-${m.lineUserId}`}
+            >
+              <div className="relative">
+                <div
+                  className={`w-[72px] h-[72px] rounded-full overflow-hidden border-[3px] transition-all duration-500 ${
+                    isMemberHost ? "border-[#FFCC02]" : "border-[hsl(160,60%,45%)]"
+                  }`}
+                  style={{ boxShadow: isMemberHost ? "0 6px 20px -4px rgba(255,204,2,0.25)" : "0 6px 20px -4px rgba(0,200,100,0.15)" }}
+                >
+                  {m.pictureUrl ? (
+                    <img src={m.pictureUrl} alt={m.displayName} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                      <span className="text-xl font-bold text-amber-600">{m.displayName.charAt(0)}</span>
+                    </div>
+                  )}
+                </div>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", damping: 12, stiffness: 300, delay: 0.15 }}
+                  className={`absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white ${
+                    isMemberHost ? "bg-[#FFCC02]" : "bg-[hsl(160,60%,45%)]"
+                  }`}
+                >
+                  <span className={`text-[10px] font-bold ${isMemberHost ? "text-[#2d2000]" : "text-white"}`}>
+                    {isMemberHost ? "\u2605" : "\u2713"}
+                  </span>
+                </motion.div>
               </div>
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", damping: 12, stiffness: 300, delay: 0.15 }}
-                className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full bg-[hsl(160,60%,45%)] flex items-center justify-center border-2 border-white"
-              >
-                <span className="text-white text-[10px] font-bold">✓</span>
-              </motion.div>
-            </div>
-            <span className="text-sm font-bold">{m.lineUserId === profile?.userId ? "You" : m.displayName}</span>
-            <span className="text-[11px] font-semibold text-[hsl(160,60%,45%)]">Ready</span>
-          </motion.div>
-        ))}
+              <span className="text-sm font-bold" data-testid={`text-member-name-${m.lineUserId}`}>{displayLabel}</span>
+              <span className={`text-[11px] font-semibold ${isMemberHost ? "text-[#FFCC02]" : "text-[hsl(160,60%,45%)]"}`}>
+                {isMemberHost ? "Host" : "Ready"}
+              </span>
+            </motion.div>
+          );
+        })}
 
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
