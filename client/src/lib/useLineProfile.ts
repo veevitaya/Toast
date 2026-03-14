@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { initLiff, initLiffOA, getProfile, isLoggedIn, isLiffAvailable, isLineOAAvailable, login, isInLiff, syncProfileToServer, getLineOALiffId, type LineProfile } from "./liff";
+import { getSavedDisplayName } from "@/hooks/use-onboarding";
 
 const GUEST_KEY = "toast_guest_profile";
 
@@ -13,10 +14,19 @@ const GUEST_NAMES = [
 function getGuestProfile(): LineProfile {
   const stored = localStorage.getItem(GUEST_KEY);
   if (stored) {
-    try { return JSON.parse(stored); } catch {}
+    try {
+      const parsed = JSON.parse(stored);
+      const savedName = getSavedDisplayName();
+      if (savedName && parsed.displayName !== savedName) {
+        parsed.displayName = savedName;
+        localStorage.setItem(GUEST_KEY, JSON.stringify(parsed));
+      }
+      return parsed;
+    } catch {}
   }
   const guestId = "guest_" + Math.random().toString(36).substring(2, 10);
-  const guestName = GUEST_NAMES[Math.floor(Math.random() * GUEST_NAMES.length)];
+  const savedName = getSavedDisplayName();
+  const guestName = savedName || GUEST_NAMES[Math.floor(Math.random() * GUEST_NAMES.length)];
   const profile: LineProfile = {
     userId: guestId,
     displayName: guestName,

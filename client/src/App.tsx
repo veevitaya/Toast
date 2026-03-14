@@ -9,6 +9,7 @@ import { lazy, Suspense } from "react";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 
+const Onboarding = lazy(() => import("@/pages/Onboarding"));
 const SoloQuiz = lazy(() => import("@/pages/SoloQuiz"));
 const SoloResults = lazy(() => import("@/pages/SoloResults"));
 const RestaurantList = lazy(() => import("@/pages/RestaurantList"));
@@ -102,6 +103,9 @@ function Router() {
         <Switch location={location} key={location}>
           <Route path="/">
             <AnimatedPage><Home /></AnimatedPage>
+          </Route>
+          <Route path="/onboarding">
+            <AnimatedPage><Onboarding /></AnimatedPage>
           </Route>
           <Route path="/solo/quiz">
             <AnimatedPage><SoloQuiz /></AnimatedPage>

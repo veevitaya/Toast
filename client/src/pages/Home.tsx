@@ -18,6 +18,7 @@ import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { MODE_TO_VIBE } from "@shared/vibeConfig";
 import { ToastDecides } from "@/components/ToastDecides";
+import { isOnboardingComplete } from "@/hooks/use-onboarding";
 import toastLogoPath from "@assets/toast_logo_nobg.png";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import toastCharPath from "@assets/IMG_9345_1772899599160.png";
@@ -190,6 +191,14 @@ export default function Home() {
   const { data: suggestions = [], isLoading: suggestionsLoading } = useSuggestions();
   const { data: nearbyRestaurants = [], isLoading: nearbyLoading } = useRestaurants("new");
   const { profile: userProfile } = useLineProfile();
+
+  const navigateWithOnboarding = useCallback((target: string) => {
+    if (isOnboardingComplete()) {
+      navigate(target);
+    } else {
+      navigate(`/onboarding?returnTo=${encodeURIComponent(target)}`);
+    }
+  }, [navigate]);
 
   const [drawerOpen, setDrawerOpen] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -665,7 +674,7 @@ export default function Home() {
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
                     <button
-                      onClick={(e) => { e.stopPropagation(); navigate("/solo/quiz"); }}
+                      onClick={(e) => { e.stopPropagation(); navigateWithOnboarding("/solo/quiz"); }}
                       className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 h-[72px] border border-gray-100 shadow-md"
                       data-testid="button-solo-collapsed"
                     >
@@ -676,7 +685,7 @@ export default function Home() {
                       </div>
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); navigate("/group/setup"); }}
+                      onClick={(e) => { e.stopPropagation(); navigateWithOnboarding("/group/setup"); }}
                       className="flex items-center justify-center rounded-2xl bg-white h-[72px] border border-gray-100 shadow-md overflow-hidden"
                       data-testid="button-group-collapsed"
                     >
@@ -763,7 +772,7 @@ export default function Home() {
                 transition={{ delay: 0.32, type: "spring", stiffness: 300, damping: 22 }}
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => navigate("/solo/quiz")}
+                onClick={() => navigateWithOnboarding("/solo/quiz")}
                 data-testid="button-solo"
                 className="flex items-center rounded-[20px] bg-white pl-3 pr-5 h-[100px] border border-gray-100 shadow-md"
               >
@@ -780,7 +789,7 @@ export default function Home() {
                 transition={{ delay: 0.36, type: "spring", stiffness: 300, damping: 22 }}
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => navigate("/group/setup")}
+                onClick={() => navigateWithOnboarding("/group/setup")}
                 data-testid="button-group"
                 className="flex items-center justify-center rounded-[20px] bg-white h-[100px] border border-gray-100 shadow-md overflow-hidden"
               >
