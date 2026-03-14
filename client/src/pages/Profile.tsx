@@ -644,6 +644,58 @@ export default function Profile() {
                       </motion.div>
                     )}
                   </AnimatePresence>
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
+                  {lineProfile ? (
+                    <div className="px-5 py-4 flex items-center gap-4">
+                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: "#06C755" }}>
+                        <span className="text-white text-[11px] font-bold">LINE</span>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-bold text-[15px]">LINE</p>
+                        <p className="text-[11px] text-[#06C755] font-medium mt-0.5 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#06C755] inline-block" />
+                          {t("profile.connected_via_line")}
+                        </p>
+                      </div>
+                      <button
+                        onClick={lineLogout}
+                        className="px-3 py-2 rounded-xl bg-gray-100 dark:bg-muted text-muted-foreground text-xs font-medium active:scale-95 transition-transform"
+                        data-testid="button-line-logout-section"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={liffAvailable ? lineLogin : undefined}
+                      className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 transition-colors"
+                      data-testid="button-line-connect"
+                    >
+                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: "#06C755" }}>
+                        <span className="text-white text-[11px] font-bold">LINE</span>
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="font-bold text-[15px]">{t("profile.login_line")}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">{t("profile.open_in_line")}</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                    </button>
+                  )}
+
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
+                  <PartnerRow
+                    profile={localProfile}
+                    onInvite={invitePartnerViaLine}
+                    onManualAdd={() => setShowPartnerModal(true)}
+                    onUnlink={unlinkPartner}
+                    t={t}
+                  />
+
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
+                  <SavedSection t={t} />
                 </div>
               </div>
 
@@ -732,22 +784,6 @@ export default function Profile() {
                   <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
 
                   <button
-                    onClick={() => navigate("/legal")}
-                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
-                    data-testid="button-legal-settings"
-                  >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(45,80%,90%) 0%, hsl(40,70%,82%) 100%)" }}>
-                      {"\u{1F6E1}\u{FE0F}"}
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-bold text-[15px]">{t("legal.settings_row")}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
-                  </button>
-
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
-
-                  <button
                     onClick={() => {
                       if (window.confirm(t("profile.clear_data_confirm"))) {
                         localStorage.removeItem(PROFILE_STORAGE_KEY);
@@ -770,65 +806,25 @@ export default function Profile() {
                 </div>
               </div>
 
-              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-2 px-1">{t("profile.section_account")}</p>
-              <div className="mb-5">
-                <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-                  {lineProfile ? (
-                    <div className="px-5 py-4 flex items-center gap-4">
-                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: "#06C755" }}>
-                        <span className="text-white text-[11px] font-bold">LINE</span>
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="font-bold text-[15px]">LINE</p>
-                        <p className="text-[11px] text-[#06C755] font-medium mt-0.5 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#06C755] inline-block" />
-                          {t("profile.connected_via_line")}
-                        </p>
-                      </div>
-                      <button
-                        onClick={lineLogout}
-                        className="px-3 py-2 rounded-xl bg-gray-100 dark:bg-muted text-muted-foreground text-xs font-medium active:scale-95 transition-transform"
-                        data-testid="button-line-logout-section"
-                      >
-                        <LogOut className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={liffAvailable ? lineLogin : undefined}
-                      className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 transition-colors"
-                      data-testid="button-line-connect"
-                    >
-                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: "#06C755" }}>
-                        <span className="text-white text-[11px] font-bold">LINE</span>
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="font-bold text-[15px]">{t("profile.login_line")}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">{t("profile.open_in_line")}</p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
-                    </button>
-                  )}
-
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
-
-                  <PartnerRow
-                    profile={localProfile}
-                    onInvite={invitePartnerViaLine}
-                    onManualAdd={() => setShowPartnerModal(true)}
-                    onUnlink={unlinkPartner}
-                    t={t}
-                  />
-
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
-
-                  <SavedSection t={t} />
-                </div>
-              </div>
-
               <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-2 px-1">{t("profile.section_about")}</p>
               <div className="mb-5">
                 <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+                  <button
+                    onClick={() => navigate("/legal")}
+                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
+                    data-testid="button-legal-settings"
+                  >
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(45,80%,90%) 0%, hsl(40,70%,82%) 100%)" }}>
+                      {"\u{1F6E1}\u{FE0F}"}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-[15px]">{t("legal.settings_row")}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                  </button>
+
+                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+
                   <button
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-privacy-policy"
