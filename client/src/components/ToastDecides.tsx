@@ -861,7 +861,7 @@ function RefineSheet({
       data-testid="refine-overlay"
       role="dialog"
       aria-modal="true"
-      aria-label="Refine your picks"
+      aria-label="What's your mood?"
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
@@ -871,7 +871,7 @@ function RefineSheet({
         animate={{ y: 0, height: expanded ? "auto" : "auto" }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 26, stiffness: 240, mass: 1 }}
-        className="absolute bottom-0 left-0 right-0 bg-[#FAF9F6] rounded-t-3xl flex flex-col"
+        className="absolute bottom-0 left-0 right-0 bg-[#F5F5F5] rounded-t-3xl flex flex-col"
         style={{ maxHeight: expanded ? "92dvh" : "auto" }}
         data-testid="refine-sheet"
       >
@@ -882,7 +882,7 @@ function RefineSheet({
             data-testid="refine-toggle"
           >
             <motion.div
-              animate={{ rotate: expanded ? 180 : 0 }}
+              animate={{ rotate: expanded ? 0 : 180 }}
               transition={{ type: "spring", damping: 20, stiffness: 300 }}
             >
               <ChevronDown className="w-5 h-5 text-gray-400" />
@@ -896,7 +896,7 @@ function RefineSheet({
             >
               <X className="w-4 h-4 text-muted-foreground" />
             </button>
-            <h2 className="text-[17px] font-bold text-foreground">Refine your picks</h2>
+            <h2 className="text-[17px] font-bold text-foreground">What's your mood?</h2>
             <button
               onClick={onClose}
               className="text-[13px] font-medium text-muted-foreground"
@@ -1012,7 +1012,7 @@ function RefineSheet({
                 </div>
               </div>
 
-              <div className="flex-shrink-0 px-5 pt-3 pb-6 bg-[#FAF9F6] border-t border-gray-100">
+              <div className="flex-shrink-0 px-5 pt-3 pb-6 bg-[#F5F5F5] border-t border-gray-100">
                 <motion.button
                   whileTap={{ scale: 0.96 }}
                   onClick={onUpdate}

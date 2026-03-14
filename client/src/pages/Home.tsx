@@ -633,14 +633,16 @@ export default function Home() {
           className="w-full flex-shrink-0"
           onClick={() => setDrawerOpen(prev => !prev)}
         >
-          <div className="pt-3 pb-1 flex justify-center cursor-pointer" data-testid="drawer-toggle">
-            <motion.div
-              animate={{ rotate: drawerOpen ? 180 : 0 }}
-              transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            >
-              <ChevronDown className="w-5 h-5 text-gray-400" />
-            </motion.div>
-          </div>
+          {!refineOpen && (
+            <div className="pt-3 pb-1 flex justify-center cursor-pointer" data-testid="drawer-toggle">
+              <motion.div
+                animate={{ rotate: drawerOpen ? 0 : 180 }}
+                transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              >
+                <ChevronDown className="w-5 h-5 text-gray-400" />
+              </motion.div>
+            </div>
+          )}
           <AnimatePresence>
             {!drawerOpen && (
               <motion.div
