@@ -620,8 +620,6 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
 
         {showSkeleton ? (
           <HeroSkeleton />
-        ) : uiState === "thinking" ? (
-          <ThinkingScreenInline />
         ) : (
           <div className="p-5">
             <div className="flex items-center justify-between mb-2">
@@ -807,6 +805,12 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
       </AnimatePresence>
 
       <AnimatePresence>
+        {uiState === "thinking" && (
+          <ThinkingScreenFullscreen onComplete={() => {}} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {uiState === "decision_flow" && (
           <DecisionFlow
             step={decisionStep}
@@ -835,21 +839,37 @@ const THINKING_STEPS = [
   { text: "Finding something you\u2019ll love\u2026", delay: 1.2 },
 ];
 
-function ThinkingScreenInline() {
+function ThinkingScreenFullscreen({ onComplete: _ }: { onComplete: () => void }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
+      className="fixed inset-0 z-[100] bg-white"
       data-testid="thinking-screen"
     >
-      <div className="p-6 flex flex-col items-center text-center">
+      <div className="h-full flex flex-col items-center justify-center px-8 text-center safe-top safe-bottom">
+        <div className="px-5 pt-4 pb-3 absolute top-0 left-0 right-0">
+          <div className="flex items-center justify-center gap-2">
+            <img src={mascotPath} alt="" className="w-6 h-6 object-contain" />
+            <span className="text-[12px] font-bold text-foreground">Toast Decides</span>
+          </div>
+          <div className="mt-3 w-full h-1 bg-gray-100 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: "70%" }}
+              animate={{ width: "95%" }}
+              transition={{ duration: 2.5, ease: "easeOut" }}
+              className="h-full rounded-full bg-[#FFCC02]"
+            />
+          </div>
+        </div>
+
         <motion.p
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="text-[20px] font-bold text-foreground mb-4"
+          className="text-[22px] font-bold text-foreground mb-5"
           data-testid="text-thinking-title"
         >
           Toast is thinking...
@@ -859,12 +879,12 @@ function ThinkingScreenInline() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
-          className="relative mb-4"
+          className="relative mb-6"
         >
           <img
             src={mascotPath}
             alt="Toast mascot thinking"
-            className="w-[120px] h-[120px] object-contain"
+            className="w-[140px] h-[140px] object-contain"
             data-testid="img-thinking-mascot"
           />
           <motion.div
@@ -872,29 +892,29 @@ function ThinkingScreenInline() {
             animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
             transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
           >
-            <Sparkles className="w-5 h-5 text-[#FFCC02]" />
+            <Sparkles className="w-6 h-6 text-[#FFCC02]" />
           </motion.div>
           <motion.div
             className="absolute -bottom-1 -left-2"
             animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.15, 1] }}
             transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut", delay: 0.3 }}
           >
-            <Star className="w-4 h-4 text-[#FFCC02]/60" />
+            <Star className="w-5 h-5 text-[#FFCC02]/60" />
           </motion.div>
         </motion.div>
 
-        <div className="flex gap-1.5 mb-5">
+        <div className="flex gap-2 mb-8">
           {[0, 1, 2, 3, 4].map((i) => (
             <motion.div
               key={i}
-              className="w-2 h-2 rounded-full bg-[#FFCC02]"
+              className="w-2.5 h-2.5 rounded-full bg-[#FFCC02]"
               animate={{ opacity: [0.3, 1, 0.3] }}
               transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.15 }}
             />
           ))}
         </div>
 
-        <div className="w-full space-y-3">
+        <div className="w-full max-w-[280px] space-y-4">
           {THINKING_STEPS.map((step, i) => (
             <motion.div
               key={i}
@@ -904,11 +924,11 @@ function ThinkingScreenInline() {
               className="flex items-center gap-3"
             >
               <motion.div
-                className="w-2 h-2 rounded-full bg-[#FFCC02] flex-shrink-0"
+                className="w-2.5 h-2.5 rounded-full bg-[#FFCC02] flex-shrink-0"
                 animate={{ scale: [1, 1.3, 1] }}
                 transition={{ repeat: Infinity, duration: 1.5, delay: step.delay }}
               />
-              <span className="text-[14px] text-foreground/80 text-left">{step.text}</span>
+              <span className="text-[15px] text-foreground/80 text-left">{step.text}</span>
             </motion.div>
           ))}
         </div>
