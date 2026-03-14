@@ -633,10 +633,6 @@ export default function Home() {
           className="w-full flex-shrink-0 cursor-grab active:cursor-grabbing"
           onClick={() => setDrawerOpen(prev => !prev)}
         >
-          <div className="pt-3 pb-2 flex justify-center">
-            <div className="w-10 h-[5px] bg-gray-300/60 rounded-full" />
-          </div>
-
           <AnimatePresence>
             {!drawerOpen && (
               <motion.div

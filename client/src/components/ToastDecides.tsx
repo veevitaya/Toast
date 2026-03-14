@@ -875,10 +875,7 @@ function RefineSheet({
         data-testid="refine-sheet"
       >
         <div className="flex-shrink-0">
-          <div className="flex justify-center pt-3 pb-1">
-            <div className="w-10 h-1 rounded-full bg-gray-300" />
-          </div>
-          <div className="px-5 pb-3 flex items-center justify-between">
+          <div className="px-5 pt-4 pb-3 flex items-center justify-between">
             <button
               onClick={onClose}
               className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
