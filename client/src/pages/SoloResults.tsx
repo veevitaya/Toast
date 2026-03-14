@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { BottomNav } from "@/components/BottomNav";
-import { Sparkles, Clock, Wallet, TrendingUp, MapPin, Search, UtensilsCrossed, X, Check, ChevronDown, Star, Footprints, Car, Globe } from "lucide-react";
+import { Sparkles, Clock, Wallet, TrendingUp, MapPin, Search, UtensilsCrossed, X, Check, Star } from "lucide-react";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { VIBE_LABELS, VIBE_EMOJI } from "@shared/vibeConfig";
 import type { VibeTag } from "@shared/vibeConfig";
@@ -326,7 +326,7 @@ function mapVibeRestaurantToMenuItem(r: VibeRestaurant, index: number): MenuItem
 
 export default function SoloResults() {
   const [, navigate] = useLocation();
-  const { topPreference } = useTasteProfile();
+  const { topPreference, profile: tasteProfile, activityLog, searchHistory, getMoodSignal } = useTasteProfile();
 
   const quizAnswers = useMemo(() => parseQuizParams(), []);
   const vibeParam = quizAnswers.vibe;
@@ -432,12 +432,8 @@ export default function SoloResults() {
   const [selectedSide, setSelectedSide] = useState<"left" | "right" | null>(null);
   const [replacingSide, setReplacingSide] = useState<"left" | "right" | null>(null);
   const [showDecideForMe, setShowDecideForMe] = useState(false);
-  const [decideStep, setDecideStep] = useState<"refine" | "thinking" | "result">("refine");
+  const [decideStep, setDecideStep] = useState<"thinking" | "result">("thinking");
   const [aiRecommendation, setAiRecommendation] = useState<MenuItem | null>(null);
-  const [refineExpanded, setRefineExpanded] = useState(true);
-  const [refineCraving, setRefineCraving] = useState<string | null>(null);
-  const [refineDistance, setRefineDistance] = useState("medium");
-  const [refineAvoid, setRefineAvoid] = useState<string[]>([]);
   const thinkingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -519,43 +515,78 @@ export default function SoloResults() {
     const timeCtx = getTimeContext();
     const dayCtx = getDayContext();
 
-    const cravingTagMap: Record<string, string[]> = {
-      warm: ["Comfort", "Soup", "Curry", "Noodle"],
-      spicy: ["Spicy", "Thai", "Isaan", "Chili"],
-      healthy: ["Healthy", "Salad", "Light"],
-      balanced: ["Thai", "Rice"],
-      sweet: ["Dessert", "Cake", "Sweet", "Pancake"],
-      quick: ["Fast", "Street food", "Grab & go"],
-      fancy: ["Fine dining", "Upscale", "Premium"],
-      surprise: [],
-    };
+    const likeScores: Record<string, number> = {};
+    for (const [cat, entry] of Object.entries(tasteProfile.likes)) {
+      const recencyDays = (Date.now() - entry.lastSeen) / (1000 * 60 * 60 * 24);
+      const recencyMul = Math.max(0.3, 1 - recencyDays * 0.05);
+      likeScores[cat.toLowerCase()] = (likeScores[cat.toLowerCase()] || 0) + entry.count * recencyMul;
+    }
+    for (const [cat, entry] of Object.entries(tasteProfile.superLikes)) {
+      const recencyDays = (Date.now() - entry.lastSeen) / (1000 * 60 * 60 * 24);
+      const recencyMul = Math.max(0.3, 1 - recencyDays * 0.05);
+      likeScores[cat.toLowerCase()] = (likeScores[cat.toLowerCase()] || 0) + entry.count * 2.5 * recencyMul;
+    }
+    const dislikeSet = new Set(Object.keys(tasteProfile.dislikes).map(k => k.toLowerCase()));
+
+    const recentWindow = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const currentHour = new Date().getHours();
+    const currentTimeSlot = currentHour >= 6 && currentHour < 11 ? "morning" : currentHour < 14 ? "lunch" : currentHour < 17 ? "afternoon" : currentHour < 21 ? "dinner" : "latenight";
+    const recentTimeActivities = activityLog.filter(a => now - a.timestamp < recentWindow);
+    const timeSlotCats: Record<string, number> = {};
+    for (const a of recentTimeActivities) {
+      const slot = a.hour >= 6 && a.hour < 11 ? "morning" : a.hour < 14 ? "lunch" : a.hour < 17 ? "afternoon" : a.hour < 21 ? "dinner" : "latenight";
+      if (slot === currentTimeSlot) {
+        timeSlotCats[a.category.toLowerCase()] = (timeSlotCats[a.category.toLowerCase()] || 0) + 2;
+      }
+    }
+
+    const searchBoosts: Record<string, number> = {};
+    for (const q of searchHistory.slice(-10)) {
+      const ql = q.toLowerCase();
+      searchBoosts[ql] = (searchBoosts[ql] || 0) + 1.5;
+    }
 
     const scored = filteredMenus.map((item) => {
-      let score = Math.random() * 5;
+      let score = Math.random() * 3;
+      const nameAndTags = [item.name, item.type, ...item.tags, ...item.interests, item.setting].join(" ").toLowerCase();
 
-      if (timeCtx.period === "morning" && (item.tags.some(t => t.includes("Coffee") || t.includes("Brunch") || t.includes("Pancake")) || item.interests.includes("Coffee"))) score += 15;
-      if (timeCtx.period === "lunch" && item.budget !== "Expensive") score += 8;
-      if (timeCtx.period === "dinner" && (item.interests.includes("Popular spots") || item.interests.includes("Comfort food"))) score += 10;
-      if (timeCtx.period === "latenight" && item.setting.includes("Late night")) score += 12;
-      if (timeCtx.period === "afternoon" && (item.interests.includes("Coffee") || item.interests.includes("Dessert"))) score += 10;
-
-      if (dayCtx.isWeekend && item.budget !== "Cheap") score += 5;
-      if (dayCtx.isPayday && (item.budget === "Fancy" || item.budget === "Expensive")) score += 8;
-      if (!dayCtx.isPayday && item.budget === "Cheap") score += 6;
-
-      if (item.restaurantCount > 10) score += 4;
-      if (item.interests.includes("Popular spots")) score += 3;
-      if (item.interests.includes("Comfort food")) score += 2;
-
-      if (refineCraving && refineCraving !== "surprise") {
-        const matchTags = cravingTagMap[refineCraving] || [];
-        const nameAndTags = [item.name, item.type, ...item.tags].join(" ").toLowerCase();
-        if (matchTags.some(t => nameAndTags.includes(t.toLowerCase()))) score += 20;
+      for (const [cat, catScore] of Object.entries(likeScores)) {
+        if (nameAndTags.includes(cat)) score += catScore * 3;
       }
 
-      if (refineAvoid.length > 0) {
-        const nameAndTags = [item.name, item.type, ...item.tags].join(" ").toLowerCase();
-        if (refineAvoid.some(a => nameAndTags.includes(a.toLowerCase()))) score -= 50;
+      for (const dislike of dislikeSet) {
+        if (nameAndTags.includes(dislike)) score -= 25;
+      }
+
+      for (const [cat, catScore] of Object.entries(timeSlotCats)) {
+        if (nameAndTags.includes(cat)) score += catScore * 2;
+      }
+
+      for (const [q, boost] of Object.entries(searchBoosts)) {
+        if (nameAndTags.includes(q)) score += boost * 2;
+      }
+
+      if (timeCtx.period === "morning" && (item.tags.some(t => t.includes("Coffee") || t.includes("Brunch") || t.includes("Pancake")) || item.interests.includes("Coffee"))) score += 12;
+      if (timeCtx.period === "lunch" && item.budget !== "Expensive") score += 6;
+      if (timeCtx.period === "dinner" && (item.interests.includes("Popular spots") || item.interests.includes("Comfort food"))) score += 8;
+      if (timeCtx.period === "latenight" && item.setting.includes("Late night")) score += 10;
+      if (timeCtx.period === "afternoon" && (item.interests.includes("Coffee") || item.interests.includes("Dessert"))) score += 8;
+
+      if (dayCtx.isWeekend && item.budget !== "Cheap") score += 4;
+      if (dayCtx.isPayday && (item.budget === "Fancy" || item.budget === "Expensive")) score += 6;
+      if (!dayCtx.isPayday && item.budget === "Cheap") score += 5;
+
+      if (item.restaurantCount > 10) score += 3;
+      if (item.interests.includes("Popular spots")) score += 2;
+
+      if (quizAnswers.cuisines.length > 0) {
+        const matchesCuisine = quizAnswers.cuisines.some(c => nameAndTags.includes(c.toLowerCase()));
+        if (matchesCuisine) score += 15;
+      }
+      if (quizAnswers.interests.length > 0) {
+        const matchesInterest = quizAnswers.interests.some(i => nameAndTags.includes(i.toLowerCase()));
+        if (matchesInterest) score += 10;
       }
 
       return { item, score };
@@ -565,30 +596,61 @@ export default function SoloResults() {
     return scored[0]?.item || filteredMenus[0] || ALL_MENUS[0];
   };
 
+  const tasteDnaSummary = useMemo(() => {
+    const topLikes = Object.entries(tasteProfile.likes)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 3)
+      .map(([k]) => k);
+    const topSuperLikes = Object.entries(tasteProfile.superLikes)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 2)
+      .map(([k]) => k);
+    const topDislikes = Object.keys(tasteProfile.dislikes).slice(0, 2);
+    const totalSwipes = Object.values(tasteProfile.likes).reduce((s, e) => s + e.count, 0) +
+      Object.values(tasteProfile.superLikes).reduce((s, e) => s + e.count, 0);
+    return { topLikes, topSuperLikes, topDislikes, totalSwipes };
+  }, [tasteProfile]);
+
+  const getPersonalizedThinkingSteps = () => {
+    const { topLikes, topSuperLikes, totalSwipes } = tasteDnaSummary;
+    const timeCtx = getTimeContext();
+    const steps: { text: string; delay: number }[] = [];
+
+    if (totalSwipes > 0) {
+      steps.push({ text: `Reading your taste DNA (${totalSwipes} signals)`, delay: 0 });
+    } else {
+      steps.push({ text: "Learning your preferences\u2026", delay: 0 });
+    }
+
+    if (topSuperLikes.length > 0) {
+      steps.push({ text: `You love ${topSuperLikes[0]} \u2014 noted`, delay: 0.5 });
+    } else if (topLikes.length > 0) {
+      steps.push({ text: `You\u2019re into ${topLikes[0]} \u2014 got it`, delay: 0.5 });
+    } else if (quizAnswers.cuisines.length > 0) {
+      steps.push({ text: `${quizAnswers.cuisines[0]} fan \u2014 on it`, delay: 0.5 });
+    } else {
+      steps.push({ text: "Checking trending flavours\u2026", delay: 0.5 });
+    }
+
+    steps.push({ text: `Matching ${timeCtx.label.toLowerCase()} mood`, delay: 1.0 });
+    steps.push({ text: "Finding your perfect pick\u2026", delay: 1.6 });
+
+    return steps;
+  };
+
   const handleDecideForMe = () => {
     if (thinkingTimerRef.current) clearTimeout(thinkingTimerRef.current);
     setShowDecideForMe(true);
-    setDecideStep("refine");
-    setRefineExpanded(true);
-    setRefineCraving(null);
-    setRefineDistance("medium");
-    setRefineAvoid([]);
-    setAiRecommendation(null);
-  };
-
-  const handleRefineConfirm = () => {
-    if (thinkingTimerRef.current) clearTimeout(thinkingTimerRef.current);
     setDecideStep("thinking");
+    setAiRecommendation(null);
+
     const recommendation = generateAiRecommendation();
     setAiRecommendation(recommendation);
+
     thinkingTimerRef.current = setTimeout(() => {
       setDecideStep("result");
       thinkingTimerRef.current = null;
     }, 2800);
-  };
-
-  const toggleRefineAvoid = (tag: string) => {
-    setRefineAvoid(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
   };
 
   const handleAcceptRecommendation = () => {
@@ -795,141 +857,12 @@ export default function SoloResults() {
             data-testid="decide-for-me-screen"
           >
             <button
-              onClick={() => { if (thinkingTimerRef.current) { clearTimeout(thinkingTimerRef.current); thinkingTimerRef.current = null; } setShowDecideForMe(false); setDecideStep("refine"); }}
+              onClick={() => { if (thinkingTimerRef.current) { clearTimeout(thinkingTimerRef.current); thinkingTimerRef.current = null; } setShowDecideForMe(false); setDecideStep("thinking"); }}
               className="absolute top-14 right-5 z-10 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
               data-testid="button-close-decide"
             >
               <X className="w-4 h-4 text-muted-foreground" />
             </button>
-
-            {decideStep === "refine" && (
-              <div className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex-shrink-0 pt-14 px-5 pb-3">
-                  <div
-                    className="flex justify-center cursor-pointer pb-2"
-                    onClick={() => setRefineExpanded(prev => !prev)}
-                    data-testid="solo-refine-toggle"
-                  >
-                    <motion.div animate={{ rotate: refineExpanded ? 0 : 180 }} transition={{ type: "spring", damping: 20, stiffness: 300 }}>
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
-                    </motion.div>
-                  </div>
-                  <h2 className="text-[19px] font-bold text-foreground text-center">What's your mood?</h2>
-                </div>
-
-                <AnimatePresence initial={false}>
-                  {refineExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ type: "spring", damping: 26, stiffness: 240, mass: 1 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="px-5 pb-4 overflow-y-auto" style={{ maxHeight: "60vh" }}>
-                        <div className="mb-6">
-                          <h3 className="text-[14px] font-semibold text-foreground mb-3">What's the vibe?</h3>
-                          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                            {[
-                              { key: "warm", label: "Comfort", icon: "\u{1F35C}" },
-                              { key: "spicy", label: "Spicy", icon: "\u{1F525}" },
-                              { key: "healthy", label: "Healthy", icon: "\u{1F33F}" },
-                              { key: "balanced", label: "Balanced", icon: "\u2696\uFE0F" },
-                              { key: "sweet", label: "Sweet", icon: "\u{1F370}" },
-                              { key: "quick", label: "Quick", icon: "\u23F1\uFE0F" },
-                              { key: "fancy", label: "Treat", icon: "\u2764\uFE0F" },
-                              { key: "surprise", label: "Surprise", icon: "\u2728" },
-                            ].map((opt) => {
-                              const isSelected = refineCraving === opt.key;
-                              return (
-                                <motion.button
-                                  key={opt.key}
-                                  whileTap={{ scale: 0.93 }}
-                                  onClick={() => setRefineCraving(isSelected ? null : opt.key)}
-                                  className="flex flex-col items-center gap-1.5 flex-shrink-0"
-                                  data-testid={`solo-craving-${opt.key}`}
-                                >
-                                  <div
-                                    className={`w-[56px] h-[56px] rounded-2xl flex items-center justify-center text-xl transition-all ${isSelected ? "bg-[#FFCC02] shadow-md" : "bg-white border border-gray-100"}`}
-                                    style={isSelected ? { boxShadow: "0 4px 16px rgba(255,204,2,0.35)" } : { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-                                  >
-                                    {opt.icon}
-                                  </div>
-                                  <span className={`text-[10px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>{opt.label}</span>
-                                </motion.button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        <div className="mb-6">
-                          <h3 className="text-[14px] font-semibold text-foreground mb-3">How far?</h3>
-                          <div className="flex gap-2.5" data-testid="solo-distance-pills">
-                            {([
-                              { key: "close", km: 1, label: "Walking", sub: "Under 1 km", Icon: Footprints },
-                              { key: "medium", km: 3, label: "Short ride", sub: "Under 3 km", Icon: Car },
-                              { key: "flexible", km: 10, label: "Anywhere", sub: "Any distance", Icon: Globe },
-                            ] as const).map((pill) => {
-                              const isSelected = refineDistance === pill.key;
-                              const PillIcon = pill.Icon;
-                              return (
-                                <motion.button
-                                  key={pill.key}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={() => setRefineDistance(pill.key)}
-                                  className={`flex-1 flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border-2 transition-all ${isSelected ? "bg-[#FFCC02]/10 border-[#FFCC02]" : "bg-white border-gray-100"}`}
-                                  style={isSelected ? { boxShadow: "0 4px 16px rgba(255,204,2,0.2)" } : { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
-                                  data-testid={`solo-distance-${pill.key}`}
-                                >
-                                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isSelected ? "bg-[#FFCC02]" : "bg-gray-50"}`}>
-                                    <PillIcon className={`w-4 h-4 ${isSelected ? "text-foreground" : "text-muted-foreground"}`} />
-                                  </div>
-                                  <span className={`text-[11px] font-semibold ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>{pill.label}</span>
-                                  <span className={`text-[10px] ${isSelected ? "text-foreground/60" : "text-muted-foreground/60"}`}>{pill.sub}</span>
-                                  {isSelected && <Check className="w-3.5 h-3.5 text-[#FFCC02]" />}
-                                </motion.button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        <div className="mb-2">
-                          <h3 className="text-[14px] font-semibold text-foreground mb-3">Anything to avoid?</h3>
-                          <div className="flex flex-wrap gap-2">
-                            {["Spicy", "Seafood", "Pork", "Gluten", "Dairy", "Nuts"].map((tag) => {
-                              const isAvoided = refineAvoid.includes(tag);
-                              return (
-                                <motion.button
-                                  key={tag}
-                                  whileTap={{ scale: 0.93 }}
-                                  onClick={() => toggleRefineAvoid(tag)}
-                                  className={`px-3.5 py-1.5 rounded-full text-[12px] font-medium border-2 transition-all ${isAvoided ? "bg-[#FFCC02]/10 border-[#FFCC02] text-foreground" : "bg-white border-gray-200 text-muted-foreground"}`}
-                                  data-testid={`solo-avoid-${tag.toLowerCase()}`}
-                                >
-                                  {tag}
-                                </motion.button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex-shrink-0 px-5 pt-3 pb-6 border-t border-gray-100">
-                        <motion.button
-                          whileTap={{ scale: 0.96 }}
-                          onClick={handleRefineConfirm}
-                          className="w-full h-[48px] rounded-2xl bg-[#FFCC02] font-bold text-[15px] text-foreground flex items-center justify-center gap-2"
-                          style={{ boxShadow: "0 4px 16px rgba(255,204,2,0.35)" }}
-                          data-testid="solo-button-show-picks"
-                        >
-                          Show my picks <Sparkles className="w-4 h-4" />
-                        </motion.button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
 
             {decideStep === "thinking" && (
               <motion.div
@@ -937,20 +870,11 @@ export default function SoloResults() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
-                <motion.p
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-[20px] font-bold text-foreground mb-4"
-                  data-testid="text-analyzing"
-                >
-                  Toast is thinking...
-                </motion.p>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
-                  className="relative mb-4"
+                  transition={{ delay: 0.1, type: "spring", stiffness: 200, damping: 15 }}
+                  className="relative mb-5"
                 >
                   <img src={mascotPath} alt="Toast mascot thinking" className="w-[120px] h-[120px] object-contain" />
                   <motion.div className="absolute -top-1 -right-1" animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}>
@@ -960,20 +884,46 @@ export default function SoloResults() {
                     <Star className="w-4 h-4 text-[#FFCC02]/60" />
                   </motion.div>
                 </motion.div>
-                <div className="flex gap-1.5 mb-5">
+                <motion.p
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                  className="text-[20px] font-bold text-foreground mb-1"
+                  data-testid="text-analyzing"
+                >
+                  Toast is thinking...
+                </motion.p>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.25 }}
+                  className="text-[13px] text-muted-foreground mb-5"
+                >
+                  Using everything I know about you
+                </motion.p>
+                <div className="flex gap-1.5 mb-6">
                   {[0, 1, 2, 3, 4].map((i) => (
                     <motion.div key={i} className="w-2 h-2 rounded-full bg-[#FFCC02]" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.15 }} />
                   ))}
                 </div>
-                <div className="w-full max-w-xs space-y-3">
-                  {[
-                    { text: "Analyzing your taste profile", delay: 0 },
-                    { text: "Checking what\u2019s popular nearby", delay: 0.6 },
-                    { text: "Finding something you\u2019ll love\u2026", delay: 1.2 },
-                  ].map((step, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: step.delay, duration: 0.4 }} className="flex items-center gap-3">
-                      <motion.div className="w-2 h-2 rounded-full bg-[#FFCC02] flex-shrink-0" animate={{ scale: [1, 1.3, 1] }} transition={{ repeat: Infinity, duration: 1.5, delay: step.delay }} />
-                      <span className="text-[14px] text-foreground/80">{step.text}</span>
+                <div className="w-full max-w-xs space-y-3.5">
+                  {getPersonalizedThinkingSteps().map((step, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: step.delay, duration: 0.4 }} className="flex items-center gap-3">
+                      <motion.div
+                        className="w-6 h-6 rounded-lg bg-[#FFCC02]/15 flex items-center justify-center flex-shrink-0"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: step.delay + 0.15, type: "spring", damping: 12 }}
+                      >
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: step.delay + 0.4 }}
+                        >
+                          <Check className="w-3 h-3 text-[#FFCC02]" />
+                        </motion.div>
+                      </motion.div>
+                      <span className="text-[13px] text-foreground/80">{step.text}</span>
                     </motion.div>
                   ))}
                 </div>
@@ -996,21 +946,45 @@ export default function SoloResults() {
                 >
                   <Sparkles className="w-6 h-6 text-[#2d2000]" />
                 </motion.div>
-                <h2 className="text-xl font-bold text-foreground mb-1" data-testid="text-toast-suggests">Toast suggests</h2>
-                <p className="text-sm text-muted-foreground mb-6">Based on your taste, time & trends</p>
+                <h2 className="text-xl font-bold text-foreground mb-1" data-testid="text-toast-suggests">Toast knows you</h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  {tasteDnaSummary.totalSwipes > 5
+                    ? `Based on ${tasteDnaSummary.totalSwipes} taste signals & right now`
+                    : "Based on your preferences, time & trends"}
+                </p>
+
+                {tasteDnaSummary.topLikes.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="flex flex-wrap gap-1.5 mb-5 justify-center"
+                  >
+                    {tasteDnaSummary.topLikes.slice(0, 3).map((like) => (
+                      <span key={like} className="text-[10px] bg-[#FFCC02]/15 text-[#2d2000] rounded-full px-2.5 py-1 font-semibold flex items-center gap-1">
+                        <Check className="w-2.5 h-2.5" /> {like}
+                      </span>
+                    ))}
+                    {tasteDnaSummary.topDislikes.slice(0, 1).map((dis) => (
+                      <span key={dis} className="text-[10px] bg-red-50 text-red-600 rounded-full px-2.5 py-1 font-semibold flex items-center gap-1">
+                        <X className="w-2.5 h-2.5" /> {dis}
+                      </span>
+                    ))}
+                  </motion.div>
+                )}
 
                 <motion.div
                   initial={{ y: 30, opacity: 0, scale: 0.95 }}
                   animate={{ y: 0, opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2, type: "spring", damping: 18, stiffness: 200 }}
-                  className="w-full max-w-sm bg-white rounded-2xl overflow-hidden ring-2 ring-[#FFCC02] mb-6"
+                  className="w-full max-w-sm bg-white dark:bg-card rounded-2xl overflow-hidden ring-2 ring-[#FFCC02] mb-6"
                   style={{ boxShadow: "0 12px 40px -8px rgba(255,204,2,0.25)" }}
                   data-testid="card-ai-recommendation"
                 >
                   <div className="w-full aspect-[16/10] overflow-hidden relative">
                     <img src={aiRecommendation.imageUrl} alt={aiRecommendation.name} className="w-full h-full object-cover" />
                     <div className="absolute top-3 left-3 bg-[#FFCC02] text-[#2d2000] text-xs font-bold rounded-full px-3 py-1 flex items-center gap-1" style={{ boxShadow: "0 2px 8px rgba(255,204,2,0.4)" }}>
-                      <Sparkles className="w-3 h-3" /> Toast Pick
+                      <Sparkles className="w-3 h-3" /> Picked for you
                     </div>
                   </div>
                   <div className="p-5">
@@ -1018,12 +992,29 @@ export default function SoloResults() {
                     <p className="text-sm text-muted-foreground mb-3">{aiRecommendation.type}</p>
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {aiRecommendation.tags.map((tag) => (
-                        <span key={tag} className="text-xs bg-gray-100 rounded-full px-2.5 py-0.5 font-medium text-muted-foreground">{tag}</span>
+                        <span key={tag} className="text-xs bg-gray-100 dark:bg-muted rounded-full px-2.5 py-0.5 font-medium text-muted-foreground">{tag}</span>
                       ))}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {aiRecommendation.restaurantCount} places nearby</span>
                       <span className="flex items-center gap-1"><Wallet className="w-3 h-3" /> {aiRecommendation.budget}</span>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-gray-100 dark:border-border">
+                      <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-2">Why this pick</p>
+                      <p className="text-xs text-muted-foreground leading-relaxed" data-testid="text-recommendation-reason">
+                        {(() => {
+                          const timeCtx = getTimeContext();
+                          const reasons: string[] = [];
+                          if (tasteDnaSummary.topLikes.some(l => [aiRecommendation.name, aiRecommendation.type, ...aiRecommendation.tags].join(" ").toLowerCase().includes(l.toLowerCase()))) {
+                            reasons.push("matches your taste DNA");
+                          }
+                          reasons.push(`perfect for ${timeCtx.label.toLowerCase()}`);
+                          if (aiRecommendation.restaurantCount > 8) reasons.push(`${aiRecommendation.restaurantCount} great options nearby`);
+                          if (quizAnswers.cuisines.length > 0) reasons.push("aligns with your quiz picks");
+                          return reasons.slice(0, 3).join(" \u00B7 ");
+                        })()}
+                      </p>
                     </div>
                   </div>
                 </motion.div>
@@ -1042,7 +1033,7 @@ export default function SoloResults() {
                 </motion.button>
 
                 <motion.button
-                  onClick={() => { setShowDecideForMe(false); setDecideStep("refine"); }}
+                  onClick={() => { if (thinkingTimerRef.current) { clearTimeout(thinkingTimerRef.current); thinkingTimerRef.current = null; } setShowDecideForMe(false); setDecideStep("thinking"); }}
                   data-testid="button-back-to-choosing"
                   whileTap={{ scale: 0.95 }}
                   initial={{ y: 10, opacity: 0 }}
