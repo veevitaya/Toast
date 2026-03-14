@@ -117,5 +117,11 @@ export function useLineProfile(options?: { requireAuth?: boolean }) {
     setAuthRequired(false);
   };
 
-  return { profile, loading, isLineUser, authRequired, triggerLineLogin, continueAsGuest };
+  const refreshProfile = () => {
+    if (!isLineUser) {
+      setProfileState(getGuestProfile());
+    }
+  };
+
+  return { profile, loading, isLineUser, authRequired, triggerLineLogin, continueAsGuest, refreshProfile };
 }

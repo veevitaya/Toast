@@ -197,7 +197,18 @@ function saveOwnerProfile(profile: OwnerProfile) {
 }
 
 function saveProfile(profile: LocalProfile) {
-  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+  const toSave = { ...profile, onboardingComplete: true };
+  localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(toSave));
+  if (profile.displayName) {
+    try {
+      const guestRaw = localStorage.getItem("toast_guest_profile");
+      if (guestRaw) {
+        const guest = JSON.parse(guestRaw);
+        guest.displayName = profile.displayName;
+        localStorage.setItem("toast_guest_profile", JSON.stringify(guest));
+      }
+    } catch {}
+  }
 }
 
 async function syncToServer(lineUserId: string, profile: LocalProfile) {

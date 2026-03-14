@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/BottomNav";
 import mascotImg from "@assets/toast_mascot_nobg.png";
 import { sendGroupInvite, getAccessToken, getGroupInviteUrl } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
+import { getSavedDisplayName } from "@/hooks/use-onboarding";
 
 interface SessionMember {
   id: number;
@@ -44,28 +45,25 @@ export default function WaitingRoom() {
   const { profile: lineProfile, loading: profileLoading, isLineUser, authRequired: lineAuthRequired, triggerLineLogin } = useLineProfile({ requireAuth: !hostOfSession });
 
   const hostProfile = hostOfSession ? getHostProfile() : null;
+
   const [localGuestProfile, setLocalGuestProfile] = useState<{ userId: string; displayName: string; pictureUrl?: string } | null>(() => {
     if (!sessionId || hostOfSession) return null;
     try {
       const sessionRaw = localStorage.getItem(`toast_guest_${sessionId}`);
       if (sessionRaw) {
         const parsed = JSON.parse(sessionRaw);
-        const hostRaw = sessionStorage.getItem("toast_group_host_profile");
-        if (hostRaw) {
-          try {
-            const hostData = JSON.parse(hostRaw);
-            if (hostData.userId === parsed.userId) return null;
-          } catch {}
-        }
-        return parsed;
+        if (parsed.joinedAsGuest) return parsed;
       }
     } catch {}
     return null;
   });
+
+  const inviteeLineProfile = !hostOfSession && isLineUser ? lineProfile : null;
+
   const profile = hostOfSession
     ? (lineProfile || hostProfile || { userId: `host_${sessionId}`, displayName: "Host" })
-    : (localGuestProfile || lineProfile || null);
-  const authRequired = lineAuthRequired && !localGuestProfile;
+    : (localGuestProfile || inviteeLineProfile || null);
+  const authRequired = !profile && !hostOfSession;
 
   const [members, setMembers] = useState<SessionMember[]>([]);
   const [sessionCreated, setSessionCreated] = useState(false);
@@ -73,7 +71,7 @@ export default function WaitingRoom() {
   const [error, setError] = useState<string | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [guestName, setGuestName] = useState("");
+  const [guestName, setGuestName] = useState(() => getSavedDisplayName() || "");
   const [guestJoining, setGuestJoining] = useState(false);
   const [lineLoginPending, setLineLoginPending] = useState(false);
   const [lineLoginError, setLineLoginError] = useState<string | null>(null);
@@ -298,7 +296,7 @@ export default function WaitingRoom() {
     } else {
       guestUserId = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     }
-    const guestProf = { userId: guestUserId, displayName: guestName.trim() };
+    const guestProf = { userId: guestUserId, displayName: guestName.trim(), joinedAsGuest: true };
     localStorage.setItem(`toast_guest_${sessionId}`, JSON.stringify(guestProf));
     sessionStorage.setItem("toast_guest_profile", JSON.stringify(guestProf));
     localStorage.setItem("toast_guest_profile", JSON.stringify(guestProf));

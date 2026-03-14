@@ -138,7 +138,7 @@ function SectionCard({ title, icon: Icon, iconColor, summary, expanded, onToggle
 
 export default function GroupSetup() {
   const [, navigate] = useLocation();
-  const { profile } = useLineProfile();
+  const { profile, refreshProfile } = useLineProfile();
   const [onboarded, setOnboarded] = useState(() => isOnboardingComplete());
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<string>("");
@@ -209,7 +209,6 @@ export default function GroupSetup() {
     if (profile) {
       sessionStorage.setItem("toast_group_host_profile", JSON.stringify(profile));
       localStorage.setItem("toast_guest_profile", JSON.stringify(profile));
-      localStorage.setItem(`toast_guest_${sessionId}`, JSON.stringify(profile));
     }
     sessionStorage.setItem("toast_group_host_session", sessionId);
     sessionStorage.setItem("toast_group_pending_invite", sessionId);
@@ -235,7 +234,7 @@ export default function GroupSetup() {
 
   if (!onboarded) {
     return (
-      <InlineOnboarding onComplete={() => setOnboarded(true)} />
+      <InlineOnboarding onComplete={() => { setOnboarded(true); refreshProfile(); }} />
     );
   }
 
@@ -585,7 +584,6 @@ export default function GroupSetup() {
               if (profile) {
                 sessionStorage.setItem("toast_group_host_profile", JSON.stringify(profile));
                 localStorage.setItem("toast_guest_profile", JSON.stringify(profile));
-                localStorage.setItem(`toast_guest_${sessionId}`, JSON.stringify(profile));
               }
               sessionStorage.setItem("toast_group_host_session", sessionId);
               navigate(`/group/waiting?session=${sessionId}`);
