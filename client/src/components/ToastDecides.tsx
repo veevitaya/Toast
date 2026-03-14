@@ -869,7 +869,7 @@ function RefineSheet({
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        transition={{ type: "spring", damping: 26, stiffness: 240, mass: 1 }}
         className="absolute bottom-0 left-0 right-0 bg-[#FAF9F6] rounded-t-3xl flex flex-col"
         style={{ maxHeight: "92dvh" }}
         data-testid="refine-sheet"
