@@ -319,21 +319,22 @@ export default function Home() {
     if (buttonEl) {
       const img = buttonEl.querySelector("img") as HTMLElement | null;
       if (img) {
-        img.style.transition = "transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)";
-        img.style.transform = "scale(1.2) rotate(-8deg)";
-        setTimeout(() => {
-          img.style.transform = "scale(0.9) rotate(6deg)";
-          setTimeout(() => {
-            img.style.transform = "scale(1.1) rotate(-4deg)";
-            setTimeout(() => {
-              img.style.transform = "scale(1) rotate(0deg)";
-              setTimeout(() => {
-                modeClickPending.current = false;
-                navigate(route);
-              }, 120);
-            }, 120);
-          }, 120);
-        }, 150);
+        const anim = img.animate([
+          { transform: "scale(1) translateY(0)", offset: 0 },
+          { transform: "scale(0.92) translateY(2px)", offset: 0.12 },
+          { transform: "scale(1.12) translateY(-6px)", offset: 0.35 },
+          { transform: "scale(0.97) translateY(1px)", offset: 0.6 },
+          { transform: "scale(1.04) translateY(-2px)", offset: 0.8 },
+          { transform: "scale(1) translateY(0)", offset: 1 },
+        ], {
+          duration: 500,
+          easing: "ease-out",
+          fill: "forwards",
+        });
+        anim.onfinish = () => {
+          modeClickPending.current = false;
+          navigate(route);
+        };
         return;
       }
     }
