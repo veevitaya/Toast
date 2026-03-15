@@ -365,7 +365,7 @@ export default function Profile() {
   const pictureUrl = localProfile.pictureUrl || lineProfile?.pictureUrl || "";
 
   return (
-    <div className="w-full min-h-[100dvh] bg-[#F8F7F4] dark:bg-background" data-testid="profile-page">
+    <div className="w-full min-h-[100dvh] bg-[#FCFCFC] dark:bg-background" data-testid="profile-page">
       <div className="relative overflow-hidden">
         {isOwnerMode && (
           <>
