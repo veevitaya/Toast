@@ -367,28 +367,18 @@ export default function Profile() {
   return (
     <div className="w-full min-h-[100dvh] bg-[#F8F7F4] dark:bg-background" data-testid="profile-page">
       <div className="relative overflow-hidden">
-        <div
-          className="absolute inset-0 pointer-events-none dark:hidden"
-          style={{
-            background: isOwnerMode
-              ? "linear-gradient(165deg, hsl(222,47%,14%) 0%, hsl(222,40%,22%) 50%, transparent 100%)"
-              : "linear-gradient(165deg, #FFF8E1 0%, #FFF3CD 30%, #F8F7F4 100%)",
-          }}
-        />
-        <div
-          className="absolute inset-0 pointer-events-none hidden dark:block"
-          style={{
-            background: isOwnerMode
-              ? "linear-gradient(165deg, hsl(222,47%,10%) 0%, hsl(222,40%,14%) 50%, transparent 100%)"
-              : "linear-gradient(165deg, hsl(40,20%,12%) 0%, hsl(35,15%,10%) 30%, transparent 100%)",
-          }}
-        />
-        <div
-          className="absolute top-0 right-0 w-48 h-48 pointer-events-none opacity-[0.07] dark:opacity-[0.04]"
-          style={{
-            background: "radial-gradient(circle, #FFCC02 0%, transparent 70%)",
-          }}
-        />
+        {isOwnerMode && (
+          <>
+            <div
+              className="absolute inset-0 pointer-events-none dark:hidden"
+              style={{ background: "linear-gradient(165deg, hsl(222,47%,14%) 0%, hsl(222,40%,22%) 50%, transparent 100%)" }}
+            />
+            <div
+              className="absolute inset-0 pointer-events-none hidden dark:block"
+              style={{ background: "linear-gradient(165deg, hsl(222,47%,10%) 0%, hsl(222,40%,14%) 50%, transparent 100%)" }}
+            />
+          </>
+        )}
 
         <div className="relative px-6 pt-14 pb-5">
           <div className="flex items-center justify-between mb-8">
@@ -403,11 +393,11 @@ export default function Profile() {
 
           <div className="flex flex-col items-center text-center mb-5">
             <div className="relative mb-4">
-              <div className="absolute -inset-1.5 rounded-full opacity-20" style={{
-                background: isOwnerMode
-                  ? "conic-gradient(from 180deg, hsl(222,50%,50%), hsl(260,50%,50%), hsl(222,50%,50%))"
-                  : "conic-gradient(from 180deg, #FFCC02, #FF9500, #FFCC02)",
-              }} />
+              {isOwnerMode && (
+                <div className="absolute -inset-1.5 rounded-full opacity-20" style={{
+                  background: "conic-gradient(from 180deg, hsl(222,50%,50%), hsl(260,50%,50%), hsl(222,50%,50%))",
+                }} />
+              )}
               <div
                 className="relative w-[88px] h-[88px] rounded-full overflow-hidden flex items-center justify-center text-4xl border-[3px]"
                 style={{
@@ -417,7 +407,7 @@ export default function Profile() {
                   borderColor: isOwnerMode ? "rgba(255,255,255,0.1)" : "#fff",
                   boxShadow: isOwnerMode
                     ? "0 8px 32px rgba(0,0,0,0.25)"
-                    : "0 8px 32px rgba(255,180,0,0.2), 0 2px 8px rgba(0,0,0,0.06)",
+                    : "0 4px 20px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04)",
                 }}
                 data-testid="avatar-profile"
               >
@@ -3596,10 +3586,7 @@ function SavedSection({ t }: { t: (key: string, params?: Record<string, string |
   }, [allRestaurants, allSavedIds]);
 
   return (
-    <div
-      className="bg-white dark:bg-card rounded-[20px] overflow-hidden border border-black/[0.04] dark:border-border"
-      style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.02)" }}
-    >
+    <div>
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
