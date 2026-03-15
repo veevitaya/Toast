@@ -78,25 +78,19 @@ type UIConfig = {
   mascotGreeting: string;
 };
 
-type ApiIntegration = {
+type UnifiedService = {
   id: string;
   name: string;
   description: string;
   icon: typeof Key;
-  status: "connected" | "not_configured" | "error";
-  envKey: string;
-  docsUrl: string;
-  category: "data" | "messaging" | "payments" | "maps";
-};
-
-type ServiceIntegration = {
-  name: string;
-  status: "connected" | "planned";
+  status: "connected" | "planned" | "not_configured" | "error";
   lastSync: string;
-  description: string;
   appId: string;
   health: number;
   canDisable: boolean;
+  envKey?: string;
+  docsUrl?: string;
+  category: "data" | "messaging" | "delivery" | "payments" | "maps";
 };
 
 type FetchedPlace = {
@@ -180,34 +174,24 @@ const CATEGORY_META: Record<string, { label: string; color: string; bgClass: str
   ui: { label: "Interface", color: "text-pink-600", bgClass: "bg-pink-50" },
 };
 
-const DEFAULT_APIS: ApiIntegration[] = [
-  { id: "google_places", name: "Google Places API", description: "Fetch real restaurant data, photos, ratings, and location info from Google Maps", icon: MapPin, status: "not_configured", envKey: "GOOGLE_PLACES_API_KEY", docsUrl: "https://developers.google.com/maps/documentation/places/web-service", category: "data" },
-  { id: "line_liff", name: "LINE LIFF SDK", description: "Login, profile access, and share target picker for LINE messaging integration", icon: Globe, status: "not_configured", envKey: "VITE_LIFF_ID", docsUrl: "https://developers.line.biz/en/docs/liff/", category: "messaging" },
-  { id: "line_messaging", name: "LINE Messaging API", description: "Send push notifications, rich menus, and flex messages to LINE users", icon: Globe, status: "not_configured", envKey: "LINE_CHANNEL_ACCESS_TOKEN", docsUrl: "https://developers.line.biz/en/docs/messaging-api/", category: "messaging" },
-  { id: "grab", name: "Grab Food API", description: "Deep link integration for Grab Food ordering and delivery tracking", icon: Truck, status: "not_configured", envKey: "GRAB_API_KEY", docsUrl: "https://developer.grab.com/", category: "data" },
-  { id: "lineman", name: "LINE MAN API", description: "Delivery integration with LINE MAN Wongnai for restaurant ordering", icon: Truck, status: "not_configured", envKey: "LINEMAN_API_KEY", docsUrl: "https://developers.lineman.line.me/", category: "data" },
-  { id: "robinhood", name: "Robinhood API", description: "Integration with Robinhood food delivery platform in Thailand", icon: Truck, status: "not_configured", envKey: "ROBINHOOD_API_KEY", docsUrl: "https://robinhood.in.th/", category: "data" },
-  { id: "stripe", name: "Stripe Payments", description: "Process premium subscription payments and campaign ad purchases", icon: Shield, status: "not_configured", envKey: "STRIPE_SECRET_KEY", docsUrl: "https://docs.stripe.com/", category: "payments" },
-  { id: "google_analytics", name: "Google Analytics", description: "Track user behavior, page views, and conversion events", icon: Database, status: "not_configured", envKey: "VITE_GA_MEASUREMENT_ID", docsUrl: "https://developers.google.com/analytics", category: "data" },
-];
-
-const API_CATEGORY_META: Record<string, { label: string; color: string; bgClass: string }> = {
+const SERVICES_CATEGORY_META: Record<string, { label: string; color: string; bgClass: string }> = {
   data: { label: "Data & Maps", color: "text-blue-600", bgClass: "bg-blue-50" },
   messaging: { label: "Messaging", color: "text-green-600", bgClass: "bg-green-50" },
+  delivery: { label: "Delivery", color: "text-orange-600", bgClass: "bg-orange-50" },
   payments: { label: "Payments", color: "text-purple-600", bgClass: "bg-purple-50" },
   maps: { label: "Maps", color: "text-amber-600", bgClass: "bg-amber-50" },
 };
 
-const SERVICES_INIT: ServiceIntegration[] = [
-  { name: "LINE LIFF", status: "connected", lastSync: "Real-time", description: "User auth, profile data, rich menus", appId: "2009293021-mFgkOhqd", health: 99.8, canDisable: true },
-  { name: "LINE Official Account", status: "connected", lastSync: "Real-time", description: "Messaging, push notifications, friend tracking", appId: "2009335625-Pyd3rjhr", health: 99.5, canDisable: true },
-  { name: "Grab", status: "connected", lastSync: "4h ago", description: "Deep links for food delivery", appId: "Partner deeplink", health: 98.2, canDisable: true },
-  { name: "LINE MAN", status: "connected", lastSync: "4h ago", description: "Deep links for food delivery", appId: "Partner deeplink", health: 97.8, canDisable: true },
-  { name: "Robinhood", status: "connected", lastSync: "4h ago", description: "Deep links for food delivery", appId: "Partner deeplink", health: 96.1, canDisable: true },
-  { name: "Google Places API", status: "connected", lastSync: "2h ago", description: "Restaurant data, ratings, photos", appId: "API Key", health: 99.9, canDisable: true },
-  { name: "Leaflet / OpenStreetMap", status: "connected", lastSync: "Real-time", description: "Map tiles and geocoding", appId: "Public API", health: 99.7, canDisable: false },
-  { name: "Stripe", status: "planned", lastSync: "\u2014", description: "Owner subscription payments", appId: "\u2014", health: 0, canDisable: false },
-  { name: "Google Analytics", status: "planned", lastSync: "\u2014", description: "Web analytics and event tracking", appId: "\u2014", health: 0, canDisable: false },
+const SERVICES_INIT: UnifiedService[] = [
+  { id: "line_liff", name: "LINE LIFF", description: "User auth, profile data, share target picker", icon: Globe, status: "connected", lastSync: "Real-time", appId: "2009293021-mFgkOhqd", health: 99.8, canDisable: true, envKey: "VITE_LIFF_ID", docsUrl: "https://developers.line.biz/en/docs/liff/", category: "messaging" },
+  { id: "line_messaging", name: "LINE Messaging API", description: "Push notifications, rich menus, flex messages", icon: Globe, status: "connected", lastSync: "Real-time", appId: "2009335625-Pyd3rjhr", health: 99.5, canDisable: true, envKey: "LINE_CHANNEL_ACCESS_TOKEN", docsUrl: "https://developers.line.biz/en/docs/messaging-api/", category: "messaging" },
+  { id: "grab", name: "Grab Food", description: "Deep links for Grab Food ordering and delivery", icon: Truck, status: "connected", lastSync: "4h ago", appId: "Partner deeplink", health: 98.2, canDisable: true, envKey: "GRAB_API_KEY", docsUrl: "https://developer.grab.com/", category: "delivery" },
+  { id: "lineman", name: "LINE MAN", description: "Deep links for LINE MAN Wongnai ordering", icon: Truck, status: "connected", lastSync: "4h ago", appId: "Partner deeplink", health: 97.8, canDisable: true, envKey: "LINEMAN_API_KEY", docsUrl: "https://developers.lineman.line.me/", category: "delivery" },
+  { id: "robinhood", name: "Robinhood", description: "Deep links for Robinhood food delivery", icon: Truck, status: "connected", lastSync: "4h ago", appId: "Partner deeplink", health: 96.1, canDisable: true, envKey: "ROBINHOOD_API_KEY", docsUrl: "https://robinhood.in.th/", category: "delivery" },
+  { id: "google_places", name: "Google Places API", description: "Restaurant data, ratings, photos from Google Maps", icon: MapPin, status: "connected", lastSync: "2h ago", appId: "API Key", health: 99.9, canDisable: true, envKey: "GOOGLE_PLACES_API_KEY", docsUrl: "https://developers.google.com/maps/documentation/places/web-service", category: "data" },
+  { id: "leaflet", name: "Leaflet / OpenStreetMap", description: "Map tiles, geocoding, and location services", icon: MapPin, status: "connected", lastSync: "Real-time", appId: "Public API", health: 99.7, canDisable: false, category: "maps" },
+  { id: "stripe", name: "Stripe Payments", description: "Premium subscriptions and campaign ad payments", icon: Shield, status: "planned", lastSync: "\u2014", appId: "\u2014", health: 0, canDisable: false, envKey: "STRIPE_SECRET_KEY", docsUrl: "https://docs.stripe.com/", category: "payments" },
+  { id: "google_analytics", name: "Google Analytics", description: "User behavior, page views, conversion tracking", icon: Database, status: "planned", lastSync: "\u2014", appId: "\u2014", health: 0, canDisable: false, envKey: "VITE_GA_MEASUREMENT_ID", docsUrl: "https://developers.google.com/analytics", category: "data" },
 ];
 
 const WEBHOOK_LOGS = [
@@ -226,9 +210,8 @@ const API_USAGE = [
 ];
 
 const TABS = [
-  { id: "services", label: "Services", icon: Plug },
+  { id: "services", label: "Services & APIs", icon: Plug },
   { id: "features", label: "Features", icon: ToggleLeft },
-  { id: "apis", label: "API Keys", icon: Key },
   { id: "branding", label: "Branding", icon: Palette },
   { id: "vibes", label: "Vibes", icon: Flame },
   { id: "ui", label: "UI & Text", icon: Type },
@@ -243,8 +226,7 @@ export default function AdminConfig() {
   const [images, setImages] = useState<AppImage[]>(DEFAULT_IMAGES);
   const [vibes, setVibes] = useState<VibeConfig[]>(DEFAULT_VIBES);
   const [uiConfig, setUiConfig] = useState<UIConfig>(DEFAULT_UI);
-  const [apis, setApis] = useState<ApiIntegration[]>(DEFAULT_APIS);
-  const [services, setServices] = useState<ServiceIntegration[]>(SERVICES_INIT);
+  const [services, setServices] = useState<UnifiedService[]>(SERVICES_INIT);
   const [showPreview, setShowPreview] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
@@ -306,7 +288,6 @@ export default function AdminConfig() {
     setImages(DEFAULT_IMAGES);
     setVibes(DEFAULT_VIBES);
     setUiConfig(DEFAULT_UI);
-    setApis(DEFAULT_APIS);
     setServices(SERVICES_INIT);
     setHasChanges(false);
     setPendingChanges([]);
@@ -375,12 +356,12 @@ export default function AdminConfig() {
 
   const [expandedPlace, setExpandedPlace] = useState<number | null>(null);
 
-  const updateApiStatus = (id: string, status: ApiIntegration["status"]) => {
-    setApis((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status } : a))
+  const updateServiceApiKey = (id: string) => {
+    setServices((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, status: "connected" as const, health: s.health || 99.0 } : s))
     );
-    const api = apis.find((a) => a.id === id);
-    trackChange(`${status === "connected" ? "Connected" : "Updated"} ${api?.name}`);
+    const svc = services.find((s) => s.id === id);
+    trackChange(`Configured API key for ${svc?.name}`);
   };
 
   const handleSync = (name: string) => {
@@ -434,7 +415,7 @@ export default function AdminConfig() {
             </h2>
           </div>
           <p className="text-sm text-muted-foreground ml-[52px]">
-            Services, features, API keys, branding, and app behavior in one place
+            Services, features, branding, and app behavior in one place
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -523,7 +504,7 @@ export default function AdminConfig() {
               {activeTab === "services" && (
                 <div className="space-y-4" data-testid="panel-services">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Connected Services</p>
+                    <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Services & API Integrations</p>
                     <span className="text-xs text-muted-foreground">{connectedServices}/{services.length} active</span>
                   </div>
 
@@ -544,271 +525,141 @@ export default function AdminConfig() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    {services.map(service => (
-                      <div key={service.name} className="bg-gray-50 rounded-xl p-4 hover:bg-gray-100/60 transition-colors" data-testid={`service-${service.name.toLowerCase().replace(/\s+/g, "-")}`}>
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                            service.status === "connected" ? "bg-emerald-100" : "bg-gray-200"
-                          }`}>
-                            {service.status === "connected" ?
-                              <Zap className="w-5 h-5 text-emerald-600" /> :
-                              <Clock className="w-5 h-5 text-gray-400" />
-                            }
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-gray-800">{service.name}</span>
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                                service.status === "connected" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"
-                              }`}>{service.status}</span>
-                            </div>
-                            <p className="text-xs text-gray-400 mt-0.5">{service.description}</p>
-                          </div>
-                          {service.status === "connected" && (
-                            <div className="text-right flex-shrink-0">
-                              <div className="flex items-center gap-1.5 justify-end">
-                                <div className="w-12 h-1.5 rounded-full bg-gray-200 overflow-hidden">
-                                  <div className="h-full rounded-full bg-emerald-400" style={{ width: `${service.health}%` }} />
-                                </div>
-                                <span className="text-[10px] font-semibold text-gray-600">{service.health}%</span>
-                              </div>
-                              <span className="text-[10px] text-gray-400">Last: {service.lastSync}</span>
-                            </div>
-                          )}
-                          <div className="flex gap-1.5 flex-shrink-0">
-                            {service.canDisable && (
-                              <button
-                                onClick={() => toggleService(service.name)}
-                                className="flex-shrink-0"
-                                data-testid={`btn-toggle-${service.name.toLowerCase().replace(/\s+/g, "-")}`}
-                              >
-                                {service.status === "connected" ? (
-                                  <ToggleRight className="w-8 h-8 text-emerald-500" />
-                                ) : (
-                                  <ToggleLeft className="w-8 h-8 text-gray-300" />
-                                )}
-                              </button>
-                            )}
-                            {service.status === "connected" && (
-                              <button
-                                onClick={() => handleSync(service.name)}
-                                disabled={syncingName === service.name}
-                                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-white text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1 disabled:opacity-50 border border-gray-100"
-                                data-testid={`btn-sync-${service.name.toLowerCase().replace(/\s+/g, "-")}`}
-                              >
-                                {syncingName === service.name ? (
-                                  <><Loader2 className="w-3 h-3 animate-spin" /> Syncing...</>
-                                ) : (
-                                  <><RefreshCw className="w-3 h-3" /> Sync</>
-                                )}
-                              </button>
-                            )}
-                            <button
-                              onClick={() => setDetailService(service.name)}
-                              className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-white text-gray-400 hover:bg-gray-50 transition-colors border border-gray-100"
-                              data-testid={`btn-detail-${service.name.toLowerCase().replace(/\s+/g, "-")}`}
-                            >
-                              Details
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="border-t border-gray-100 pt-5 mt-5">
-                    <div className="border-l-[3px] pl-3 mb-4" style={{ borderColor: "var(--admin-blue)" }}>
-                      <h3 className="text-[15px] font-semibold text-gray-800">Recent Activity</h3>
-                      <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Webhook events</p>
-                    </div>
-                    <div className="space-y-1.5">
-                      {WEBHOOK_LOGS.map((log, i) => (
-                        <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
-                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${log.status === "success" ? "bg-emerald-400" : "bg-amber-400"}`} />
-                          <span className="flex-1 text-sm text-gray-700">{log.event}</span>
-                          <span className="text-xs font-mono text-gray-400 bg-gray-50 px-2 py-0.5 rounded">{log.payload}</span>
-                          <span className="text-xs text-gray-400 w-20 text-right">{log.timestamp}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "features" && (
-                <div className="space-y-6" data-testid="panel-features">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Feature Toggles</p>
-                    <span className="text-xs text-muted-foreground">
-                      {enabledCount}/{features.length} active
-                    </span>
-                  </div>
-
-                  {Object.entries(featuresByCategory).map(([category, items]) => {
-                    const meta = CATEGORY_META[category] || { label: category, color: "text-foreground", bgClass: "bg-gray-50" };
-                    return (
-                      <div key={category}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${meta.bgClass} ${meta.color}`}>
-                            {meta.label}
-                          </span>
-                        </div>
-                        <div className="space-y-1">
-                          {items.map((feature) => (
-                            <div
-                              key={feature.id}
-                              className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
-                                feature.enabled
-                                  ? "bg-gray-50"
-                                  : "bg-white opacity-60"
-                              }`}
-                              data-testid={`feature-row-${feature.id}`}
-                            >
-                              <div
-                                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                                style={{
-                                  backgroundColor: feature.enabled
-                                    ? "var(--admin-blue)"
-                                    : "hsl(0,0%,92%)",
-                                }}
-                              >
-                                <feature.icon className={`w-4 h-4 ${feature.enabled ? "text-white" : "text-muted-foreground"}`} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-800">{feature.label}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{feature.description}</p>
-                              </div>
-                              <button
-                                onClick={() => toggleFeature(feature.id)}
-                                className="flex-shrink-0"
-                                data-testid={`toggle-${feature.id}`}
-                              >
-                                {feature.enabled ? (
-                                  <ToggleRight className="w-10 h-10 text-[#FFCC02]" />
-                                ) : (
-                                  <ToggleLeft className="w-10 h-10 text-muted-foreground/30" />
-                                )}
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {activeTab === "apis" && (
-                <div className="space-y-6" data-testid="panel-apis">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">API Integrations</p>
-                    <span className="text-xs text-muted-foreground">
-                      {apis.filter((a) => a.status === "connected").length}/{apis.length} connected
-                    </span>
-                  </div>
-
                   {Object.entries(
-                    apis.reduce<Record<string, ApiIntegration[]>>((acc, api) => {
-                      if (!acc[api.category]) acc[api.category] = [];
-                      acc[api.category].push(api);
+                    services.reduce<Record<string, UnifiedService[]>>((acc, svc) => {
+                      if (!acc[svc.category]) acc[svc.category] = [];
+                      acc[svc.category].push(svc);
                       return acc;
                     }, {})
                   ).map(([category, items]) => {
-                    const meta = API_CATEGORY_META[category] || { label: category, color: "text-foreground", bgClass: "bg-gray-50" };
+                    const meta = SERVICES_CATEGORY_META[category] || { label: category, color: "text-foreground", bgClass: "bg-gray-50" };
                     return (
                       <div key={category}>
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2 mb-2">
                           <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${meta.bgClass} ${meta.color}`}>
                             {meta.label}
                           </span>
                         </div>
-                        <div className="space-y-1">
-                          {items.map((api) => (
-                            <div
-                              key={api.id}
-                              className="p-4 rounded-xl bg-gray-50"
-                              data-testid={`api-row-${api.id}`}
-                            >
-                              <div className="flex items-center gap-4">
-                                <div
-                                  className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                                  style={{
-                                    backgroundColor: api.status === "connected"
-                                      ? "#00B14F"
-                                      : "hsl(222,47%,88%)",
-                                  }}
-                                >
-                                  <api.icon className={`w-4 h-4 ${api.status === "connected" ? "text-white" : "text-foreground/60"}`} />
+                        <div className="space-y-1.5 mb-4">
+                          {items.map(service => (
+                            <div key={service.id} className="bg-gray-50 rounded-xl p-4 hover:bg-gray-100/60 transition-colors" data-testid={`service-${service.id}`}>
+                              <div className="flex items-center gap-3">
+                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                                  service.status === "connected" ? "bg-emerald-100" : "bg-gray-200"
+                                }`}>
+                                  <service.icon className={`w-4 h-4 ${service.status === "connected" ? "text-emerald-600" : "text-gray-400"}`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
-                                    <p className="text-sm font-semibold text-gray-800">{api.name}</p>
-                                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                                      api.status === "connected"
-                                        ? "bg-[#00B14F]/10 text-[#00B14F]"
-                                        : api.status === "error"
-                                          ? "bg-red-100 text-red-700"
-                                          : "bg-gray-100 text-muted-foreground"
-                                    }`}>
-                                      {api.status === "connected" ? "Connected" : api.status === "error" ? "Error" : "Not configured"}
-                                    </span>
+                                    <span className="text-sm font-semibold text-gray-800">{service.name}</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                      service.status === "connected" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"
+                                    }`}>{service.status}</span>
                                   </div>
-                                  <p className="text-xs text-muted-foreground mt-0.5">{api.description}</p>
+                                  <p className="text-xs text-gray-400 mt-0.5">{service.description}</p>
                                 </div>
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                  <a
-                                    href={api.docsUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                                    data-testid={`button-docs-${api.id}`}
-                                  >
-                                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-                                  </a>
+                                {service.status === "connected" && (
+                                  <div className="text-right flex-shrink-0">
+                                    <div className="flex items-center gap-1.5 justify-end">
+                                      <div className="w-12 h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                                        <div className="h-full rounded-full bg-emerald-400" style={{ width: `${service.health}%` }} />
+                                      </div>
+                                      <span className="text-[10px] font-semibold text-gray-600">{service.health}%</span>
+                                    </div>
+                                    <span className="text-[10px] text-gray-400">Last: {service.lastSync}</span>
+                                  </div>
+                                )}
+                                <div className="flex gap-1.5 flex-shrink-0">
+                                  {service.docsUrl && (
+                                    <a
+                                      href={service.docsUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                                      data-testid={`button-docs-${service.id}`}
+                                    >
+                                      <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                                    </a>
+                                  )}
+                                  {service.envKey && (
+                                    <button
+                                      onClick={() => { setShowApiKeyInput(showApiKeyInput === service.id ? null : service.id); setApiKeyInputValue(""); }}
+                                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-gray-100 text-xs font-medium text-foreground hover:bg-gray-50 transition-colors"
+                                      data-testid={`button-configure-${service.id}`}
+                                    >
+                                      <Key className="w-3 h-3" />
+                                      {service.status === "connected" ? "Key" : "Configure"}
+                                    </button>
+                                  )}
+                                  {service.canDisable && (
+                                    <button
+                                      onClick={() => toggleService(service.name)}
+                                      className="flex-shrink-0"
+                                      data-testid={`btn-toggle-${service.name.toLowerCase().replace(/\s+/g, "-")}`}
+                                    >
+                                      {service.status === "connected" ? (
+                                        <ToggleRight className="w-8 h-8 text-emerald-500" />
+                                      ) : (
+                                        <ToggleLeft className="w-8 h-8 text-gray-300" />
+                                      )}
+                                    </button>
+                                  )}
+                                  {service.status === "connected" && (
+                                    <button
+                                      onClick={() => handleSync(service.name)}
+                                      disabled={syncingName === service.name}
+                                      className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-white text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1 disabled:opacity-50 border border-gray-100"
+                                      data-testid={`btn-sync-${service.name.toLowerCase().replace(/\s+/g, "-")}`}
+                                    >
+                                      {syncingName === service.name ? (
+                                        <><Loader2 className="w-3 h-3 animate-spin" /> Syncing...</>
+                                      ) : (
+                                        <><RefreshCw className="w-3 h-3" /> Sync</>
+                                      )}
+                                    </button>
+                                  )}
                                   <button
-                                    onClick={() => { setShowApiKeyInput(showApiKeyInput === api.id ? null : api.id); setApiKeyInputValue(""); }}
-                                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-100 text-xs font-medium text-foreground hover:bg-gray-50 transition-colors"
-                                    data-testid={`button-configure-${api.id}`}
+                                    onClick={() => setDetailService(service.name)}
+                                    className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-white text-gray-400 hover:bg-gray-50 transition-colors border border-gray-100"
+                                    data-testid={`btn-detail-${service.name.toLowerCase().replace(/\s+/g, "-")}`}
                                   >
-                                    <Key className="w-3 h-3" />
-                                    {api.status === "connected" ? "Update" : "Configure"}
+                                    Details
                                   </button>
                                 </div>
                               </div>
 
-                              {showApiKeyInput === api.id && (
+                              {showApiKeyInput === service.id && (
                                 <div className="mt-3 pt-3 border-t border-gray-100">
                                   <label className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest block mb-2">
-                                    {api.envKey}
+                                    {service.envKey}
                                   </label>
                                   <div className="flex gap-2">
                                     <input
                                       type="password"
                                       value={apiKeyInputValue}
                                       onChange={(e) => setApiKeyInputValue(e.target.value)}
-                                      placeholder={`Enter your ${api.name} key`}
+                                      placeholder={`Enter your ${service.name} key`}
                                       className="flex-1 px-3 py-2 rounded-xl border border-gray-100 bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-foreground/10 font-mono"
-                                      data-testid={`input-api-key-${api.id}`}
+                                      data-testid={`input-api-key-${service.id}`}
                                     />
                                     <button
                                       onClick={() => {
                                         if (apiKeyInputValue.trim()) {
-                                          updateApiStatus(api.id, "connected");
+                                          updateServiceApiKey(service.id);
                                           setShowApiKeyInput(null);
                                           setApiKeyInputValue("");
                                         }
                                       }}
                                       disabled={!apiKeyInputValue.trim()}
                                       className="px-4 py-2 rounded-xl bg-[#FFCC02] text-gray-900 text-xs font-semibold hover:bg-[#FFCC02]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                      data-testid={`button-save-key-${api.id}`}
+                                      data-testid={`button-save-key-${service.id}`}
                                     >
                                       Save
                                     </button>
                                   </div>
                                   <p className="text-[10px] text-muted-foreground/60 mt-2 flex items-center gap-1">
                                     <Shield className="w-3 h-3" />
-                                    Keys are stored securely as environment secrets and never exposed to the frontend
+                                    Keys are stored securely as environment secrets
                                   </p>
                                 </div>
                               )}
@@ -1128,8 +979,89 @@ export default function AdminConfig() {
                       )}
                     </div>
                   </div>
+
+                  <div className="border-t border-gray-100 pt-5 mt-5">
+                    <div className="border-l-[3px] pl-3 mb-4" style={{ borderColor: "var(--admin-blue)" }}>
+                      <h3 className="text-[15px] font-semibold text-gray-800">Recent Activity</h3>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Webhook events</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      {WEBHOOK_LOGS.map((log, i) => (
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${log.status === "success" ? "bg-emerald-400" : "bg-amber-400"}`} />
+                          <span className="flex-1 text-sm text-gray-700">{log.event}</span>
+                          <span className="text-xs font-mono text-gray-400 bg-gray-50 px-2 py-0.5 rounded">{log.payload}</span>
+                          <span className="text-xs text-gray-400 w-20 text-right">{log.timestamp}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
+
+              {activeTab === "features" && (
+                <div className="space-y-6" data-testid="panel-features">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Feature Toggles</p>
+                    <span className="text-xs text-muted-foreground">
+                      {enabledCount}/{features.length} active
+                    </span>
+                  </div>
+
+                  {Object.entries(featuresByCategory).map(([category, items]) => {
+                    const meta = CATEGORY_META[category] || { label: category, color: "text-foreground", bgClass: "bg-gray-50" };
+                    return (
+                      <div key={category}>
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${meta.bgClass} ${meta.color}`}>
+                            {meta.label}
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          {items.map((feature) => (
+                            <div
+                              key={feature.id}
+                              className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
+                                feature.enabled
+                                  ? "bg-gray-50"
+                                  : "bg-white opacity-60"
+                              }`}
+                              data-testid={`feature-row-${feature.id}`}
+                            >
+                              <div
+                                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                                style={{
+                                  backgroundColor: feature.enabled
+                                    ? "var(--admin-blue)"
+                                    : "hsl(0,0%,92%)",
+                                }}
+                              >
+                                <feature.icon className={`w-4 h-4 ${feature.enabled ? "text-white" : "text-muted-foreground"}`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-800">{feature.label}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{feature.description}</p>
+                              </div>
+                              <button
+                                onClick={() => toggleFeature(feature.id)}
+                                className="flex-shrink-0"
+                                data-testid={`toggle-${feature.id}`}
+                              >
+                                {feature.enabled ? (
+                                  <ToggleRight className="w-10 h-10 text-[#FFCC02]" />
+                                ) : (
+                                  <ToggleLeft className="w-10 h-10 text-muted-foreground/30" />
+                                )}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
 
               {activeTab === "branding" && (
                 <div className="space-y-6" data-testid="panel-branding">
