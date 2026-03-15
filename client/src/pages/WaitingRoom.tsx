@@ -209,21 +209,9 @@ export default function WaitingRoom() {
     const pendingInvite = sessionStorage.getItem("toast_group_pending_invite");
     if (pendingInvite === sessionId) {
       sessionStorage.removeItem("toast_group_pending_invite");
-      setTimeout(async () => {
-        try {
-          const result = await sendGroupInviteNoRedirect(sessionId);
-          if (result.method === "liff" && result.shared) {
-            return;
-          }
-          if (result.method === "clipboard") {
-            setLinkCopied(true);
-            setTimeout(() => setLinkCopied(false), 3000);
-          }
-          setShowShareModal(true);
-        } catch {
-          setShowShareModal(true);
-        }
-      }, 400);
+      setTimeout(() => {
+        setShowShareModal(true);
+      }, 300);
     }
   }, [sessionCreated, sessionId]);
 

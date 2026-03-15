@@ -308,11 +308,19 @@ async function tryShareTargetPicker(messages: any[]): Promise<ShareResult | null
   return null;
 }
 
+const isMobileDevice = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
 function openLineSharePopup(shareUrl: string, fallbackText: string): ShareResult | null {
   const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(fallbackText)}`;
   const popup = window.open(lineUrl, "_blank", "width=500,height=600");
   if (popup) return { shared: true, method: "line-app" };
   return null;
+}
+
+function openLineAppShare(fullText: string): ShareResult {
+  const lineUrl = `https://line.me/R/share?text=${encodeURIComponent(fullText)}`;
+  window.open(lineUrl, "_blank");
+  return { shared: true, method: "line-app" };
 }
 
 async function copyToClipboard(text: string): Promise<ShareResult> {
@@ -355,7 +363,11 @@ export async function sendGroupInviteNoRedirect(sessionId: string): Promise<Shar
     if (result) return result;
   }
 
-  const popupResult = openLineSharePopup(joinUrl, "Toast Group Session! Join our food swiping session.");
+  if (isMobileDevice()) {
+    return openLineAppShare(plainText);
+  }
+
+  const popupResult = openLineSharePopup(joinUrl, plainText);
   if (popupResult) return popupResult;
   return copyToClipboard(plainText);
 }
@@ -393,14 +405,11 @@ export async function sendGroupInvite(sessionId: string): Promise<ShareResult> {
     if (result) return result;
   }
 
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if (isMobile) {
-    const lineUrl = `https://line.me/R/share?text=${encodeURIComponent(plainText)}`;
-    window.location.href = lineUrl;
-    return { shared: true, method: "line-app" };
+  if (isMobileDevice()) {
+    return openLineAppShare(plainText);
   }
 
-  const popupResult = openLineSharePopup(joinUrl, "Toast Group Session! Join our food swiping session.");
+  const popupResult = openLineSharePopup(joinUrl, plainText);
   if (popupResult) return popupResult;
   return copyToClipboard(plainText);
 }

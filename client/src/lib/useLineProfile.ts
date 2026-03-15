@@ -62,9 +62,11 @@ export function useLineProfile(options?: { requireAuth?: boolean }) {
               syncProfileToServer(p);
               return;
             }
-          } else if (isInLiff()) {
+          } else if (isInLiff() && requireAuth) {
             login();
             return;
+          } else if (isInLiff() && !requireAuth) {
+            // In LIFF but not logged in — skip login, use guest profile
           } else if (requireAuth) {
             setAuthRequired(true);
             setLoading(false);
