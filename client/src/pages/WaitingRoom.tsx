@@ -4,9 +4,9 @@ import { useLocation } from "wouter";
 import { TrendingUp, Copy, Check, X, Share2 } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import mascotImg from "@assets/toast_mascot_nobg.png";
-import { sendGroupInvite, getAccessToken, getGroupInviteUrl } from "@/lib/liff";
+import { sendGroupInviteNoRedirect, getAccessToken, getGroupInviteUrl } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
-import { getSavedDisplayName } from "@/hooks/use-onboarding";
+import { getSavedDisplayName, getOnboardingProfile } from "@/hooks/use-onboarding";
 
 interface SessionMember {
   id: number;
@@ -42,7 +42,7 @@ export default function WaitingRoom() {
   const [, navigate] = useLocation();
   const sessionId = new URLSearchParams(window.location.search).get("session") || "";
   const hostOfSession = isHost(sessionId);
-  const { profile: lineProfile, loading: profileLoading, isLineUser, authRequired: lineAuthRequired, triggerLineLogin } = useLineProfile({ requireAuth: !hostOfSession });
+  const { profile: lineProfile, loading: profileLoading, isLineUser } = useLineProfile({ requireAuth: false });
 
   const hostProfile = hostOfSession ? getHostProfile() : null;
 
@@ -60,10 +60,12 @@ export default function WaitingRoom() {
 
   const inviteeLineProfile = !hostOfSession && isLineUser ? lineProfile : null;
 
+  const hasKnownIdentity = !!getOnboardingProfile() || !!getSavedDisplayName() || !!localGuestProfile || !!inviteeLineProfile;
+
   const profile = hostOfSession
     ? (lineProfile || hostProfile || { userId: `host_${sessionId}`, displayName: "Host" })
-    : (localGuestProfile || inviteeLineProfile || null);
-  const authRequired = !profile && !hostOfSession;
+    : (localGuestProfile || inviteeLineProfile || (hasKnownIdentity ? lineProfile : null));
+  const needsNameEntry = !profile && !hostOfSession && !profileLoading;
 
   const [members, setMembers] = useState<SessionMember[]>([]);
   const [sessionCreated, setSessionCreated] = useState(false);
@@ -73,8 +75,6 @@ export default function WaitingRoom() {
   const [linkCopied, setLinkCopied] = useState(false);
   const [guestName, setGuestName] = useState(() => getSavedDisplayName() || "");
   const [guestJoining, setGuestJoining] = useState(false);
-  const [lineLoginPending, setLineLoginPending] = useState(false);
-  const [lineLoginError, setLineLoginError] = useState<string | null>(null);
   const joiningRef = useRef(false);
 
   const getUserLocation = useCallback(async (): Promise<{ latitude: string; longitude: string } | null> => {
@@ -211,14 +211,15 @@ export default function WaitingRoom() {
       sessionStorage.removeItem("toast_group_pending_invite");
       setTimeout(async () => {
         try {
-          const result = await sendGroupInvite(sessionId);
-          if (result.method === "clipboard" || !result.shared) {
-            if (result.method === "clipboard") {
-              setLinkCopied(true);
-              setTimeout(() => setLinkCopied(false), 3000);
-            }
-            setShowShareModal(true);
+          const result = await sendGroupInviteNoRedirect(sessionId);
+          if (result.method === "liff" && result.shared) {
+            return;
           }
+          if (result.method === "clipboard") {
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 3000);
+          }
+          setShowShareModal(true);
         } catch {
           setShowShareModal(true);
         }
@@ -274,10 +275,13 @@ export default function WaitingRoom() {
   };
 
   const handleShareVieLine = async () => {
-    const result = await sendGroupInvite(sessionId);
+    const result = await sendGroupInviteNoRedirect(sessionId);
     if (result.method === "clipboard") {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 3000);
+    }
+    if (result.method === "liff" && result.shared) {
+      setShowShareModal(false);
     }
   };
 
@@ -294,12 +298,46 @@ export default function WaitingRoom() {
         guestUserId = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       }
     } else {
-      guestUserId = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const globalGuest = localStorage.getItem("toast_guest_profile");
+      if (globalGuest) {
+        try {
+          guestUserId = JSON.parse(globalGuest).userId;
+        } catch {
+          guestUserId = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        }
+      } else {
+        guestUserId = `guest_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      }
     }
     const guestProf = { userId: guestUserId, displayName: guestName.trim(), joinedAsGuest: true };
     localStorage.setItem(`toast_guest_${sessionId}`, JSON.stringify(guestProf));
     sessionStorage.setItem("toast_guest_profile", JSON.stringify(guestProf));
     localStorage.setItem("toast_guest_profile", JSON.stringify(guestProf));
+
+    const existingOnboarding = localStorage.getItem("toast_user_profile");
+    if (!existingOnboarding) {
+      localStorage.setItem("toast_user_profile", JSON.stringify({
+        displayName: guestName.trim(),
+        cuisinePreferences: [],
+        dietaryRestrictions: [],
+        defaultBudget: 2,
+        defaultDistance: "3000",
+        pictureUrl: "",
+        partnerName: "",
+        partnerPictureUrl: "",
+        partnerLinked: false,
+        onboardingComplete: true,
+      }));
+    } else {
+      try {
+        const parsed = JSON.parse(existingOnboarding);
+        if (!parsed.displayName) {
+          parsed.displayName = guestName.trim();
+          parsed.onboardingComplete = true;
+          localStorage.setItem("toast_user_profile", JSON.stringify(parsed));
+        }
+      } catch {}
+    }
 
     try {
       const joinRes = await fetch(`/api/group/sessions/${sessionId}/join`, {
@@ -374,12 +412,12 @@ export default function WaitingRoom() {
     );
   }
 
-  if (authRequired && !hostOfSession) {
+  if (needsNameEntry && !hostOfSession) {
     return (
-      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6" data-testid="line-permission-gate">
+      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6" data-testid="join-session-gate">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-[15%] left-[10%] w-32 h-32 bg-green-50/40 rounded-full blur-3xl" />
-          <div className="absolute bottom-[20%] right-[15%] w-40 h-40 bg-green-50/40 rounded-full blur-3xl" />
+          <div className="absolute top-[15%] left-[10%] w-32 h-32 bg-amber-50/40 rounded-full blur-3xl" />
+          <div className="absolute bottom-[20%] right-[15%] w-40 h-40 bg-amber-50/40 rounded-full blur-3xl" />
         </div>
 
         <motion.div
@@ -449,44 +487,11 @@ export default function WaitingRoom() {
           )}
         </motion.div>
 
-        <motion.div
-          initial={{ y: 16, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="w-full max-w-xs flex flex-col items-center gap-3"
-        >
-          <div className="flex items-center gap-3 w-full">
-            <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-muted-foreground">or</span>
-            <div className="flex-1 h-px bg-gray-200" />
-          </div>
-          <button
-            onClick={async () => {
-              setLineLoginPending(true);
-              setLineLoginError(null);
-              const success = await triggerLineLogin();
-              if (!success) {
-                setLineLoginPending(false);
-                setLineLoginError("LINE login is not available in this environment. Please enter your name above to join.");
-              }
-            }}
-            disabled={lineLoginPending}
-            className={`w-full py-4 rounded-full font-bold text-[15px] text-white active:scale-[0.96] transition-all ${lineLoginPending ? "bg-[#00B900]/60" : "bg-[#00B900]"}`}
-            style={{ boxShadow: "0 6px 20px -4px rgba(0,185,0,0.3)" }}
-            data-testid="button-line-login"
-          >
-            {lineLoginPending ? "Redirecting to LINE..." : "Continue with LINE"}
-          </button>
-          {lineLoginError && (
-            <p className="text-amber-600 text-xs text-center mt-1" data-testid="text-line-login-error">{lineLoginError}</p>
-          )}
-        </motion.div>
-
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="text-[11px] text-muted-foreground text-center mt-4 max-w-[240px]"
+          transition={{ delay: 0.35 }}
+          className="text-[11px] text-muted-foreground text-center mt-2 max-w-[240px]"
         >
           Session code: <span className="font-mono font-bold">{sessionId}</span>
         </motion.p>
