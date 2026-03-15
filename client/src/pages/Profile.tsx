@@ -365,77 +365,116 @@ export default function Profile() {
   const pictureUrl = localProfile.pictureUrl || lineProfile?.pictureUrl || "";
 
   return (
-    <div className="w-full min-h-[100dvh] bg-[#FCFCFC] dark:bg-background" data-testid="profile-page">
-      <div className="px-6 pt-14 pb-6">
-        <div className="flex items-center justify-between mb-8">
-          <p
-            className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground/40"
-            data-testid="text-profile-label"
-          >
-            {isOwnerMode ? t("profile.business") : t("profile.title")}
-          </p>
-          <div className="flex items-center gap-2" />
-        </div>
+    <div className="w-full min-h-[100dvh] bg-[#F8F7F4] dark:bg-background" data-testid="profile-page">
+      <div className="relative overflow-hidden">
+        <div
+          className="absolute inset-0 pointer-events-none dark:hidden"
+          style={{
+            background: isOwnerMode
+              ? "linear-gradient(165deg, hsl(222,47%,14%) 0%, hsl(222,40%,22%) 50%, transparent 100%)"
+              : "linear-gradient(165deg, #FFF8E1 0%, #FFF3CD 30%, #F8F7F4 100%)",
+          }}
+        />
+        <div
+          className="absolute inset-0 pointer-events-none hidden dark:block"
+          style={{
+            background: isOwnerMode
+              ? "linear-gradient(165deg, hsl(222,47%,10%) 0%, hsl(222,40%,14%) 50%, transparent 100%)"
+              : "linear-gradient(165deg, hsl(40,20%,12%) 0%, hsl(35,15%,10%) 30%, transparent 100%)",
+          }}
+        />
+        <div
+          className="absolute top-0 right-0 w-48 h-48 pointer-events-none opacity-[0.07] dark:opacity-[0.04]"
+          style={{
+            background: "radial-gradient(circle, #FFCC02 0%, transparent 70%)",
+          }}
+        />
 
-        <div className="flex flex-col items-center text-center mb-6">
-          <div className="relative mb-4">
-            <div
-              className="w-24 h-24 rounded-full overflow-hidden flex items-center justify-center text-4xl"
-              style={{
-                background: isOwnerMode
-                  ? "linear-gradient(135deg, hsl(222,47%,16%) 0%, hsl(222,47%,25%) 100%)"
-                  : pictureUrl ? undefined : "linear-gradient(135deg, #FFCC02 0%, hsl(40,90%,55%) 100%)",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-              }}
-              data-testid="avatar-profile"
+        <div className="relative px-6 pt-14 pb-5">
+          <div className="flex items-center justify-between mb-8">
+            <p
+              className={`text-[10px] font-extrabold uppercase tracking-[0.25em] ${isOwnerMode ? "text-white/40" : "text-foreground/30"}`}
+              data-testid="text-profile-label"
             >
-              {isOwnerMode ? (
-                <Store className="w-10 h-10 text-white" />
-              ) : pictureUrl ? (
-                <img src={pictureUrl} alt={displayName} className="w-full h-full object-cover" />
-              ) : (
-                <span className="drop-shadow-sm">🍞</span>
+              {isOwnerMode ? t("profile.business") : t("profile.title")}
+            </p>
+            <div className="flex items-center gap-2" />
+          </div>
+
+          <div className="flex flex-col items-center text-center mb-5">
+            <div className="relative mb-4">
+              <div className="absolute -inset-1.5 rounded-full opacity-20" style={{
+                background: isOwnerMode
+                  ? "conic-gradient(from 180deg, hsl(222,50%,50%), hsl(260,50%,50%), hsl(222,50%,50%))"
+                  : "conic-gradient(from 180deg, #FFCC02, #FF9500, #FFCC02)",
+              }} />
+              <div
+                className="relative w-[88px] h-[88px] rounded-full overflow-hidden flex items-center justify-center text-4xl border-[3px]"
+                style={{
+                  background: isOwnerMode
+                    ? "linear-gradient(135deg, hsl(222,47%,16%) 0%, hsl(222,47%,25%) 100%)"
+                    : pictureUrl ? "#fff" : "linear-gradient(145deg, #FFCC02 0%, #FFB800 50%, #FF9500 100%)",
+                  borderColor: isOwnerMode ? "rgba(255,255,255,0.1)" : "#fff",
+                  boxShadow: isOwnerMode
+                    ? "0 8px 32px rgba(0,0,0,0.25)"
+                    : "0 8px 32px rgba(255,180,0,0.2), 0 2px 8px rgba(0,0,0,0.06)",
+                }}
+                data-testid="avatar-profile"
+              >
+                {isOwnerMode ? (
+                  <Store className="w-9 h-9 text-white/90" />
+                ) : pictureUrl ? (
+                  <img src={pictureUrl} alt={displayName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="drop-shadow-sm text-[36px]">{"\uD83C\uDF5E"}</span>
+                )}
+              </div>
+              {!isOwnerMode && lineProfile && (
+                <div
+                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#06C755] flex items-center justify-center border-[2.5px] border-white dark:border-background"
+                  style={{ boxShadow: "0 2px 10px rgba(6,199,85,0.35)" }}
+                >
+                  <span className="text-white text-[9px] font-bold">LINE</span>
+                </div>
+              )}
+              {isOwnerMode && (
+                <div
+                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#FFCC02] flex items-center justify-center border-[2.5px] border-white dark:border-background"
+                  style={{ boxShadow: "0 2px 10px rgba(255,204,2,0.5)" }}
+                >
+                  <Crown className="w-3.5 h-3.5 text-[#2d2000]" />
+                </div>
               )}
             </div>
-            {!isOwnerMode && lineProfile && (
-              <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-[#06C755] flex items-center justify-center border-[2.5px] border-white dark:border-background" style={{ boxShadow: "0 2px 8px rgba(6,199,85,0.3)" }}>
-                <span className="text-white text-[9px] font-bold">LINE</span>
-              </div>
-            )}
-            {isOwnerMode && (
-              <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-[#FFCC02] flex items-center justify-center border-[2.5px] border-white dark:border-background" style={{ boxShadow: "0 2px 8px rgba(255,204,2,0.4)" }}>
-                <Crown className="w-3.5 h-3.5 text-[#2d2000]" />
-              </div>
+            {isOwnerMode ? (
+              <p className="text-[22px] font-bold tracking-tight text-white">{t("profile.business_dashboard")}</p>
+            ) : (
+              <>
+                <input
+                  type="text"
+                  value={localProfile.displayName}
+                  onChange={(e) => updateProfile({ displayName: e.target.value })}
+                  placeholder={t("profile.your_name")}
+                  className="text-[22px] font-extrabold bg-transparent border-none outline-none text-center w-full placeholder:text-muted-foreground/30 tracking-tight text-foreground"
+                  data-testid="input-display-name"
+                />
+                {!liffAvailable && !lineProfile && (
+                  <p className="text-[11px] text-muted-foreground/50 mt-1">{t("profile.open_in_line")}</p>
+                )}
+                {lineProfile && (
+                  <p className="text-[11px] text-[#06C755] font-semibold mt-1.5 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#06C755] inline-block" />
+                    {t("profile.connected_via_line")}
+                  </p>
+                )}
+              </>
             )}
           </div>
-          {isOwnerMode ? (
-            <p className="text-[22px] font-bold tracking-tight">{t("profile.business_dashboard")}</p>
-          ) : (
-            <>
-              <input
-                type="text"
-                value={localProfile.displayName}
-                onChange={(e) => updateProfile({ displayName: e.target.value })}
-                placeholder={t("profile.your_name")}
-                className="text-[22px] font-bold bg-transparent border-none outline-none text-center w-full placeholder:text-muted-foreground/30 tracking-tight"
-                data-testid="input-display-name"
-              />
-              {!liffAvailable && !lineProfile && (
-                <p className="text-[11px] text-muted-foreground/50 mt-1">{t("profile.open_in_line")}</p>
-              )}
-              {lineProfile && (
-                <p className="text-[11px] text-[#06C755] font-medium mt-1.5 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#06C755] inline-block" />
-                  {t("profile.connected_via_line")}
-                </p>
-              )}
-            </>
+
+          {ownerOnboarded && (
+            <ProfileToggle isOwnerMode={isOwnerMode} onToggle={setIsOwnerMode} />
           )}
         </div>
-
-        {ownerOnboarded && (
-          <ProfileToggle isOwnerMode={isOwnerMode} onToggle={setIsOwnerMode} />
-        )}
       </div>
 
       <div className="px-5 pb-32">
@@ -460,15 +499,15 @@ export default function Profile() {
             >
               <StatsRow t={t} />
 
-              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-2 mt-2 px-1">{t("profile.section_food")}</p>
-              <div className="mb-5">
-                <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-foreground/35 mb-2.5 mt-3 px-1">{t("profile.section_food")}</p>
+              <div className="mb-6">
+                <div className="bg-white dark:bg-card rounded-[20px] overflow-hidden border border-black/[0.04] dark:border-border" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.02)" }}>
                   <button
                     onClick={() => setActiveSection(activeSection === "dietary" ? null : "dietary")}
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-dietary-section"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(130,45%,92%) 0%, hsl(140,40%,85%) 100%)" }}>
+                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #E8F5E9 0%, #C8E6C9 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
                       🥗
                     </div>
                     <div className="flex-1 text-left">
@@ -514,14 +553,14 @@ export default function Profile() {
                     )}
                   </AnimatePresence>
 
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
                   <button
                     onClick={() => setActiveSection(activeSection === "cuisines" ? null : "cuisines")}
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-cuisines-section"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(25,50%,92%) 0%, hsl(15,45%,85%) 100%)" }}>
+                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #FFF3E0 0%, #FFE0B2 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
                       🍜
                     </div>
                     <div className="flex-1 text-left">
@@ -567,14 +606,14 @@ export default function Profile() {
                     )}
                   </AnimatePresence>
 
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
                   <button
                     onClick={() => setActiveSection(activeSection === "defaults" ? null : "defaults")}
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-defaults-section"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(220,50%,92%) 0%, hsl(230,45%,85%) 100%)" }}>
+                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #E3F2FD 0%, #BBDEFB 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
                       🎯
                     </div>
                     <div className="flex-1 text-left">
@@ -644,22 +683,23 @@ export default function Profile() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
                   {lineProfile ? (
                     <div className="px-5 py-4 flex items-center gap-4">
-                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: "#06C755" }}>
-                        <span className="text-white text-[11px] font-bold">LINE</span>
+                      <div className="w-10 h-10 rounded-[14px] flex items-center justify-center" style={{ background: "#06C755", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.2)" }}>
+                        <span className="text-white text-[10px] font-bold">LINE</span>
                       </div>
                       <div className="flex-1 text-left">
                         <p className="font-bold text-[15px]">LINE</p>
-                        <p className="text-[11px] text-[#06C755] font-medium mt-0.5 flex items-center gap-1">
+                        <p className="text-[11px] text-[#06C755] font-semibold mt-0.5 flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#06C755] inline-block" />
                           {t("profile.connected_via_line")}
                         </p>
                       </div>
                       <button
                         onClick={lineLogout}
+                        aria-label="Logout from LINE"
                         className="px-3 py-2 rounded-xl bg-gray-100 dark:bg-muted text-muted-foreground text-xs font-medium active:scale-95 transition-transform"
                         data-testid="button-line-logout-section"
                       >
@@ -672,8 +712,8 @@ export default function Profile() {
                       className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 transition-colors"
                       data-testid="button-line-connect"
                     >
-                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: "#06C755" }}>
-                        <span className="text-white text-[11px] font-bold">LINE</span>
+                      <div className="w-10 h-10 rounded-[14px] flex items-center justify-center" style={{ background: "#06C755", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.2)" }}>
+                        <span className="text-white text-[10px] font-bold">LINE</span>
                       </div>
                       <div className="flex-1 text-left">
                         <p className="font-bold text-[15px]">{t("profile.login_line")}</p>
@@ -683,7 +723,7 @@ export default function Profile() {
                     </button>
                   )}
 
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
                   <PartnerRow
                     profile={localProfile}
@@ -693,21 +733,21 @@ export default function Profile() {
                     t={t}
                   />
 
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
                   <SavedSection t={t} />
                 </div>
               </div>
 
-              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-2 px-1">{t("profile.section_app")}</p>
-              <div className="mb-5">
-                <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-foreground/35 mb-2.5 px-1">{t("profile.section_app")}</p>
+              <div className="mb-6">
+                <div className="bg-white dark:bg-card rounded-[20px] overflow-hidden border border-black/[0.04] dark:border-border" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.02)" }}>
                   <button
                     onClick={() => setActiveSection(activeSection === "language" ? null : "language")}
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-language-section"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(270,50%,92%) 0%, hsl(280,45%,85%) 100%)" }}>
+                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #F3E5F5 0%, #E1BEE7 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
                       🌐
                     </div>
                     <div className="flex-1 text-left">
@@ -750,13 +790,13 @@ export default function Profile() {
                     )}
                   </AnimatePresence>
 
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
                   <button
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-notifications-section"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(40,60%,92%) 0%, hsl(35,50%,85%) 100%)" }}>
+                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #FFF8E1 0%, #FFECB3 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
                       🔔
                     </div>
                     <div className="flex-1 text-left">
@@ -766,13 +806,13 @@ export default function Profile() {
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                   </button>
 
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
                   <button
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-contact-support"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(340,50%,92%) 0%, hsl(350,45%,85%) 100%)" }}>
+                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #FCE4EC 0%, #F8BBD0 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
                       💬
                     </div>
                     <div className="flex-1 text-left">
@@ -781,7 +821,7 @@ export default function Profile() {
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                   </button>
 
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
                   <button
                     onClick={() => {
@@ -795,7 +835,7 @@ export default function Profile() {
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-clear-data"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(0,50%,92%) 0%, hsl(350,45%,85%) 100%)" }}>
+                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #FFEBEE 0%, #FFCDD2 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
                       🗑️
                     </div>
                     <div className="flex-1 text-left">
@@ -806,15 +846,15 @@ export default function Profile() {
                 </div>
               </div>
 
-              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/40 mb-2 px-1">{t("profile.section_about")}</p>
-              <div className="mb-5">
-                <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-foreground/35 mb-2.5 px-1">{t("profile.section_about")}</p>
+              <div className="mb-6">
+                <div className="bg-white dark:bg-card rounded-[20px] overflow-hidden border border-black/[0.04] dark:border-border" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.02)" }}>
                   <button
                     onClick={() => navigate("/legal")}
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-legal-settings"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(45,80%,90%) 0%, hsl(40,70%,82%) 100%)" }}>
+                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #FFF8E1 0%, #FFE082 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
                       {"\u{1F6E1}\u{FE0F}"}
                     </div>
                     <div className="flex-1 text-left">
@@ -823,13 +863,13 @@ export default function Profile() {
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                   </button>
 
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
                   <button
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-privacy-policy"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(200,50%,92%) 0%, hsl(210,45%,85%) 100%)" }}>
+                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #E0F7FA 0%, #B2EBF2 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
                       🔒
                     </div>
                     <div className="flex-1 text-left">
@@ -838,13 +878,13 @@ export default function Profile() {
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                   </button>
 
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
                   <button
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-terms-of-service"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(160,50%,92%) 0%, hsl(170,45%,85%) 100%)" }}>
+                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #E8F5E9 0%, #C8E6C9 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
                       📄
                     </div>
                     <div className="flex-1 text-left">
@@ -853,13 +893,13 @@ export default function Profile() {
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                   </button>
 
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
                   <button
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-about-app"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(45,60%,92%) 0%, hsl(40,55%,85%) 100%)" }}>
+                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #FFF8E1 0%, #FFE082 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
                       🍞
                     </div>
                     <div className="flex-1 text-left">
@@ -869,13 +909,13 @@ export default function Profile() {
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                   </button>
 
-                  <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
                   <button
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
                     data-testid="button-rate-app"
                   >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(50,65%,92%) 0%, hsl(45,55%,85%) 100%)" }}>
+                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #FFFDE7 0%, #FFF9C4 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
                       ⭐
                     </div>
                     <div className="flex-1 text-left">
@@ -886,9 +926,13 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div className="text-center py-4 mb-4">
-                <p className="text-[10px] text-muted-foreground/40">Toast {t("profile.app_version")} 1.0.0</p>
-                <p className="text-[10px] text-muted-foreground/30 mt-1">{t("profile.about_app_desc")}</p>
+              <div className="text-center py-6 mb-4">
+                <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/[0.03] dark:bg-white/[0.05] mb-2">
+                  <span className="text-sm">{"\uD83C\uDF5E"}</span>
+                  <span className="text-[11px] font-bold tracking-wide text-foreground/30">TOAST</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground/50 font-medium">{t("profile.app_version")} 1.0.0</p>
+                <p className="text-[10px] text-muted-foreground/40 mt-0.5">{t("profile.about_app_desc")}</p>
               </div>
             </motion.div>
           )}
@@ -909,13 +953,13 @@ export default function Profile() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 22, stiffness: 200, mass: 1 }}
-              className="w-full max-w-md bg-white dark:bg-card rounded-t-[28px] p-6 pb-10"
-              style={{ boxShadow: "0 -10px 40px rgba(0,0,0,0.12)" }}
+              className="w-full max-w-md bg-white dark:bg-card rounded-t-[32px] p-6 pb-10"
+              style={{ boxShadow: "0 -10px 50px rgba(0,0,0,0.1), 0 -2px 10px rgba(0,0,0,0.04)" }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="w-10 h-1 bg-gray-200 dark:bg-border rounded-full mx-auto mb-6" />
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style={{ background: "linear-gradient(135deg, hsl(340,50%,92%) 0%, hsl(330,45%,85%) 100%)" }}>
+                <div className="w-11 h-11 rounded-[14px] flex items-center justify-center text-xl" style={{ background: "linear-gradient(140deg, #FCE4EC 0%, #F8BBD0 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
                   💕
                 </div>
                 <div>
@@ -1538,31 +1582,32 @@ function ProfileToggle({ isOwnerMode, onToggle }: { isOwnerMode: boolean; onTogg
   const { t } = useLanguage();
   return (
     <div
-      className="relative flex items-center bg-gray-100 dark:bg-muted rounded-2xl p-1 mb-2"
+      className="relative flex items-center rounded-2xl p-1 mb-2"
+      style={{ background: "rgba(0,0,0,0.04)" }}
       data-testid="toggle-profile-mode"
     >
       <motion.div
         className="absolute top-1 bottom-1 rounded-xl bg-white dark:bg-card"
-        style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.08), 0 2px 12px rgba(0,0,0,0.04)", width: "calc(50% - 4px)" }}
+        style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)", width: "calc(50% - 4px)" }}
         animate={{ left: isOwnerMode ? "calc(50% + 2px)" : "4px" }}
         transition={springConfig}
       />
       <button
         onClick={() => onToggle(false)}
-        className="relative z-10 flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors duration-200"
+        className="relative z-10 flex-1 flex items-center justify-center gap-2 py-3 text-[13px] font-bold transition-colors duration-200"
         style={{ color: !isOwnerMode ? "hsl(var(--foreground))" : "#9ca3af" }}
         data-testid="button-user-mode"
       >
-        <User className="w-4 h-4" />
+        <User className="w-3.5 h-3.5" />
         {t("profile.diner")}
       </button>
       <button
         onClick={() => onToggle(true)}
-        className="relative z-10 flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-colors duration-200"
+        className="relative z-10 flex-1 flex items-center justify-center gap-2 py-3 text-[13px] font-bold transition-colors duration-200"
         style={{ color: isOwnerMode ? "hsl(var(--foreground))" : "#9ca3af" }}
         data-testid="button-owner-mode"
       >
-        <Store className="w-4 h-4" />
+        <Store className="w-3.5 h-3.5" />
         {t("profile.owner")}
       </button>
     </div>
@@ -2105,7 +2150,7 @@ function OwnerDashboard() {
             </AnimatePresence>
           </div>
 
-          <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+          <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
           <button
             onClick={() => setActiveSection(activeSection === "photos" ? null : "photos")}
@@ -2147,7 +2192,7 @@ function OwnerDashboard() {
             )}
           </AnimatePresence>
 
-          <div className="mx-5 h-px bg-gray-100 dark:bg-border" />
+          <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
           <button
             onClick={() => setActiveSection(activeSection === "menus" ? null : "menus")}
@@ -3439,11 +3484,14 @@ function StatsRow({ t }: { t: (key: string, params?: Record<string, string | num
   ];
 
   return (
-    <div className="flex items-center justify-around py-4 mb-4 border-b border-gray-100 dark:border-border">
-      {items.map((item) => (
-        <div key={item.labelKey} className="flex flex-col items-center">
-          <p className="text-xl font-bold tracking-tight leading-none" data-testid={item.testId}>{item.value}</p>
-          <p className="text-[10px] text-muted-foreground mt-1">{t(item.labelKey)}</p>
+    <div className="flex items-center justify-around py-4 mb-5">
+      {items.map((item, idx) => (
+        <div key={item.labelKey} className="flex flex-col items-center relative">
+          <p className="text-[22px] font-extrabold tracking-tight leading-none" data-testid={item.testId}>{item.value}</p>
+          <p className="text-[10px] font-medium text-muted-foreground/50 mt-1.5 uppercase tracking-wider">{t(item.labelKey)}</p>
+          {idx < items.length - 1 && (
+            <div className="absolute right-[-24px] top-1/2 -translate-y-1/2 w-px h-6 bg-black/[0.06] dark:bg-white/[0.06]" />
+          )}
         </div>
       ))}
     </div>
@@ -3463,7 +3511,7 @@ function PartnerRow({ profile, onInvite, onManualAdd, onUnlink, t }: {
   return (
     <div data-testid="button-partner-section">
       <div className="px-5 py-4 flex items-center gap-4">
-        <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(340,50%,92%) 0%, hsl(330,45%,85%) 100%)" }}>
+        <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #FCE4EC 0%, #F8BBD0 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
           💕
         </div>
         <div className="flex-1 min-w-0">
@@ -3549,14 +3597,15 @@ function SavedSection({ t }: { t: (key: string, params?: Record<string, string |
 
   return (
     <div
-      className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-border"
+      className="bg-white dark:bg-card rounded-[20px] overflow-hidden border border-black/[0.04] dark:border-border"
+      style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.02)" }}
     >
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
         data-testid="button-saved-section"
       >
-        <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl" style={{ background: "linear-gradient(135deg, hsl(0,55%,92%) 0%, hsl(350,50%,85%) 100%)" }}>
+        <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #FFEBEE 0%, #FFCDD2 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
           ❤️
         </div>
         <div className="flex-1 text-left">
