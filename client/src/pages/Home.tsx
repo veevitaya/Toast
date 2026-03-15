@@ -311,6 +311,35 @@ export default function Home() {
   }, [navigate, recordVibe]);
 
   const vibeClickPending = useRef(false);
+  const modeClickPending = useRef(false);
+
+  const handleModeClickAnimated = useCallback((route: string, buttonEl: HTMLElement | null) => {
+    if (modeClickPending.current) return;
+    modeClickPending.current = true;
+    if (buttonEl) {
+      const img = buttonEl.querySelector("img") as HTMLElement | null;
+      if (img) {
+        img.style.transition = "transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1)";
+        img.style.transform = "scale(1.2) rotate(-8deg)";
+        setTimeout(() => {
+          img.style.transform = "scale(0.9) rotate(6deg)";
+          setTimeout(() => {
+            img.style.transform = "scale(1.1) rotate(-4deg)";
+            setTimeout(() => {
+              img.style.transform = "scale(1) rotate(0deg)";
+              setTimeout(() => {
+                modeClickPending.current = false;
+                navigate(route);
+              }, 120);
+            }, 120);
+          }, 120);
+        }, 150);
+        return;
+      }
+    }
+    modeClickPending.current = false;
+    navigate(route);
+  }, [navigate]);
   const handleVibeClickAnimated = useCallback((mode: string, emoji: string, buttonEl: HTMLElement | null) => {
     if (vibeClickPending.current) return;
     vibeClickPending.current = true;
@@ -659,7 +688,7 @@ export default function Home() {
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
                     <button
-                      onClick={(e) => { e.stopPropagation(); navigate("/solo/quiz"); }}
+                      onClick={(e) => { e.stopPropagation(); handleModeClickAnimated("/solo/quiz", e.currentTarget); }}
                       className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 h-[72px] border border-gray-100 shadow-md"
                       data-testid="button-solo-collapsed"
                     >
@@ -670,7 +699,7 @@ export default function Home() {
                       </div>
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); navigate("/group/setup"); }}
+                      onClick={(e) => { e.stopPropagation(); handleModeClickAnimated("/group/setup", e.currentTarget); }}
                       className="flex items-center justify-center rounded-2xl bg-white h-[72px] border border-gray-100 shadow-md overflow-hidden"
                       data-testid="button-group-collapsed"
                     >
@@ -757,7 +786,7 @@ export default function Home() {
                 transition={{ delay: 0.32, type: "spring", stiffness: 300, damping: 22 }}
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => navigate("/solo/quiz")}
+                onClick={(e) => handleModeClickAnimated("/solo/quiz", e.currentTarget)}
                 data-testid="button-solo"
                 className="flex items-center rounded-[20px] bg-white pl-3 pr-5 h-[100px] border border-gray-100 shadow-md"
               >
@@ -774,7 +803,7 @@ export default function Home() {
                 transition={{ delay: 0.36, type: "spring", stiffness: 300, damping: 22 }}
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => navigate("/group/setup")}
+                onClick={(e) => handleModeClickAnimated("/group/setup", e.currentTarget)}
                 data-testid="button-group"
                 className="flex items-center justify-center rounded-[20px] bg-white h-[100px] border border-gray-100 shadow-md overflow-hidden"
               >
