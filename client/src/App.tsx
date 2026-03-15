@@ -43,7 +43,6 @@ const AdminFoodTrends = lazy(() => import("@/pages/admin/AdminFoodTrends"));
 const AdminGeography = lazy(() => import("@/pages/admin/AdminGeography"));
 const AdminPredictiveIntelligence = lazy(() => import("@/pages/admin/AdminPredictiveIntelligence"));
 const AdminDataOps = lazy(() => import("@/pages/admin/AdminDataOps"));
-const AdminIntegrations = lazy(() => import("@/pages/admin/AdminIntegrations"));
 const AdminReports = lazy(() => import("@/pages/admin/AdminReports"));
 const AdminAuditLogs = lazy(() => import("@/pages/admin/AdminAuditLogs"));
 const AdminOwnerDashboard = lazy(() => import("@/pages/admin/AdminOwnerDashboard"));
@@ -203,7 +202,7 @@ function Router() {
             <Suspense fallback={<PageLoader />}><AdminLayout><AdminDataOps /></AdminLayout></Suspense>
           </Route>
           <Route path="/admin/integrations">
-            <Suspense fallback={<PageLoader />}><AdminLayout><AdminIntegrations /></AdminLayout></Suspense>
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminConfig /></AdminLayout></Suspense>
           </Route>
           <Route path="/admin/reports">
             <Suspense fallback={<PageLoader />}><AdminLayout><AdminReports /></AdminLayout></Suspense>

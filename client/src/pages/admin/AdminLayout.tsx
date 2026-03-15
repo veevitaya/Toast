@@ -23,7 +23,6 @@ import {
   MapPin,
   Brain,
   Database,
-  Plug,
   FileText,
   ScrollText,
   Lightbulb,
@@ -93,7 +92,6 @@ const adminNavGroups: NavGroup[] = [
     items: [
       { label: "Owners", icon: Store, href: "/admin/owners" },
       { label: "Data Ops", icon: Database, href: "/admin/data-ops" },
-      { label: "Integrations", icon: Plug, href: "/admin/integrations" },
     ],
   },
   {

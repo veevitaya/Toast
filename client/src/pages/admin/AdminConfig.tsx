@@ -20,7 +20,6 @@ import {
   Globe,
   Zap,
   Type,
-  Layout,
   Navigation,
   X,
   Upload,
@@ -29,19 +28,23 @@ import {
   Database,
   RefreshCw,
   Shield,
-  Link2,
-  Download,
   ExternalLink,
   Loader2,
   AlertCircle,
   CheckCircle2,
   Pencil,
-  Building2,
   TrendingUp,
+  Plug,
+  Clock,
+  Download,
+  Activity,
+  BarChart3,
+  Layout,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import toastLogo from "@assets/toast_logo_nobg.png";
 import mascotImg from "@assets/image_1772011321697.png";
+import { useToast } from "@/hooks/use-toast";
 
 type FeatureToggle = {
   id: string;
@@ -84,6 +87,16 @@ type ApiIntegration = {
   envKey: string;
   docsUrl: string;
   category: "data" | "messaging" | "payments" | "maps";
+};
+
+type ServiceIntegration = {
+  name: string;
+  status: "connected" | "planned";
+  lastSync: string;
+  description: string;
+  appId: string;
+  health: number;
+  canDisable: boolean;
 };
 
 type FetchedPlace = {
@@ -133,22 +146,22 @@ const DEFAULT_IMAGES: AppImage[] = [
 ];
 
 const DEFAULT_VIBES: VibeConfig[] = [
-  { mode: "cheap", emoji: "💰", label: "Budget", enabled: true },
-  { mode: "nearby", emoji: "🚇", label: "Near BTS", enabled: true },
-  { mode: "trending", emoji: "📈", label: "Trendy", enabled: true },
-  { mode: "hot", emoji: "🔥", label: "Hot now", enabled: true },
-  { mode: "restaurants", emoji: "🍽️", label: "Restaurants", enabled: true },
-  { mode: "late", emoji: "🌙", label: "Late night", enabled: true },
-  { mode: "outdoor", emoji: "⛱️", label: "Outdoor", enabled: true },
-  { mode: "saved", emoji: "❤️", label: "Saved", enabled: true },
-  { mode: "partner", emoji: "💕", label: "With partner", enabled: true },
-  { mode: "healthy", emoji: "🥗", label: "Healthy", enabled: true },
-  { mode: "drinks", emoji: "🍸", label: "Drinks", enabled: true },
-  { mode: "spicy", emoji: "🌶️", label: "Spicy", enabled: true },
-  { mode: "sweets", emoji: "🍰", label: "Sweets", enabled: true },
-  { mode: "coffee", emoji: "☕", label: "Cafe", enabled: true },
-  { mode: "fancy", emoji: "✨", label: "Fine dining", enabled: true },
-  { mode: "delivery", emoji: "🛵", label: "Delivery", enabled: false },
+  { mode: "cheap", emoji: "\uD83D\uDCB0", label: "Budget", enabled: true },
+  { mode: "nearby", emoji: "\uD83D\uDE87", label: "Near BTS", enabled: true },
+  { mode: "trending", emoji: "\uD83D\uDCC8", label: "Trendy", enabled: true },
+  { mode: "hot", emoji: "\uD83D\uDD25", label: "Hot now", enabled: true },
+  { mode: "restaurants", emoji: "\uD83C\uDF7D\uFE0F", label: "Restaurants", enabled: true },
+  { mode: "late", emoji: "\uD83C\uDF19", label: "Late night", enabled: true },
+  { mode: "outdoor", emoji: "\u26F1\uFE0F", label: "Outdoor", enabled: true },
+  { mode: "saved", emoji: "\u2764\uFE0F", label: "Saved", enabled: true },
+  { mode: "partner", emoji: "\uD83D\uDC95", label: "With partner", enabled: true },
+  { mode: "healthy", emoji: "\uD83E\uDD57", label: "Healthy", enabled: true },
+  { mode: "drinks", emoji: "\uD83C\uDF78", label: "Drinks", enabled: true },
+  { mode: "spicy", emoji: "\uD83C\uDF36\uFE0F", label: "Spicy", enabled: true },
+  { mode: "sweets", emoji: "\uD83C\uDF70", label: "Sweets", enabled: true },
+  { mode: "coffee", emoji: "\u2615", label: "Cafe", enabled: true },
+  { mode: "fancy", emoji: "\u2728", label: "Fine dining", enabled: true },
+  { mode: "delivery", emoji: "\uD83D\uDEF5", label: "Delivery", enabled: false },
 ];
 
 const DEFAULT_UI: UIConfig = {
@@ -185,23 +198,53 @@ const API_CATEGORY_META: Record<string, { label: string; color: string; bgClass:
   maps: { label: "Maps", color: "text-amber-600", bgClass: "bg-amber-50" },
 };
 
+const SERVICES_INIT: ServiceIntegration[] = [
+  { name: "LINE LIFF", status: "connected", lastSync: "Real-time", description: "User auth, profile data, rich menus", appId: "2009293021-mFgkOhqd", health: 99.8, canDisable: true },
+  { name: "LINE Official Account", status: "connected", lastSync: "Real-time", description: "Messaging, push notifications, friend tracking", appId: "2009335625-Pyd3rjhr", health: 99.5, canDisable: true },
+  { name: "Grab", status: "connected", lastSync: "4h ago", description: "Deep links for food delivery", appId: "Partner deeplink", health: 98.2, canDisable: true },
+  { name: "LINE MAN", status: "connected", lastSync: "4h ago", description: "Deep links for food delivery", appId: "Partner deeplink", health: 97.8, canDisable: true },
+  { name: "Robinhood", status: "connected", lastSync: "4h ago", description: "Deep links for food delivery", appId: "Partner deeplink", health: 96.1, canDisable: true },
+  { name: "Google Places API", status: "connected", lastSync: "2h ago", description: "Restaurant data, ratings, photos", appId: "API Key", health: 99.9, canDisable: true },
+  { name: "Leaflet / OpenStreetMap", status: "connected", lastSync: "Real-time", description: "Map tiles and geocoding", appId: "Public API", health: 99.7, canDisable: false },
+  { name: "Stripe", status: "planned", lastSync: "\u2014", description: "Owner subscription payments", appId: "\u2014", health: 0, canDisable: false },
+  { name: "Google Analytics", status: "planned", lastSync: "\u2014", description: "Web analytics and event tracking", appId: "\u2014", health: 0, canDisable: false },
+];
+
+const WEBHOOK_LOGS = [
+  { event: "LINE LIFF login", timestamp: "2 min ago", status: "success" as const, payload: "user_profile" },
+  { event: "Grab deeplink click", timestamp: "8 min ago", status: "success" as const, payload: "clickout_event" },
+  { event: "LINE MAN deeplink click", timestamp: "12 min ago", status: "success" as const, payload: "clickout_event" },
+  { event: "Google Places sync", timestamp: "2h ago", status: "success" as const, payload: "batch_412_records" },
+  { event: "Image CDN upload", timestamp: "3h ago", status: "warning" as const, payload: "timeout_retry" },
+  { event: "Menu scraper run", timestamp: "12h ago", status: "success" as const, payload: "2847_items" },
+];
+
+const API_USAGE = [
+  { api: "Google Places", used: 8420, limit: 10000, unit: "calls/day" },
+  { api: "LINE Messaging", used: 1240, limit: 5000, unit: "messages/mo" },
+  { api: "Leaflet Tiles", used: 24800, limit: 50000, unit: "tiles/day" },
+];
+
 const TABS = [
+  { id: "services", label: "Services", icon: Plug },
   { id: "features", label: "Features", icon: ToggleLeft },
-  { id: "apis", label: "APIs", icon: Key },
+  { id: "apis", label: "API Keys", icon: Key },
   { id: "branding", label: "Branding", icon: Palette },
   { id: "vibes", label: "Vibes", icon: Flame },
   { id: "ui", label: "UI & Text", icon: Type },
+  { id: "usage", label: "Usage", icon: BarChart3 },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
 
 export default function AdminConfig() {
-  const [activeTab, setActiveTab] = useState<TabId>("features");
+  const [activeTab, setActiveTab] = useState<TabId>("services");
   const [features, setFeatures] = useState<FeatureToggle[]>(DEFAULT_FEATURES);
   const [images, setImages] = useState<AppImage[]>(DEFAULT_IMAGES);
   const [vibes, setVibes] = useState<VibeConfig[]>(DEFAULT_VIBES);
   const [uiConfig, setUiConfig] = useState<UIConfig>(DEFAULT_UI);
   const [apis, setApis] = useState<ApiIntegration[]>(DEFAULT_APIS);
+  const [services, setServices] = useState<ServiceIntegration[]>(SERVICES_INIT);
   const [showPreview, setShowPreview] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
@@ -216,6 +259,9 @@ export default function AdminConfig() {
   const [placesMaxResults, setPlacesMaxResults] = useState(20);
   const [showApiKeyInput, setShowApiKeyInput] = useState<string | null>(null);
   const [apiKeyInputValue, setApiKeyInputValue] = useState("");
+  const [syncingName, setSyncingName] = useState<string | null>(null);
+  const [detailService, setDetailService] = useState<string | null>(null);
+  const { toast: showToast } = useToast();
 
   const trackChange = (description: string) => {
     setHasChanges(true);
@@ -261,6 +307,7 @@ export default function AdminConfig() {
     setVibes(DEFAULT_VIBES);
     setUiConfig(DEFAULT_UI);
     setApis(DEFAULT_APIS);
+    setServices(SERVICES_INIT);
     setHasChanges(false);
     setPendingChanges([]);
   };
@@ -336,6 +383,27 @@ export default function AdminConfig() {
     trackChange(`${status === "connected" ? "Connected" : "Updated"} ${api?.name}`);
   };
 
+  const handleSync = (name: string) => {
+    setSyncingName(name);
+    setTimeout(() => {
+      showToast({ title: "Sync Complete", description: `${name} has been synced successfully` });
+      setSyncingName(null);
+    }, 2000);
+  };
+
+  const toggleService = (name: string) => {
+    setServices(prev => prev.map(s => {
+      if (s.name !== name) return s;
+      const newStatus = s.status === "connected" ? "planned" as const : "connected" as const;
+      showToast({
+        title: newStatus === "connected" ? "Integration Enabled" : "Integration Disabled",
+        description: `${name} has been ${newStatus === "connected" ? "enabled" : "disabled"}`
+      });
+      return { ...s, status: newStatus, health: newStatus === "connected" ? 99.0 : 0 };
+    }));
+    trackChange(`Toggled ${name}`);
+  };
+
   const featuresByCategory = useMemo(() => {
     const grouped: Record<string, FeatureToggle[]> = {};
     features.forEach((f) => {
@@ -347,6 +415,8 @@ export default function AdminConfig() {
 
   const enabledCount = features.filter((f) => f.enabled).length;
   const enabledVibes = vibes.filter((v) => v.enabled).length;
+  const connectedServices = services.filter(s => s.status === "connected").length;
+  const detail = services.find(s => s.name === detailService);
 
   return (
     <div className="max-w-[1200px] mx-auto" data-testid="admin-config-page">
@@ -364,7 +434,7 @@ export default function AdminConfig() {
             </h2>
           </div>
           <p className="text-sm text-muted-foreground ml-[52px]">
-            Toggle features, update branding, and preview changes before publishing
+            Services, features, API keys, branding, and app behavior in one place
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -431,12 +501,12 @@ export default function AdminConfig() {
       <div className="flex gap-6">
         <div className="flex-1 min-w-0">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="flex border-b border-gray-100">
+            <div className="flex border-b border-gray-100 overflow-x-auto">
               {TABS.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-medium transition-all border-b-2 ${
+                  className={`flex items-center justify-center gap-1.5 px-4 py-3.5 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
                     activeTab === tab.id
                       ? "border-[#FFCC02] text-foreground bg-[#FFCC02]/5"
                       : "border-transparent text-muted-foreground hover:text-foreground hover:bg-gray-50"
@@ -450,6 +520,122 @@ export default function AdminConfig() {
             </div>
 
             <div className="p-6">
+              {activeTab === "services" && (
+                <div className="space-y-4" data-testid="panel-services">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Connected Services</p>
+                    <span className="text-xs text-muted-foreground">{connectedServices}/{services.length} active</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-100">
+                      <p className="text-2xl font-bold text-emerald-700">{connectedServices}</p>
+                      <p className="text-[10px] font-bold text-emerald-600/60 uppercase tracking-widest mt-1">Connected</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
+                      <p className="text-2xl font-bold text-gray-600">{services.filter(s => s.status === "planned").length}</p>
+                      <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mt-1">Planned</p>
+                    </div>
+                    <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
+                      <p className="text-2xl font-bold text-blue-700">
+                        {connectedServices > 0 ? (services.filter(s => s.status === "connected").reduce((sum, s) => sum + s.health, 0) / connectedServices).toFixed(1) : "0"}%
+                      </p>
+                      <p className="text-[10px] font-bold text-blue-600/60 uppercase tracking-widest mt-1">Avg Health</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {services.map(service => (
+                      <div key={service.name} className="bg-gray-50 rounded-xl p-4 hover:bg-gray-100/60 transition-colors" data-testid={`service-${service.name.toLowerCase().replace(/\s+/g, "-")}`}>
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                            service.status === "connected" ? "bg-emerald-100" : "bg-gray-200"
+                          }`}>
+                            {service.status === "connected" ?
+                              <Zap className="w-5 h-5 text-emerald-600" /> :
+                              <Clock className="w-5 h-5 text-gray-400" />
+                            }
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-semibold text-gray-800">{service.name}</span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                service.status === "connected" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"
+                              }`}>{service.status}</span>
+                            </div>
+                            <p className="text-xs text-gray-400 mt-0.5">{service.description}</p>
+                          </div>
+                          {service.status === "connected" && (
+                            <div className="text-right flex-shrink-0">
+                              <div className="flex items-center gap-1.5 justify-end">
+                                <div className="w-12 h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                                  <div className="h-full rounded-full bg-emerald-400" style={{ width: `${service.health}%` }} />
+                                </div>
+                                <span className="text-[10px] font-semibold text-gray-600">{service.health}%</span>
+                              </div>
+                              <span className="text-[10px] text-gray-400">Last: {service.lastSync}</span>
+                            </div>
+                          )}
+                          <div className="flex gap-1.5 flex-shrink-0">
+                            {service.canDisable && (
+                              <button
+                                onClick={() => toggleService(service.name)}
+                                className="flex-shrink-0"
+                                data-testid={`btn-toggle-${service.name.toLowerCase().replace(/\s+/g, "-")}`}
+                              >
+                                {service.status === "connected" ? (
+                                  <ToggleRight className="w-8 h-8 text-emerald-500" />
+                                ) : (
+                                  <ToggleLeft className="w-8 h-8 text-gray-300" />
+                                )}
+                              </button>
+                            )}
+                            {service.status === "connected" && (
+                              <button
+                                onClick={() => handleSync(service.name)}
+                                disabled={syncingName === service.name}
+                                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-white text-gray-600 hover:bg-gray-50 transition-colors flex items-center gap-1 disabled:opacity-50 border border-gray-100"
+                                data-testid={`btn-sync-${service.name.toLowerCase().replace(/\s+/g, "-")}`}
+                              >
+                                {syncingName === service.name ? (
+                                  <><Loader2 className="w-3 h-3 animate-spin" /> Syncing...</>
+                                ) : (
+                                  <><RefreshCw className="w-3 h-3" /> Sync</>
+                                )}
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setDetailService(service.name)}
+                              className="text-xs font-medium px-2.5 py-1.5 rounded-lg bg-white text-gray-400 hover:bg-gray-50 transition-colors border border-gray-100"
+                              data-testid={`btn-detail-${service.name.toLowerCase().replace(/\s+/g, "-")}`}
+                            >
+                              Details
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-gray-100 pt-5 mt-5">
+                    <div className="border-l-[3px] pl-3 mb-4" style={{ borderColor: "var(--admin-blue)" }}>
+                      <h3 className="text-[15px] font-semibold text-gray-800">Recent Activity</h3>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Webhook events</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      {WEBHOOK_LOGS.map((log, i) => (
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${log.status === "success" ? "bg-emerald-400" : "bg-amber-400"}`} />
+                          <span className="flex-1 text-sm text-gray-700">{log.event}</span>
+                          <span className="text-xs font-mono text-gray-400 bg-gray-50 px-2 py-0.5 rounded">{log.payload}</span>
+                          <span className="text-xs text-gray-400 w-20 text-right">{log.timestamp}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {activeTab === "features" && (
                 <div className="space-y-6" data-testid="panel-features">
                   <div className="flex items-center justify-between">
@@ -744,7 +930,7 @@ export default function AdminConfig() {
                             {fetchedPlaces.map((place, idx) => {
                               const cls = place.classification;
                               const isExpanded = expandedPlace === idx;
-                              const budgetSymbols = "฿".repeat(place.priceLevel);
+                              const budgetSymbols = "\u0E3F".repeat(place.priceLevel);
                               const ownershipLabel = cls?.ownershipType === "chain" ? "Chain" : cls?.ownershipType === "franchise" ? "Franchise" : "Independent";
                               const ownershipColor = cls?.ownershipType === "chain"
                                 ? "bg-orange-100 text-orange-700"
@@ -885,10 +1071,10 @@ export default function AdminConfig() {
                                             className="w-full px-2.5 py-1.5 rounded-lg border border-gray-100 bg-white text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-foreground/10"
                                             data-testid={`select-budget-${idx}`}
                                           >
-                                            <option value={1}>฿ Budget</option>
-                                            <option value={2}>฿฿ Mid-range</option>
-                                            <option value={3}>฿฿฿ Upscale</option>
-                                            <option value={4}>฿฿฿฿ Fine dining</option>
+                                            <option value={1}>{"\u0E3F"} Budget</option>
+                                            <option value={2}>{"\u0E3F\u0E3F"} Mid-range</option>
+                                            <option value={3}>{"\u0E3F\u0E3F\u0E3F"} Upscale</option>
+                                            <option value={4}>{"\u0E3F\u0E3F\u0E3F\u0E3F"} Fine dining</option>
                                           </select>
                                         </div>
                                         <div>
@@ -1115,6 +1301,40 @@ export default function AdminConfig() {
                   </div>
                 </div>
               )}
+
+              {activeTab === "usage" && (
+                <div className="space-y-6" data-testid="panel-usage">
+                  <div className="border-l-[3px] pl-3" style={{ borderColor: "var(--admin-teal, #14b8a6)" }}>
+                    <h3 className="text-[15px] font-semibold text-gray-800">API Usage</h3>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Current billing period</p>
+                  </div>
+                  <div className="space-y-4">
+                    {API_USAGE.map(api => {
+                      const usagePct = (api.used / api.limit) * 100;
+                      return (
+                        <div key={api.api} className="p-4 rounded-xl border border-gray-100">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-semibold text-gray-800">{api.api}</span>
+                            <span className="text-xs text-gray-500">{api.used.toLocaleString()} / {api.limit.toLocaleString()} {api.unit}</span>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                            <div className="h-full rounded-full transition-all" style={{
+                              width: `${usagePct}%`,
+                              backgroundColor: usagePct > 90 ? "#F43F5E" : usagePct > 70 ? "#F59E0B" : "#10B981",
+                            }} />
+                          </div>
+                          <div className="flex justify-between mt-1.5">
+                            <span className={`text-[10px] font-medium ${usagePct > 90 ? "text-red-500" : usagePct > 70 ? "text-amber-600" : "text-emerald-600"}`}>
+                              {usagePct.toFixed(1)}% used
+                            </span>
+                            <span className="text-[10px] text-gray-400">{(api.limit - api.used).toLocaleString()} remaining</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1202,6 +1422,51 @@ export default function AdminConfig() {
           </div>
         </div>
       </div>
+
+      {detailService && detail && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-6" data-testid="service-detail-modal">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${detail.status === "connected" ? "bg-emerald-50" : "bg-gray-100"}`}>
+                  {detail.status === "connected" ? <Zap className="w-4 h-4 text-emerald-500" /> : <Clock className="w-4 h-4 text-gray-400" />}
+                </div>
+                <h3 className="text-sm font-semibold text-gray-800">{detail.name}</h3>
+              </div>
+              <button onClick={() => setDetailService(null)} className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200" data-testid="btn-close-detail">
+                <X className="w-3.5 h-3.5 text-gray-500" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Description</p>
+                <p className="text-sm text-gray-700">{detail.description}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-xl bg-gray-50">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</p>
+                  <span className={`text-sm font-medium ${detail.status === "connected" ? "text-emerald-600" : "text-gray-500"}`}>{detail.status}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-gray-50">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Health</p>
+                  <span className="text-sm font-medium text-gray-700">{detail.health > 0 ? `${detail.health}%` : "N/A"}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-gray-50">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">App ID</p>
+                  <span className="text-xs font-mono text-gray-600 break-all">{detail.appId}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-gray-50">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Last Sync</p>
+                  <span className="text-sm font-medium text-gray-700">{detail.lastSync}</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 bg-gray-50">
+              <button onClick={() => setDetailService(null)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors rounded-lg" data-testid="btn-close-detail-bottom">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showPreview && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-6" data-testid="preview-modal">
