@@ -158,23 +158,178 @@ export async function ensureLoggedIn(): Promise<LineProfile | null> {
   return getProfile();
 }
 
+function buildGroupInviteFlexMessage(joinUrl: string): any {
+  return {
+    type: "flex",
+    altText: "Toast Group Session! Tap to join our food swiping session.",
+    contents: {
+      type: "bubble",
+      size: "mega",
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        paddingAll: "20px",
+        contents: [
+          {
+            type: "box",
+            layout: "horizontal",
+            contents: [
+              {
+                type: "text",
+                text: "\uD83C\uDF5E",
+                size: "3xl",
+                flex: 0,
+              },
+              {
+                type: "box",
+                layout: "vertical",
+                flex: 1,
+                contents: [
+                  {
+                    type: "text",
+                    text: "Toast Group Session!",
+                    weight: "bold",
+                    size: "lg",
+                    color: "#2D2000",
+                  },
+                  {
+                    type: "text",
+                    text: "You're invited to swipe",
+                    size: "sm",
+                    color: "#888888",
+                  },
+                ],
+              },
+            ],
+            spacing: "lg",
+            alignItems: "center",
+          },
+          {
+            type: "separator",
+            margin: "lg",
+          },
+          {
+            type: "text",
+            text: "Join our food swiping session and let\u2019s find the perfect meal together!",
+            size: "sm",
+            color: "#555555",
+            wrap: true,
+            margin: "lg",
+          },
+          {
+            type: "button",
+            action: {
+              type: "uri",
+              label: "Tap to Join!",
+              uri: joinUrl,
+            },
+            style: "primary",
+            color: "#FFCC02",
+            height: "md",
+            margin: "lg",
+          },
+        ],
+      },
+      styles: {
+        body: {
+          backgroundColor: "#FFFDF5",
+        },
+      },
+    },
+  };
+}
+
+function buildInviteFlexMessage(mode: string, appUrl: string): any {
+  const swipeUrl = `${appUrl}/swipe?mode=${mode}`;
+  return {
+    type: "flex",
+    altText: `Join me on Toast! Let's decide what to eat together.`,
+    contents: {
+      type: "bubble",
+      size: "mega",
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        paddingAll: "20px",
+        contents: [
+          {
+            type: "text",
+            text: "\uD83C\uDF5E Join me on Toast!",
+            weight: "bold",
+            size: "lg",
+            color: "#2D2000",
+          },
+          {
+            type: "text",
+            text: `Let's decide what to eat together. I'm swiping on ${mode} mode right now!`,
+            size: "sm",
+            color: "#555555",
+            wrap: true,
+            margin: "md",
+          },
+          {
+            type: "button",
+            action: {
+              type: "uri",
+              label: "Join Now!",
+              uri: swipeUrl,
+            },
+            style: "primary",
+            color: "#FFCC02",
+            height: "md",
+            margin: "lg",
+          },
+        ],
+      },
+      styles: {
+        body: {
+          backgroundColor: "#FFFDF5",
+        },
+      },
+    },
+  };
+}
+
+async function tryShareTargetPicker(messages: any[]): Promise<ShareResult | null> {
+  if (!initialized || !liff.isLoggedIn()) return null;
+  try {
+    if (liff.isApiAvailable("shareTargetPicker")) {
+      const result = await liff.shareTargetPicker(messages);
+      if (result && "status" in result && result.status === "success") {
+        return { shared: true, method: "liff" };
+      }
+      return { shared: false, method: "liff" };
+    }
+  } catch (err) {
+    console.error("shareTargetPicker failed:", err);
+  }
+  return null;
+}
+
+function openLineSharePopup(shareUrl: string, fallbackText: string): ShareResult | null {
+  const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(fallbackText)}`;
+  const popup = window.open(lineUrl, "_blank", "width=500,height=600");
+  if (popup) return { shared: true, method: "line-app" };
+  return null;
+}
+
+async function copyToClipboard(text: string): Promise<ShareResult> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return { shared: true, method: "clipboard" };
+  } catch {
+    return { shared: false, method: "clipboard" };
+  }
+}
+
 export async function shareMessage(text: string): Promise<ShareResult> {
   const ready = await initLiff();
 
   if (ready && initialized) {
-    try {
-      if (liff.isApiAvailable("shareTargetPicker")) {
-        const result = await liff.shareTargetPicker([
-          { type: "text", text },
-        ]);
-        if (result && "status" in result && result.status === "success") {
-          return { shared: true, method: "liff" };
-        }
-        return { shared: false, method: "liff" };
-      }
-    } catch (err) {
-      console.error("shareTargetPicker failed:", err);
-    }
+    const result = await tryShareTargetPicker([{ type: "text", text }]);
+    if (result) return result;
   }
 
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -183,71 +338,71 @@ export async function shareMessage(text: string): Promise<ShareResult> {
     const lineUrl = `https://line.me/R/share?text=${encodeURIComponent(text)}`;
     window.location.href = lineUrl;
     return { shared: true, method: "line-app" };
-  } else {
-    const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.origin)}&text=${encodeURIComponent(text)}`;
-    const popup = window.open(lineUrl, "_blank", "width=500,height=600");
-    if (popup) {
-      return { shared: true, method: "line-app" };
-    }
-    try {
-      await navigator.clipboard.writeText(text);
-      return { shared: true, method: "clipboard" };
-    } catch {
-      return { shared: false, method: "clipboard" };
-    }
-  }
-}
-
-export async function shareMessageNoRedirect(text: string): Promise<ShareResult> {
-  const ready = await initLiff();
-
-  if (ready && initialized) {
-    try {
-      if (liff.isApiAvailable("shareTargetPicker")) {
-        const result = await liff.shareTargetPicker([
-          { type: "text", text },
-        ]);
-        if (result && "status" in result && result.status === "success") {
-          return { shared: true, method: "liff" };
-        }
-        return { shared: false, method: "liff" };
-      }
-    } catch (err) {
-      console.error("shareTargetPicker failed:", err);
-    }
   }
 
-  const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.origin)}&text=${encodeURIComponent(text)}`;
-  const popup = window.open(lineUrl, "_blank", "width=500,height=600");
-  if (!popup) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return { shared: true, method: "clipboard" };
-    } catch {
-      return { shared: false, method: "clipboard" };
-    }
-  }
-  return { shared: true, method: "line-app" };
+  const popupResult = openLineSharePopup(window.location.origin, text);
+  if (popupResult) return popupResult;
+  return copyToClipboard(text);
 }
 
 export async function sendGroupInviteNoRedirect(sessionId: string): Promise<ShareResult> {
   const joinUrl = getGroupInviteUrl(sessionId);
+  const plainText = `Toast Group Session!\n\nJoin our food swiping session and let\u2019s find the perfect meal together!\n\nTap to join:\n${joinUrl}`;
 
-  const message = `Toast Group Session!\n\nJoin our food swiping session and let's find the perfect meal together!\n\nTap to join:\n${joinUrl}`;
-  return shareMessageNoRedirect(message);
+  if (initialized && liff.isLoggedIn()) {
+    const flexMsg = buildGroupInviteFlexMessage(joinUrl);
+    const result = await tryShareTargetPicker([flexMsg]);
+    if (result) return result;
+  }
+
+  const popupResult = openLineSharePopup(joinUrl, "Toast Group Session! Join our food swiping session.");
+  if (popupResult) return popupResult;
+  return copyToClipboard(plainText);
 }
 
 export async function sendInvite(mode: string): Promise<ShareResult> {
-  const appUrl = window.location.origin;
-  const message = `Join me on Toast!\n\nLet's decide what to eat together. I'm swiping on ${mode} mode right now!\n\n${appUrl}/swipe?mode=${mode}`;
-  return shareMessage(message);
+  const appUrl = getAppBaseUrl();
+  const swipeUrl = `${appUrl}/swipe?mode=${mode}`;
+  const plainText = `Join me on Toast!\n\nLet's decide what to eat together. I'm swiping on ${mode} mode right now!\n\n${swipeUrl}`;
+
+  if (initialized && liff.isLoggedIn()) {
+    const flexMsg = buildInviteFlexMessage(mode, appUrl);
+    const result = await tryShareTargetPicker([flexMsg]);
+    if (result) return result;
+  }
+
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile) {
+    const lineUrl = `https://line.me/R/share?text=${encodeURIComponent(plainText)}`;
+    window.location.href = lineUrl;
+    return { shared: true, method: "line-app" };
+  }
+
+  const popupResult = openLineSharePopup(swipeUrl, plainText);
+  if (popupResult) return popupResult;
+  return copyToClipboard(plainText);
 }
 
 export async function sendGroupInvite(sessionId: string): Promise<ShareResult> {
   const joinUrl = getGroupInviteUrl(sessionId);
+  const plainText = `Toast Group Session!\n\nJoin our food swiping session and let\u2019s find the perfect meal together!\n\nTap to join:\n${joinUrl}`;
 
-  const message = `Toast Group Session!\n\nJoin our food swiping session and let's find the perfect meal together!\n\nTap to join:\n${joinUrl}`;
-  return shareMessage(message);
+  if (initialized && liff.isLoggedIn()) {
+    const flexMsg = buildGroupInviteFlexMessage(joinUrl);
+    const result = await tryShareTargetPicker([flexMsg]);
+    if (result) return result;
+  }
+
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile) {
+    const lineUrl = `https://line.me/R/share?text=${encodeURIComponent(plainText)}`;
+    window.location.href = lineUrl;
+    return { shared: true, method: "line-app" };
+  }
+
+  const popupResult = openLineSharePopup(joinUrl, "Toast Group Session! Join our food swiping session.");
+  if (popupResult) return popupResult;
+  return copyToClipboard(plainText);
 }
 
 export function isInLiff(): boolean {
