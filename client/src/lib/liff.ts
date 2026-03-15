@@ -317,10 +317,24 @@ function openLineSharePopup(shareUrl: string, fallbackText: string): ShareResult
   return null;
 }
 
-function openLineAppShare(fullText: string): ShareResult {
-  const lineUrl = `https://line.me/R/share?text=${encodeURIComponent(fullText)}`;
-  window.open(lineUrl, "_blank");
-  return { shared: true, method: "line-app" };
+async function mobileShare(title: string, text: string, url: string, fullText: string): Promise<ShareResult> {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text, url });
+      return { shared: true, method: "line-app" };
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        return { shared: false, method: "line-app" };
+      }
+    }
+  }
+
+  try {
+    await navigator.clipboard.writeText(fullText);
+    return { shared: true, method: "clipboard" };
+  } catch {
+    return { shared: false, method: "clipboard" };
+  }
 }
 
 async function copyToClipboard(text: string): Promise<ShareResult> {
@@ -364,7 +378,12 @@ export async function sendGroupInviteNoRedirect(sessionId: string): Promise<Shar
   }
 
   if (isMobileDevice()) {
-    return openLineAppShare(plainText);
+    return mobileShare(
+      "Toast Group Session!",
+      "Join our food swiping session and let\u2019s find the perfect meal together!",
+      joinUrl,
+      plainText,
+    );
   }
 
   const popupResult = openLineSharePopup(joinUrl, plainText);
@@ -383,11 +402,13 @@ export async function sendInvite(mode: string): Promise<ShareResult> {
     if (result) return result;
   }
 
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if (isMobile) {
-    const lineUrl = `https://line.me/R/share?text=${encodeURIComponent(plainText)}`;
-    window.location.href = lineUrl;
-    return { shared: true, method: "line-app" };
+  if (isMobileDevice()) {
+    return mobileShare(
+      "Join me on Toast!",
+      `Let's decide what to eat together. I'm swiping on ${mode} mode right now!`,
+      swipeUrl,
+      plainText,
+    );
   }
 
   const popupResult = openLineSharePopup(swipeUrl, plainText);
@@ -406,7 +427,12 @@ export async function sendGroupInvite(sessionId: string): Promise<ShareResult> {
   }
 
   if (isMobileDevice()) {
-    return openLineAppShare(plainText);
+    return mobileShare(
+      "Toast Group Session!",
+      "Join our food swiping session and let\u2019s find the perfect meal together!",
+      joinUrl,
+      plainText,
+    );
   }
 
   const popupResult = openLineSharePopup(joinUrl, plainText);

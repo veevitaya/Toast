@@ -268,7 +268,7 @@ export default function WaitingRoom() {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 3000);
     }
-    if (result.method === "liff" && result.shared) {
+    if (result.shared) {
       setShowShareModal(false);
     }
   };
