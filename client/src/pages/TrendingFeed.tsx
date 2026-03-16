@@ -3,7 +3,7 @@ import { motion, AnimatePresence, useMotionValue, PanInfo } from "framer-motion"
 import { useLocation } from "wouter";
 import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
-import { shareMessage } from "@/lib/liff";
+import { shareMessage, sendGroupInviteNoRedirect } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { useToast } from "@/hooks/use-toast";
 
@@ -650,22 +650,91 @@ export default function TrendingFeed() {
     navigate(`/restaurant/${post.restaurantId}`);
   }, [navigate]);
 
-  const handleInviteSwipe = useCallback(async (post: TrendingPost) => {
-    const appUrl = window.location.origin;
-    const shareUrl = `${appUrl}/restaurant/${post.restaurantId}`;
-    const message = `Let's eat here! 🍽️\n\n${post.restaurantName} — ${post.category}\n⭐ ${post.rating} · ${post.address}\n\n"${post.description.slice(0, 100)}..."\n\nSwipe together on Toast:\n${shareUrl}`;
+  const [creatingSession, setCreatingSession] = useState(false);
+
+  const handleInviteSwipe = useCallback(async (_post: TrendingPost) => {
+    if (creatingSession) return;
+    setCreatingSession(true);
+
     try {
-      await shareMessage(message);
-      toast({ title: "Shared via LINE!", description: "Invite sent to your friends" });
-    } catch {
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        toast({ title: "Link copied!", description: "Share this link with your friends" });
-      } catch {
-        toast({ title: "Share link", description: shareUrl });
+      const sessionCode = `t${Date.now().toString(36)}${Math.random().toString(36).substring(2, 6)}`;
+      const userId = profile?.userId || `guest_${Math.random().toString(36).substring(2, 8)}`;
+      const displayName = profile?.displayName || "Guest";
+      const pictureUrl = profile?.pictureUrl || "";
+
+      let latitude: string | undefined;
+      let longitude: string | undefined;
+      if (navigator.geolocation) {
+        try {
+          const pos = await Promise.race([
+            new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000, maximumAge: 60000 });
+            }),
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 3500)),
+          ]);
+          latitude = pos.coords.latitude.toString();
+          longitude = pos.coords.longitude.toString();
+        } catch {}
       }
+
+      const trendingRestaurants = TRENDING_POSTS.map(p => ({
+        id: p.restaurantId,
+        name: p.restaurantName,
+        category: p.category,
+        description: p.description,
+        rating: p.rating,
+        priceLevel: p.priceLevel,
+        address: p.address,
+        imageUrl: p.mediaItems[0]?.url || "",
+        isNew: p.isNew || false,
+      }));
+
+      const sourceData = JSON.stringify({
+        source: "trending",
+        restaurants: trendingRestaurants,
+      });
+
+      const createRes = await fetch("/api/group/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionCode,
+          hostLineUserId: userId,
+          hostDisplayName: displayName,
+          hostPictureUrl: pictureUrl,
+          sessionType: "trending",
+          sourceData,
+          latitude,
+          longitude,
+        }),
+      });
+
+      if (!createRes.ok) throw new Error("Failed to create session");
+
+      try {
+        const shareResult = await sendGroupInviteNoRedirect(sessionCode);
+        toast({
+          title: "Trending swipe session!",
+          description: shareResult.shared ? "Invite sent — heading to waiting room" : "Heading to waiting room",
+        });
+      } catch {
+        toast({
+          title: "Trending swipe session!",
+          description: "Heading to waiting room",
+        });
+      }
+
+      navigate(`/group/waiting?session=${sessionCode}`);
+    } catch {
+      toast({
+        title: "Couldn't create session",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingSession(false);
     }
-  }, [toast]);
+  }, [toast, navigate, profile, creatingSession]);
 
   return (
     <motion.div

@@ -2710,14 +2710,32 @@ export async function registerRoutes(
     }
   });
 
+  async function buildRestaurantMap(code: string): Promise<Map<number, any>> {
+    const allRestaurants = await storage.getRestaurants();
+    const restaurantMap = new Map(allRestaurants.map(r => [r.id, r]));
+
+    const session = await storage.getGroupSession(code);
+    if (session?.sourceData) {
+      try {
+        const parsed = JSON.parse(session.sourceData);
+        if (parsed.restaurants && Array.isArray(parsed.restaurants)) {
+          for (const r of parsed.restaurants) {
+            if (r.id && !restaurantMap.has(r.id)) {
+              restaurantMap.set(r.id, r);
+            }
+          }
+        }
+      } catch {}
+    }
+    return restaurantMap;
+  }
+
   app.get("/api/group/sessions/:code/matches", async (req, res) => {
     try {
       const { code } = req.params;
       const matches = await storage.getGroupMatches(code);
       const members = await storage.getGroupMembers(code);
-      const restaurantIds = matches.map(m => m.menuItemId);
-      const allRestaurants = restaurantIds.length > 0 ? await storage.getRestaurants() : [];
-      const restaurantMap = new Map(allRestaurants.map(r => [r.id, r]));
+      const restaurantMap = matches.length > 0 ? await buildRestaurantMap(code) : new Map();
       const enrichedMatches = matches.map(m => ({
         ...m,
         restaurant: restaurantMap.get(m.menuItemId) || null,
@@ -2734,8 +2752,7 @@ export async function registerRoutes(
       const swipes = await storage.getGroupSwipes(code);
       const members = await storage.getGroupMembers(code);
       const menuItemIds = [...new Set(swipes.map(s => s.menuItemId))];
-      const allRestaurants = menuItemIds.length > 0 ? await storage.getRestaurants() : [];
-      const restaurantMap = new Map(allRestaurants.map(r => [r.id, r]));
+      const restaurantMap = menuItemIds.length > 0 ? await buildRestaurantMap(code) : new Map();
       const restaurants = menuItemIds
         .map(id => restaurantMap.get(id))
         .filter(Boolean);
@@ -2770,6 +2787,15 @@ export async function registerRoutes(
       const session = await storage.getGroupSession(code);
       if (!session) {
         return res.status(404).json({ message: "Session not found" });
+      }
+
+      if (session.sourceData) {
+        try {
+          const parsed = JSON.parse(session.sourceData);
+          if (parsed.restaurants && Array.isArray(parsed.restaurants) && parsed.restaurants.length > 0) {
+            return res.json({ restaurants: parsed.restaurants, source: "trending_feed" });
+          }
+        } catch {}
       }
 
       const members = await storage.getGroupMembers(code);
