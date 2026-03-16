@@ -52,7 +52,12 @@ app.use((req, res, next) => {
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        const body = JSON.stringify(capturedJsonResponse);
+        logLine += ` :: ${body.length > 500 ? body.slice(0, 500) + "…" : body}`;
+      }
+
+      if (duration > 2000) {
+        logLine = `[SLOW] ${logLine}`;
       }
 
       log(logLine);

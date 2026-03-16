@@ -1,8 +1,15 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+const API_TIMEOUT = 15000;
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
+    let text: string;
+    try {
+      text = (await res.text()) || res.statusText;
+    } catch {
+      text = res.statusText || "Unknown error";
+    }
     throw new Error(`${res.status}: ${text}`);
   }
 }
@@ -20,6 +27,12 @@ function getAdminHeaders(): Record<string, string> {
   return {};
 }
 
+function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = API_TIMEOUT): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 export async function apiRequest(
   method: string,
   url: string,
@@ -29,7 +42,7 @@ export async function apiRequest(
     ...getAdminHeaders(),
     ...(data ? { "Content-Type": "application/json" } : {}),
   };
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -40,23 +53,40 @@ export async function apiRequest(
   return res;
 }
 
+function isNetworkError(err: unknown): boolean {
+  if (err instanceof TypeError && err.message.includes("fetch")) return true;
+  if (err instanceof DOMException && err.name === "AbortError") return true;
+  return false;
+}
+
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
-  async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
-      credentials: "include",
-      headers: getAdminHeaders(),
-    });
-
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+  async ({ queryKey, signal }) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), API_TIMEOUT);
+    if (signal) {
+      signal.addEventListener("abort", () => controller.abort());
     }
 
-    await throwIfResNotOk(res);
-    return await res.json();
+    try {
+      const res = await fetch(queryKey.join("/") as string, {
+        credentials: "include",
+        headers: getAdminHeaders(),
+        signal: controller.signal,
+      });
+
+      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        return null;
+      }
+
+      await throwIfResNotOk(res);
+      return await res.json();
+    } finally {
+      clearTimeout(timer);
+    }
   };
 
 export const queryClient = new QueryClient({
@@ -66,7 +96,11 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
-      retry: false,
+      retry: (failureCount, error) => {
+        if (isNetworkError(error) && failureCount < 2) return true;
+        return false;
+      },
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
     },
     mutations: {
       retry: false,

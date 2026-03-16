@@ -37,6 +37,17 @@ export function getLineOALiffId(): string {
   return LINE_OA_LIFF_ID;
 }
 
+const LIFF_INIT_TIMEOUT = 8000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
 export async function initLiff(): Promise<boolean> {
   if (!LIFF_ID) return false;
   if (initialized && currentLiffId === LIFF_ID) return true;
@@ -44,7 +55,11 @@ export async function initLiff(): Promise<boolean> {
   if (!initPromise || currentLiffId !== LIFF_ID) {
     currentLiffId = LIFF_ID;
     initialized = false;
-    initPromise = liff.init({ liffId: LIFF_ID }).then(() => {
+    initPromise = withTimeout(
+      liff.init({ liffId: LIFF_ID }),
+      LIFF_INIT_TIMEOUT,
+      "LIFF init"
+    ).then(() => {
       initialized = true;
     }).catch((err) => {
       console.error("LIFF init failed:", err);
@@ -64,7 +79,11 @@ export async function initLiffOA(): Promise<boolean> {
   if (!initPromise || currentLiffId !== oaId) {
     currentLiffId = oaId;
     initialized = false;
-    initPromise = liff.init({ liffId: oaId }).then(() => {
+    initPromise = withTimeout(
+      liff.init({ liffId: oaId }),
+      LIFF_INIT_TIMEOUT,
+      "LIFF OA init"
+    ).then(() => {
       initialized = true;
     }).catch((err) => {
       console.error("LIFF OA init failed:", err);

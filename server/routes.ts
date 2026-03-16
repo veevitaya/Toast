@@ -11,6 +11,26 @@ function hashPassword(password: string): string {
   return createHash("sha256").update(password).digest("hex");
 }
 
+const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
+function rateLimit(key: string, maxPerWindow: number, windowMs: number): boolean {
+  const now = Date.now();
+  const bucket = rateLimitBuckets.get(key);
+  if (!bucket || now > bucket.resetAt) {
+    rateLimitBuckets.set(key, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
+  bucket.count++;
+  if (bucket.count > maxPerWindow) return true;
+  return false;
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of rateLimitBuckets) {
+    if (now > v.resetAt) rateLimitBuckets.delete(k);
+  }
+}, 60000);
+
 const CACHE_MAX_ENTRIES = 200;
 const cache = new Map<string, { data: any; expiry: number }>();
 function getCached<T>(key: string, ttlMs: number, fetcher: () => Promise<T>): Promise<T> {
@@ -1643,13 +1663,17 @@ export async function registerRoutes(
   app.post("/api/analytics/event", async (req, res) => {
     try {
       const schema = z.object({
-        eventType: z.string().min(1),
-        userId: z.string().optional().nullable(),
+        eventType: z.string().min(1).max(100),
+        userId: z.string().max(100).optional().nullable(),
         restaurantId: z.number().optional().nullable(),
-        metadata: z.string().optional().nullable(),
+        metadata: z.string().max(2000).optional().nullable(),
         timestamp: z.string().optional().default(() => new Date().toISOString()),
       });
       const input = schema.parse(req.body);
+      const ip = req.ip || "unknown";
+      if (rateLimit(`analytics:${ip}`, 60, 10000)) {
+        return res.status(429).json({ message: "Rate limited" });
+      }
       const event = await storage.logEvent({
         eventType: input.eventType,
         userId: input.userId || null,
@@ -2671,10 +2695,15 @@ export async function registerRoutes(
 
   app.post("/api/group/sessions/:code/swipe", async (req, res) => {
     try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`swipe-ip:${ip}`, 100, 10000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+
       const { code } = req.params;
       const schema = z.object({
-        lineUserId: z.string().min(1),
-        menuItemId: z.number(),
+        lineUserId: z.string().min(1).max(100),
+        menuItemId: z.number().int().positive(),
         direction: z.enum(["left", "right", "super"]),
       });
       const input = schema.parse(req.body);
@@ -2682,6 +2711,11 @@ export async function registerRoutes(
       const isMember = await storage.isGroupMember(code, input.lineUserId);
       if (!isMember) {
         return res.status(403).json({ message: "Not a member of this session" });
+      }
+
+      const rlKey = `swipe:${code}:${input.lineUserId}`;
+      if (rateLimit(rlKey, 30, 10000)) {
+        return res.status(429).json({ message: "Too many swipes, slow down" });
       }
 
       const swipe = await storage.recordGroupSwipe({

@@ -725,7 +725,7 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
                     data-testid={`card-secondary-rec-${rec.id}`}
                   >
                     <div className="relative w-full h-[80px] rounded-xl overflow-hidden mb-1.5 border border-gray-100">
-                      <img src={optimizeImageUrl(rec.imageUrl, 200, 40)} alt={rec.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                      <img src={optimizeImageUrl(rec.imageUrl, 200, 40)} alt={rec.name} className="w-full h-full object-cover" loading="lazy" decoding="async" onError={(e) => { const img = e.currentTarget; img.style.display = 'none'; }} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                       <div className="absolute top-1.5 right-1.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[9px] font-bold rounded-full px-1.5 py-0.5">
                         {rec.match}%

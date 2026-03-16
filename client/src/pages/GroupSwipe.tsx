@@ -5,6 +5,8 @@ import { addSession, updateSession, removeSession } from "@/lib/sessionStore";
 import { BottomNav } from "@/components/BottomNav";
 import { trackEvent } from "@/lib/analytics";
 import { useLineProfile } from "@/lib/useLineProfile";
+import { handleImageError } from "@/lib/imageUtils";
+import { throttleTap } from "@/lib/requestLock";
 import { Square, X, Trophy, ChevronRight, Crown, Medal, Award, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils } from "lucide-react";
 
 interface MenuItem {
@@ -120,23 +122,28 @@ function SwipeCardGroup({ item, active, behind, onSwipe, onTap, showHint = false
   const superOpacity = useTransform(y, [0, -80], [0, 1]);
   const [dragging, setDragging] = useState(false);
   const [exiting, setExiting] = useState<{ x: number; y: number } | null>(null);
+  const swiped = useRef(false);
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
+    if (swiped.current) return;
     const xThreshold = 120;
     const yThreshold = -100;
 
     if (info.offset.y < yThreshold && Math.abs(info.offset.x) < 80) {
+      swiped.current = true;
       setExiting({ x: 0, y: -600 });
       onSwipe(item.id, "super");
     } else if (info.offset.x > xThreshold) {
+      swiped.current = true;
       setExiting({ x: 500, y: info.offset.y });
       onSwipe(item.id, "right");
     } else if (info.offset.x < -xThreshold) {
+      swiped.current = true;
       setExiting({ x: -500, y: info.offset.y });
       onSwipe(item.id, "left");
     }
     setTimeout(() => setDragging(false), 50);
-  };
+  }, [item.id, onSwipe]);
 
   if (!active && !behind) return null;
 
@@ -171,7 +178,7 @@ function SwipeCardGroup({ item, active, behind, onSwipe, onTap, showHint = false
       data-testid={`swipe-card-${item.id}`}
     >
       <div className="relative w-full h-[58%]">
-        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" draggable={false} />
+        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" draggable={false} onError={handleImageError} loading={active ? "eager" : "lazy"} decoding="async" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/5" />
 
         {active && (
@@ -512,7 +519,12 @@ export default function GroupSwipe() {
     return null;
   }, [sessionCode, profile]);
 
+  const swipeLockRef = useRef(false);
   const handleSwipe = useCallback((id: number, dir: "left" | "right" | "super") => {
+    if (swipeLockRef.current) return;
+    swipeLockRef.current = true;
+    setTimeout(() => { swipeLockRef.current = false; }, 400);
+
     const item = menuItems.find((m) => m.id === id);
     if (!item) return;
 

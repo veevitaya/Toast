@@ -1,7 +1,8 @@
 import { motion, useMotionValue, useTransform, useAnimation, PanInfo } from "framer-motion";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import type { RestaurantResponse } from "@shared/routes";
 import { MapPin, Star } from "lucide-react";
+import { handleImageError } from "@/lib/imageUtils";
 
 interface SwipeCardProps {
   restaurant: RestaurantResponse;
@@ -12,24 +13,27 @@ interface SwipeCardProps {
 
 export function SwipeCard({ restaurant, active, onSwipe, zIndex }: SwipeCardProps) {
   const [exitX, setExitX] = useState<number>(0);
+  const swiped = useRef(false);
   const x = useMotionValue(0);
   const scale = useTransform(x, [-150, 0, 150], [0.95, 1, 0.95]);
   const rotate = useTransform(x, [-150, 0, 150], [-8, 0, 8]);
   
-  // Opacity for the LIKE / NOPE stamps
   const opacityRight = useTransform(x, [0, 100], [0, 1]);
   const opacityLeft = useTransform(x, [0, -100], [0, 1]);
 
-  const handleDragEnd = (event: any, info: PanInfo) => {
+  const handleDragEnd = useCallback((event: any, info: PanInfo) => {
+    if (swiped.current) return;
     const threshold = 100;
     if (info.offset.x > threshold) {
+      swiped.current = true;
       setExitX(300);
       onSwipe(restaurant.id, 'right');
     } else if (info.offset.x < -threshold) {
+      swiped.current = true;
       setExitX(-300);
       onSwipe(restaurant.id, 'left');
     }
-  };
+  }, [restaurant.id, onSwipe]);
 
   return (
     <motion.div
@@ -52,6 +56,9 @@ export function SwipeCard({ restaurant, active, onSwipe, zIndex }: SwipeCardProp
           src={restaurant.imageUrl} 
           alt={restaurant.name}
           className="w-full h-full object-cover pointer-events-none"
+          onError={handleImageError}
+          loading={active ? "eager" : "lazy"}
+          decoding="async"
         />
         {/* Subtle dark gradient at bottom of image for text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />

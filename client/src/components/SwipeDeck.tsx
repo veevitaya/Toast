@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { SwipeCard } from "./SwipeCard";
 import type { RestaurantResponse } from "@shared/routes";
 import { useRecordPreference } from "@/hooks/use-restaurants";
 import { Loader2 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { preloadImage, optimizeImageUrl } from "@/lib/imageUtils";
 
 interface SwipeDeckProps {
   restaurants: RestaurantResponse[];
@@ -13,8 +14,20 @@ interface SwipeDeckProps {
 export function SwipeDeck({ restaurants, isLoading }: SwipeDeckProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const recordPreference = useRecordPreference();
+  const swipeLockRef = useRef(false);
 
-  const handleSwipe = (id: number, direction: 'left' | 'right') => {
+  useEffect(() => {
+    for (let i = currentIndex + 1; i <= currentIndex + 3 && i < restaurants.length; i++) {
+      const url = restaurants[i]?.imageUrl;
+      if (url) preloadImage(optimizeImageUrl(url, 400, 50));
+    }
+  }, [currentIndex, restaurants]);
+
+  const handleSwipe = useCallback((id: number, direction: 'left' | 'right') => {
+    if (swipeLockRef.current) return;
+    swipeLockRef.current = true;
+    setTimeout(() => { swipeLockRef.current = false; }, 350);
+
     setCurrentIndex((prev) => prev + 1);
     const restaurant = restaurants.find(r => r.id === id);
 
@@ -34,7 +47,7 @@ export function SwipeDeck({ restaurants, isLoading }: SwipeDeckProps) {
       restaurantId: id,
       metadata: { category: restaurant?.category || "" },
     });
-  };
+  }, [restaurants, recordPreference]);
 
   if (isLoading) {
     return (

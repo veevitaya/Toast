@@ -8,6 +8,7 @@ import { trackEvent } from "@/lib/analytics";
 import { BottomNav } from "@/components/BottomNav";
 import { SaveBucketPicker } from "@/components/SaveBucketPicker";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
+import { handleImageError } from "@/lib/imageUtils";
 import { RestaurantCampaignBanner } from "@/components/CampaignBanner";
 import noodsPhoto1 from "@assets/IMG_9279_1772025468067.jpeg";
 import noodsPhoto2 from "@assets/IMG_9280_1772025468067.jpeg";
@@ -272,6 +273,8 @@ export default function RestaurantDetail() {
                 src={photo}
                 alt={`${restaurant.name} ${idx + 1}`}
                 className="w-full h-full object-cover"
+                onError={handleImageError}
+                loading={idx === 0 ? "eager" : "lazy"}
               />
             </div>
           ))}
@@ -383,7 +386,7 @@ export default function RestaurantDetail() {
               className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 cursor-pointer active:scale-[0.95] transition-transform duration-200"
               data-testid={`photo-thumb-${idx}`}
             >
-              <img src={photo} alt="" className="w-full h-full object-cover" />
+              <img src={photo} alt="" className="w-full h-full object-cover" onError={handleImageError} loading="lazy" />
             </div>
           ))}
         </div>

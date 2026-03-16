@@ -5,6 +5,7 @@ import type { RestaurantResponse } from "@shared/routes";
 import { LoadingMascot } from "./LoadingMascot";
 import { SaveBucketPicker } from "./SaveBucketPicker";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
+import { handleImageError } from "@/lib/imageUtils";
 
 function optimizeRowImage(url: string, width: number): string {
   if (!url || !url.includes("unsplash.com")) return url;
@@ -126,6 +127,7 @@ export const RestaurantRow = memo(function RestaurantRow({ title, subtitle, rest
                 decoding="async"
                 className="w-full h-full object-cover"
                 draggable={false}
+                onError={handleImageError}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
               {rest.isNew && (
