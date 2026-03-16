@@ -723,6 +723,39 @@ export default function GroupSwipe() {
             </div>
           ) : top3.length > 0 ? (
             <div className="space-y-3">
+              <div className="flex gap-2 mb-1" data-testid="group-stats-bar">
+                <div className="flex-1 bg-white rounded-2xl px-3 py-2.5 border border-gray-100 text-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}>
+                  <p className="text-[17px] font-bold text-foreground">{menuItems.length}</p>
+                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Restaurants</p>
+                </div>
+                <div className="flex-1 bg-white rounded-2xl px-3 py-2.5 border border-gray-100 text-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}>
+                  <p className="text-[17px] font-bold text-[hsl(160,60%,40%)]">{likedCount}</p>
+                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Your Likes</p>
+                </div>
+                <div className="flex-1 bg-white rounded-2xl px-3 py-2.5 border border-gray-100 text-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}>
+                  <p className="text-[17px] font-bold text-[#FFCC02]">{rankedResults.filter(r => r.isFullMatch).length}</p>
+                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Full Matches</p>
+                </div>
+              </div>
+              {(() => {
+                const topCategory = rankedResults.length > 0
+                  ? Object.entries(
+                      rankedResults.reduce<Record<string, number>>((acc, r) => {
+                        const cat = r.item.category || "Other";
+                        acc[cat] = (acc[cat] || 0) + r.voteCount;
+                        return acc;
+                      }, {})
+                    ).sort((a, b) => b[1] - a[1])[0]?.[0] || null
+                  : null;
+                return topCategory ? (
+                  <div className="bg-[#FFCC02]/8 rounded-2xl px-3.5 py-2 flex items-center gap-2 mb-1 border border-[#FFCC02]/15" data-testid="group-top-category">
+                    <span className="text-[13px]">{"\uD83C\uDF1F"}</span>
+                    <p className="text-[12px] text-foreground/80 font-medium">
+                      Group favorite: <span className="font-bold text-foreground">{topCategory}</span>
+                    </p>
+                  </div>
+                ) : null;
+              })()}
               {top3.map((result, idx) => {
                 const RankIcon = RANK_ICONS[idx] || Award;
                 return (
@@ -943,8 +976,10 @@ export default function GroupSwipe() {
             initial={{ y: 24, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            className="w-full max-w-[280px] rounded-[20px] overflow-hidden"
+            onClick={() => navigate(`/restaurant/${matchedItem.id}`)}
+            className="w-full max-w-[280px] rounded-[20px] overflow-hidden cursor-pointer active:scale-[0.97] transition-transform"
             style={{ boxShadow: "0 20px 60px -15px rgba(0,0,0,0.18)" }}
+            data-testid={`match-card-${matchedItem.id}`}
           >
             <div className="relative">
               <img src={matchedItem.imageUrl} alt={matchedItem.name} className="w-full aspect-[16/10] object-cover" />
@@ -954,9 +989,9 @@ export default function GroupSwipe() {
               <h3 className="font-semibold text-base leading-tight truncate">{matchedItem.name}</h3>
               <p className="text-[13px] text-muted-foreground mt-0.5 truncate">{matchedItem.category}</p>
               <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                <span className="text-[11px] font-medium">★ {matchedItem.rating}</span>
-                <span className="text-[11px] text-muted-foreground">{"฿".repeat(matchedItem.priceLevel)}</span>
-                <span className="text-[11px] text-muted-foreground truncate max-w-[140px]">· {matchedItem.address}</span>
+                <span className="text-[11px] font-medium">{"\u2605"} {matchedItem.rating}</span>
+                <span className="text-[11px] text-muted-foreground">{"\u0E3F".repeat(matchedItem.priceLevel)}</span>
+                <span className="text-[11px] text-muted-foreground truncate max-w-[140px]">{"\u00B7"} {matchedItem.address}</span>
               </div>
               <div className="flex flex-wrap gap-1 mt-2.5">
                 {matchedItem.tags.slice(0, 3).map((tag) => (
