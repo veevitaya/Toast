@@ -728,6 +728,7 @@ export async function registerRoutes(
   app.get("/api/restaurants/suggestions", async (req, res) => {
     try {
       const suggestions = await storage.getSuggestions();
+      res.set("Cache-Control", "public, max-age=300, stale-while-revalidate=600");
       res.json(suggestions);
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
@@ -779,8 +780,8 @@ export async function registerRoutes(
           storage.getTasteDna(userId),
           storage.getContextPatterns(userId),
           storage.getRecentMealMemory(userId),
-          storage.getUserEvents(userId, 300),
-          storage.getUserBehaviorEvents(userId, 300),
+          storage.getUserEvents(userId, 80),
+          storage.getUserBehaviorEvents(userId, 80),
         ]);
       }
 
@@ -914,8 +915,8 @@ export async function registerRoutes(
           storage.getTasteDna(userId),
           storage.getContextPatterns(userId),
           storage.getRecentMealMemory(userId),
-          storage.getUserEvents(userId, 200),
-          storage.getUserBehaviorEvents(userId, 200),
+          storage.getUserEvents(userId, 50),
+          storage.getUserBehaviorEvents(userId, 50),
         ]);
       }
 
@@ -1324,6 +1325,7 @@ export async function registerRoutes(
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const restaurant = await storage.getRestaurantById(id);
       if (!restaurant) return res.status(404).json({ message: "Not found" });
+      res.set("Cache-Control", "public, max-age=120, stale-while-revalidate=300");
       res.json(restaurant);
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
@@ -1337,6 +1339,7 @@ export async function registerRoutes(
       const restaurants = await getCached(cacheKey, 30000, () =>
         storage.getRestaurants(input.mode, input.lat, input.lng, input.query)
       );
+      res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=120");
       res.json(restaurants);
     } catch (err) {
       if (err instanceof z.ZodError) {

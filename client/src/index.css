@@ -99,6 +99,18 @@
   backface-visibility: hidden;
 }
 
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-page-in {
+  animation: page-in 0.18s ease-out both;
+}
+
+.aspect-hero { aspect-ratio: 16/9; }
+.aspect-thumb { aspect-ratio: 16/10; }
+.aspect-card { aspect-ratio: 3/2; }
+
 .glass-panel {
   @apply bg-white/80 border border-white/50;
   -webkit-backdrop-filter: blur(24px);

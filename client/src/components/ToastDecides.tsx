@@ -100,9 +100,9 @@ function getMealPeriod(): string {
   return "late night";
 }
 
-function optimizeImageUrl(url: string, width: number): string {
+function optimizeImageUrl(url: string, width: number, quality = 50): string {
   if (!url || !url.includes("unsplash.com")) return url;
-  return url.replace(/w=\d+/, `w=${width}`).replace(/q=\d+/, "q=55");
+  return url.replace(/w=\d+/, `w=${width}`).replace(/q=\d+/, `q=${quality}`);
 }
 
 const ScoreBar = memo(function ScoreBar({ label, value, color }: { label: string; value: number; color: string }) {
@@ -130,12 +130,12 @@ const InsightCard = memo(function InsightCard({ rec, rank }: { rec: Personalized
   const imgWidth = isTop ? 400 : 300;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: rank * 0.12, type: "spring", stiffness: 260, damping: 24 }}
-      className="rounded-2xl overflow-hidden bg-white border border-gray-100"
-      style={{ boxShadow: isTop ? "0 8px 32px -8px rgba(0,0,0,0.10)" : "0 4px 16px -4px rgba(0,0,0,0.06)" }}
+    <div
+      className="rounded-2xl overflow-hidden bg-white border border-gray-100 animate-page-in"
+      style={{
+        boxShadow: isTop ? "0 8px 32px -8px rgba(0,0,0,0.10)" : "0 4px 16px -4px rgba(0,0,0,0.06)",
+        animationDelay: `${rank * 80}ms`,
+      }}
       data-testid={`card-result-${rec.id}`}
     >
       <button
@@ -228,7 +228,7 @@ const InsightCard = memo(function InsightCard({ rec, rank }: { rec: Personalized
           {isTop ? "Looks great" : "View details"} <ArrowRight className="w-3.5 h-3.5" />
         </motion.button>
       </div>
-    </motion.div>
+    </div>
   );
 });
 
@@ -267,12 +267,9 @@ const TasteDNAPanel = memo(function TasteDNAPanel({ recs }: { recs: Personalized
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4 }}
-      className="rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 p-4 mt-4"
-      style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}
+    <div
+      className="rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 p-4 mt-4 animate-page-in"
+      style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)", animationDelay: "200ms" }}
       data-testid="taste-dna-panel"
     >
       <div className="flex items-center gap-2 mb-3">
@@ -305,7 +302,7 @@ const TasteDNAPanel = memo(function TasteDNAPanel({ recs }: { recs: Personalized
           </div>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 });
 
@@ -610,11 +607,8 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
         </button>
       </div>}
 
-      {!isRefineOpen && <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15, type: "spring", stiffness: 280, damping: 22 }}
-        className="rounded-[20px] overflow-hidden bg-white border border-gray-100 relative"
+      {!isRefineOpen && <div
+        className="rounded-[20px] overflow-hidden bg-white border border-gray-100 relative animate-page-in"
         style={{ boxShadow: "0 6px 24px -6px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03)" }}
         data-testid="card-toast-decides"
       >
@@ -724,18 +718,14 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
             {secondaryRecs.length > 0 && (
               <div className="flex gap-2.5">
                 {secondaryRecs.map((rec, idx) => (
-                  <motion.button
+                  <button
                     key={rec.id}
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 + idx * 0.05 }}
-                    whileTap={{ scale: 0.96 }}
                     onClick={() => promoteSecondary(idx)}
-                    className="flex-1 group"
+                    className="flex-1 group active:scale-[0.96] transition-transform duration-150"
                     data-testid={`card-secondary-rec-${rec.id}`}
                   >
                     <div className="relative w-full h-[80px] rounded-xl overflow-hidden mb-1.5 border border-gray-100">
-                      <img src={optimizeImageUrl(rec.imageUrl, 200)} alt={rec.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                      <img src={optimizeImageUrl(rec.imageUrl, 200, 40)} alt={rec.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                       <div className="absolute top-1.5 right-1.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[9px] font-bold rounded-full px-1.5 py-0.5">
                         {rec.match}%
@@ -745,7 +735,7 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
                       </div>
                     </div>
                     <p className="text-[10px] text-muted-foreground truncate">{rec.address} | {rec.rating}</p>
-                  </motion.button>
+                  </button>
                 ))}
               </div>
             )}
@@ -779,7 +769,7 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
             </motion.button>
           </div>
         )}
-      </motion.div>}
+      </div>}
 
       <AnimatePresence>
         {uiState === "refine_open" && (

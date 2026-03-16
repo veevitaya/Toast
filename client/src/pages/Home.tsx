@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
@@ -8,7 +8,6 @@ import {
 import { BottomNav } from "@/components/BottomNav";
 import { SessionBar } from "@/components/SessionBar";
 import { RestaurantRow } from "@/components/RestaurantRow";
-import { InteractiveMap } from "@/components/InteractiveMap";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { useRestaurants, useSuggestions } from "@/hooks/use-restaurants";
 import { useVibeFrequency } from "@/hooks/use-vibe-frequency";
@@ -22,6 +21,8 @@ import toastLogoPath from "@assets/toast_logo_nobg.png";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import toastCharPath from "@assets/IMG_9345_1772899599160.png";
 import toastWafflePath from "@assets/IMG_9677_1772904144672.jpeg";
+
+const InteractiveMap = lazy(() => import("@/components/InteractiveMap").then(m => ({ default: m.InteractiveMap })));
 
 const FILTER_OPTIONS = {
   sortBy: [
@@ -374,15 +375,17 @@ export default function Home() {
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden" data-testid="home-page">
       <div className="absolute inset-0 z-0">
-        <InteractiveMap
-          pins={mapPins}
-          center={mapCenter}
-          zoom={14}
-          selectedPinId={null}
-          onPinSelect={(id) => navigate(`/restaurant/${id}`)}
-          filteredCategory={selectedCategory}
-          userLocation={actualGpsLocation}
-        />
+        <Suspense fallback={<div className="w-full h-full bg-gray-100" />}>
+          <InteractiveMap
+            pins={mapPins}
+            center={mapCenter}
+            zoom={14}
+            selectedPinId={null}
+            onPinSelect={(id) => navigate(`/restaurant/${id}`)}
+            filteredCategory={selectedCategory}
+            userLocation={actualGpsLocation}
+          />
+        </Suspense>
       </div>
 
       <div className="absolute top-0 left-0 right-0 z-[60] safe-top" ref={locationRef}>
@@ -721,31 +724,22 @@ export default function Home() {
 
         <div className={`flex-1 min-h-0 hide-scrollbar relative ${refineOpen ? "flex flex-col overflow-hidden" : "overflow-y-auto pb-24"}`} style={{ overscrollBehavior: "contain" }}>
           <div className="px-6 pt-2 pb-3" style={refineOpen ? { display: "none" } : undefined}>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
+            <p
               className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2"
               data-testid="text-context-line"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
               {getContextLine()}
-            </motion.p>
+            </p>
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
-                <motion.h1
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15, type: "spring", stiffness: 300, damping: 25 }}
-                  className="text-[22px] font-bold text-foreground leading-[1.15] tracking-tight"
+                <h1
+                  className="text-[22px] font-bold text-foreground leading-[1.15] tracking-tight animate-page-in"
                   data-testid="text-greeting"
                 >
                   Hey there,<br />{getGreeting()}
-                </motion.h1>
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25 }}
+                </h1>
+                <div
                   className="flex items-center gap-2 mt-3 flex-wrap"
                 >
                   {topPreference.score > 0 && (
@@ -756,14 +750,12 @@ export default function Home() {
                   <span className="inline-flex items-center gap-1.5 bg-white rounded-full px-3 py-1.5 text-xs font-medium text-foreground border border-gray-100" data-testid="badge-streak">
                     12-wk streak
                   </span>
-                </motion.div>
+                </div>
               </div>
-              <motion.img
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 260, damping: 20 }}
+              <img
                 src={toastLogoPath}
                 alt="Toast"
+                loading="lazy"
                 className="h-12 w-auto flex-shrink-0 mt-[30px]"
                 data-testid="img-hero-logo"
               />

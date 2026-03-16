@@ -3,7 +3,6 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AnimatePresence, motion } from "framer-motion";
 import { LanguageProvider } from "@/i18n/LanguageProvider";
 import { lazy, Suspense } from "react";
 import NotFound from "@/pages/not-found";
@@ -59,31 +58,11 @@ const OwnerDeliveryConversions = lazy(() => import("@/pages/admin/OwnerDeliveryC
 const OwnerCustomerInsights = lazy(() => import("@/pages/admin/OwnerCustomerInsights"));
 const OwnerBilling = lazy(() => import("@/pages/admin/OwnerBilling"));
 
-const pageVariants = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -4 },
-};
-
-const pageTransition = {
-  type: "spring" as const,
-  damping: 26,
-  stiffness: 260,
-  mass: 0.8,
-};
-
 function AnimatedPage({ children }: { children: React.ReactNode }) {
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      transition={pageTransition}
-      className="w-full h-full gpu-accelerated"
-    >
+    <div className="w-full h-full animate-page-in gpu-accelerated">
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -100,8 +79,7 @@ function Router() {
 
   return (
     <Suspense fallback={<PageLoader />}>
-      <AnimatePresence mode="wait">
-        <Switch location={location} key={location}>
+        <Switch location={location}>
           <Route path="/">
             <AnimatedPage><Home /></AnimatedPage>
           </Route>
@@ -256,7 +234,6 @@ function Router() {
             <AnimatedPage><NotFound /></AnimatedPage>
           </Route>
         </Switch>
-      </AnimatePresence>
     </Suspense>
   );
 }

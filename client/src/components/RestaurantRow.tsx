@@ -1,10 +1,15 @@
-import { useRef, useState } from "react";
+import { useRef, useState, memo } from "react";
 
 import { useLocation } from "wouter";
 import type { RestaurantResponse } from "@shared/routes";
 import { LoadingMascot } from "./LoadingMascot";
 import { SaveBucketPicker } from "./SaveBucketPicker";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
+
+function optimizeRowImage(url: string, width: number): string {
+  if (!url || !url.includes("unsplash.com")) return url;
+  return url.replace(/w=\d+/, `w=${width}`).replace(/q=\d+/, "q=40");
+}
 
 interface RestaurantRowProps {
   title: string;
@@ -51,7 +56,7 @@ function HeartButton({ restaurantId, restaurantName }: { restaurantId: number; r
   );
 }
 
-export function RestaurantRow({ title, subtitle, restaurants, isLoading, size = "default", category }: RestaurantRowProps) {
+export const RestaurantRow = memo(function RestaurantRow({ title, subtitle, restaurants, isLoading, size = "default", category }: RestaurantRowProps) {
   const [, navigate] = useLocation();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -115,10 +120,11 @@ export function RestaurantRow({ title, subtitle, restaurants, isLoading, size = 
               className={`w-full ${imageHeight} rounded-2xl overflow-hidden relative active:scale-[0.97] transition-transform duration-200`}
             >
               <img
-                src={rest.imageUrl}
+                src={optimizeRowImage(rest.imageUrl, size === "xl" ? 300 : 200)}
                 alt={rest.name}
                 loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                decoding="async"
+                className="w-full h-full object-cover"
                 draggable={false}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
@@ -148,4 +154,4 @@ export function RestaurantRow({ title, subtitle, restaurants, isLoading, size = 
       </div>
     </div>
   );
-}
+});

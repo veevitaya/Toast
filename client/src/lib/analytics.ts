@@ -11,15 +11,23 @@ export function trackEvent(
     }
   } catch {}
 
-  fetch("/api/analytics/event", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      eventType,
-      userId: data?.userId || userId,
-      restaurantId: data?.restaurantId,
-      metadata: data?.metadata ? JSON.stringify(data.metadata) : undefined,
-      timestamp: new Date().toISOString(),
-    }),
-  }).catch(() => {});
+  const payload = JSON.stringify({
+    eventType,
+    userId: data?.userId || userId,
+    restaurantId: data?.restaurantId,
+    metadata: data?.metadata ? JSON.stringify(data.metadata) : undefined,
+    timestamp: new Date().toISOString(),
+  });
+
+  const sent = typeof navigator.sendBeacon === "function" &&
+    navigator.sendBeacon("/api/analytics/event", new Blob([payload], { type: "application/json" }));
+
+  if (!sent) {
+    fetch("/api/analytics/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: payload,
+    }).catch(() => {});
+  }
 }
