@@ -60,6 +60,12 @@ import {
   type InsertUserBehaviorEvent,
   type MoodChoiceLink,
   type InsertMoodChoiceLink,
+  sessionEvents,
+  auditLogs,
+  type SessionEvent,
+  type InsertSessionEvent,
+  type AuditLog,
+  type InsertAuditLog,
 } from "@shared/schema";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -155,6 +161,11 @@ export interface IStorage {
   getUserBehaviorEvents(userId: string, limit?: number): Promise<UserBehaviorEvent[]>;
   createMoodChoiceLink(link: InsertMoodChoiceLink): Promise<MoodChoiceLink>;
   getMoodChoiceLinks(userId: string, limit?: number): Promise<MoodChoiceLink[]>;
+  createSessionEvent(event: InsertSessionEvent): Promise<SessionEvent>;
+  getSessionEvents(sessionCode: string): Promise<SessionEvent[]>;
+  checkIdempotencyKey(key: string): Promise<boolean>;
+  createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
+  getAuditLogs(filters?: { actorType?: string; action?: string; limit?: number }): Promise<AuditLog[]>;
 }
 
 const MAX_CACHE_ENTRIES = 200;
@@ -781,6 +792,38 @@ export class DatabaseStorage implements IStorage {
       .where(eq(moodChoiceLinks.userId, userId))
       .orderBy(desc(moodChoiceLinks.id))
       .limit(limit);
+  }
+
+  async createSessionEvent(event: InsertSessionEvent): Promise<SessionEvent> {
+    const [created] = await db.insert(sessionEvents).values(event).returning();
+    return created;
+  }
+
+  async getSessionEvents(sessionCode: string): Promise<SessionEvent[]> {
+    return await db.select().from(sessionEvents)
+      .where(eq(sessionEvents.sessionCode, sessionCode))
+      .orderBy(desc(sessionEvents.id));
+  }
+
+  async checkIdempotencyKey(key: string): Promise<boolean> {
+    const rows = await db.select({ id: sessionEvents.id }).from(sessionEvents)
+      .where(eq(sessionEvents.idempotencyKey, key))
+      .limit(1);
+    return rows.length > 0;
+  }
+
+  async createAuditLog(log: InsertAuditLog): Promise<AuditLog> {
+    const [created] = await db.insert(auditLogs).values(log).returning();
+    return created;
+  }
+
+  async getAuditLogs(filters?: { actorType?: string; action?: string; limit?: number }): Promise<AuditLog[]> {
+    let query = db.select().from(auditLogs);
+    const conditions = [];
+    if (filters?.actorType) conditions.push(eq(auditLogs.actorType, filters.actorType));
+    if (filters?.action) conditions.push(eq(auditLogs.action, filters.action));
+    if (conditions.length > 0) query = query.where(and(...conditions)) as any;
+    return await (query as any).orderBy(desc(auditLogs.id)).limit(filters?.limit || 100);
   }
 }
 

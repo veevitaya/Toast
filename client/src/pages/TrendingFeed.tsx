@@ -658,7 +658,6 @@ export default function TrendingFeed() {
     setCreatingSession(true);
 
     try {
-      const sessionCode = `t${Date.now().toString(36)}${Math.random().toString(36).substring(2, 6)}`;
       const userId = profile?.userId || `guest_${Math.random().toString(36).substring(2, 8)}`;
       const displayName = profile?.displayName || "Guest";
       const pictureUrl = profile?.pictureUrl || "";
@@ -699,7 +698,6 @@ export default function TrendingFeed() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionCode,
           hostLineUserId: userId,
           hostDisplayName: displayName,
           hostPictureUrl: pictureUrl,
@@ -711,6 +709,8 @@ export default function TrendingFeed() {
       });
 
       if (!createRes.ok) throw new Error("Failed to create session");
+      const createdSession = await createRes.json();
+      const sessionCode = createdSession.sessionCode;
 
       try {
         const shareResult = await sendGroupInviteNoRedirect(sessionCode);
@@ -725,6 +725,7 @@ export default function TrendingFeed() {
         });
       }
 
+      sessionStorage.setItem("toast_group_host_session", sessionCode);
       navigate(`/group/waiting?session=${sessionCode}`);
     } catch {
       toast({

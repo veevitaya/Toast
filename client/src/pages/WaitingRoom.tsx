@@ -136,7 +136,6 @@ export default function WaitingRoom() {
             ...(accessToken ? { "X-Line-Access-Token": accessToken } : {}),
           },
           body: JSON.stringify({
-            sessionCode: sessionId,
             hostLineUserId: profile.userId,
             hostDisplayName: profile.displayName,
             hostPictureUrl: profile.pictureUrl || "",
@@ -145,6 +144,12 @@ export default function WaitingRoom() {
           }),
         });
         if (createRes.ok) {
+          const createdSession = await createRes.json();
+          if (createdSession.sessionCode && createdSession.sessionCode !== sessionId) {
+            const newUrl = `/group/waiting?session=${createdSession.sessionCode}&host=true`;
+            window.location.replace(newUrl);
+            return;
+          }
           setSessionCreated(true);
         } else {
           const retryJoin = await fetchWithTimeout(`/api/group/sessions/${sessionId}/join`, {

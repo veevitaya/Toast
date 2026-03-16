@@ -394,3 +394,40 @@ export const groupComboStats = pgTable("group_combo_stats", {
 export const insertGroupComboStatsSchema = createInsertSchema(groupComboStats).omit({ id: true });
 export type GroupComboStats = typeof groupComboStats.$inferSelect;
 export type InsertGroupComboStats = z.infer<typeof insertGroupComboStatsSchema>;
+
+export const sessionEvents = pgTable("session_events", {
+  id: serial("id").primaryKey(),
+  sessionCode: text("session_code").notNull(),
+  eventType: text("event_type").notNull(),
+  actorId: text("actor_id").notNull(),
+  payload: jsonb("payload"),
+  idempotencyKey: text("idempotency_key"),
+  createdAt: text("created_at").notNull(),
+}, (table) => ({
+  sessionCodeIdx: index("session_events_session_code_idx").on(table.sessionCode),
+  eventTypeIdx: index("session_events_event_type_idx").on(table.eventType),
+  idempotencyKeyIdx: index("session_events_idempotency_key_idx").on(table.idempotencyKey),
+}));
+
+export const insertSessionEventSchema = createInsertSchema(sessionEvents).omit({ id: true });
+export type SessionEvent = typeof sessionEvents.$inferSelect;
+export type InsertSessionEvent = z.infer<typeof insertSessionEventSchema>;
+
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  action: text("action").notNull(),
+  actorType: text("actor_type").notNull(),
+  actorId: text("actor_id").notNull(),
+  targetType: text("target_type"),
+  targetId: text("target_id"),
+  metadata: jsonb("metadata"),
+  ipAddress: text("ip_address"),
+  createdAt: text("created_at").notNull(),
+}, (table) => ({
+  actorIdx: index("audit_logs_actor_idx").on(table.actorType, table.actorId),
+  actionIdx: index("audit_logs_action_idx").on(table.action),
+}));
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true });
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;

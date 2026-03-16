@@ -3,12 +3,40 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { createHash } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import { classifyRestaurant, VERIFICATION_CHECKLIST_TEMPLATE } from "./classifier";
 import { autoAssignVibes, autoDetectDistrict } from "@shared/vibeConfig";
 
 function hashPassword(password: string): string {
   return createHash("sha256").update(password).digest("hex");
+}
+
+function generateSessionCode(): string {
+  return randomBytes(4).toString("hex");
+}
+
+function logSessionEvent(sessionCode: string, eventType: string, actorId: string, payload?: any, idempotencyKey?: string) {
+  storage.createSessionEvent({
+    sessionCode,
+    eventType,
+    actorId,
+    payload: payload || null,
+    idempotencyKey: idempotencyKey || null,
+    createdAt: new Date().toISOString(),
+  }).catch(err => console.error("Failed to log session event:", err));
+}
+
+function logAudit(action: string, actorType: string, actorId: string, targetType?: string, targetId?: string, metadata?: any, ipAddress?: string) {
+  storage.createAuditLog({
+    action,
+    actorType,
+    actorId,
+    targetType: targetType || null,
+    targetId: targetId || null,
+    metadata: metadata || null,
+    ipAddress: ipAddress || null,
+    createdAt: new Date().toISOString(),
+  }).catch(err => console.error("Failed to log audit event:", err));
 }
 
 const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
@@ -1878,13 +1906,19 @@ export async function registerRoutes(
         password: z.string().min(1),
       });
       const input = schema.parse(req.body);
+      const ip = req.ip || "unknown";
+      if (rateLimit(`admin-login:${ip}`, 5, 60000)) {
+        return res.status(429).json({ message: "Too many login attempts" });
+      }
       const admin = await storage.getAdminUser(input.username);
       if (!admin || admin.passwordHash !== hashPassword(input.password)) {
+        logAudit("admin_login_failed", "admin", input.username, undefined, undefined, undefined, ip);
         return res.status(401).json({ message: "Invalid credentials" });
       }
       if (admin.isActive === false) {
         return res.status(403).json({ message: "Account disabled" });
       }
+      logAudit("admin_login_success", "admin", input.username, undefined, undefined, { role: admin.role }, ip);
       res.json({
         username: admin.username,
         role: admin.role,
@@ -1905,10 +1939,16 @@ export async function registerRoutes(
         password: z.string().min(1),
       });
       const input = schema.parse(req.body);
+      const ip = req.ip || "unknown";
+      if (rateLimit(`owner-login:${ip}`, 5, 60000)) {
+        return res.status(429).json({ message: "Too many login attempts" });
+      }
       const owner = await storage.getRestaurantOwnerByEmail(input.email);
       if (!owner || owner.passwordHash !== hashPassword(input.password)) {
+        logAudit("owner_login_failed", "owner", input.email, undefined, undefined, undefined, ip);
         return res.status(401).json({ message: "Invalid credentials" });
       }
+      logAudit("owner_login_success", "owner", input.email, "restaurant", String(owner.restaurantId), undefined, ip);
       let restaurant = null;
       if (owner.restaurantId) {
         restaurant = await storage.getRestaurantById(owner.restaurantId);
@@ -1964,6 +2004,31 @@ export async function registerRoutes(
       res.status(201).json({ ...user, passwordHash: undefined });
     } catch (err) {
       if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/admin/audit-logs", adminAuth, async (req: any, res) => {
+    try {
+      if (req.adminUser?.role !== "superadmin") {
+        return res.status(403).json({ message: "Only superadmins can view audit logs" });
+      }
+      const action = req.query.action as string | undefined;
+      const actorType = req.query.actorType as string | undefined;
+      const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+      const logs = await storage.getAuditLogs({ action, actorType, limit });
+      res.json(logs);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/admin/session-events/:code", adminAuth, async (req, res) => {
+    try {
+      const { code } = req.params;
+      const events = await storage.getSessionEvents(code);
+      res.json(events);
+    } catch (err) {
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -2132,6 +2197,7 @@ export async function registerRoutes(
       updates.reviewedBy = req.adminUser?.id;
       updates.reviewedAt = new Date().toISOString();
       const updated = await storage.updateRestaurantClaim(id, updates);
+      logAudit(`claim_${req.body.status || "updated"}`, "admin", String(req.adminUser?.id || "unknown"), "claim", String(id), { restaurantId: claim.restaurantId, ownerId: claim.ownerId }, req.ip);
       if (req.body.status === "approved") {
         await storage.updateRestaurant(claim.restaurantId, {
           ownerId: claim.ownerId,
@@ -2315,12 +2381,13 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/admin/restaurants/:id", adminAuth, async (req, res) => {
+  app.delete("/api/admin/restaurants/:id", adminAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       await storage.deleteRestaurant(id);
       invalidateCache("restaurants");
+      logAudit("restaurant_deleted", "admin", String(req.adminUser?.id || "unknown"), "restaurant", String(id), undefined, req.ip);
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
@@ -2520,8 +2587,13 @@ export async function registerRoutes(
 
   app.post("/api/group/sessions", async (req, res) => {
     try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`session-create:${ip}`, 10, 60000)) {
+        return res.status(429).json({ message: "Too many session creation requests" });
+      }
+
       const schema = z.object({
-        sessionCode: z.string().min(1),
+        sessionCode: z.string().min(1).optional(),
         hostLineUserId: z.string().min(1),
         hostDisplayName: z.string().min(1),
         hostPictureUrl: z.string().optional(),
@@ -2547,13 +2619,17 @@ export async function registerRoutes(
         }
       }
 
-      const existing = await storage.getGroupSession(input.sessionCode);
-      if (existing) {
-        return res.status(409).json({ message: "Session already exists" });
+      let sessionCode = generateSessionCode();
+      let retries = 0;
+      while (retries < 5) {
+        const existing = await storage.getGroupSession(sessionCode);
+        if (!existing) break;
+        sessionCode = generateSessionCode();
+        retries++;
       }
 
       const session = await storage.createGroupSession({
-        sessionCode: input.sessionCode,
+        sessionCode,
         hostLineUserId: hostUserId,
         status: "waiting",
         sessionType: input.sessionType || "regular",
@@ -2563,7 +2639,7 @@ export async function registerRoutes(
       });
 
       await storage.addGroupMember({
-        sessionCode: input.sessionCode,
+        sessionCode,
         lineUserId: hostUserId,
         displayName: hostDisplayName,
         pictureUrl: hostPictureUrl,
@@ -2571,6 +2647,8 @@ export async function registerRoutes(
         longitude: input.longitude || null,
         joinedAt: new Date().toISOString(),
       });
+
+      logSessionEvent(sessionCode, "SESSION_CREATED", hostUserId, { sessionType: input.sessionType || "regular", expectedMembers: input.expectedMembers });
 
       res.status(201).json(session);
     } catch (err) {
@@ -2628,6 +2706,8 @@ export async function registerRoutes(
         joinedAt: new Date().toISOString(),
       });
 
+      logSessionEvent(code, "USER_JOINED", userId, { displayName });
+
       const members = await storage.getGroupMembers(code);
       res.status(201).json({ session, members, newMember: member });
     } catch (err) {
@@ -2674,6 +2754,7 @@ export async function registerRoutes(
       }
 
       await storage.updateGroupSessionStatus(code, input.status);
+      logSessionEvent(code, input.status === "swiping" ? "ROUND_STARTED" : input.status === "completed" ? "SESSION_COMPLETED" : "STATUS_CHANGED", input.lineUserId, { status: input.status });
 
       if (input.status === "swiping") {
         const members = await storage.getGroupMembers(code);
@@ -2724,6 +2805,8 @@ export async function registerRoutes(
         return res.status(429).json({ message: "Too many swipes, slow down" });
       }
 
+      const idempotencyKey = `swipe:${code}:${input.lineUserId}:${input.menuItemId}`;
+
       const swipe = await storage.recordGroupSwipe({
         sessionCode: code,
         lineUserId: input.lineUserId,
@@ -2732,8 +2815,14 @@ export async function registerRoutes(
         swipedAt: new Date().toISOString(),
       });
 
+      logSessionEvent(code, "SWIPE_SUBMITTED", input.lineUserId, { menuItemId: input.menuItemId, direction: input.direction }, idempotencyKey);
+
       const matches = await storage.getGroupMatches(code);
       const members = await storage.getGroupMembers(code);
+
+      if (matches.length > 0) {
+        logSessionEvent(code, "MATCH_GENERATED", "system", { matchCount: matches.length });
+      }
 
       const currentSession = await storage.getGroupSession(code);
       if (currentSession && !currentSession.memberFingerprint && members.length >= 2) {

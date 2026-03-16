@@ -184,23 +184,27 @@ export default function GroupSetup() {
 
   const getOrCreateSessionId = async () => {
     if (pendingSessionId) return pendingSessionId;
-    const sessionId = Math.random().toString(36).substring(2, 10);
-    setPendingSessionId(sessionId);
     if (profile) {
       try {
-        await fetchWithTimeout("/api/group/sessions", {
+        const resp = await fetchWithTimeout("/api/group/sessions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            sessionCode: sessionId,
             hostLineUserId: profile.userId,
             hostDisplayName: profile.displayName,
             hostPictureUrl: profile.pictureUrl || "",
           }),
         });
+        if (resp.ok) {
+          const session = await resp.json();
+          setPendingSessionId(session.sessionCode);
+          return session.sessionCode;
+        }
       } catch {}
     }
-    return sessionId;
+    const fallbackId = Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b => b.toString(16).padStart(2, "0")).join("");
+    setPendingSessionId(fallbackId);
+    return fallbackId;
   };
 
   const handleInvite = async () => {
