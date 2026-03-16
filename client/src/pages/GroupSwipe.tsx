@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo, useAnimate } from "framer-motion";
 import { useLocation } from "wouter";
-import { addSession, updateSession } from "@/lib/sessionStore";
+import { addSession, updateSession, removeSession } from "@/lib/sessionStore";
 import { BottomNav } from "@/components/BottomNav";
 import { trackEvent } from "@/lib/analytics";
 import { useLineProfile } from "@/lib/useLineProfile";
@@ -1057,24 +1057,13 @@ export default function GroupSwipe() {
             </div>
           ) : sessionEnded ? (
             <div className="space-y-2.5">
-              {rankedResults.length > 0 && rankedResults[0] && (
-                <button
-                  onClick={() => { sessionStorage.setItem("group_results_return", `/group/swipe?session=${sessionCode}`); navigate(`/restaurant/${rankedResults[0].item.id}`); }}
-                  data-testid="button-order-top-pick"
-                  className="w-full py-3.5 rounded-2xl bg-[#FFCC02] text-[#2d2000] font-bold text-[14px] active:scale-[0.97] transition-transform flex items-center justify-center gap-2"
-                  style={{ boxShadow: "0 6px 20px -4px rgba(255,204,2,0.4)" }}
-                >
-                  <Utensils className="w-4 h-4" />
-                  Order {rankedResults[0].item.name}
-                </button>
-              )}
               <button
-                onClick={() => navigate("/")}
-                data-testid="button-home-summary"
-                className="w-full py-3.5 rounded-2xl bg-foreground text-white font-bold text-[14px] active:scale-[0.97] transition-transform"
-                style={{ boxShadow: "0 8px 25px -5px rgba(0,0,0,0.25)" }}
+                onClick={() => { if (sessionCode) removeSession(sessionCode); navigate("/"); }}
+                data-testid="button-complete-session"
+                className="w-full py-3.5 rounded-2xl bg-[#FFCC02] text-[#2d2000] font-bold text-[14px] active:scale-[0.97] transition-transform flex items-center justify-center gap-2"
+                style={{ boxShadow: "0 6px 20px -4px rgba(255,204,2,0.4)" }}
               >
-                Back to Home
+                Complete Session
               </button>
             </div>
           ) : (
