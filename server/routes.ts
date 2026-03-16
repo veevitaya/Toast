@@ -2715,7 +2715,14 @@ export async function registerRoutes(
       const { code } = req.params;
       const matches = await storage.getGroupMatches(code);
       const members = await storage.getGroupMembers(code);
-      res.json({ matches, members });
+      const restaurantIds = matches.map(m => m.menuItemId);
+      const allRestaurants = restaurantIds.length > 0 ? await storage.getRestaurants() : [];
+      const restaurantMap = new Map(allRestaurants.map(r => [r.id, r]));
+      const enrichedMatches = matches.map(m => ({
+        ...m,
+        restaurant: restaurantMap.get(m.menuItemId) || null,
+      }));
+      res.json({ matches: enrichedMatches, members });
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -2726,7 +2733,13 @@ export async function registerRoutes(
       const { code } = req.params;
       const swipes = await storage.getGroupSwipes(code);
       const members = await storage.getGroupMembers(code);
-      res.json({ swipes, members });
+      const menuItemIds = [...new Set(swipes.map(s => s.menuItemId))];
+      const allRestaurants = menuItemIds.length > 0 ? await storage.getRestaurants() : [];
+      const restaurantMap = new Map(allRestaurants.map(r => [r.id, r]));
+      const restaurants = menuItemIds
+        .map(id => restaurantMap.get(id))
+        .filter(Boolean);
+      res.json({ swipes, members, restaurants });
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
     }

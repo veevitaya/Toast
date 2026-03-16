@@ -262,19 +262,6 @@ function SwipeCardGroup({ item, active, behind, onSwipe, onTap, showHint = false
   );
 }
 
-function seededShuffle<T>(arr: T[], seed: string): T[] {
-  const result = [...arr];
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
-  }
-  for (let i = result.length - 1; i > 0; i--) {
-    hash = ((hash << 5) - hash + i) | 0;
-    const j = ((hash >>> 0) % (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
-}
 
 function buildTagsFromCategory(category: string): string[] {
   const tags: string[] = [];
@@ -375,8 +362,8 @@ export default function GroupSwipe() {
           imageUrl: r.imageUrl || r.image_url || "",
           isNew: r.isNew || r.is_new || false,
         }));
-        const shuffled = seededShuffle(items, sessionCode || "default");
-        setMenuItems(shuffled);
+        items.sort(() => Math.random() - 0.5);
+        setMenuItems(items);
       } catch (err) {
         console.error("Failed to load restaurants:", err);
       } finally {
@@ -412,17 +399,29 @@ export default function GroupSwipe() {
           setIsHost(true);
         }
 
-        const items = menuItemsRef.current;
-        if (items.length > 0 && !cancelled) {
+        if (!cancelled) {
           try {
             const matchRes = await fetch(`/api/group/sessions/${sessionCode}/matches`);
             if (!cancelled && matchRes.ok) {
               const matchData = await matchRes.json();
               if (matchData.matches) {
                 const fullMatches = matchData.matches
-                  .filter((m: MatchInfo) => m.voters.length >= data.members.length)
-                  .map((m: MatchInfo) => items.find(item => item.id === m.menuItemId))
-                  .filter(Boolean) as MenuItem[];
+                  .filter((m: any) => m.voters.length >= data.members.length && m.restaurant)
+                  .map((m: any) => {
+                    const r = m.restaurant;
+                    return {
+                      id: r.id,
+                      name: r.name,
+                      category: r.category || "",
+                      tags: buildTagsFromCategory(r.category || ""),
+                      description: r.description || "",
+                      priceLevel: r.priceLevel || 2,
+                      rating: r.rating || "4.0",
+                      address: r.address || "Bangkok",
+                      imageUrl: r.imageUrl || "",
+                      isNew: r.isNew || false,
+                    } as MenuItem;
+                  });
 
                 setAllMatches(prev => {
                   const existing = new Set(prev.map(p => p.id));
@@ -596,8 +595,14 @@ export default function GroupSwipe() {
       const res = await fetch(`/api/group/sessions/${sessionCode}/swipes`);
       if (!res.ok) return;
       const data = await res.json();
-      const { swipes, members: memberList } = data;
-      const items = menuItemsRef.current;
+      const { swipes, members: memberList, restaurants: serverRestaurants } = data;
+
+      const restaurantMap = new Map<number, any>();
+      if (serverRestaurants) {
+        for (const r of serverRestaurants) {
+          restaurantMap.set(r.id, r);
+        }
+      }
 
       const voteMap = new Map<number, Set<string>>();
       for (const s of swipes) {
@@ -610,8 +615,20 @@ export default function GroupSwipe() {
       const ranked: RankedResult[] = [];
       for (const [menuItemId, voterIds] of voteMap) {
         if (voterIds.size < 2) continue;
-        const item = items.find(m => m.id === menuItemId);
-        if (!item) continue;
+        const r = restaurantMap.get(menuItemId);
+        if (!r) continue;
+        const item: MenuItem = {
+          id: r.id,
+          name: r.name,
+          category: r.category || "",
+          tags: buildTagsFromCategory(r.category || ""),
+          description: r.description || "",
+          priceLevel: r.priceLevel || 2,
+          rating: r.rating || "4.0",
+          address: r.address || "Bangkok",
+          imageUrl: r.imageUrl || "",
+          isNew: r.isNew || false,
+        };
         const voters = memberList.filter((m: SessionMember) => voterIds.has(m.lineUserId));
         ranked.push({
           item,
