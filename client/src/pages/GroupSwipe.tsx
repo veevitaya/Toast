@@ -477,9 +477,19 @@ export default function GroupSwipe() {
       route: `/group/swipe?session=${sessionCode}`,
       memberCount: members.length,
       matchCount: 0,
+      members: members.map(m => ({ displayName: m.displayName, pictureUrl: m.pictureUrl || undefined })),
       startedAt: Date.now(),
     });
-  }, [sessionCode, members.length]);
+  }, [sessionCode]);
+
+  useEffect(() => {
+    if (sessionCode && members.length > 0) {
+      updateSession(sessionCode, {
+        memberCount: members.length,
+        members: members.map(m => ({ displayName: m.displayName, pictureUrl: m.pictureUrl || undefined })),
+      });
+    }
+  }, [sessionCode, members]);
 
   const recordSwipe = useCallback(async (menuItemId: number, direction: "left" | "right" | "super") => {
     if (!sessionCode || !profile) return null;

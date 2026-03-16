@@ -3,17 +3,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useSessions, removeSession, type ActiveSession } from "@/lib/sessionStore";
 
-const MEMBER_AVATARS: Record<string, string> = {
-  You: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
-  Nook: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-  Beam: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&crop=face",
-};
-
 function SessionCard({ session, onNavigate }: { session: ActiveSession; onNavigate: (route: string) => void }) {
   const elapsed = Math.floor((Date.now() - session.startedAt) / 60000);
   const timeLabel = elapsed < 1 ? "Just started" : `${elapsed}m ago`;
 
-  const memberNames = session.type === "group" ? ["You", "Nook", "Beam"] : ["You"];
+  const displayMembers = session.members && session.members.length > 0
+    ? session.members
+    : [];
+
+  const memberCount = session.memberCount || displayMembers.length || 0;
 
   return (
     <motion.div
@@ -33,20 +31,40 @@ function SessionCard({ session, onNavigate }: { session: ActiveSession; onNaviga
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="flex -space-x-1.5 flex-shrink-0">
-            {memberNames.map((name) => (
-              <img
-                key={name}
-                src={MEMBER_AVATARS[name] || MEMBER_AVATARS.You}
-                alt={name}
-                className="w-7 h-7 rounded-full border-2 border-white object-cover"
-              />
-            ))}
+            {displayMembers.length > 0 ? (
+              displayMembers.slice(0, 4).map((m, i) => (
+                m.pictureUrl ? (
+                  <img
+                    key={i}
+                    src={m.pictureUrl}
+                    alt={m.displayName}
+                    className="w-7 h-7 rounded-full border-2 border-white object-cover"
+                  />
+                ) : (
+                  <div
+                    key={i}
+                    className="w-7 h-7 rounded-full border-2 border-white bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center"
+                  >
+                    <span className="text-[9px] font-bold text-amber-600">{m.displayName.charAt(0)}</span>
+                  </div>
+                )
+              ))
+            ) : (
+              <div className="w-7 h-7 rounded-full border-2 border-white bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                <span className="text-[9px] font-bold text-amber-600">?</span>
+              </div>
+            )}
+            {displayMembers.length > 4 && (
+              <div className="w-7 h-7 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center">
+                <span className="text-[9px] font-bold text-gray-500">+{displayMembers.length - 4}</span>
+              </div>
+            )}
           </div>
           <div className="min-w-0">
             <p className="font-bold text-sm text-foreground truncate">{session.label}</p>
             <p className="text-[11px] text-muted-foreground truncate">
               {session.type === "group"
-                ? `${session.memberCount || 0} members · ${session.matchCount || 0} matches`
+                ? `${memberCount} member${memberCount !== 1 ? "s" : ""} · ${session.matchCount || 0} match${(session.matchCount || 0) !== 1 ? "es" : ""}`
                 : timeLabel}
             </p>
           </div>

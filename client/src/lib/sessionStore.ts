@@ -1,5 +1,10 @@
 import { useSyncExternalStore } from "react";
 
+export interface SessionMemberInfo {
+  displayName: string;
+  pictureUrl?: string;
+}
+
 export interface ActiveSession {
   id: string;
   type: "solo" | "group";
@@ -7,6 +12,7 @@ export interface ActiveSession {
   route: string;
   memberCount?: number;
   matchCount?: number;
+  members?: SessionMemberInfo[];
   startedAt: number;
 }
 
