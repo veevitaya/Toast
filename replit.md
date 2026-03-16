@@ -33,7 +33,7 @@ The design adopts an Airbnb-inspired aesthetic with a #FFCC02 golden yellow bran
 
 **Technical Implementations:**
 - **LINE LIFF Integration:** Deep integration for user authentication, profile retrieval, and social sharing, including server-side token verification and group session invites with mandatory LINE permission flow.
-- **Real-time Group Sessions:** Backend-powered sessions using PostgreSQL tables for `group_sessions`, `group_session_members`, and `group_swipes`, supporting trending sessions with geolocation-based restaurant fetching.
+- **Real-time Group Sessions:** Backend-powered sessions using PostgreSQL tables for `group_sessions`, `group_session_members`, and `group_swipes`, supporting trending sessions with geolocation-based restaurant fetching. Group sessions now track a `memberFingerprint` (sorted member IDs) to identify unique group combinations across sessions. Per-user stats (`user_swipe_stats`) and per-combo stats (`group_combo_stats`) are computed when viewing results, enabling historical trends — total matches, favorite cuisines, and session counts for both individuals and specific group combinations. The Top Picks page shows this session's stats, combo history (if same group has played before), and each member's all-time likes/dislikes/trends.
 - **Data Model:** Structured PostgreSQL tables for all core entities.
 - **Session Management:** Utilizes `sessionStorage` with `useSyncExternalStore` for persistent, global session tracking.
 - **Google Places API Integration:** Backend supports fetching and importing restaurant data from Google Places API, with auto-deduplication, auto-vibe assignment, and auto-district detection.

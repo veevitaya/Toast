@@ -308,6 +308,12 @@ export default function GroupSwipe() {
   const [rankedResults, setRankedResults] = useState<RankedResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [loadingResults, setLoadingResults] = useState(false);
+  const [comboStats, setComboStats] = useState<{
+    fingerprint: string;
+    comboStats: { totalSessions: number; totalMatches: number; totalSwipes: number; topCategoriesJson: string | null; lastSessionAt: string | null } | null;
+    memberStats: { lineUserId: string; displayName: string; pictureUrl: string | null; stats: { totalSessions: number; totalLikes: number; totalDislikes: number; totalSuperLikes: number; topCategoriesJson: string | null } | null }[];
+    previousSessionCount: number;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -600,6 +606,14 @@ export default function GroupSwipe() {
 
       ranked.sort((a, b) => b.voteCount - a.voteCount);
       setRankedResults(ranked);
+
+      try {
+        await fetch(`/api/group/sessions/${sessionCode}/finalize-stats`, { method: "POST" });
+        const statsRes = await fetch(`/api/group/combo-stats/${sessionCode}`);
+        if (statsRes.ok) {
+          setComboStats(await statsRes.json());
+        }
+      } catch {}
     } catch {} finally {
       fetchRankedResultsRef.current = false;
       setLoadingResults(false);
@@ -737,6 +751,92 @@ export default function GroupSwipe() {
                   <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Full Matches</p>
                 </div>
               </div>
+
+              {comboStats && comboStats.comboStats && comboStats.previousSessionCount > 1 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="bg-gradient-to-r from-violet-50 to-blue-50 rounded-2xl px-3.5 py-2.5 border border-violet-100/40 mb-1"
+                  data-testid="group-combo-history"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[13px]">{"\uD83D\uDD04"}</span>
+                    <p className="text-[12px] font-bold text-foreground">
+                      Session #{comboStats.comboStats.totalSessions} together
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="text-center">
+                      <p className="text-[14px] font-bold text-violet-600">{comboStats.comboStats.totalMatches}</p>
+                      <p className="text-[9px] text-muted-foreground">All-time Matches</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[14px] font-bold text-blue-600">{comboStats.comboStats.totalSwipes}</p>
+                      <p className="text-[9px] text-muted-foreground">Total Swipes</p>
+                    </div>
+                    {(() => {
+                      const cats = comboStats.comboStats!.topCategoriesJson ? JSON.parse(comboStats.comboStats!.topCategoriesJson) as [string, number][] : [];
+                      return cats.length > 0 ? (
+                        <div className="text-center flex-1 min-w-0">
+                          <p className="text-[14px] font-bold text-foreground truncate">{cats[0][0]}</p>
+                          <p className="text-[9px] text-muted-foreground">Go-to Cuisine</p>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                </motion.div>
+              )}
+
+              {comboStats && comboStats.memberStats.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="bg-white rounded-2xl px-3.5 py-2.5 border border-gray-100 mb-1"
+                  style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}
+                  data-testid="member-stats-panel"
+                >
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 mb-2">Member Trends</p>
+                  <div className="space-y-2">
+                    {comboStats.memberStats.map((ms) => {
+                      const topCats = ms.stats?.topCategoriesJson ? JSON.parse(ms.stats.topCategoriesJson) as [string, number][] : [];
+                      const isYou = ms.lineUserId === profile?.userId;
+                      return (
+                        <div key={ms.lineUserId} className="flex items-center gap-2.5">
+                          {ms.pictureUrl ? (
+                            <img src={ms.pictureUrl} alt={ms.displayName} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                          ) : (
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[10px] font-bold text-amber-600">{ms.displayName.charAt(0)}</span>
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[12px] font-semibold truncate">{isYou ? "You" : ms.displayName}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {ms.stats ? (
+                                <>
+                                  <span className="text-[10px] text-[hsl(160,60%,40%)]">{"\u2764"} {ms.stats.totalLikes}</span>
+                                  <span className="text-[10px] text-muted-foreground">{"\u00D7"} {ms.stats.totalDislikes}</span>
+                                  {ms.stats.totalSuperLikes > 0 && (
+                                    <span className="text-[10px] text-[#FFCC02]">{"\u2B50"} {ms.stats.totalSuperLikes}</span>
+                                  )}
+                                  {topCats.length > 0 && (
+                                    <span className="text-[10px] text-muted-foreground/80 truncate">{"\u00B7"} Loves {topCats[0][0]}</span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground">First session</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+
               {(() => {
                 const topCategory = rankedResults.length > 0
                   ? Object.entries(

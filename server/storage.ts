@@ -42,6 +42,12 @@ import {
   type InsertTasteDna,
   type DecisionSession,
   type InsertDecisionSession,
+  userSwipeStats,
+  groupComboStats,
+  type UserSwipeStats,
+  type InsertUserSwipeStats,
+  type GroupComboStats,
+  type InsertGroupComboStats,
 } from "@shared/schema";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -119,6 +125,15 @@ export interface IStorage {
   createDecisionSession(data: InsertDecisionSession): Promise<DecisionSession>;
   getRecentDecisionSessions(userId: string, limit?: number): Promise<DecisionSession[]>;
   updateDecisionSession(id: number, updates: Partial<InsertDecisionSession>): Promise<void>;
+
+  updateGroupSessionFingerprint(sessionCode: string, fingerprint: string): Promise<void>;
+  getSessionsByFingerprint(fingerprint: string): Promise<GroupSession[]>;
+  upsertUserSwipeStats(stats: InsertUserSwipeStats): Promise<UserSwipeStats>;
+  getUserSwipeStats(lineUserId: string): Promise<UserSwipeStats | undefined>;
+  upsertGroupComboStats(stats: InsertGroupComboStats): Promise<GroupComboStats>;
+  getGroupComboStats(fingerprint: string): Promise<GroupComboStats | undefined>;
+  getGroupCombosByUser(lineUserId: string): Promise<GroupComboStats[]>;
+  getAllSwipesForUser(lineUserId: string): Promise<GroupSwipe[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -581,6 +596,66 @@ export class DatabaseStorage implements IStorage {
 
   async updateDecisionSession(id: number, updates: Partial<InsertDecisionSession>): Promise<void> {
     await db.update(decisionSessions).set(updates).where(eq(decisionSessions.id, id));
+  }
+
+  async updateGroupSessionFingerprint(sessionCode: string, fingerprint: string): Promise<void> {
+    await db.update(groupSessions).set({ memberFingerprint: fingerprint }).where(eq(groupSessions.sessionCode, sessionCode));
+  }
+
+  async getSessionsByFingerprint(fingerprint: string): Promise<GroupSession[]> {
+    return await db.select().from(groupSessions)
+      .where(eq(groupSessions.memberFingerprint, fingerprint))
+      .orderBy(desc(groupSessions.id));
+  }
+
+  async upsertUserSwipeStats(stats: InsertUserSwipeStats): Promise<UserSwipeStats> {
+    const existing = await this.getUserSwipeStats(stats.lineUserId);
+    if (existing) {
+      const [updated] = await db.update(userSwipeStats)
+        .set(stats)
+        .where(eq(userSwipeStats.lineUserId, stats.lineUserId))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(userSwipeStats).values(stats).returning();
+    return created;
+  }
+
+  async getUserSwipeStats(lineUserId: string): Promise<UserSwipeStats | undefined> {
+    const [stats] = await db.select().from(userSwipeStats)
+      .where(eq(userSwipeStats.lineUserId, lineUserId)).limit(1);
+    return stats;
+  }
+
+  async upsertGroupComboStats(stats: InsertGroupComboStats): Promise<GroupComboStats> {
+    const existing = await this.getGroupComboStats(stats.fingerprint);
+    if (existing) {
+      const [updated] = await db.update(groupComboStats)
+        .set(stats)
+        .where(eq(groupComboStats.fingerprint, stats.fingerprint))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(groupComboStats).values(stats).returning();
+    return created;
+  }
+
+  async getGroupComboStats(fingerprint: string): Promise<GroupComboStats | undefined> {
+    const [stats] = await db.select().from(groupComboStats)
+      .where(eq(groupComboStats.fingerprint, fingerprint)).limit(1);
+    return stats;
+  }
+
+  async getGroupCombosByUser(lineUserId: string): Promise<GroupComboStats[]> {
+    return await db.select().from(groupComboStats)
+      .where(sql`${groupComboStats.memberIdsJson}::jsonb @> ${JSON.stringify([lineUserId])}::jsonb`)
+      .orderBy(desc(groupComboStats.id));
+  }
+
+  async getAllSwipesForUser(lineUserId: string): Promise<GroupSwipe[]> {
+    return await db.select().from(groupSwipes)
+      .where(eq(groupSwipes.lineUserId, lineUserId))
+      .orderBy(desc(groupSwipes.id));
   }
 }
 

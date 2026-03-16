@@ -2764,6 +2764,22 @@ export async function registerRoutes(
       }
 
       await storage.updateGroupSessionStatus(code, input.status);
+
+      if (input.status === "swiping") {
+        const members = await storage.getGroupMembers(code);
+        const sortedIds = members.map(m => m.lineUserId).sort();
+        const fingerprint = sortedIds.join("|");
+        await storage.updateGroupSessionFingerprint(code, fingerprint);
+      }
+
+      if (input.status === "completed") {
+        try {
+          await finalizeSessionStats(code);
+        } catch (e) {
+          console.error("Failed to finalize session stats:", e);
+        }
+      }
+
       res.json({ success: true });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -2798,6 +2814,12 @@ export async function registerRoutes(
 
       const matches = await storage.getGroupMatches(code);
       const members = await storage.getGroupMembers(code);
+
+      const currentSession = await storage.getGroupSession(code);
+      if (currentSession && !currentSession.memberFingerprint && members.length >= 2) {
+        const sortedIds = members.map(m => m.lineUserId).sort();
+        await storage.updateGroupSessionFingerprint(code, sortedIds.join("|"));
+      }
 
       res.json({ swipe, matches, memberCount: members.length });
     } catch (err) {
@@ -2964,6 +2986,191 @@ export async function registerRoutes(
       res.json({ restaurants: withDistance.slice(0, 30), center: { lat: centerLat, lng: centerLng }, source: "database" });
     } catch (err) {
       console.error("Trending restaurants error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  async function finalizeSessionStats(sessionCode: string) {
+    const session = await storage.getGroupSession(sessionCode);
+    if (!session) return;
+
+    const members = await storage.getGroupMembers(sessionCode);
+    const swipes = await storage.getGroupSwipes(sessionCode);
+    const matches = await storage.getGroupMatches(sessionCode);
+
+    let fingerprint = session.memberFingerprint;
+    if (!fingerprint) {
+      const sortedIds = members.map(m => m.lineUserId).sort();
+      fingerprint = sortedIds.join("|");
+      await storage.updateGroupSessionFingerprint(sessionCode, fingerprint);
+    }
+
+    for (const member of members) {
+      const memberSwipes = swipes.filter(s => s.lineUserId === member.lineUserId);
+      const likes = memberSwipes.filter(s => s.direction === "right" || s.direction === "super");
+      const dislikes = memberSwipes.filter(s => s.direction === "left");
+      const superLikes = memberSwipes.filter(s => s.direction === "super");
+
+      const allUserSwipes = await storage.getAllSwipesForUser(member.lineUserId);
+
+      const categoryCounts: Record<string, number> = {};
+      const restaurantLikeCounts: Record<number, number> = {};
+      for (const s of allUserSwipes) {
+        if (s.direction === "right" || s.direction === "super") {
+          restaurantLikeCounts[s.menuItemId] = (restaurantLikeCounts[s.menuItemId] || 0) + 1;
+        }
+      }
+      for (const [rid, cnt] of Object.entries(restaurantLikeCounts)) {
+        const r = await storage.getRestaurantById(parseInt(rid));
+        if (r) {
+          categoryCounts[r.category] = (categoryCounts[r.category] || 0) + cnt;
+        }
+      }
+
+      const topCategories = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const topRestaurantIds = Object.entries(restaurantLikeCounts).sort((a, b) => b[1] - a[1]).slice(0, 10).map(e => parseInt(e[0]));
+
+      const allUserSessions = await storage.getGroupCombosByUser(member.lineUserId);
+      const sessionCodes = new Set<string>();
+      for (const combo of allUserSessions) {
+        const sessions = await storage.getSessionsByFingerprint(combo.fingerprint);
+        for (const s of sessions) sessionCodes.add(s.sessionCode);
+      }
+      const currentSessionSessions = await storage.getSessionsByFingerprint(fingerprint);
+      for (const s of currentSessionSessions) sessionCodes.add(s.sessionCode);
+
+      await storage.upsertUserSwipeStats({
+        lineUserId: member.lineUserId,
+        displayName: member.displayName,
+        pictureUrl: member.pictureUrl,
+        totalSessions: sessionCodes.size,
+        totalSwipes: allUserSwipes.length,
+        totalLikes: allUserSwipes.filter(s => s.direction === "right" || s.direction === "super").length,
+        totalDislikes: allUserSwipes.filter(s => s.direction === "left").length,
+        totalSuperLikes: allUserSwipes.filter(s => s.direction === "super").length,
+        topCategoriesJson: JSON.stringify(topCategories),
+        topRestaurantIdsJson: JSON.stringify(topRestaurantIds),
+        updatedAt: new Date().toISOString(),
+      });
+    }
+
+    const allFingerprintSessions = await storage.getSessionsByFingerprint(fingerprint);
+    let comboTotalSwipes = 0;
+    let comboTotalMatches = 0;
+    const comboCategoryCounts: Record<string, number> = {};
+    const comboMatchedRestaurants: Record<number, number> = {};
+
+    for (const s of allFingerprintSessions) {
+      const sSwipes = await storage.getGroupSwipes(s.sessionCode);
+      const sMatches = await storage.getGroupMatches(s.sessionCode);
+      comboTotalSwipes += sSwipes.length;
+      comboTotalMatches += sMatches.length;
+      for (const m of sMatches) {
+        comboMatchedRestaurants[m.menuItemId] = (comboMatchedRestaurants[m.menuItemId] || 0) + 1;
+        const r = await storage.getRestaurantById(m.menuItemId);
+        if (r) comboCategoryCounts[r.category] = (comboCategoryCounts[r.category] || 0) + 1;
+      }
+    }
+
+    const comboTopCategories = Object.entries(comboCategoryCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const comboTopMatchedIds = Object.entries(comboMatchedRestaurants).sort((a, b) => b[1] - a[1]).slice(0, 10).map(e => parseInt(e[0]));
+
+    const memberIds = members.map(m => m.lineUserId).sort();
+    await storage.upsertGroupComboStats({
+      fingerprint,
+      memberIdsJson: JSON.stringify(memberIds),
+      memberNamesJson: JSON.stringify(members.map(m => m.displayName)),
+      totalSessions: allFingerprintSessions.length,
+      totalSwipes: comboTotalSwipes,
+      totalMatches: comboTotalMatches,
+      topCategoriesJson: JSON.stringify(comboTopCategories),
+      topMatchedRestaurantIdsJson: JSON.stringify(comboTopMatchedIds),
+      lastSessionCode: sessionCode,
+      lastSessionAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  app.post("/api/group/sessions/:code/finalize-stats", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const session = await storage.getGroupSession(code);
+      if (!session) return res.status(404).json({ message: "Session not found" });
+
+      const { lineUserId } = req.body || {};
+      if (lineUserId) {
+        const isMember = await storage.isGroupMember(code, lineUserId);
+        if (!isMember) return res.status(403).json({ message: "Not a member" });
+      }
+
+      await finalizeSessionStats(code);
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Finalize stats error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/group/combo-stats/:code", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const session = await storage.getGroupSession(code);
+      if (!session) return res.status(404).json({ message: "Session not found" });
+
+      const members = await storage.getGroupMembers(code);
+
+      const fingerprint = session.memberFingerprint || members.map(m => m.lineUserId).sort().join("|");
+
+      const comboStatsData = await storage.getGroupComboStats(fingerprint);
+
+      const memberStats = [];
+      for (const member of members) {
+        const stats = await storage.getUserSwipeStats(member.lineUserId);
+        memberStats.push({
+          lineUserId: member.lineUserId,
+          displayName: member.displayName,
+          pictureUrl: member.pictureUrl,
+          stats: stats ? {
+            totalSessions: stats.totalSessions,
+            totalLikes: stats.totalLikes,
+            totalDislikes: stats.totalDislikes,
+            totalSuperLikes: stats.totalSuperLikes,
+            topCategoriesJson: stats.topCategoriesJson,
+          } : null,
+        });
+      }
+
+      const previousSessions = await storage.getSessionsByFingerprint(fingerprint);
+
+      res.json({
+        fingerprint,
+        comboStats: comboStatsData || null,
+        memberStats,
+        previousSessionCount: previousSessions.length,
+        previousSessions: previousSessions.slice(0, 10).map(s => ({
+          sessionCode: s.sessionCode,
+          createdAt: s.createdAt,
+          status: s.status,
+        })),
+      });
+    } catch (err) {
+      console.error("Combo stats error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/group/user-stats/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const requesterId = req.query.requesterId as string;
+      if (requesterId && requesterId !== userId) {
+        return res.status(403).json({ message: "Can only view your own stats" });
+      }
+      const stats = await storage.getUserSwipeStats(userId);
+      const combos = await storage.getGroupCombosByUser(userId);
+      res.json({ stats: stats || null, groups: combos });
+    } catch (err) {
+      console.error("User stats error:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });

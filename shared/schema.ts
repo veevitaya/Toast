@@ -190,6 +190,7 @@ export const groupSessions = pgTable("group_sessions", {
   sessionType: text("session_type").default("regular"),
   sourceData: text("source_data"),
   expectedMembers: integer("expected_members"),
+  memberFingerprint: text("member_fingerprint"),
   createdAt: text("created_at").notNull(),
 });
 
@@ -259,3 +260,41 @@ export const groupSwipes = pgTable("group_swipes", {
 export const insertGroupSwipeSchema = createInsertSchema(groupSwipes).omit({ id: true });
 export type GroupSwipe = typeof groupSwipes.$inferSelect;
 export type InsertGroupSwipe = z.infer<typeof insertGroupSwipeSchema>;
+
+export const userSwipeStats = pgTable("user_swipe_stats", {
+  id: serial("id").primaryKey(),
+  lineUserId: text("line_user_id").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  pictureUrl: text("picture_url"),
+  totalSessions: integer("total_sessions").default(0),
+  totalSwipes: integer("total_swipes").default(0),
+  totalLikes: integer("total_likes").default(0),
+  totalDislikes: integer("total_dislikes").default(0),
+  totalSuperLikes: integer("total_super_likes").default(0),
+  topCategoriesJson: text("top_categories_json"),
+  topRestaurantIdsJson: text("top_restaurant_ids_json"),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const insertUserSwipeStatsSchema = createInsertSchema(userSwipeStats).omit({ id: true });
+export type UserSwipeStats = typeof userSwipeStats.$inferSelect;
+export type InsertUserSwipeStats = z.infer<typeof insertUserSwipeStatsSchema>;
+
+export const groupComboStats = pgTable("group_combo_stats", {
+  id: serial("id").primaryKey(),
+  fingerprint: text("fingerprint").notNull().unique(),
+  memberIdsJson: text("member_ids_json").notNull(),
+  memberNamesJson: text("member_names_json").notNull(),
+  totalSessions: integer("total_sessions").default(0),
+  totalSwipes: integer("total_swipes").default(0),
+  totalMatches: integer("total_matches").default(0),
+  topCategoriesJson: text("top_categories_json"),
+  topMatchedRestaurantIdsJson: text("top_matched_restaurant_ids_json"),
+  lastSessionCode: text("last_session_code"),
+  lastSessionAt: text("last_session_at"),
+  createdAt: text("created_at").notNull(),
+});
+
+export const insertGroupComboStatsSchema = createInsertSchema(groupComboStats).omit({ id: true });
+export type GroupComboStats = typeof groupComboStats.$inferSelect;
+export type InsertGroupComboStats = z.infer<typeof insertGroupComboStatsSchema>;
