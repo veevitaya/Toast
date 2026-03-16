@@ -318,26 +318,20 @@ export default function Home() {
     if (modeClickPending.current) return;
     modeClickPending.current = true;
     if (buttonEl) {
-      const img = buttonEl.querySelector("img") as HTMLElement | null;
-      if (img) {
-        const anim = img.animate([
-          { transform: "scale(1) translateY(0)", offset: 0 },
-          { transform: "scale(0.92) translateY(2px)", offset: 0.12 },
-          { transform: "scale(1.12) translateY(-6px)", offset: 0.35 },
-          { transform: "scale(0.97) translateY(1px)", offset: 0.6 },
-          { transform: "scale(1.04) translateY(-2px)", offset: 0.8 },
-          { transform: "scale(1) translateY(0)", offset: 1 },
-        ], {
-          duration: 500,
-          easing: "ease-out",
-          fill: "forwards",
-        });
-        anim.onfinish = () => {
-          modeClickPending.current = false;
-          navigate(route);
-        };
-        return;
-      }
+      const anim = buttonEl.animate([
+        { transform: "scale(1)", offset: 0 },
+        { transform: "scale(0.96)", offset: 0.4 },
+        { transform: "scale(1)", offset: 1 },
+      ], {
+        duration: 220,
+        easing: "ease-out",
+        fill: "forwards",
+      });
+      anim.onfinish = () => {
+        modeClickPending.current = false;
+        navigate(route);
+      };
+      return;
     }
     modeClickPending.current = false;
     navigate(route);
@@ -763,42 +757,30 @@ export default function Home() {
           </div>
 
           <div className="px-6 pt-2 pb-4" style={refineOpen ? { display: "none" } : undefined}>
-            <motion.h2
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
+            <h2
               className="text-[20px] font-bold text-foreground mb-4"
               data-testid="text-who-eating"
             >
               Who's joining you tonight?
-            </motion.h2>
+            </h2>
             <div className="grid grid-cols-2 gap-3">
-              <motion.button
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.32, type: "spring", stiffness: 300, damping: 22 }}
-                whileHover={{ scale: 1.02, y: -2 }}
-                whileTap={{ scale: 0.97 }}
+              <button
                 onClick={(e) => handleModeClickAnimated("/solo/quiz", e.currentTarget)}
                 data-testid="button-solo"
-                className="flex items-center rounded-[20px] bg-white pl-3 pr-5 h-[100px] border border-gray-100 shadow-md"
+                className="flex items-center rounded-[20px] bg-white pl-3 pr-5 h-[100px] border border-gray-100 shadow-md transition-transform duration-150 ease-out active:scale-[0.97] animate-page-in"
               >
                 <img src={toastCharPath} alt="" className="w-[80px] h-[80px] object-contain flex-shrink-0" />
                 <div className="ml-2 min-w-0">
                   <p className="text-[20px] font-bold text-foreground leading-tight">Solo</p>
                   <p className="text-[12px] text-muted-foreground mt-0.5 whitespace-nowrap">Just for you</p>
                 </div>
-              </motion.button>
+              </button>
 
-              <motion.button
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.36, type: "spring", stiffness: 300, damping: 22 }}
-                whileHover={{ scale: 1.02, y: -2 }}
-                whileTap={{ scale: 0.97 }}
+              <button
                 onClick={(e) => handleModeClickAnimated("/group/setup", e.currentTarget)}
                 data-testid="button-group"
-                className="flex items-center justify-center rounded-[20px] bg-white h-[100px] border border-gray-100 shadow-md overflow-hidden"
+                className="flex items-center justify-center rounded-[20px] bg-white h-[100px] border border-gray-100 shadow-md overflow-hidden transition-transform duration-150 ease-out active:scale-[0.97] animate-page-in"
+                style={{ animationDelay: "40ms" }}
               >
                 <div className="flex items-center gap-1 px-2">
                   <img src={toastWafflePath} alt="" className="w-[110px] h-[88px] object-contain flex-shrink-0 -my-3 -ml-3" style={{ mixBlendMode: "multiply" }} />
@@ -807,7 +789,7 @@ export default function Home() {
                     <p className="text-[12px] text-muted-foreground mt-0.5 whitespace-nowrap">With friends</p>
                   </div>
                 </div>
-              </motion.button>
+              </button>
             </div>
           </div>
 
