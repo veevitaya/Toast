@@ -280,7 +280,15 @@ export default function RestaurantDetail() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/10 pointer-events-none" />
 
         <button
-          onClick={() => window.history.back()}
+          onClick={() => {
+            const groupReturn = sessionStorage.getItem("group_results_return");
+            if (groupReturn) {
+              sessionStorage.removeItem("group_results_return");
+              navigate(groupReturn);
+            } else {
+              window.history.back();
+            }
+          }}
           className="absolute top-4 left-4 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center z-10 active:scale-[0.90] transition-transform duration-150"
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}
           data-testid="button-back-hero"

@@ -5,7 +5,7 @@ import { addSession, updateSession } from "@/lib/sessionStore";
 import { BottomNav } from "@/components/BottomNav";
 import { trackEvent } from "@/lib/analytics";
 import { useLineProfile } from "@/lib/useLineProfile";
-import { Square, X, Trophy, ChevronRight, Crown, Medal, Award } from "lucide-react";
+import { Square, X, Trophy, ChevronRight, Crown, Medal, Award, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils } from "lucide-react";
 
 interface MenuItem {
   id: number;
@@ -262,6 +262,20 @@ function SwipeCardGroup({ item, active, behind, onSwipe, onTap, showHint = false
   );
 }
 
+function seededShuffle<T>(arr: T[], seed: string): T[] {
+  const result = [...arr];
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+  }
+  for (let i = result.length - 1; i > 0; i--) {
+    hash = ((hash << 5) - hash + i) | 0;
+    const j = ((hash >>> 0) % (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 function buildTagsFromCategory(category: string): string[] {
   const tags: string[] = [];
   const parts = category.split("•").map(p => p.trim()).filter(Boolean);
@@ -308,6 +322,9 @@ export default function GroupSwipe() {
   const [rankedResults, setRankedResults] = useState<RankedResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [loadingResults, setLoadingResults] = useState(false);
+  const [groupAggregateStats, setGroupAggregateStats] = useState<{
+    totalSwipes: number; totalLikes: number; totalDislikes: number; totalSuperLikes: number;
+  }>({ totalSwipes: 0, totalLikes: 0, totalDislikes: 0, totalSuperLikes: 0 });
   const [comboStats, setComboStats] = useState<{
     fingerprint: string;
     comboStats: { totalSessions: number; totalMatches: number; totalSwipes: number; topCategoriesJson: string | null; lastSessionAt: string | null } | null;
@@ -358,7 +375,7 @@ export default function GroupSwipe() {
           imageUrl: r.imageUrl || r.image_url || "",
           isNew: r.isNew || r.is_new || false,
         }));
-        const shuffled = items.sort(() => Math.random() - 0.5);
+        const shuffled = seededShuffle(items, sessionCode || "default");
         setMenuItems(shuffled);
       } catch (err) {
         console.error("Failed to load restaurants:", err);
@@ -607,6 +624,14 @@ export default function GroupSwipe() {
       ranked.sort((a, b) => b.voteCount - a.voteCount);
       setRankedResults(ranked);
 
+      let gLikes = 0, gDislikes = 0, gSuper = 0;
+      for (const s of swipes) {
+        if (s.direction === "right") gLikes++;
+        else if (s.direction === "super") { gLikes++; gSuper++; }
+        else if (s.direction === "left") gDislikes++;
+      }
+      setGroupAggregateStats({ totalSwipes: swipes.length, totalLikes: gLikes, totalDislikes: gDislikes, totalSuperLikes: gSuper });
+
       try {
         await fetch(`/api/group/sessions/${sessionCode}/finalize-stats`, { method: "POST" });
         const statsRes = await fetch(`/api/group/combo-stats/${sessionCode}`);
@@ -701,16 +726,32 @@ export default function GroupSwipe() {
     return (
       <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col overflow-hidden" data-testid="group-summary-page">
         <div className="flex-shrink-0 px-6 pt-12 pb-5">
+          {!sessionEnded && currentIndex < menuItems.length && (
+            <button
+              onClick={() => setShowResults(false)}
+              className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground mb-3 active:opacity-70"
+              data-testid="button-back-to-swiping"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to swiping
+            </button>
+          )}
+          {sessionEnded && (
+            <div className="flex items-center gap-2 mb-3 bg-green-50 rounded-xl px-3 py-2 border border-green-100/60" data-testid="session-complete-banner">
+              <span className="text-base">✅</span>
+              <p className="text-[12px] font-semibold text-green-700">Session complete — time to eat!</p>
+            </div>
+          )}
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-2xl bg-[#FFCC02]/15 flex items-center justify-center">
               <Trophy className="w-5 h-5 text-[#FFCC02]" />
             </div>
             <div className="flex-1">
               <h1 className="text-[22px] font-bold" data-testid="text-summary-title">
-                {sessionEnded ? "Session Results" : "Your Top Picks"}
+                {sessionEnded ? "Group Results" : "Your Top Picks"}
               </h1>
               <p className="text-[12px] text-muted-foreground">
-                {members.length} people swiped · {rankedResults.filter(r => r.isFullMatch).length} full match{rankedResults.filter(r => r.isFullMatch).length !== 1 ? "es" : ""}
+                {members.length} people · {rankedResults.filter(r => r.isFullMatch).length} full match{rankedResults.filter(r => r.isFullMatch).length !== 1 ? "es" : ""} · {groupAggregateStats.totalSwipes} swipes
               </p>
             </div>
           </div>
@@ -739,12 +780,12 @@ export default function GroupSwipe() {
             <div className="space-y-3">
               <div className="flex gap-2 mb-1" data-testid="group-stats-bar">
                 <div className="flex-1 bg-white rounded-2xl px-3 py-2.5 border border-gray-100 text-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}>
-                  <p className="text-[17px] font-bold text-foreground">{menuItems.length}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Restaurants</p>
+                  <p className="text-[17px] font-bold text-foreground">{groupAggregateStats.totalSwipes}</p>
+                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Total Swipes</p>
                 </div>
                 <div className="flex-1 bg-white rounded-2xl px-3 py-2.5 border border-gray-100 text-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}>
-                  <p className="text-[17px] font-bold text-[hsl(160,60%,40%)]">{likedCount}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Your Likes</p>
+                  <p className="text-[17px] font-bold text-[hsl(160,60%,40%)]">{groupAggregateStats.totalLikes}</p>
+                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Group Likes</p>
                 </div>
                 <div className="flex-1 bg-white rounded-2xl px-3 py-2.5 border border-gray-100 text-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}>
                   <p className="text-[17px] font-bold text-[#FFCC02]">{rankedResults.filter(r => r.isFullMatch).length}</p>
@@ -864,7 +905,7 @@ export default function GroupSwipe() {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.12, ease: [0.4, 0, 0.2, 1] }}
-                    onClick={() => navigate(`/restaurant/${result.item.id}`)}
+                    onClick={() => { sessionStorage.setItem("group_results_return", `/group/swipe?session=${sessionCode}`); navigate(`/restaurant/${result.item.id}`); }}
                     className="rounded-[20px] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
                     style={{ boxShadow: idx === 0 ? "0 8px 32px -6px rgba(255,204,2,0.25), 0 4px 16px rgba(0,0,0,0.06)" : "0 4px 20px rgba(0,0,0,0.06)", background: RANK_BG[idx] }}
                     data-testid={`result-card-${result.item.id}`}
@@ -930,7 +971,7 @@ export default function GroupSwipe() {
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 + idx * 0.06 }}
-                        onClick={() => navigate(`/restaurant/${result.item.id}`)}
+                        onClick={() => { sessionStorage.setItem("group_results_return", `/group/swipe?session=${sessionCode}`); navigate(`/restaurant/${result.item.id}`); }}
                         className="flex items-center gap-3 bg-white rounded-2xl p-2.5 pr-3 border border-gray-100 cursor-pointer active:scale-[0.98] transition-transform"
                         style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}
                         data-testid={`result-card-${result.item.id}`}
@@ -979,12 +1020,34 @@ export default function GroupSwipe() {
           {!sessionEnded && isHost ? (
             <div className="flex gap-3">
               <button
-                onClick={handleEndSession}
+                onClick={() => { handleEndSession(); }}
                 data-testid="button-end-done"
                 className="flex-1 py-3.5 rounded-2xl bg-[#FFCC02] text-[#2d2000] font-bold text-[14px] active:scale-[0.97] transition-transform"
                 style={{ boxShadow: "0 6px 20px -4px rgba(255,204,2,0.4)" }}
               >
-                End Session
+                Wrap it up
+              </button>
+            </div>
+          ) : sessionEnded ? (
+            <div className="space-y-2.5">
+              {rankedResults.length > 0 && rankedResults[0] && (
+                <button
+                  onClick={() => { sessionStorage.setItem("group_results_return", `/group/swipe?session=${sessionCode}`); navigate(`/restaurant/${rankedResults[0].item.id}`); }}
+                  data-testid="button-order-top-pick"
+                  className="w-full py-3.5 rounded-2xl bg-[#FFCC02] text-[#2d2000] font-bold text-[14px] active:scale-[0.97] transition-transform flex items-center justify-center gap-2"
+                  style={{ boxShadow: "0 6px 20px -4px rgba(255,204,2,0.4)" }}
+                >
+                  <Utensils className="w-4 h-4" />
+                  Order {rankedResults[0].item.name}
+                </button>
+              )}
+              <button
+                onClick={() => navigate("/")}
+                data-testid="button-home-summary"
+                className="w-full py-3.5 rounded-2xl bg-foreground text-white font-bold text-[14px] active:scale-[0.97] transition-transform"
+                style={{ boxShadow: "0 8px 25px -5px rgba(0,0,0,0.25)" }}
+              >
+                Back to Home
               </button>
             </div>
           ) : (
@@ -1076,7 +1139,7 @@ export default function GroupSwipe() {
             initial={{ y: 24, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            onClick={() => navigate(`/restaurant/${matchedItem.id}`)}
+            onClick={() => { sessionStorage.setItem("group_results_return", `/group/swipe?session=${sessionCode}`); navigate(`/restaurant/${matchedItem.id}`); }}
             className="w-full max-w-[280px] rounded-[20px] overflow-hidden cursor-pointer active:scale-[0.97] transition-transform"
             style={{ boxShadow: "0 20px 60px -15px rgba(0,0,0,0.18)" }}
             data-testid={`match-card-${matchedItem.id}`}
