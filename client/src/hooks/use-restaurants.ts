@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, type RestaurantResponse, type UserPreferenceResponse } from "@shared/routes";
+import { fetchWithTimeout } from "@/lib/queryClient";
 import { z } from "zod";
 
 // Fetch restaurants for the swipe deck
@@ -13,7 +14,7 @@ export function useRestaurants(mode?: string) {
       
       const url = params.toString() ? `${api.restaurants.list.path}?${params.toString()}` : api.restaurants.list.path;
       
-      const res = await fetch(url, { credentials: "include" });
+      const res = await fetchWithTimeout(url, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch restaurants");
       
       const data = await res.json();
@@ -27,7 +28,7 @@ export function useSuggestions() {
   return useQuery({
     queryKey: [api.restaurants.suggestions.path],
     queryFn: async () => {
-      const res = await fetch(api.restaurants.suggestions.path, { credentials: "include" });
+      const res = await fetchWithTimeout(api.restaurants.suggestions.path, { credentials: "include" });
       if (!res.ok) {
         // Fallback to empty array if endpoint doesn't exist yet so UI doesn't break entirely
         if (res.status === 404) return [];
@@ -48,7 +49,7 @@ export function useRecordPreference() {
     mutationFn: async (data: { userId: string; restaurantId: number; preference: string }) => {
       const validated = api.preferences.create.input.parse(data);
       
-      const res = await fetch(api.preferences.create.path, {
+      const res = await fetchWithTimeout(api.preferences.create.path, {
         method: api.preferences.create.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validated),

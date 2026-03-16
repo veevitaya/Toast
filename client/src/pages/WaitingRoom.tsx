@@ -7,6 +7,7 @@ import mascotImg from "@assets/toast_mascot_nobg.png";
 import { sendGroupInviteNoRedirect, getAccessToken, getGroupInviteUrl } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { getSavedDisplayName, getOnboardingProfile } from "@/hooks/use-onboarding";
+import { fetchWithTimeout } from "@/lib/queryClient";
 
 interface SessionMember {
   id: number;
@@ -97,7 +98,7 @@ export default function WaitingRoom() {
 
     try {
       if (hostOfSession) {
-        const checkRes = await fetch(`/api/group/sessions/${sessionId}`);
+        const checkRes = await fetchWithTimeout(`/api/group/sessions/${sessionId}`);
         if (checkRes.ok) {
           setSessionCreated(true);
           const data = await checkRes.json();
@@ -107,7 +108,7 @@ export default function WaitingRoom() {
         }
       }
 
-      const joinRes = await fetch(`/api/group/sessions/${sessionId}/join`, {
+      const joinRes = await fetchWithTimeout(`/api/group/sessions/${sessionId}/join`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -128,7 +129,7 @@ export default function WaitingRoom() {
         if (data.members) setMembers(data.members);
         if (data.session) setSessionInfo(data.session);
       } else if (joinRes.status === 404) {
-        const createRes = await fetch("/api/group/sessions", {
+        const createRes = await fetchWithTimeout("/api/group/sessions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -146,7 +147,7 @@ export default function WaitingRoom() {
         if (createRes.ok) {
           setSessionCreated(true);
         } else {
-          const retryJoin = await fetch(`/api/group/sessions/${sessionId}/join`, {
+          const retryJoin = await fetchWithTimeout(`/api/group/sessions/${sessionId}/join`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -175,7 +176,7 @@ export default function WaitingRoom() {
       }
 
       if (loc && sessionId) {
-        fetch(`/api/group/sessions/${sessionId}/location`, {
+        fetchWithTimeout(`/api/group/sessions/${sessionId}/location`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -217,10 +218,11 @@ export default function WaitingRoom() {
 
   useEffect(() => {
     if (!sessionCreated || !sessionId) return;
+    const controller = new AbortController();
 
     const fetchSession = async () => {
       try {
-        const res = await fetch(`/api/group/sessions/${sessionId}`);
+        const res = await fetchWithTimeout(`/api/group/sessions/${sessionId}`, { signal: controller.signal });
         if (res.ok) {
           const data = await res.json();
           setMembers(data.members);
@@ -234,7 +236,7 @@ export default function WaitingRoom() {
 
     fetchSession();
     const interval = setInterval(fetchSession, 4000);
-    return () => clearInterval(interval);
+    return () => { clearInterval(interval); controller.abort(); };
   }, [sessionCreated, sessionId, navigate]);
 
   const handleInviteMore = () => {
@@ -328,7 +330,7 @@ export default function WaitingRoom() {
     }
 
     try {
-      const joinRes = await fetch(`/api/group/sessions/${sessionId}/join`, {
+      const joinRes = await fetchWithTimeout(`/api/group/sessions/${sessionId}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -365,7 +367,7 @@ export default function WaitingRoom() {
   const handleStartSwiping = async () => {
     if (profile) {
       try {
-        await fetch(`/api/group/sessions/${sessionId}/status`, {
+        await fetchWithTimeout(`/api/group/sessions/${sessionId}/status`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: "swiping", lineUserId: profile.userId }),

@@ -7,6 +7,7 @@ import {
   ChevronDown, Sparkles, UserPlus, Check, Share2,
 } from "lucide-react";
 import { useLineProfile } from "@/lib/useLineProfile";
+import { fetchWithTimeout } from "@/lib/queryClient";
 import { isOnboardingComplete } from "@/hooks/use-onboarding";
 import { InlineOnboarding } from "@/pages/Onboarding";
 
@@ -187,7 +188,7 @@ export default function GroupSetup() {
     setPendingSessionId(sessionId);
     if (profile) {
       try {
-        await fetch("/api/group/sessions", {
+        await fetchWithTimeout("/api/group/sessions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

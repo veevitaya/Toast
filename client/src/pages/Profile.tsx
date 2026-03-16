@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { ChevronRight, UserPlus, Unlink, LogIn, LogOut, X, Store, User, Star, TrendingUp, Image, Sparkles, Plus, Check, Crown, Eye, ExternalLink, MapPin, Clock, BarChart3, ArrowUpRight, ArrowDownRight, Utensils, Zap, Calendar, Megaphone, Tag, Percent, Trash2, Send, Users, Target, Search, Shield, AlertTriangle, Upload, FileText, Building2, Phone, Mail, ChevronDown, ShieldCheck, Globe } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, fetchWithTimeout } from "@/lib/queryClient";
 import type { RestaurantResponse } from "@shared/routes";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import type { LanguagePreference } from "@/i18n/index";
@@ -213,7 +213,7 @@ function saveProfile(profile: LocalProfile) {
 
 async function syncToServer(lineUserId: string, profile: LocalProfile) {
   try {
-    await fetch("/api/profile", {
+    await fetchWithTimeout("/api/profile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -234,7 +234,7 @@ async function syncToServer(lineUserId: string, profile: LocalProfile) {
 
 async function fetchFromServer(lineUserId: string): Promise<Partial<LocalProfile> | null> {
   try {
-    const res = await fetch(`/api/profile/${lineUserId}`, { credentials: "include" });
+    const res = await fetchWithTimeout(`/api/profile/${lineUserId}`, { credentials: "include" });
     if (!res.ok) return null;
     const data = await res.json();
     return {

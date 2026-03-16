@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, jsonb, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb, real, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -22,7 +22,11 @@ export const restaurants = pgTable("restaurants", {
   vibes: text("vibes").array().default([]),
   district: text("district"),
   operatingHours: text("operating_hours"),
-});
+}, (table) => ({
+  ownerIdIdx: index("restaurants_owner_id_idx").on(table.ownerId),
+  trendingScoreIdx: index("restaurants_trending_score_idx").on(table.trendingScore),
+  googlePlaceIdIdx: index("restaurants_google_place_id_idx").on(table.googlePlaceId),
+}));
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({ id: true });
 export type Restaurant = typeof restaurants.$inferSelect;
@@ -33,7 +37,9 @@ export const userPreferences = pgTable("user_preferences", {
   userId: text("user_id").notNull(),
   restaurantId: integer("restaurant_id").notNull(),
   preference: text("preference").notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("user_preferences_user_id_idx").on(table.userId),
+}));
 export const insertUserPreferenceSchema = createInsertSchema(userPreferences).omit({ id: true });
 export type UserPreference = typeof userPreferences.$inferSelect;
 export type InsertUserPreference = z.infer<typeof insertUserPreferenceSchema>;
@@ -72,7 +78,9 @@ export const campaigns = pgTable("campaigns", {
   targetGroups: text("target_groups").array().default([]),
   status: text("status").default("draft"),
   createdAt: text("created_at").notNull(),
-});
+}, (table) => ({
+  ownerKeyIdx: index("campaigns_owner_key_idx").on(table.restaurantOwnerKey),
+}));
 
 export const insertCampaignSchema = createInsertSchema(campaigns).omit({ id: true });
 export type Campaign = typeof campaigns.$inferSelect;
@@ -85,7 +93,12 @@ export const analyticsEvents = pgTable("analytics_events", {
   restaurantId: integer("restaurant_id"),
   metadata: text("metadata"),
   timestamp: text("timestamp").notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("analytics_events_user_id_idx").on(table.userId),
+  eventTypeIdx: index("analytics_events_event_type_idx").on(table.eventType),
+  timestampIdx: index("analytics_events_timestamp_idx").on(table.timestamp),
+  restaurantIdIdx: index("analytics_events_restaurant_id_idx").on(table.restaurantId),
+}));
 
 export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({ id: true });
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
@@ -207,7 +220,9 @@ export const groupSessionMembers = pgTable("group_session_members", {
   latitude: text("latitude"),
   longitude: text("longitude"),
   joinedAt: text("joined_at").notNull(),
-});
+}, (table) => ({
+  sessionCodeIdx: index("group_session_members_session_code_idx").on(table.sessionCode),
+}));
 
 export const insertGroupSessionMemberSchema = createInsertSchema(groupSessionMembers).omit({ id: true });
 export type GroupSessionMember = typeof groupSessionMembers.$inferSelect;
@@ -281,7 +296,9 @@ export const userBehaviorEvents = pgTable("user_behavior_events", {
   eventWeight: real("event_weight").default(1.0),
   metadataJson: jsonb("metadata_json").default({}),
   createdAt: text("created_at").notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("user_behavior_events_user_id_idx").on(table.userId),
+}));
 
 export const insertUserBehaviorEventSchema = createInsertSchema(userBehaviorEvents).omit({ id: true });
 export type UserBehaviorEvent = typeof userBehaviorEvents.$inferSelect;
@@ -294,7 +311,9 @@ export const moodChoiceLinks = pgTable("mood_choice_links", {
   chosenCuisine: text("chosen_cuisine"),
   chosenDishType: text("chosen_dish_type"),
   createdAt: text("created_at").notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("mood_choice_links_user_id_idx").on(table.userId),
+}));
 
 export const insertMoodChoiceLinkSchema = createInsertSchema(moodChoiceLinks).omit({ id: true });
 export type MoodChoiceLink = typeof moodChoiceLinks.$inferSelect;
@@ -313,7 +332,9 @@ export const decisionSessions = pgTable("decision_sessions", {
   successFlag: boolean("success_flag"),
   createdAt: text("created_at").notNull(),
   endedAt: text("ended_at"),
-});
+}, (table) => ({
+  userIdIdx: index("decision_sessions_user_id_idx").on(table.userId),
+}));
 
 export const insertDecisionSessionSchema = createInsertSchema(decisionSessions).omit({ id: true });
 export type DecisionSession = typeof decisionSessions.$inferSelect;
@@ -326,7 +347,11 @@ export const groupSwipes = pgTable("group_swipes", {
   menuItemId: integer("menu_item_id").notNull(),
   direction: text("direction").notNull(),
   swipedAt: text("swiped_at").notNull(),
-});
+}, (table) => ({
+  sessionCodeIdx: index("group_swipes_session_code_idx").on(table.sessionCode),
+  lineUserIdIdx: index("group_swipes_line_user_id_idx").on(table.lineUserId),
+  sessionUserIdx: index("group_swipes_session_user_idx").on(table.sessionCode, table.lineUserId, table.menuItemId),
+}));
 
 export const insertGroupSwipeSchema = createInsertSchema(groupSwipes).omit({ id: true });
 export type GroupSwipe = typeof groupSwipes.$inferSelect;

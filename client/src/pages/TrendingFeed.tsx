@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { fetchWithTimeout } from "@/lib/queryClient";
 import { motion, AnimatePresence, useMotionValue, PanInfo } from "framer-motion";
 import { useLocation } from "wouter";
 import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers } from "lucide-react";
@@ -694,7 +695,7 @@ export default function TrendingFeed() {
         restaurants: trendingRestaurants,
       });
 
-      const createRes = await fetch("/api/group/sessions", {
+      const createRes = await fetchWithTimeout("/api/group/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

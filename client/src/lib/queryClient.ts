@@ -27,8 +27,16 @@ function getAdminHeaders(): Record<string, string> {
   return {};
 }
 
-function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = API_TIMEOUT): Promise<Response> {
+export function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = API_TIMEOUT): Promise<Response> {
   const controller = new AbortController();
+  const existingSignal = options.signal;
+  if (existingSignal) {
+    if (existingSignal.aborted) {
+      controller.abort();
+    } else {
+      existingSignal.addEventListener("abort", () => controller.abort(), { once: true });
+    }
+  }
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
 }

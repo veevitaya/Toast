@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { motion, useMotionValue, useTransform, PanInfo, AnimatePresence, useAnimate } from "framer-motion";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { fetchWithTimeout } from "@/lib/queryClient";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { sendInvite } from "@/lib/liff";
 import { BottomNav } from "@/components/BottomNav";
@@ -589,7 +590,7 @@ export default function SwipePage() {
   const { data: dbRestaurants } = useQuery<any[]>({
     queryKey: ["/api/restaurants/for-swipe", mode],
     queryFn: async () => {
-      const res = await fetch(`/api/restaurants/for-swipe?${swipeQueryParams.toString()}`);
+      const res = await fetchWithTimeout(`/api/restaurants/for-swipe?${swipeQueryParams.toString()}`);
       if (!res.ok) return [];
       return res.json();
     },

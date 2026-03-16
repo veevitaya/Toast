@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { fetchWithTimeout } from "@/lib/queryClient";
 import { BottomNav } from "@/components/BottomNav";
 import { Sparkles, Clock, Wallet, TrendingUp, MapPin, Search, UtensilsCrossed, X, Check, Star } from "lucide-react";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
@@ -334,7 +335,7 @@ export default function SoloResults() {
   const { data: vibeRestaurants, isLoading: vibeLoading } = useQuery<VibeRestaurant[]>({
     queryKey: ["/api/restaurants/by-vibe", vibeParam],
     queryFn: async () => {
-      const res = await fetch("/api/restaurants/by-vibe", {
+      const res = await fetchWithTimeout("/api/restaurants/by-vibe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vibe: vibeParam }),
@@ -372,7 +373,7 @@ export default function SoloResults() {
   const { data: quizDbRestaurants } = useQuery<VibeRestaurant[]>({
     queryKey: ["/api/restaurants/for-swipe", "solo-quiz", quizSwipeParams],
     queryFn: async () => {
-      const res = await fetch(`/api/restaurants/for-swipe?${quizSwipeParams}`);
+      const res = await fetchWithTimeout(`/api/restaurants/for-swipe?${quizSwipeParams}`);
       if (!res.ok) return [];
       return res.json();
     },

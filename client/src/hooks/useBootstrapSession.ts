@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { fetchWithTimeout } from "@/lib/queryClient";
 
 interface BootstrapUser {
   id: number | null;
@@ -84,7 +85,7 @@ const bootstrapState = {
 function doFetch(accessToken?: string | null): Promise<BootstrapPayload | null> {
   if (bootstrapState.promise) return bootstrapState.promise;
 
-  bootstrapState.promise = fetch("/api/session/bootstrap", {
+  bootstrapState.promise = fetchWithTimeout("/api/session/bootstrap", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

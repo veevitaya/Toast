@@ -7,6 +7,7 @@ import { trackEvent } from "@/lib/analytics";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { handleImageError } from "@/lib/imageUtils";
 import { throttleTap } from "@/lib/requestLock";
+import { fetchWithTimeout } from "@/lib/queryClient";
 import { Square, X, Trophy, ChevronRight, Crown, Medal, Award, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils } from "lucide-react";
 
 interface MenuItem {
@@ -328,17 +329,18 @@ export default function GroupSwipe() {
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
     const loadRestaurants = async () => {
       try {
         let data: any[] = [];
 
         if (sessionCode) {
-          const sessionRes = await fetch(`/api/group/sessions/${sessionCode}`);
+          const sessionRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}`, { signal: controller.signal });
           if (cancelled) return;
           if (sessionRes.ok) {
             const sessionData = await sessionRes.json();
             if (sessionData.session?.sessionType === "trending") {
-              const trendingRes = await fetch(`/api/group/sessions/${sessionCode}/trending-restaurants`);
+              const trendingRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/trending-restaurants`, { signal: controller.signal });
               if (cancelled) return;
               if (trendingRes.ok) {
                 const trendingData = await trendingRes.json();
@@ -349,7 +351,7 @@ export default function GroupSwipe() {
         }
 
         if (data.length === 0) {
-          const res = await fetch("/api/restaurants");
+          const res = await fetchWithTimeout("/api/restaurants", { signal: controller.signal });
           if (cancelled) return;
           if (res.ok) {
             data = await res.json();
@@ -378,7 +380,7 @@ export default function GroupSwipe() {
       }
     };
     loadRestaurants();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; controller.abort(); };
   }, [sessionCode]);
 
   const menuItemsRef = useRef<MenuItem[]>([]);
@@ -390,10 +392,11 @@ export default function GroupSwipe() {
     if (!sessionCode) return;
     let cancelled = false;
 
+    const pollController = new AbortController();
     const fetchSession = async () => {
       if (cancelled) return;
       try {
-        const res = await fetch(`/api/group/sessions/${sessionCode}`);
+        const res = await fetchWithTimeout(`/api/group/sessions/${sessionCode}`, { signal: pollController.signal });
         if (cancelled) return;
         if (!res.ok) {
           pollFailCount.current += 1;
@@ -408,7 +411,7 @@ export default function GroupSwipe() {
 
         if (!cancelled) {
           try {
-            const matchRes = await fetch(`/api/group/sessions/${sessionCode}/matches`);
+            const matchRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/matches`, { signal: pollController.signal });
             if (!cancelled && matchRes.ok) {
               const matchData = await matchRes.json();
               if (matchData.matches) {
@@ -455,7 +458,7 @@ export default function GroupSwipe() {
     };
     fetchSession();
     const interval = setInterval(fetchSession, 5000);
-    return () => { cancelled = true; clearInterval(interval); };
+    return () => { cancelled = true; clearInterval(interval); pollController.abort(); };
   }, [sessionCode, profile]);
 
   useEffect(() => {
@@ -501,7 +504,7 @@ export default function GroupSwipe() {
   const recordSwipe = useCallback(async (menuItemId: number, direction: "left" | "right" | "super") => {
     if (!sessionCode || !profile) return null;
     try {
-      const res = await fetch(`/api/group/sessions/${sessionCode}/swipe`, {
+      const res = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/swipe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -578,7 +581,7 @@ export default function GroupSwipe() {
   const checkPartialMatches = useCallback(async (menuItemId: number) => {
     if (!sessionCode || notifiedPartials.has(menuItemId)) return;
     try {
-      const res = await fetch(`/api/group/sessions/${sessionCode}/swipes`);
+      const res = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/swipes`);
       if (!res.ok) return;
       const data = await res.json();
 
@@ -614,7 +617,7 @@ export default function GroupSwipe() {
     fetchRankedResultsRef.current = true;
     setLoadingResults(true);
     try {
-      const res = await fetch(`/api/group/sessions/${sessionCode}/swipes`);
+      const res = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/swipes`);
       if (!res.ok) return;
       const data = await res.json();
       const { swipes, members: memberList, restaurants: serverRestaurants } = data;
@@ -672,8 +675,8 @@ export default function GroupSwipe() {
       setGroupAggregateStats({ totalSwipes: swipes.length, totalLikes: gLikes, totalDislikes: gDislikes, totalSuperLikes: gSuper });
 
       try {
-        await fetch(`/api/group/sessions/${sessionCode}/finalize-stats`, { method: "POST" });
-        const statsRes = await fetch(`/api/group/combo-stats/${sessionCode}`);
+        await fetchWithTimeout(`/api/group/sessions/${sessionCode}/finalize-stats`, { method: "POST" });
+        const statsRes = await fetchWithTimeout(`/api/group/combo-stats/${sessionCode}`);
         if (statsRes.ok) {
           setComboStats(await statsRes.json());
         }
@@ -709,7 +712,7 @@ export default function GroupSwipe() {
   const handleEndSession = async () => {
     if (!sessionCode || !profile) return;
     try {
-      await fetch(`/api/group/sessions/${sessionCode}/status`, {
+      await fetchWithTimeout(`/api/group/sessions/${sessionCode}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "completed", lineUserId: profile.userId }),

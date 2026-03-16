@@ -157,10 +157,38 @@ export interface IStorage {
   getMoodChoiceLinks(userId: string, limit?: number): Promise<MoodChoiceLink[]>;
 }
 
+const MAX_CACHE_ENTRIES = 200;
+const memCache = new Map<string, { data: any; expiry: number }>();
+function cached<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const entry = memCache.get(key);
+  if (entry && entry.expiry > now) return Promise.resolve(entry.data as T);
+  return fn().then(data => {
+    if (memCache.size >= MAX_CACHE_ENTRIES) {
+      let oldestKey: string | null = null;
+      let oldestExpiry = Infinity;
+      for (const [k, v] of memCache) {
+        if (v.expiry < oldestExpiry) { oldestExpiry = v.expiry; oldestKey = k; }
+      }
+      if (oldestKey) memCache.delete(oldestKey);
+    }
+    memCache.set(key, { data, expiry: now + ttlMs });
+    return data;
+  });
+}
+function invalidateCache(prefix: string) {
+  for (const key of memCache.keys()) {
+    if (key.startsWith(prefix)) memCache.delete(key);
+  }
+}
+
 export class DatabaseStorage implements IStorage {
   async getRestaurants(mode?: string, lat?: number, lng?: number, query?: string): Promise<Restaurant[]> {
-    let queryBuilder = db.select().from(restaurants);
-    return await queryBuilder.orderBy(desc(restaurants.id));
+    const cacheKey = `restaurants:list:${mode || ''}:${query || ''}`;
+    return cached(cacheKey, 30000, async () => {
+      let queryBuilder = db.select().from(restaurants);
+      return await queryBuilder.orderBy(desc(restaurants.id));
+    });
   }
 
   async getRestaurantById(id: number): Promise<Restaurant | undefined> {
@@ -186,13 +214,18 @@ export class DatabaseStorage implements IStorage {
 
   async seedRestaurants(data: InsertRestaurant[]): Promise<void> {
     await db.delete(restaurants);
-    for (const restaurant of data) {
-      await db.insert(restaurants).values(restaurant);
+    if (data.length > 0) {
+      const batchSize = 50;
+      for (let i = 0; i < data.length; i += batchSize) {
+        await db.insert(restaurants).values(data.slice(i, i + batchSize));
+      }
     }
+    invalidateCache("restaurants:");
   }
 
   async addRestaurant(data: InsertRestaurant): Promise<Restaurant> {
     const [restaurant] = await db.insert(restaurants).values(data).returning();
+    invalidateCache("restaurants:");
     return restaurant;
   }
 
@@ -211,6 +244,7 @@ export class DatabaseStorage implements IStorage {
       return updated;
     }
     const [created] = await db.insert(userProfiles).values(profile).returning();
+    invalidateCache("users:");
     return created;
   }
 
@@ -231,22 +265,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRestaurantCount(): Promise<number> {
-    const [result] = await db.select({ count: count() }).from(restaurants);
-    return result.count;
+    return cached("restaurants:count", 60000, async () => {
+      const [result] = await db.select({ count: count() }).from(restaurants);
+      return result.count;
+    });
   }
 
   async getUserCount(): Promise<number> {
-    const [result] = await db.select({ count: count() }).from(userProfiles);
-    return result.count;
+    return cached("users:count", 60000, async () => {
+      const [result] = await db.select({ count: count() }).from(userProfiles);
+      return result.count;
+    });
   }
 
   async updateRestaurant(id: number, updates: Partial<InsertRestaurant>): Promise<Restaurant | undefined> {
     const [updated] = await db.update(restaurants).set(updates).where(eq(restaurants.id, id)).returning();
+    invalidateCache("restaurants:");
     return updated;
   }
 
   async deleteRestaurant(id: number): Promise<void> {
     await db.delete(restaurants).where(eq(restaurants.id, id));
+    invalidateCache("restaurants:");
   }
 
   async createCampaign(campaign: InsertCampaign): Promise<Campaign> {
@@ -482,25 +522,23 @@ export class DatabaseStorage implements IStorage {
     const memberCount = members.length;
     if (memberCount === 0) return [];
 
-    const allPositive = await db.select().from(groupSwipes)
+    const results = await db.select({
+      menuItemId: groupSwipes.menuItemId,
+      voters: sql<string>`array_agg(DISTINCT ${groupSwipes.lineUserId})`,
+      voterCount: sql<number>`count(DISTINCT ${groupSwipes.lineUserId})`,
+    })
+      .from(groupSwipes)
       .where(and(
         eq(groupSwipes.sessionCode, sessionCode),
         sql`${groupSwipes.direction} IN ('right', 'super')`
-      ));
+      ))
+      .groupBy(groupSwipes.menuItemId)
+      .having(sql`count(DISTINCT ${groupSwipes.lineUserId}) >= ${memberCount}`);
 
-    const voteMap = new Map<number, Set<string>>();
-    for (const s of allPositive) {
-      if (!voteMap.has(s.menuItemId)) voteMap.set(s.menuItemId, new Set());
-      voteMap.get(s.menuItemId)!.add(s.lineUserId);
-    }
-
-    const matches: { menuItemId: number; voters: string[] }[] = [];
-    for (const [menuItemId, voters] of voteMap) {
-      if (voters.size >= memberCount) {
-        matches.push({ menuItemId, voters: Array.from(voters) });
-      }
-    }
-    return matches;
+    return results.map(r => ({
+      menuItemId: r.menuItemId,
+      voters: Array.isArray(r.voters) ? r.voters : String(r.voters).replace(/[{}]/g, '').split(',').filter(Boolean),
+    }));
   }
 
   async getPopularRestaurants(days: number, limit: number): Promise<{ restaurantId: number; score: number }[]> {

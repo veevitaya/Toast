@@ -2049,9 +2049,15 @@ export async function registerRoutes(
     try {
       const status = req.query.status as string | undefined;
       const claims = await storage.getRestaurantClaims(status);
-      const enriched = await Promise.all(claims.map(async (c) => {
-        const owner = await storage.getRestaurantOwnerById(c.ownerId);
-        const restaurant = await storage.getRestaurantById(c.restaurantId);
+      const [allOwners, allRestaurants] = await Promise.all([
+        storage.getAllRestaurantOwners(),
+        storage.getRestaurants(),
+      ]);
+      const ownerMap = new Map(allOwners.map(o => [o.id, o]));
+      const restaurantMap = new Map(allRestaurants.map(r => [r.id, r]));
+      const enriched = claims.map(c => {
+        const owner = ownerMap.get(c.ownerId);
+        const restaurant = restaurantMap.get(c.restaurantId);
         return {
           ...c,
           ownerName: owner?.displayName || "Unknown",
@@ -2062,7 +2068,7 @@ export async function registerRoutes(
           restaurantCategory: restaurant?.category || "",
           restaurantImageUrl: restaurant?.imageUrl || "",
         };
-      }));
+      });
       res.json(enriched);
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
@@ -2951,6 +2957,9 @@ export async function registerRoutes(
     const swipes = await storage.getGroupSwipes(sessionCode);
     const matches = await storage.getGroupMatches(sessionCode);
 
+    const allRestaurants = await storage.getRestaurants();
+    const restaurantMap = new Map(allRestaurants.map(r => [r.id, r]));
+
     let fingerprint = session.memberFingerprint;
     if (!fingerprint) {
       const sortedIds = members.map(m => m.lineUserId).sort();
@@ -2959,11 +2968,6 @@ export async function registerRoutes(
     }
 
     for (const member of members) {
-      const memberSwipes = swipes.filter(s => s.lineUserId === member.lineUserId);
-      const likes = memberSwipes.filter(s => s.direction === "right" || s.direction === "super");
-      const dislikes = memberSwipes.filter(s => s.direction === "left");
-      const superLikes = memberSwipes.filter(s => s.direction === "super");
-
       const allUserSwipes = await storage.getAllSwipesForUser(member.lineUserId);
 
       const categoryCounts: Record<string, number> = {};
@@ -2974,7 +2978,7 @@ export async function registerRoutes(
         }
       }
       for (const [rid, cnt] of Object.entries(restaurantLikeCounts)) {
-        const r = await storage.getRestaurantById(parseInt(rid));
+        const r = restaurantMap.get(parseInt(rid));
         if (r) {
           categoryCounts[r.category] = (categoryCounts[r.category] || 0) + cnt;
         }
@@ -3020,7 +3024,7 @@ export async function registerRoutes(
       comboTotalMatches += sMatches.length;
       for (const m of sMatches) {
         comboMatchedRestaurants[m.menuItemId] = (comboMatchedRestaurants[m.menuItemId] || 0) + 1;
-        const r = await storage.getRestaurantById(m.menuItemId);
+        const r = restaurantMap.get(m.menuItemId);
         if (r) comboCategoryCounts[r.category] = (comboCategoryCounts[r.category] || 0) + 1;
       }
     }

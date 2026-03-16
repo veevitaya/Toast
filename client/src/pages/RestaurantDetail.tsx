@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { fetchWithTimeout } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -167,7 +168,7 @@ export default function RestaurantDetail() {
   const { data: apiRestaurant, isLoading, isError } = useQuery<RestaurantResponse>({
     queryKey: ["/api/restaurants", id],
     queryFn: async () => {
-      const res = await fetch(`/api/restaurants/${id}`, { credentials: "include" });
+      const res = await fetchWithTimeout(`/api/restaurants/${id}`, { credentials: "include" });
       if (!res.ok) throw new Error("Not found");
       return res.json();
     },

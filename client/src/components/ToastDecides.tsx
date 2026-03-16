@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo, memo, lazy, Suspense } from "react";
+import { fetchWithTimeout } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
@@ -414,7 +415,7 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
     setLoading(true);
     try {
       const now = new Date();
-      const res = await fetch("/api/restaurants/personalized", {
+      const res = await fetchWithTimeout("/api/restaurants/personalized", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -10,5 +10,14 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+});
 export const db = drizzle(pool, { schema });
+
+pool.query(`
+  CREATE INDEX IF NOT EXISTS idx_restaurants_vibes_gin ON restaurants USING gin (vibes);
+`).catch(() => {});
