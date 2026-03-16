@@ -48,6 +48,18 @@ import {
   type InsertUserSwipeStats,
   type GroupComboStats,
   type InsertGroupComboStats,
+  tasteContextPatterns,
+  recentMealMemory,
+  userBehaviorEvents,
+  moodChoiceLinks,
+  type TasteContextPattern,
+  type InsertTasteContextPattern,
+  type RecentMealMemory,
+  type InsertRecentMealMemory,
+  type UserBehaviorEvent,
+  type InsertUserBehaviorEvent,
+  type MoodChoiceLink,
+  type InsertMoodChoiceLink,
 } from "@shared/schema";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -134,6 +146,15 @@ export interface IStorage {
   getGroupComboStats(fingerprint: string): Promise<GroupComboStats | undefined>;
   getGroupCombosByUser(lineUserId: string): Promise<GroupComboStats[]>;
   getAllSwipesForUser(lineUserId: string): Promise<GroupSwipe[]>;
+
+  getContextPatterns(userId: string): Promise<TasteContextPattern | undefined>;
+  upsertContextPatterns(userId: string, data: Partial<InsertTasteContextPattern>): Promise<TasteContextPattern>;
+  getRecentMealMemory(userId: string): Promise<RecentMealMemory | undefined>;
+  upsertRecentMealMemory(userId: string, data: Partial<InsertRecentMealMemory>): Promise<RecentMealMemory>;
+  logBehaviorEvent(event: InsertUserBehaviorEvent): Promise<UserBehaviorEvent>;
+  getUserBehaviorEvents(userId: string, limit?: number): Promise<UserBehaviorEvent[]>;
+  createMoodChoiceLink(link: InsertMoodChoiceLink): Promise<MoodChoiceLink>;
+  getMoodChoiceLinks(userId: string, limit?: number): Promise<MoodChoiceLink[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -656,6 +677,72 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(groupSwipes)
       .where(eq(groupSwipes.lineUserId, lineUserId))
       .orderBy(desc(groupSwipes.id));
+  }
+
+  async getContextPatterns(userId: string): Promise<TasteContextPattern | undefined> {
+    const [pattern] = await db.select().from(tasteContextPatterns)
+      .where(eq(tasteContextPatterns.userId, userId)).limit(1);
+    return pattern;
+  }
+
+  async upsertContextPatterns(userId: string, data: Partial<InsertTasteContextPattern>): Promise<TasteContextPattern> {
+    const existing = await this.getContextPatterns(userId);
+    if (existing) {
+      const [updated] = await db.update(tasteContextPatterns)
+        .set({ ...data, updatedAt: new Date().toISOString() })
+        .where(eq(tasteContextPatterns.userId, userId))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(tasteContextPatterns)
+      .values({ userId, updatedAt: new Date().toISOString(), ...data } as any)
+      .returning();
+    return created;
+  }
+
+  async getRecentMealMemory(userId: string): Promise<RecentMealMemory | undefined> {
+    const [memory] = await db.select().from(recentMealMemory)
+      .where(eq(recentMealMemory.userId, userId)).limit(1);
+    return memory;
+  }
+
+  async upsertRecentMealMemory(userId: string, data: Partial<InsertRecentMealMemory>): Promise<RecentMealMemory> {
+    const existing = await this.getRecentMealMemory(userId);
+    if (existing) {
+      const [updated] = await db.update(recentMealMemory)
+        .set({ ...data, updatedAt: new Date().toISOString() })
+        .where(eq(recentMealMemory.userId, userId))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(recentMealMemory)
+      .values({ userId, updatedAt: new Date().toISOString(), ...data } as any)
+      .returning();
+    return created;
+  }
+
+  async logBehaviorEvent(event: InsertUserBehaviorEvent): Promise<UserBehaviorEvent> {
+    const [created] = await db.insert(userBehaviorEvents).values(event).returning();
+    return created;
+  }
+
+  async getUserBehaviorEvents(userId: string, limit: number = 200): Promise<UserBehaviorEvent[]> {
+    return await db.select().from(userBehaviorEvents)
+      .where(eq(userBehaviorEvents.userId, userId))
+      .orderBy(desc(userBehaviorEvents.id))
+      .limit(limit);
+  }
+
+  async createMoodChoiceLink(link: InsertMoodChoiceLink): Promise<MoodChoiceLink> {
+    const [created] = await db.insert(moodChoiceLinks).values(link).returning();
+    return created;
+  }
+
+  async getMoodChoiceLinks(userId: string, limit: number = 50): Promise<MoodChoiceLink[]> {
+    return await db.select().from(moodChoiceLinks)
+      .where(eq(moodChoiceLinks.userId, userId))
+      .orderBy(desc(moodChoiceLinks.id))
+      .limit(limit);
   }
 }
 

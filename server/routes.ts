@@ -739,70 +739,13 @@ export async function registerRoutes(
       const { userId, tasteProfile, hour, dayOfWeek, craving, preferences, avoidTags, pricePref, distancePref } = req.body;
       const allRestaurants = await getCached("restaurants:all", 30000, () => storage.getRestaurants());
 
-      let userEvents: any[] = [];
-      if (userId) {
-        userEvents = await storage.getUserEvents(userId, 300);
-      }
-
-      const swipeRightIds = new Set<number>();
-      const swipeLeftIds = new Set<number>();
-      const savedIds = new Set<number>();
-      const viewedIds = new Set<number>();
-      const categoryAffinities: Record<string, number> = {};
-
-      for (const evt of userEvents) {
-        if (evt.eventType === "swipe_right" && evt.restaurantId) swipeRightIds.add(evt.restaurantId);
-        if (evt.eventType === "swipe_left" && evt.restaurantId) swipeLeftIds.add(evt.restaurantId);
-        if (evt.eventType === "save" && evt.restaurantId) savedIds.add(evt.restaurantId);
-        if (evt.eventType === "view_detail" && evt.restaurantId) viewedIds.add(evt.restaurantId);
-
-        if (evt.metadata) {
-          try {
-            const meta = JSON.parse(evt.metadata);
-            if (meta.category) {
-              const cats = meta.category.split(/[,·•]/).map((c: string) => c.trim().toLowerCase());
-              for (const cat of cats) {
-                if (!cat) continue;
-                const weight = evt.eventType === "swipe_right" ? 2 : evt.eventType === "save" ? 3 : evt.eventType === "swipe_left" ? -1 : 0.5;
-                categoryAffinities[cat] = (categoryAffinities[cat] || 0) + weight;
-              }
-            }
-          } catch {}
-        }
-      }
-
-      if (tasteProfile) {
-        const { likes = {}, superLikes = {}, dislikes = {} } = tasteProfile;
-        for (const [cat, entry] of Object.entries(likes) as [string, any][]) {
-          const key = cat.toLowerCase();
-          categoryAffinities[key] = (categoryAffinities[key] || 0) + (entry.count || 1) * 1.5;
-        }
-        for (const [cat, entry] of Object.entries(superLikes) as [string, any][]) {
-          const key = cat.toLowerCase();
-          categoryAffinities[key] = (categoryAffinities[key] || 0) + (entry.count || 1) * 3;
-        }
-        for (const [cat, entry] of Object.entries(dislikes) as [string, any][]) {
-          const key = cat.toLowerCase();
-          categoryAffinities[key] = (categoryAffinities[key] || 0) - (entry.count || 1) * 1;
-        }
-      }
-
       const timeSlot = hour !== undefined ? (
         hour >= 6 && hour < 11 ? "morning" :
         hour >= 11 && hour < 14 ? "lunch" :
         hour >= 14 && hour < 17 ? "afternoon" :
         hour >= 17 && hour < 21 ? "dinner" : "latenight"
       ) : "dinner";
-
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-      const TIME_BOOSTS: Record<string, string[]> = {
-        morning: ["cafe", "brunch", "coffee", "bakery", "breakfast"],
-        lunch: ["thai", "japanese", "noodles", "street food", "quick"],
-        afternoon: ["cafe", "dessert", "tea", "boba", "snack"],
-        dinner: ["bbq", "fine dining", "sushi", "italian", "korean", "seafood"],
-        latenight: ["street food", "ramen", "noodles", "thai", "bar"],
-      };
+      const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
 
       const CRAVING_MAP: Record<string, string[]> = {
         "warm": ["thai", "ramen", "noodles", "curry", "soup"],
@@ -811,189 +754,113 @@ export async function registerRoutes(
         "balanced": ["thai", "japanese", "brunch", "western"],
         "indulgent": ["bbq", "burger", "pizza", "dessert", "fine dining"],
         "quick": ["street food", "noodles", "fast", "quick"],
+        "comforting": ["ramen", "noodles", "curry", "soup", "thai"],
+        "healthy": ["salad", "poke", "smoothie", "vegan", "healthy"],
+        "adventurous": ["fusion", "ethiopian", "peruvian", "middle eastern"],
         "familiar": [],
         "surprise": [],
       };
 
-      const avoidSet = new Set((avoidTags || []).map((t: string) => t.toLowerCase()));
-      const prefSet = new Set((preferences || []).map((p: string) => p.toLowerCase()));
+      const cuisineBoosts = craving ? (CRAVING_MAP[craving.toLowerCase()] || []) : [];
 
-      const scored = allRestaurants.map((r) => {
-        let score = 50;
-        const rCats = r.category.toLowerCase().split(/[,·•]/).map(c => c.trim());
-        const reasons: string[] = [];
+      let priceNum: number | undefined;
+      if (pricePref && pricePref !== "any") {
+        priceNum = pricePref === "$" ? 1 : pricePref === "$$" ? 2 : 3;
+      }
 
-        for (const cat of rCats) {
-          if (avoidSet.has(cat)) {
-            score -= 100;
-          }
+      let tasteDnaData = null;
+      let contextPatterns = null;
+      let mealMemory = null;
+      let userEvents: any[] = [];
+      let behaviorEvents: any[] = [];
+
+      if (userId) {
+        [tasteDnaData, contextPatterns, mealMemory, userEvents, behaviorEvents] = await Promise.all([
+          storage.getTasteDna(userId),
+          storage.getContextPatterns(userId),
+          storage.getRecentMealMemory(userId),
+          storage.getUserEvents(userId, 300),
+          storage.getUserBehaviorEvents(userId, 300),
+        ]);
+      }
+
+      if (tasteProfile && tasteDnaData) {
+        const { likes = {}, superLikes = {} } = tasteProfile;
+        const affinityUpdates = { ...(tasteDnaData.cuisineAffinityJson as Record<string, number> || {}) };
+        for (const [cat, entry] of Object.entries(likes) as [string, any][]) {
+          affinityUpdates[cat.toLowerCase()] = (affinityUpdates[cat.toLowerCase()] || 0) + (entry.count || 1) * 1.5;
         }
-
-        for (const cat of rCats) {
-          if (categoryAffinities[cat]) {
-            score += categoryAffinities[cat] * 3;
-          }
-          for (const [affCat, affScore] of Object.entries(categoryAffinities)) {
-            if (cat.includes(affCat) || affCat.includes(cat)) {
-              score += affScore * 1.5;
-            }
-          }
+        for (const [cat, entry] of Object.entries(superLikes) as [string, any][]) {
+          affinityUpdates[cat.toLowerCase()] = (affinityUpdates[cat.toLowerCase()] || 0) + (entry.count || 1) * 3;
         }
+        tasteDnaData = { ...tasteDnaData, cuisineAffinityJson: affinityUpdates };
+      }
 
-        let hasAffinityMatch = false;
-        for (const cat of rCats) {
-          if (categoryAffinities[cat] && categoryAffinities[cat] > 2) {
-            hasAffinityMatch = true;
-            break;
-          }
-        }
+      const { buildUserHistory, generateRecommendation } = await import("./recommendation/index");
+      const userHistory = buildUserHistory(userEvents, behaviorEvents);
 
-        if (swipeRightIds.has(r.id)) { score += 15; reasons.push("You liked this before"); }
-        if (savedIds.has(r.id)) { score += 20; reasons.push("In your saved list"); }
-        if (swipeLeftIds.has(r.id)) score -= 25;
-        if (viewedIds.has(r.id)) score += 5;
+      const result = generateRecommendation(
+        allRestaurants,
+        {
+          userId: userId || "anonymous",
+          daypart: timeSlot,
+          isWeekend,
+          mood: craving?.toLowerCase(),
+          avoidTags: avoidTags || [],
+          cuisineBoosts,
+          pricePref: priceNum,
+        },
+        tasteDnaData,
+        contextPatterns,
+        mealMemory,
+        userHistory,
+        userEvents.length
+      );
 
-        const timeBoostCats = TIME_BOOSTS[timeSlot] || [];
-        let hasTimeBoost = false;
-        for (const cat of rCats) {
-          for (const tb of timeBoostCats) {
-            if (cat.includes(tb) || tb.includes(cat)) {
-              score += 8;
-              hasTimeBoost = true;
-            }
-          }
-        }
+      if (!result) {
+        return res.json([]);
+      }
 
-        if (isWeekend) {
-          for (const cat of rCats) {
-            if (["brunch", "cafe", "fine dining", "premium", "bbq"].some(w => cat.includes(w))) {
-              score += 5;
-            }
-          }
-        }
+      const formatResult = (item: any, index: number) => {
+        const r = allRestaurants.find(rest => rest.id === item.restaurantId) || null;
+        const rCats = r ? r.category.toLowerCase().split(/[,·•]/).map((c: string) => c.trim()) : [];
 
-        if (craving) {
-          const cravingKey = craving.toLowerCase();
-          const cravingCats = CRAVING_MAP[cravingKey] || [];
-          if (cravingKey === "surprise") {
-            score += Math.random() * 20;
-            reasons.push("Something different");
-          } else if (cravingKey === "familiar" && hasAffinityMatch) {
-            score += 15;
-            reasons.push("Familiar favorite");
-          } else {
-            for (const cat of rCats) {
-              for (const cc of cravingCats) {
-                if (cat.includes(cc) || cc.includes(cat)) {
-                  score += 12;
-                  break;
-                }
-              }
-            }
-          }
-        }
-
-        if (prefSet.has("cheaper") && r.priceLevel <= 1) score += 10;
-        if (prefSet.has("more popular") && (r.trendingScore || 0) > 50) score += 8;
-        if (prefSet.has("new for me")) {
-          if (r.isNew) score += 12;
-          if (!viewedIds.has(r.id) && !swipeRightIds.has(r.id) && !savedIds.has(r.id)) score += 8;
-        }
-        if (prefSet.has("healthier")) {
-          for (const cat of rCats) {
-            if (["healthy", "salad", "vegan", "smoothie"].some(h => cat.includes(h))) {
-              score += 10;
-            }
-          }
-        }
-        if (prefSet.has("more indulgent")) {
-          for (const cat of rCats) {
-            if (["bbq", "burger", "pizza", "dessert", "fine dining"].some(h => cat.includes(h))) {
-              score += 10;
-            }
-          }
-        }
-
-        if (distancePref === "close") {
-          if (r.priceLevel <= 2) score += 5;
-        } else if (distancePref === "medium") {
-          score += 2;
-        }
-
-        if (pricePref && pricePref !== "any") {
-          const priceNum = pricePref === "$" ? 1 : pricePref === "$$" ? 2 : 3;
-          if (r.priceLevel <= priceNum) score += 8;
-          else score -= 10;
-        }
-
-        const rating = parseFloat(r.rating) || 4.0;
-        score += (rating - 4.0) * 10;
-        if (r.trendingScore) score += r.trendingScore * 0.1;
-        if (r.isNew) { score += 3; reasons.push("New near you"); }
-
-        if (hasTimeBoost) {
-          const timeLabels: Record<string, string> = {
-            morning: "Great for morning", lunch: "Perfect for lunch",
-            afternoon: "Afternoon pick", dinner: "Great for dinner", latenight: "Late night pick",
-          };
-          reasons.push(timeLabels[timeSlot] || "Good timing");
-        }
-        if (hasAffinityMatch && reasons.length < 3) reasons.push("Matches your taste");
-        if ((r.trendingScore || 0) > 60 && reasons.length < 3) reasons.push("Trending nearby");
-        if (rating >= 4.7 && reasons.length < 3) reasons.push("Highly rated");
-        if (r.priceLevel <= 1 && reasons.length < 3) reasons.push("Good value");
-
-        score = Math.max(0, Math.min(99, Math.round(score)));
-
-        const confidenceText = score >= 85 ? "Strong match based on your preferences and timing" :
-          score >= 70 ? "Good match for this moment" :
-          score >= 55 ? "Worth trying based on what's popular now" :
-          "Something new to explore";
-
-        const insightParts: string[] = [];
-        if (hasTimeBoost) insightParts.push(`fits your ${timeSlot} routine`);
-        if (hasAffinityMatch) insightParts.push("aligns with your taste profile");
-        if (rating >= 4.7) insightParts.push(`rated ${r.rating} by diners`);
-        if ((r.trendingScore || 0) > 80) insightParts.push("trending this week");
-        if (r.isNew) insightParts.push("recently opened");
-        if (swipeRightIds.has(r.id)) insightParts.push("you liked this before");
-        if (savedIds.has(r.id)) insightParts.push("in your saved list");
-        if (r.priceLevel <= 1) insightParts.push("easy on the wallet");
-
-        const tasteScore = Math.min(100, Math.max(0, Math.round(50 + Object.entries(categoryAffinities).reduce((sum, [cat, s]) => {
-          return sum + (rCats.some(rc => rc.includes(cat) || cat.includes(rc)) ? s * 2 : 0);
-        }, 0))));
-
-        const nameHash = r.name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 25;
-        const daypartScore = hasTimeBoost ? Math.min(100, 70 + nameHash) : Math.round(30 + nameHash);
+        const nameHash = (item.name || "").split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) % 25;
+        const daypartScore = rCats.some(c =>
+          (timeSlot === "lunch" && ["thai", "japanese", "noodles"].some(t => c.includes(t))) ||
+          (timeSlot === "dinner" && ["bbq", "fine dining", "sushi"].some(t => c.includes(t)))
+        ) ? Math.min(100, 70 + nameHash) : Math.round(30 + nameHash);
 
         return {
-          id: r.id,
-          name: r.name,
-          category: r.category,
-          rating: r.rating,
-          imageUrl: r.imageUrl,
-          address: r.address,
-          priceLevel: r.priceLevel,
-          district: r.district || null,
-          match: score,
-          reasonChips: reasons.slice(0, 3),
-          confidenceText,
-          insight: insightParts.length > 0 ? insightParts.slice(0, 3).join(" · ") : null,
+          id: item.restaurantId,
+          name: item.name,
+          category: item.category || r?.category,
+          rating: item.rating || r?.rating,
+          imageUrl: item.imageUrl || r?.imageUrl,
+          address: item.address || r?.address,
+          priceLevel: item.priceLevel ?? r?.priceLevel,
+          district: item.district || r?.district || null,
+          match: item.match,
+          reasonChips: item.reasonChips || [],
+          confidenceText: index === 0 ? (result.primary.confidenceLabel || "Good match") : undefined,
+          insight: item.reasonChips?.join(" \u00B7 ") || null,
           scores: {
-            taste: Math.min(99, tasteScore),
+            taste: Math.min(99, Math.round(item.match * 1.1)),
             daypart: daypartScore,
-            popularity: Math.min(99, Math.round((r.trendingScore || 50) * 0.99)),
-            value: Math.min(99, Math.round(100 - (r.priceLevel - 1) * 20 + (parseFloat(r.rating) || 4) * 3)),
+            popularity: Math.min(99, Math.round((r?.trendingScore || 50) * 0.99)),
+            value: Math.min(99, Math.round(100 - ((r?.priceLevel || 2) - 1) * 20 + (parseFloat(r?.rating || "4") || 4) * 3)),
           },
-          description: r.description || null,
-          vibes: r.vibes || [],
+          description: r?.description || null,
+          vibes: r?.vibes || [],
         };
-      });
+      };
 
-      scored.sort((a, b) => b.match - a.match);
+      const results = [
+        formatResult(result.primary, 0),
+        ...result.alternatives.map((alt, i) => formatResult(alt, i + 1)),
+      ];
 
-      res.json(scored.slice(0, 5));
+      res.json(results.slice(0, 5));
     } catch (err) {
       console.error("Personalized suggestions error:", err);
       res.status(500).json({ message: "Internal server error" });
@@ -1010,6 +877,7 @@ export async function registerRoutes(
         hour >= 11 && hour < 14 ? "lunch" :
         hour >= 14 && hour < 17 ? "afternoon" :
         hour >= 17 && hour < 21 ? "dinner" : "latenight";
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
       let lineProfile: VerifiedLineProfile | null = null;
       let userProfile: any = null;
@@ -1032,141 +900,108 @@ export async function registerRoutes(
       }
 
       const userId = lineProfile?.userId || "anonymous";
-      let tasteDnaSummary = null;
-      if (userId !== "anonymous") {
-        const dna = await storage.getTasteDna(userId);
-        if (dna) {
-          tasteDnaSummary = {
-            comfort: dna.comfortScore || 50,
-            exploration: dna.explorationScore || 50,
-            healthy: dna.healthyScore || 50,
-            indulgent: dna.indulgentScore || 50,
-            spicy: dna.spiceScore || 50,
-            distance: dna.distanceScore || 50,
-            budget: dna.budgetScore || 50,
-            novelty: dna.noveltyScore || 50,
-          };
-        }
-      }
 
       const allRestaurants = await getCached("restaurants:all", 30000, () => storage.getRestaurants());
 
+      let tasteDnaData = null;
+      let contextPatterns = null;
+      let mealMemory = null;
       let userEvents: any[] = [];
+      let behaviorEvents: any[] = [];
+
       if (userId !== "anonymous") {
-        userEvents = await storage.getUserEvents(userId, 100);
+        [tasteDnaData, contextPatterns, mealMemory, userEvents, behaviorEvents] = await Promise.all([
+          storage.getTasteDna(userId),
+          storage.getContextPatterns(userId),
+          storage.getRecentMealMemory(userId),
+          storage.getUserEvents(userId, 200),
+          storage.getUserBehaviorEvents(userId, 200),
+        ]);
       }
 
-      const swipeRightIds = new Set<number>();
-      const swipeLeftIds = new Set<number>();
-      const savedIds = new Set<number>();
-      const categoryAffinities: Record<string, number> = {};
-
-      for (const evt of userEvents) {
-        if (evt.eventType === "swipe_right" && evt.restaurantId) swipeRightIds.add(evt.restaurantId);
-        if (evt.eventType === "swipe_left" && evt.restaurantId) swipeLeftIds.add(evt.restaurantId);
-        if (evt.eventType === "save" && evt.restaurantId) savedIds.add(evt.restaurantId);
-        if (evt.metadata) {
-          try {
-            const meta = JSON.parse(evt.metadata);
-            if (meta.category) {
-              const cats = meta.category.split(/[,\u00B7\u2022]/).map((c: string) => c.trim().toLowerCase());
-              for (const cat of cats) {
-                if (!cat) continue;
-                const weight = evt.eventType === "swipe_right" ? 2 : evt.eventType === "save" ? 3 : evt.eventType === "swipe_left" ? -1 : 0.5;
-                categoryAffinities[cat] = (categoryAffinities[cat] || 0) + weight;
-              }
-            }
-          } catch {}
-        }
-      }
-
-      const recentDecisions = userId !== "anonymous"
-        ? await storage.getRecentDecisionSessions(userId, 10)
-        : [];
-      const recentRecIds = new Set<number>();
-      for (const ds of recentDecisions) {
-        if (ds.recommendationIdsJson) {
-          try { JSON.parse(ds.recommendationIdsJson).forEach((id: number) => recentRecIds.add(id)); } catch {}
-        }
-      }
-
-      const TIME_BOOSTS: Record<string, string[]> = {
-        morning: ["cafe", "brunch", "coffee", "bakery", "breakfast"],
-        lunch: ["thai", "japanese", "noodles", "street food", "quick"],
-        afternoon: ["cafe", "dessert", "tea", "boba", "snack"],
-        dinner: ["bbq", "fine dining", "sushi", "italian", "korean", "seafood"],
-        latenight: ["street food", "ramen", "noodles", "thai", "bar"],
+      const tasteDnaSummary = tasteDnaData ? {
+        comfort: tasteDnaData.comfortScore || 50,
+        exploration: tasteDnaData.explorationScore || 50,
+        healthy: tasteDnaData.healthyScore || 50,
+        indulgent: tasteDnaData.indulgentScore || 50,
+        spicy: tasteDnaData.spiceScore || 50,
+        distance: tasteDnaData.distanceScore || 50,
+        budget: tasteDnaData.budgetScore || 50,
+        novelty: tasteDnaData.noveltyScore || 50,
+      } : {
+        comfort: 50, exploration: 50, healthy: 50, indulgent: 50,
+        spicy: 50, distance: 50, budget: 50, novelty: 50,
       };
 
-      const timeBoostCats = TIME_BOOSTS[daypart] || [];
+      const { buildUserHistory, generateRecommendation } = await import("./recommendation/index");
 
-      const scored = allRestaurants.map(r => {
-        let score = 50;
-        const rCats = r.category.toLowerCase().split(/[,\u00B7\u2022]/).map((c: string) => c.trim());
-        const reasons: string[] = [];
+      const userHistory = buildUserHistory(userEvents, behaviorEvents);
 
-        for (const cat of rCats) {
-          if (categoryAffinities[cat]) score += categoryAffinities[cat] * 3;
+      const result = generateRecommendation(
+        allRestaurants,
+        {
+          userId,
+          daypart,
+          isWeekend,
+          areaLabel: undefined,
+          mood: undefined,
+          weatherLabel: undefined,
+        },
+        tasteDnaData,
+        contextPatterns,
+        mealMemory,
+        userHistory,
+        userEvents.length
+      );
+
+      let dailyPick: any = null;
+      let alternatives: any[] = [];
+
+      if (result) {
+        dailyPick = result.primary;
+        alternatives = result.alternatives;
+      } else {
+        const fallback = allRestaurants.slice(0, 3);
+        if (fallback.length > 0) {
+          dailyPick = {
+            restaurantId: fallback[0].id,
+            name: fallback[0].name,
+            imageUrl: fallback[0].imageUrl,
+            category: fallback[0].category,
+            address: fallback[0].address,
+            district: fallback[0].district,
+            rating: fallback[0].rating,
+            priceLevel: fallback[0].priceLevel,
+            confidenceLabel: "Worth trying",
+            reasonChips: ["Popular nearby"],
+            match: 60,
+            distanceText: null,
+          };
+          alternatives = fallback.slice(1).map(r => ({
+            restaurantId: r.id,
+            name: r.name,
+            imageUrl: r.imageUrl,
+            category: r.category,
+            address: r.address,
+            district: r.district,
+            rating: r.rating,
+            priceLevel: r.priceLevel,
+            match: 55,
+            reasonChips: [],
+          }));
         }
-
-        if (swipeRightIds.has(r.id)) { score += 15; reasons.push("You liked this before"); }
-        if (savedIds.has(r.id)) { score += 20; reasons.push("In your saved list"); }
-        if (swipeLeftIds.has(r.id)) score -= 25;
-        if (recentRecIds.has(r.id)) score -= 15;
-
-        let hasTimeBoost = false;
-        for (const cat of rCats) {
-          for (const tb of timeBoostCats) {
-            if (cat.includes(tb) || tb.includes(cat)) { score += 8; hasTimeBoost = true; }
-          }
-        }
-
-        const rating = parseFloat(r.rating) || 4.0;
-        score += (rating - 4.0) * 10;
-        if (r.trendingScore) score += r.trendingScore * 0.1;
-
-        if (hasTimeBoost) reasons.push(`Great for ${daypart}`);
-        if ((r.trendingScore || 0) > 80) reasons.push("Trending nearby");
-        if (rating >= 4.7) reasons.push("Highly rated");
-        if (r.priceLevel <= 1) reasons.push("Good value");
-
-        score = Math.max(0, Math.min(99, Math.round(score)));
-
-        const confidenceLabel = score >= 85 ? "Strong fit for right now" :
-          score >= 70 ? "Good match for this moment" :
-          score >= 55 ? "Worth trying based on what's popular" :
-          "Something new to explore";
-
-        return {
-          restaurantId: r.id,
-          name: r.name,
-          imageUrl: r.imageUrl,
-          distanceText: null,
-          confidenceLabel,
-          reasonChips: reasons.slice(0, 3),
-          match: score,
-          rating: r.rating,
-          priceLevel: r.priceLevel,
-          category: r.category,
-          address: r.address,
-          district: r.district,
-        };
-      });
-
-      scored.sort((a, b) => b.match - a.match);
-
-      const dailyPick = scored[0] || null;
-      const alternatives = scored.slice(1, 3);
+      }
 
       let sessionId: number | null = null;
       if (userId !== "anonymous" && dailyPick) {
         try {
-          const recIds = [dailyPick.restaurantId, ...alternatives.map(a => a.restaurantId)];
+          const recIds = [dailyPick.restaurantId, ...alternatives.map((a: any) => a.restaurantId)];
           const session = await storage.createDecisionSession({
             userId,
             daypart,
             createdAt: now.toISOString(),
             recommendationIdsJson: JSON.stringify(recIds),
+            resultConfidence: result?.confidence?.score || null,
           });
           sessionId = session.id;
         } catch {}
@@ -1186,10 +1021,7 @@ export async function registerRoutes(
           locationUsed: !!(lat && lng),
           sessionId,
         },
-        tasteDnaSummary: tasteDnaSummary || {
-          comfort: 50, exploration: 50, healthy: 50, indulgent: 50,
-          spicy: 50, distance: 50, budget: 50, novelty: 50,
-        },
+        tasteDnaSummary,
         dailyPick,
         alternatives,
       });
@@ -1203,73 +1035,113 @@ export async function registerRoutes(
     "hero_impression", "primary_cta_clicked", "alternative_requested",
     "refine_opened", "refine_applied", "recommendation_accepted",
     "recommendation_rejected", "detail_viewed", "saved", "session_abandoned",
+    "swipe_right", "swipe_left", "restaurant_detail_opened",
   ];
 
   async function processDecisionEvent(evt: { userId?: string; eventType: string; restaurantId?: number | null; metadata?: any; sessionId?: string | number }) {
     const userId = evt.userId || "anonymous";
     const { eventType, restaurantId, metadata, sessionId } = evt;
+    const now = new Date();
+    const meta = typeof metadata === "object" ? metadata : (metadata ? (() => { try { return JSON.parse(metadata); } catch { return {}; } })() : {});
 
     await storage.logEvent({
       eventType,
       userId,
       restaurantId: restaurantId || null,
       metadata: metadata ? JSON.stringify(metadata) : null,
-      timestamp: new Date().toISOString(),
+      timestamp: now.toISOString(),
     });
+
+    const hour = now.getHours();
+    const daypart = hour >= 6 && hour < 11 ? "morning" :
+      hour >= 11 && hour < 14 ? "lunch" :
+      hour >= 14 && hour < 17 ? "afternoon" :
+      hour >= 17 && hour < 21 ? "dinner" : "latenight";
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+
+    try {
+      await storage.logBehaviorEvent({
+        userId,
+        sessionId: sessionId?.toString() || null,
+        eventType,
+        restaurantId: restaurantId || null,
+        cuisineTag: meta.category?.toLowerCase() || null,
+        cravingTag: meta.craving || null,
+        timeOfDay: daypart,
+        dayOfWeek: ["sun", "mon", "tue", "wed", "thu", "fri", "sat"][now.getDay()],
+        areaLabel: meta.area || null,
+        weatherLabel: meta.weather || null,
+        groupSize: meta.groupSize || null,
+        eventWeight: (await import("./recommendation/eventWeighting")).getEventWeight(eventType),
+        createdAt: now.toISOString(),
+      });
+    } catch {}
 
     if (eventType === "recommendation_accepted" && sessionId && restaurantId) {
       try {
-        const meta = typeof metadata === "object" ? metadata : {};
         await storage.updateDecisionSession(Number(sessionId), {
           chosenRestaurantId: restaurantId,
           timeToDecisionMs: meta?.timeToDecisionMs || null,
+          successFlag: true,
+          endedAt: now.toISOString(),
         });
       } catch {}
     }
 
     if (userId && userId !== "anonymous") {
-      const posEvents = ["recommendation_accepted", "primary_cta_clicked", "saved", "detail_viewed"];
-      const negEvents = ["recommendation_rejected", "alternative_requested", "session_abandoned"];
+      const triggerEvents = [
+        "recommendation_accepted", "primary_cta_clicked", "saved", "detail_viewed",
+        "recommendation_rejected", "alternative_requested", "session_abandoned",
+        "swipe_right", "swipe_left", "restaurant_detail_opened",
+      ];
 
-      if (posEvents.includes(eventType) || negEvents.includes(eventType)) {
-        const isPositive = posEvents.includes(eventType);
-        const dna = await storage.getTasteDna(userId);
-        if (dna && metadata) {
-          const meta = typeof metadata === "string" ? JSON.parse(metadata) : metadata;
-          const category = (meta.category || "").toLowerCase();
+      if (triggerEvents.includes(eventType)) {
+        try {
+          const { computeTasteDnaUpdates, computeContextPatternUpdate, computeRecentMealUpdate } = await import("./recommendation/tasteDnaWorker");
 
-          const delta = isPositive ? 2 : -1;
-          const updates: Record<string, number> = {};
-
-          if (category.includes("comfort") || category.includes("curry") || category.includes("ramen") || category.includes("noodles")) {
-            updates.comfortScore = Math.max(0, Math.min(100, (dna.comfortScore || 50) + delta));
-          }
-          if (category.includes("healthy") || category.includes("salad") || category.includes("vegan")) {
-            updates.healthyScore = Math.max(0, Math.min(100, (dna.healthyScore || 50) + delta));
-          }
-          if (category.includes("spicy") || category.includes("isaan")) {
-            updates.spiceScore = Math.max(0, Math.min(100, (dna.spiceScore || 50) + delta));
-          }
-          if (category.includes("fine dining") || category.includes("premium") || category.includes("dessert")) {
-            updates.indulgentScore = Math.max(0, Math.min(100, (dna.indulgentScore || 50) + delta));
-          }
-          if (category.includes("new") || meta.isNew) {
-            updates.noveltyScore = Math.max(0, Math.min(100, (dna.noveltyScore || 50) + delta));
-            updates.explorationScore = Math.max(0, Math.min(100, (dna.explorationScore || 50) + delta));
+          let dna = await storage.getTasteDna(userId);
+          if (!dna) {
+            dna = await storage.upsertTasteDna({ userId, updatedAt: now.toISOString() });
           }
 
-          if (Object.keys(updates).length > 0) {
+          let restaurant = null;
+          if (restaurantId) {
+            restaurant = await storage.getRestaurantById(restaurantId);
+          }
+
+          const dnaUpdates = computeTasteDnaUpdates(dna, eventType, restaurant, meta);
+          if (Object.keys(dnaUpdates).length > 0) {
             await storage.upsertTasteDna({
               userId,
-              ...updates,
-              updatedAt: new Date().toISOString(),
+              ...dnaUpdates,
+              updatedAt: now.toISOString(),
             } as any);
           }
-        } else if (!dna) {
-          await storage.upsertTasteDna({
-            userId,
-            updatedAt: new Date().toISOString(),
-          });
+
+          if (restaurant && ["recommendation_accepted", "saved", "swipe_right"].includes(eventType)) {
+            const contextPatterns = await storage.getContextPatterns(userId);
+            const ctxUpdate = computeContextPatternUpdate(contextPatterns, daypart, isWeekend, restaurant);
+            await storage.upsertContextPatterns(userId, ctxUpdate);
+
+            const mealMemory = await storage.getRecentMealMemory(userId);
+            const mealUpdate = computeRecentMealUpdate(mealMemory, restaurant);
+            await storage.upsertRecentMealMemory(userId, mealUpdate);
+          }
+
+          if (meta.mood && restaurant && eventType === "recommendation_accepted") {
+            try {
+              const rCats = restaurant.category.toLowerCase().split(/[,·•]/).map((c: string) => c.trim());
+              await storage.createMoodChoiceLink({
+                userId,
+                moodTag: meta.mood,
+                chosenCuisine: rCats[0] || null,
+                chosenDishType: meta.dishType || null,
+                createdAt: now.toISOString(),
+              });
+            } catch {}
+          }
+        } catch (err) {
+          console.error("Taste DNA update error:", err);
         }
       }
     }
@@ -1328,12 +1200,14 @@ export async function registerRoutes(
       if (!userId) return res.status(400).json({ message: "userId required" });
 
       const dna = await storage.getTasteDna(userId);
-      if (!dna) {
-        return res.json({
-          comfort: 50, exploration: 50, healthy: 50, indulgent: 50,
-          spicy: 50, distance: 50, budget: 50, novelty: 50,
-        });
-      }
+      const defaults = {
+        comfort: 50, exploration: 50, healthy: 50, indulgent: 50,
+        spicy: 50, distance: 50, budget: 50, novelty: 50, speed: 50,
+        cuisineAffinities: {},
+        cuisineDislikes: {},
+      };
+
+      if (!dna) return res.json(defaults);
 
       res.json({
         comfort: dna.comfortScore || 50,
@@ -1344,6 +1218,9 @@ export async function registerRoutes(
         distance: dna.distanceScore || 50,
         budget: dna.budgetScore || 50,
         novelty: dna.noveltyScore || 50,
+        speed: dna.speedPreferenceScore || 50,
+        cuisineAffinities: dna.cuisineAffinityJson || {},
+        cuisineDislikes: dna.cuisineDislikeJson || {},
       });
     } catch (err) {
       console.error("Taste DNA error:", err);

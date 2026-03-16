@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -224,6 +224,9 @@ export const tasteDna = pgTable("taste_dna", {
   distanceScore: integer("distance_score").default(50),
   budgetScore: integer("budget_score").default(50),
   noveltyScore: integer("novelty_score").default(50),
+  speedPreferenceScore: integer("speed_preference_score").default(50),
+  cuisineAffinityJson: jsonb("cuisine_affinity_json").default({}),
+  cuisineDislikeJson: jsonb("cuisine_dislike_json").default({}),
   contextPatternsJson: text("context_patterns_json"),
   updatedAt: text("updated_at").notNull(),
 });
@@ -231,6 +234,71 @@ export const tasteDna = pgTable("taste_dna", {
 export const insertTasteDnaSchema = createInsertSchema(tasteDna).omit({ id: true });
 export type TasteDna = typeof tasteDna.$inferSelect;
 export type InsertTasteDna = z.infer<typeof insertTasteDnaSchema>;
+
+export const tasteContextPatterns = pgTable("taste_context_patterns", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  weekdayLunchJson: jsonb("weekday_lunch_json").default({}),
+  weekdayDinnerJson: jsonb("weekday_dinner_json").default({}),
+  weekendLunchJson: jsonb("weekend_lunch_json").default({}),
+  weekendDinnerJson: jsonb("weekend_dinner_json").default({}),
+  rainyDayJson: jsonb("rainy_day_json").default({}),
+  officeAreaJson: jsonb("office_area_json").default({}),
+  homeAreaJson: jsonb("home_area_json").default({}),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const insertTasteContextPatternsSchema = createInsertSchema(tasteContextPatterns).omit({ id: true });
+export type TasteContextPattern = typeof tasteContextPatterns.$inferSelect;
+export type InsertTasteContextPattern = z.infer<typeof insertTasteContextPatternsSchema>;
+
+export const recentMealMemory = pgTable("recent_meal_memory", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  recentCuisinesJson: jsonb("recent_cuisines_json").default([]),
+  recentRestaurantsJson: jsonb("recent_restaurants_json").default([]),
+  recentDishTagsJson: jsonb("recent_dish_tags_json").default([]),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const insertRecentMealMemorySchema = createInsertSchema(recentMealMemory).omit({ id: true });
+export type RecentMealMemory = typeof recentMealMemory.$inferSelect;
+export type InsertRecentMealMemory = z.infer<typeof insertRecentMealMemorySchema>;
+
+export const userBehaviorEvents = pgTable("user_behavior_events", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  sessionId: text("session_id"),
+  eventType: text("event_type").notNull(),
+  restaurantId: integer("restaurant_id"),
+  cuisineTag: text("cuisine_tag"),
+  cravingTag: text("craving_tag"),
+  timeOfDay: text("time_of_day"),
+  dayOfWeek: text("day_of_week"),
+  areaLabel: text("area_label"),
+  weatherLabel: text("weather_label"),
+  groupSize: integer("group_size"),
+  eventWeight: real("event_weight").default(1.0),
+  metadataJson: jsonb("metadata_json").default({}),
+  createdAt: text("created_at").notNull(),
+});
+
+export const insertUserBehaviorEventSchema = createInsertSchema(userBehaviorEvents).omit({ id: true });
+export type UserBehaviorEvent = typeof userBehaviorEvents.$inferSelect;
+export type InsertUserBehaviorEvent = z.infer<typeof insertUserBehaviorEventSchema>;
+
+export const moodChoiceLinks = pgTable("mood_choice_links", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  moodTag: text("mood_tag").notNull(),
+  chosenCuisine: text("chosen_cuisine"),
+  chosenDishType: text("chosen_dish_type"),
+  createdAt: text("created_at").notNull(),
+});
+
+export const insertMoodChoiceLinkSchema = createInsertSchema(moodChoiceLinks).omit({ id: true });
+export type MoodChoiceLink = typeof moodChoiceLinks.$inferSelect;
+export type InsertMoodChoiceLink = z.infer<typeof insertMoodChoiceLinkSchema>;
 
 export const decisionSessions = pgTable("decision_sessions", {
   id: serial("id").primaryKey(),
@@ -241,7 +309,10 @@ export const decisionSessions = pgTable("decision_sessions", {
   recommendationIdsJson: text("recommendation_ids_json"),
   chosenRestaurantId: integer("chosen_restaurant_id"),
   timeToDecisionMs: integer("time_to_decision_ms"),
+  resultConfidence: real("result_confidence"),
+  successFlag: boolean("success_flag"),
   createdAt: text("created_at").notNull(),
+  endedAt: text("ended_at"),
 });
 
 export const insertDecisionSessionSchema = createInsertSchema(decisionSessions).omit({ id: true });
