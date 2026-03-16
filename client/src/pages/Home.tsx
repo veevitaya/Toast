@@ -698,15 +698,13 @@ export default function Home() {
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleModeClickAnimated("/group/setup", e.currentTarget); }}
-                      className="flex items-center justify-center rounded-2xl bg-white h-[72px] border border-gray-100 shadow-md overflow-hidden"
+                      className="flex items-center rounded-2xl bg-white h-[72px] border border-gray-100 shadow-md overflow-hidden"
                       data-testid="button-group-collapsed"
                     >
-                      <div className="flex items-center gap-1 pl-1 pr-3">
-                        <img src={toastWafflePath} alt="" className="w-[80px] h-[64px] object-contain flex-shrink-0 -my-2 -ml-2" style={{ mixBlendMode: "multiply" }} />
-                        <div>
-                          <p className="text-[14px] font-bold text-foreground leading-tight">Group</p>
-                          <p className="text-[10px] text-muted-foreground whitespace-nowrap">With friends</p>
-                        </div>
+                      <img src={toastWafflePath} alt="" className="w-[62px] h-[56px] object-contain flex-shrink-0 ml-1" style={{ mixBlendMode: "multiply" }} />
+                      <div className="min-w-0 pr-3">
+                        <p className="text-[14px] font-bold text-foreground leading-tight">Group</p>
+                        <p className="text-[10px] text-muted-foreground whitespace-nowrap">With friends</p>
                       </div>
                     </button>
                   </div>
@@ -782,9 +780,9 @@ export default function Home() {
                 className="flex items-center justify-center rounded-[20px] bg-white h-[100px] border border-gray-100 shadow-md overflow-hidden transition-transform duration-150 ease-out active:scale-[0.97] animate-page-in"
                 style={{ animationDelay: "40ms" }}
               >
-                <div className="flex items-center gap-1 pl-2 pr-4">
-                  <img src={toastWafflePath} alt="" className="w-[110px] h-[88px] object-contain flex-shrink-0 -my-3 -ml-3" style={{ mixBlendMode: "multiply" }} />
-                  <div>
+                <div className="flex items-center gap-2 pl-2 pr-5">
+                  <img src={toastWafflePath} alt="" className="w-[90px] h-[76px] object-contain flex-shrink-0 -my-2 -ml-2" style={{ mixBlendMode: "multiply" }} />
+                  <div className="min-w-0">
                     <p className="text-[20px] font-bold text-foreground leading-tight">Group</p>
                     <p className="text-[12px] text-muted-foreground mt-0.5 whitespace-nowrap">With friends</p>
                   </div>
