@@ -866,10 +866,7 @@ export default function Home() {
                 category="New"
               />
 
-              <div className="px-6 pt-5 pb-2">
-              </div>
-
-              <div className="h-8" />
+              <div className="h-4" />
             </>
           )}
         </div>
