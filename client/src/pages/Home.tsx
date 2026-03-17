@@ -739,6 +739,9 @@ export default function Home() {
                       {getMoodSignal.emoji} {topPreference.label} fan
                     </span>
                   )}
+                  <span className="inline-flex items-center gap-1.5 bg-white rounded-full px-3 py-1.5 text-xs font-medium text-foreground border border-gray-100" data-testid="badge-streak">
+                    12-wk streak
+                  </span>
                 </div>
               </div>
               <img
