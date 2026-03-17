@@ -675,7 +675,7 @@ export default function GroupSwipe() {
       setGroupAggregateStats({ totalSwipes: swipes.length, totalLikes: gLikes, totalDislikes: gDislikes, totalSuperLikes: gSuper });
 
       try {
-        await fetchWithTimeout(`/api/group/sessions/${sessionCode}/finalize-stats`, { method: "POST" });
+        await fetchWithTimeout(`/api/group/sessions/${sessionCode}/finalize-stats`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lineUserId: profile?.userId }) });
         const statsRes = await fetchWithTimeout(`/api/group/combo-stats/${sessionCode}`);
         if (statsRes.ok) {
           setComboStats(await statsRes.json());

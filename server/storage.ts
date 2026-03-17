@@ -89,6 +89,7 @@ export interface IStorage {
 
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
   getCampaigns(): Promise<Campaign[]>;
+  getCampaignById(id: number): Promise<Campaign | undefined>;
   getCampaignsByOwner(ownerKey: string): Promise<Campaign[]>;
   updateCampaign(id: number, updates: Partial<InsertCampaign>): Promise<Campaign | undefined>;
   deleteCampaign(id: number): Promise<void>;
@@ -307,6 +308,11 @@ export class DatabaseStorage implements IStorage {
 
   async getCampaigns(): Promise<Campaign[]> {
     return await db.select().from(campaigns).orderBy(desc(campaigns.id));
+  }
+
+  async getCampaignById(id: number): Promise<Campaign | undefined> {
+    const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, id));
+    return campaign;
   }
 
   async getCampaignsByOwner(ownerKey: string): Promise<Campaign[]> {

@@ -1558,9 +1558,14 @@ export async function registerRoutes(
 
   app.get("/api/profile/:lineUserId", async (req, res) => {
     try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`profile-read:${ip}`, 30, 10000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
       const profile = await storage.getProfile(req.params.lineUserId);
       if (!profile) return res.status(404).json({ message: "Profile not found" });
-      res.json(profile);
+      const { partnerLineUserId, ...safeProfile } = profile as any;
+      res.json(safeProfile);
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -1617,8 +1622,42 @@ export async function registerRoutes(
     }
   });
 
+  const adminAuth = async (req: any, res: any, next: any) => {
+    const authHeader = req.headers["x-admin-token"];
+    if (!authHeader) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+      const decoded = Buffer.from(authHeader, "base64").toString();
+      const [username] = decoded.split(":");
+      const admin = await storage.getAdminUser(username);
+      if (!admin || admin.isActive === false) return res.status(401).json({ message: "Unauthorized" });
+      req.adminUser = admin;
+      next();
+    } catch {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+  };
+
+  const ownerAuth = async (req: any, res: any, next: any) => {
+    const authHeader = req.headers["x-owner-token"];
+    if (!authHeader) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+      const decoded = Buffer.from(authHeader, "base64").toString();
+      const [email] = decoded.split(":");
+      const owner = await storage.getRestaurantOwnerByEmail(email);
+      if (!owner) return res.status(401).json({ message: "Unauthorized" });
+      req.ownerUser = owner;
+      next();
+    } catch {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+  };
+
   // Campaign routes
-  app.post("/api/campaigns", async (req, res) => {
+  app.post("/api/campaigns", ownerAuth, async (req: any, res) => {
     try {
       const schema = z.object({
         restaurantOwnerKey: z.string().min(1),
@@ -1637,6 +1676,7 @@ export async function registerRoutes(
       const input = schema.parse(req.body);
       const campaign = await storage.createCampaign({
         ...input,
+        restaurantOwnerKey: String(req.ownerUser.id),
         createdAt: new Date().toISOString(),
       });
       res.status(201).json(campaign);
@@ -1646,7 +1686,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/campaigns", async (_req, res) => {
+  app.get("/api/campaigns", adminAuth, async (_req, res) => {
     try {
       const all = await storage.getCampaigns();
       res.json(all);
@@ -1655,8 +1695,11 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/campaigns/owner/:ownerKey", async (req, res) => {
+  app.get("/api/campaigns/owner/:ownerKey", ownerAuth, async (req: any, res) => {
     try {
+      if (String(req.ownerUser?.id) !== req.params.ownerKey) {
+        return res.status(403).json({ message: "Not authorized to view these campaigns" });
+      }
       const list = await storage.getCampaignsByOwner(req.params.ownerKey);
       res.json(list);
     } catch (err) {
@@ -1664,11 +1707,25 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/campaigns/:id", async (req, res) => {
+  app.patch("/api/campaigns/:id", ownerAuth, async (req: any, res) => {
     try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`campaign-update:${ip}`, 10, 60000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      const updated = await storage.updateCampaign(id, req.body);
+      const campaign = await storage.getCampaignById(id);
+      if (!campaign) return res.status(404).json({ message: "Not found" });
+      if (campaign.restaurantOwnerKey !== String(req.ownerUser?.id)) {
+        return res.status(403).json({ message: "Not authorized to edit this campaign" });
+      }
+      const allowedFields: Record<string, any> = {};
+      const campaignSafeKeys = ["title", "dealType", "dealValue", "description", "status", "startDate", "endDate", "conditions", "minSpend", "maxRedemptions", "targetGroups"];
+      for (const key of campaignSafeKeys) {
+        if (req.body[key] !== undefined) allowedFields[key] = req.body[key];
+      }
+      const updated = await storage.updateCampaign(id, allowedFields);
       if (!updated) return res.status(404).json({ message: "Not found" });
       res.json(updated);
     } catch (err) {
@@ -1676,11 +1733,17 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/campaigns/:id", async (req, res) => {
+  app.delete("/api/campaigns/:id", ownerAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const campaign = await storage.getCampaignById(id);
+      if (!campaign) return res.status(404).json({ message: "Not found" });
+      if (campaign.restaurantOwnerKey !== String(req.ownerUser?.id)) {
+        return res.status(403).json({ message: "Not authorized to delete this campaign" });
+      }
       await storage.deleteCampaign(id);
+      logAudit("campaign_deleted", "owner", String(req.ownerUser?.id), "campaign", String(id), undefined, req.ip);
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
@@ -1809,40 +1872,6 @@ export async function registerRoutes(
     }
   });
 
-  const adminAuth = async (req: any, res: any, next: any) => {
-    const authHeader = req.headers["x-admin-token"];
-    if (!authHeader) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    try {
-      const decoded = Buffer.from(authHeader, "base64").toString();
-      const [username] = decoded.split(":");
-      const admin = await storage.getAdminUser(username);
-      if (!admin || admin.isActive === false) return res.status(401).json({ message: "Unauthorized" });
-      req.adminUser = admin;
-      next();
-    } catch {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-  };
-
-  const ownerAuth = async (req: any, res: any, next: any) => {
-    const authHeader = req.headers["x-owner-token"];
-    if (!authHeader) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    try {
-      const decoded = Buffer.from(authHeader, "base64").toString();
-      const [email] = decoded.split(":");
-      const owner = await storage.getRestaurantOwnerByEmail(email);
-      if (!owner) return res.status(401).json({ message: "Unauthorized" });
-      req.ownerUser = owner;
-      next();
-    } catch {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-  };
-
   // Ad Banner routes
   app.get("/api/banners", async (_req, res) => {
     try {
@@ -1874,11 +1903,16 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/admin/banners/:id", adminAuth, async (req, res) => {
+  app.patch("/api/admin/banners/:id", adminAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      const updated = await storage.updateBanner(id, req.body);
+      const allowedFields: Record<string, any> = {};
+      const safeKeys = ["title", "imageUrl", "linkUrl", "position", "isActive", "startDate", "endDate"];
+      for (const key of safeKeys) {
+        if (req.body[key] !== undefined) allowedFields[key] = req.body[key];
+      }
+      const updated = await storage.updateBanner(id, allowedFields);
       if (!updated) return res.status(404).json({ message: "Not found" });
       invalidateCache("banners");
       res.json(updated);
@@ -2142,6 +2176,10 @@ export async function registerRoutes(
 
   app.post("/api/admin/claims", ownerAuth, async (req: any, res) => {
     try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`claim-submit:${ip}`, 5, 60000)) {
+        return res.status(429).json({ message: "Too many claim submissions, try again later" });
+      }
       const schema = z.object({
         restaurantId: z.number(),
         proofDocuments: z.array(z.string()).optional().default([]),
@@ -2368,13 +2406,19 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/admin/restaurants/:id", adminAuth, async (req, res) => {
+  app.patch("/api/admin/restaurants/:id", adminAuth, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
-      const updated = await storage.updateRestaurant(id, req.body);
+      const allowedFields: Record<string, any> = {};
+      const safeKeys = ["name", "description", "imageUrl", "lat", "lng", "category", "priceLevel", "rating", "address", "isNew", "trendingScore", "vibes", "district", "operatingHours", "googlePlaceId"];
+      for (const key of safeKeys) {
+        if (req.body[key] !== undefined) allowedFields[key] = req.body[key];
+      }
+      const updated = await storage.updateRestaurant(id, allowedFields);
       if (!updated) return res.status(404).json({ message: "Not found" });
       invalidateCache("restaurants");
+      logAudit("restaurant_updated", "admin", String(req.adminUser?.id || "unknown"), "restaurant", String(id), { fields: Object.keys(allowedFields) }, req.ip);
       res.json(updated);
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
@@ -2693,7 +2737,7 @@ export async function registerRoutes(
       const alreadyMember = await storage.isGroupMember(code, userId);
       if (alreadyMember) {
         const members = await storage.getGroupMembers(code);
-        return res.json({ session, members });
+        return res.json({ session, members: sanitizeMembers(members) });
       }
 
       const member = await storage.addGroupMember({
@@ -2709,7 +2753,8 @@ export async function registerRoutes(
       logSessionEvent(code, "USER_JOINED", userId, { displayName });
 
       const members = await storage.getGroupMembers(code);
-      res.status(201).json({ session, members, newMember: member });
+      const { latitude, longitude, ...safeMember } = member as any;
+      res.status(201).json({ session, members: sanitizeMembers(members), newMember: safeMember });
     } catch (err) {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: err.errors[0].message });
@@ -2718,12 +2763,20 @@ export async function registerRoutes(
     }
   });
 
+  function sanitizeMembers(members: any[]) {
+    return members.map(({ latitude, longitude, ...safe }) => safe);
+  }
+
   app.get("/api/group/sessions/:code", async (req, res) => {
     try {
       const { code } = req.params;
       const session = await storage.getGroupSession(code);
       if (!session) {
         return res.status(404).json({ message: "Session not found" });
+      }
+      const sessionAge = Date.now() - new Date(session.createdAt).getTime();
+      if (sessionAge > 24 * 60 * 60 * 1000) {
+        return res.status(410).json({ message: "Session has expired" });
       }
       const members = await storage.getGroupMembers(code);
       const hostMember = members.find(m => m.lineUserId === session.hostLineUserId);
@@ -2732,7 +2785,7 @@ export async function registerRoutes(
         hostDisplayName: hostMember?.displayName || "Host",
         hostPictureUrl: hostMember?.pictureUrl || null,
       };
-      res.json({ session: enrichedSession, members });
+      res.json({ session: enrichedSession, members: sanitizeMembers(members) });
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -2751,6 +2804,20 @@ export async function registerRoutes(
       if (!session) return res.status(404).json({ message: "Session not found" });
       if (session.hostLineUserId !== input.lineUserId) {
         return res.status(403).json({ message: "Only the host can change session status" });
+      }
+      const sessionAge = Date.now() - new Date(session.createdAt).getTime();
+      if (sessionAge > 24 * 60 * 60 * 1000) {
+        return res.status(410).json({ message: "Session has expired" });
+      }
+
+      const validTransitions: Record<string, string[]> = {
+        waiting: ["swiping"],
+        swiping: ["completed"],
+        completed: [],
+      };
+      const currentStatus = session.status || "waiting";
+      if (!validTransitions[currentStatus]?.includes(input.status)) {
+        return res.status(400).json({ message: `Cannot transition from ${currentStatus} to ${input.status}` });
       }
 
       await storage.updateGroupSessionStatus(code, input.status);
@@ -2798,6 +2865,16 @@ export async function registerRoutes(
       const isMember = await storage.isGroupMember(code, input.lineUserId);
       if (!isMember) {
         return res.status(403).json({ message: "Not a member of this session" });
+      }
+
+      const session = await storage.getGroupSession(code);
+      if (!session || session.status !== "swiping") {
+        return res.status(400).json({ message: "Session is not in swiping state" });
+      }
+
+      const sessionAge = Date.now() - new Date(session.createdAt).getTime();
+      if (sessionAge > 24 * 60 * 60 * 1000) {
+        return res.status(410).json({ message: "Session has expired" });
       }
 
       const rlKey = `swipe:${code}:${input.lineUserId}`;
@@ -2862,6 +2939,8 @@ export async function registerRoutes(
   app.get("/api/group/sessions/:code/matches", async (req, res) => {
     try {
       const { code } = req.params;
+      const session = await storage.getGroupSession(code);
+      if (!session) return res.status(404).json({ message: "Session not found" });
       const matches = await storage.getGroupMatches(code);
       const members = await storage.getGroupMembers(code);
       const restaurantMap = matches.length > 0 ? await buildRestaurantMap(code) : new Map();
@@ -2869,7 +2948,7 @@ export async function registerRoutes(
         ...m,
         restaurant: restaurantMap.get(m.menuItemId) || null,
       }));
-      res.json({ matches: enrichedMatches, members });
+      res.json({ matches: enrichedMatches, members: sanitizeMembers(members) });
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -2878,6 +2957,8 @@ export async function registerRoutes(
   app.get("/api/group/sessions/:code/swipes", async (req, res) => {
     try {
       const { code } = req.params;
+      const session = await storage.getGroupSession(code);
+      if (!session) return res.status(404).json({ message: "Session not found" });
       const swipes = await storage.getGroupSwipes(code);
       const members = await storage.getGroupMembers(code);
       const menuItemIds = [...new Set(swipes.map(s => s.menuItemId))];
@@ -2885,7 +2966,7 @@ export async function registerRoutes(
       const restaurants = menuItemIds
         .map(id => restaurantMap.get(id))
         .filter(Boolean);
-      res.json({ swipes, members, restaurants });
+      res.json({ swipes, members: sanitizeMembers(members), restaurants });
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
     }
@@ -2900,6 +2981,10 @@ export async function registerRoutes(
         longitude: z.string().min(1),
       });
       const input = schema.parse(req.body);
+      const isMember = await storage.isGroupMember(code, input.lineUserId);
+      if (!isMember) {
+        return res.status(403).json({ message: "Not a member of this session" });
+      }
       await storage.updateMemberLocation(code, input.lineUserId, input.latitude, input.longitude);
       res.json({ success: true });
     } catch (err) {
@@ -3144,10 +3229,11 @@ export async function registerRoutes(
       if (!session) return res.status(404).json({ message: "Session not found" });
 
       const { lineUserId } = req.body || {};
-      if (lineUserId) {
-        const isMember = await storage.isGroupMember(code, lineUserId);
-        if (!isMember) return res.status(403).json({ message: "Not a member" });
+      if (!lineUserId) {
+        return res.status(400).json({ message: "lineUserId is required" });
       }
+      const isMember = await storage.isGroupMember(code, lineUserId);
+      if (!isMember) return res.status(403).json({ message: "Not a member" });
 
       await finalizeSessionStats(code);
       res.json({ success: true });
