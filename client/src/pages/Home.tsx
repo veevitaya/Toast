@@ -739,9 +739,6 @@ export default function Home() {
                       {getMoodSignal.emoji} {topPreference.label} fan
                     </span>
                   )}
-                  <span className="inline-flex items-center gap-1.5 bg-white rounded-full px-3 py-1.5 text-xs font-medium text-foreground border border-gray-100" data-testid="badge-streak">
-                    12-wk streak
-                  </span>
                 </div>
               </div>
               <img
@@ -867,29 +864,6 @@ export default function Home() {
               />
 
               <div className="px-6 pt-5 pb-2">
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="rounded-2xl px-5 py-4 flex items-center gap-4 bg-white border border-gray-100"
-                  style={{ boxShadow: "0 2px 12px -3px rgba(0,0,0,0.05)" }}
-                  data-testid="card-streak"
-                >
-                  <span className="text-3xl flex-shrink-0">{"\uD83D\uDD25"}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[15px] font-bold text-foreground">12-week decision streak!</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">You & your crew keep showing up -- keep it going</p>
-                  </div>
-                  <motion.button
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => navigate("/profile")}
-                    className="w-8 h-8 rounded-full bg-[#FFCC02] flex items-center justify-center flex-shrink-0"
-                    data-testid="button-streak-go"
-                  >
-                    <ArrowRight className="w-4 h-4 text-foreground" />
-                  </motion.button>
-                </motion.div>
               </div>
 
               <div className="h-8" />
