@@ -1679,6 +1679,18 @@ export async function registerRoutes(
     }
   };
 
+  function requirePermission(req: any, res: any, permission: string): boolean {
+    const admin = req.adminUser;
+    if (!admin) { res.status(401).json({ message: "Unauthorized" }); return false; }
+    if (admin.role === "superadmin") return true;
+    const perms: string[] = admin.permissions || [];
+    if (!perms.includes(permission)) {
+      res.status(403).json({ message: `Missing permission: ${permission}` });
+      return false;
+    }
+    return true;
+  }
+
   const TIER_HIERARCHY: Record<string, number> = { free: 0, growth: 1, premium: 2, pro: 2, enterprise: 3 };
   function requireTier(owner: any, requiredTier: string): boolean {
     const ownerLevel = TIER_HIERARCHY[owner?.subscriptionTier || "free"] ?? 0;
@@ -1719,8 +1731,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/campaigns", adminAuth, async (_req, res) => {
+  app.get("/api/campaigns", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_campaigns")) return;
       const all = await storage.getCampaigns();
       res.json(all);
     } catch (err) {
@@ -1915,8 +1928,9 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/admin/banners", adminAuth, async (req, res) => {
+  app.post("/api/admin/banners", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_banners")) return;
       const schema = z.object({
         title: z.string().min(1),
         imageUrl: z.string().min(1),
@@ -1938,6 +1952,7 @@ export async function registerRoutes(
 
   app.patch("/api/admin/banners/:id", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_banners")) return;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const allowedFields: Record<string, any> = {};
@@ -1954,8 +1969,9 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/admin/banners/:id", adminAuth, async (req, res) => {
+  app.delete("/api/admin/banners/:id", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_banners")) return;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       await storage.deleteBanner(id);
@@ -2037,8 +2053,11 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/admin/admin-users", adminAuth, async (_req, res) => {
+  app.get("/api/admin/admin-users", adminAuth, async (req: any, res) => {
     try {
+      if (req.adminUser?.role !== "superadmin") {
+        return res.status(403).json({ message: "Only superadmins can list admin users" });
+      }
       const users = await storage.getAllAdminUsers();
       res.json(users.map(u => ({ ...u, passwordHash: undefined })));
     } catch (err) {
@@ -2090,8 +2109,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/admin/session-events/:code", adminAuth, async (req, res) => {
+  app.get("/api/admin/session-events/:code", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "view_analytics")) return;
       const { code } = req.params;
       const events = await storage.getSessionEvents(code);
       res.json(events);
@@ -2107,6 +2127,9 @@ export async function registerRoutes(
       }
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      if (id === req.adminUser?.id) {
+        return res.status(403).json({ message: "Cannot modify your own admin account" });
+      }
       const updates: any = {};
       if (req.body.role) updates.role = req.body.role;
       if (req.body.permissions) updates.permissions = req.body.permissions;
@@ -2120,8 +2143,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/admin/owners", adminAuth, async (_req, res) => {
+  app.get("/api/admin/owners", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_users")) return;
       const owners = await storage.getAllRestaurantOwners();
       res.json(owners.map(o => ({ ...o, passwordHash: undefined })));
     } catch (err) {
@@ -2129,8 +2153,9 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/admin/owners", adminAuth, async (req, res) => {
+  app.post("/api/admin/owners", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_users")) return;
       const schema = z.object({
         email: z.string().email(),
         password: z.string().min(4),
@@ -2159,8 +2184,9 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/admin/owners/:id", adminAuth, async (req, res) => {
+  app.patch("/api/admin/owners/:id", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_users")) return;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const updates: any = {};
@@ -2177,8 +2203,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/admin/claims", adminAuth, async (req, res) => {
+  app.get("/api/admin/claims", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_claims")) return;
       const status = req.query.status as string | undefined;
       const claims = await storage.getRestaurantClaims(status);
       const [allOwners, allRestaurants] = await Promise.all([
@@ -2257,6 +2284,7 @@ export async function registerRoutes(
 
   app.patch("/api/admin/claims/:id", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_claims")) return;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const claim = await storage.getRestaurantClaimById(id);
@@ -2384,8 +2412,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/admin/dashboard", adminAuth, async (_req, res) => {
+  app.get("/api/admin/dashboard", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "view_analytics")) return;
       const [totalUsers, totalRestaurants, totalEvents] = await Promise.all([
         storage.getUserCount(),
         storage.getRestaurantCount(),
@@ -2421,8 +2450,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/admin/users", adminAuth, async (_req, res) => {
+  app.get("/api/admin/users", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_users")) return;
       const users = await storage.getAllProfiles();
       res.json(users);
     } catch (err) {
@@ -2430,8 +2460,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/admin/restaurants", adminAuth, async (_req, res) => {
+  app.get("/api/admin/restaurants", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_restaurants")) return;
       const all = await storage.getRestaurants();
       res.json(all);
     } catch (err) {
@@ -2441,6 +2472,7 @@ export async function registerRoutes(
 
   app.patch("/api/admin/restaurants/:id", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_restaurants")) return;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const allowedFields: Record<string, any> = {};
@@ -2460,6 +2492,7 @@ export async function registerRoutes(
 
   app.delete("/api/admin/restaurants/:id", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_restaurants")) return;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       await storage.deleteRestaurant(id);
@@ -2471,8 +2504,9 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/admin/restaurants/auto-assign-vibes", adminAuth, async (_req, res) => {
+  app.post("/api/admin/restaurants/auto-assign-vibes", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_restaurants")) return;
       const all = await storage.getRestaurants();
       let updated = 0;
       for (const r of all) {
@@ -2498,8 +2532,9 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/admin/restaurants/:id/auto-assign-vibes", adminAuth, async (req, res) => {
+  app.post("/api/admin/restaurants/:id/auto-assign-vibes", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_restaurants")) return;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const restaurant = await storage.getRestaurantById(id);
@@ -2516,8 +2551,9 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/admin/google-places/fetch", adminAuth, async (req, res) => {
+  app.post("/api/admin/google-places/fetch", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_restaurants")) return;
       const schema = z.object({
         query: z.string().default("restaurants in Bangkok"),
         radius: z.number().default(5000),
@@ -2589,8 +2625,9 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/admin/google-places/import", adminAuth, async (req, res) => {
+  app.post("/api/admin/google-places/import", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_restaurants")) return;
       const schema = z.object({
         restaurants: z.array(z.object({
           name: z.string(),
@@ -2738,6 +2775,10 @@ export async function registerRoutes(
 
   app.post("/api/group/sessions/:code/join", async (req, res) => {
     try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`session-join:${ip}`, 15, 60000)) {
+        return res.status(429).json({ message: "Too many join attempts" });
+      }
       const { code } = req.params;
       const schema = z.object({
         lineUserId: z.string().min(1),
@@ -2765,6 +2806,18 @@ export async function registerRoutes(
       const session = await storage.getGroupSession(code);
       if (!session) {
         return res.status(404).json({ message: "Session not found" });
+      }
+      if (session.status !== "waiting") {
+        const alreadyMember = await storage.isGroupMember(code, userId);
+        if (alreadyMember) {
+          const members = await storage.getGroupMembers(code);
+          return res.json({ session, members: sanitizeMembers(members) });
+        }
+        return res.status(400).json({ message: "Session is no longer accepting new members" });
+      }
+      const sessionAge = Date.now() - new Date(session.createdAt).getTime();
+      if (sessionAge > 24 * 60 * 60 * 1000) {
+        return res.status(410).json({ message: "Session has expired" });
       }
 
       const alreadyMember = await storage.isGroupMember(code, userId);
@@ -2802,6 +2855,10 @@ export async function registerRoutes(
 
   app.get("/api/group/sessions/:code", async (req, res) => {
     try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`session-lookup:${ip}`, 20, 60000)) {
+        return res.status(429).json({ message: "Too many lookup attempts" });
+      }
       const { code } = req.params;
       const session = await storage.getGroupSession(code);
       if (!session) {
@@ -2916,6 +2973,12 @@ export async function registerRoutes(
       }
 
       const idempotencyKey = `swipe:${code}:${input.lineUserId}:${input.menuItemId}`;
+      const alreadyProcessed = await storage.checkIdempotencyKey(idempotencyKey);
+      if (alreadyProcessed) {
+        const matches = await storage.getGroupMatches(code);
+        const members = await storage.getGroupMembers(code);
+        return res.json({ swipe: null, matches, memberCount: members.length, replayed: true });
+      }
 
       const swipe = await storage.recordGroupSwipe({
         sessionCode: code,
