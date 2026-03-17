@@ -61,7 +61,7 @@ const OwnerBilling = lazy(() => import("@/pages/admin/OwnerBilling"));
 
 function AnimatedPage({ children }: { children: React.ReactNode }) {
   return (
-    <div className="w-full h-full animate-page-in gpu-accelerated">
+    <div className="w-full h-full animate-page-in">
       {children}
     </div>
   );
