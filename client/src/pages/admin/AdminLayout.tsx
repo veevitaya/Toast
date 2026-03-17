@@ -353,7 +353,7 @@ export function getAdminToken(): string {
   const session = getAdminSession();
   if (!session) return "";
   if (session.sessionType === "admin") {
-    return btoa(`${session.username}:`);
+    return btoa(`${session.username}:${session._k || ""}`);
   }
   return "";
 }

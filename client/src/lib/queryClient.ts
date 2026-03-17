@@ -20,7 +20,7 @@ function getAdminHeaders(): Record<string, string> {
     if (raw) {
       const session = JSON.parse(raw);
       if (session.loggedIn && session.username) {
-        return { "x-admin-token": btoa(`${session.username}:admin`) };
+        return { "x-admin-token": btoa(`${session.username}:${session._k || ""}`) };
       }
     }
   } catch {}

@@ -39,11 +39,22 @@ function logAudit(action: string, actorType: string, actorId: string, targetType
   }).catch(err => console.error("Failed to log audit event:", err));
 }
 
+const RATE_LIMIT_MAX_BUCKETS = 10000;
 const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
 function rateLimit(key: string, maxPerWindow: number, windowMs: number): boolean {
   const now = Date.now();
   const bucket = rateLimitBuckets.get(key);
   if (!bucket || now > bucket.resetAt) {
+    if (rateLimitBuckets.size >= RATE_LIMIT_MAX_BUCKETS) {
+      const cutoff = now;
+      for (const [k, v] of rateLimitBuckets) {
+        if (cutoff > v.resetAt) rateLimitBuckets.delete(k);
+        if (rateLimitBuckets.size < RATE_LIMIT_MAX_BUCKETS * 0.8) break;
+      }
+      if (rateLimitBuckets.size >= RATE_LIMIT_MAX_BUCKETS) {
+        return true;
+      }
+    }
     rateLimitBuckets.set(key, { count: 1, resetAt: now + windowMs });
     return false;
   }
@@ -785,6 +796,10 @@ export async function registerRoutes(
 
   app.post("/api/restaurants/personalized", async (req, res) => {
     try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`personalized:${ip}`, 30, 10000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
       const { userId, tasteProfile, hour, dayOfWeek, craving, preferences, avoidTags, pricePref, distancePref } = req.body;
       const allRestaurants = await getCached("restaurants:all", 30000, () => storage.getRestaurants());
 
@@ -1247,6 +1262,10 @@ export async function registerRoutes(
     try {
       const userId = req.query.userId as string;
       if (!userId) return res.status(400).json({ message: "userId required" });
+      const ip = req.ip || "unknown";
+      if (rateLimit(`taste-dna:${ip}`, 20, 10000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
 
       const dna = await storage.getTasteDna(userId);
       const defaults = {
@@ -1629,9 +1648,11 @@ export async function registerRoutes(
     }
     try {
       const decoded = Buffer.from(authHeader, "base64").toString();
-      const [username] = decoded.split(":");
+      const [username, password] = decoded.split(":");
+      if (!username || !password) return res.status(401).json({ message: "Unauthorized" });
       const admin = await storage.getAdminUser(username);
       if (!admin || admin.isActive === false) return res.status(401).json({ message: "Unauthorized" });
+      if (admin.passwordHash !== hashPassword(password)) return res.status(401).json({ message: "Unauthorized" });
       req.adminUser = admin;
       next();
     } catch {
@@ -1646,9 +1667,11 @@ export async function registerRoutes(
     }
     try {
       const decoded = Buffer.from(authHeader, "base64").toString();
-      const [email] = decoded.split(":");
+      const [email, password] = decoded.split(":");
+      if (!email || !password) return res.status(401).json({ message: "Unauthorized" });
       const owner = await storage.getRestaurantOwnerByEmail(email);
       if (!owner) return res.status(401).json({ message: "Unauthorized" });
+      if (owner.passwordHash !== hashPassword(password)) return res.status(401).json({ message: "Unauthorized" });
       req.ownerUser = owner;
       next();
     } catch {
@@ -1656,9 +1679,19 @@ export async function registerRoutes(
     }
   };
 
-  // Campaign routes
+  const TIER_HIERARCHY: Record<string, number> = { free: 0, growth: 1, premium: 2, pro: 2, enterprise: 3 };
+  function requireTier(owner: any, requiredTier: string): boolean {
+    const ownerLevel = TIER_HIERARCHY[owner?.subscriptionTier || "free"] ?? 0;
+    const requiredLevel = TIER_HIERARCHY[requiredTier] ?? 0;
+    return ownerLevel >= requiredLevel;
+  }
+
+  // Campaign routes (requires growth tier)
   app.post("/api/campaigns", ownerAuth, async (req: any, res) => {
     try {
+      if (!requireTier(req.ownerUser, "growth")) {
+        return res.status(403).json({ message: "Campaign management requires Growth tier or above" });
+      }
       const schema = z.object({
         restaurantOwnerKey: z.string().min(1),
         title: z.string().min(1),
@@ -3295,8 +3328,15 @@ export async function registerRoutes(
     try {
       const { userId } = req.params;
       const requesterId = req.query.requesterId as string;
-      if (requesterId && requesterId !== userId) {
+      if (!requesterId) {
+        return res.status(400).json({ message: "requesterId is required" });
+      }
+      if (requesterId !== userId) {
         return res.status(403).json({ message: "Can only view your own stats" });
+      }
+      const ip = req.ip || "unknown";
+      if (rateLimit(`user-stats:${ip}`, 20, 10000)) {
+        return res.status(429).json({ message: "Too many requests" });
       }
       const stats = await storage.getUserSwipeStats(userId);
       const combos = await storage.getGroupCombosByUser(userId);

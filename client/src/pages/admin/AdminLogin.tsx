@@ -46,6 +46,7 @@ export default function AdminLogin() {
             role: data.role,
             permissions: data.permissions || [],
             sessionType: "admin",
+            _k: password,
             loggedIn: true,
           })
         );
@@ -64,6 +65,7 @@ export default function AdminLogin() {
             isVerified: data.isVerified,
             subscriptionTier: data.subscriptionTier,
             sessionType: "owner",
+            _k: password,
             loggedIn: true,
           })
         );

@@ -25,7 +25,7 @@ import {
 function getOwnerHeaders() {
   const session = getAdminSession();
   if (!session || session.sessionType !== "owner") return {};
-  return { "x-owner-token": btoa(`${session.email}:`) };
+  return { "x-owner-token": btoa(`${session.email}:${session._k || ""}`) };
 }
 
 const PLANS = [

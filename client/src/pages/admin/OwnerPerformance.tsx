@@ -16,7 +16,7 @@ import {
 function getOwnerHeaders() {
   const session = getAdminSession();
   if (!session || session.sessionType !== "owner") return {};
-  return { "x-owner-token": btoa(`${session.email}:`) };
+  return { "x-owner-token": btoa(`${session.email}:${session._k || ""}`) };
 }
 
 const DAILY_VIEWS = [42, 38, 55, 61, 48, 72, 65, 58, 80, 74, 90, 85, 95, 88];
