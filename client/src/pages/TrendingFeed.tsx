@@ -6,6 +6,7 @@ import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers } from "lucid
 import { BottomNav } from "@/components/BottomNav";
 import { shareMessage, sendGroupInviteNoRedirect } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
+import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { useToast } from "@/hooks/use-toast";
 
 interface TrendingPost {
@@ -561,6 +562,7 @@ export default function TrendingFeed() {
   const { toast } = useToast();
   const { profile } = useLineProfile();
   const containerRef = useRef<HTMLDivElement>(null);
+  const { isSaved: isServerSaved, save: serverSave, unsave: serverUnsave } = useSavedRestaurants();
   const [savedPosts, setSavedPosts] = useState<Set<number>>(new Set(getSavedPosts()));
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [activeIndex, setActiveIndex] = useState(0);
@@ -616,11 +618,16 @@ export default function TrendingFeed() {
       else next.delete(postId);
       return next;
     });
+    if (nowSaved) {
+      serverSave(postId, "mine");
+    } else {
+      serverUnsave(postId);
+    }
     toast({
       title: nowSaved ? "Saved for later!" : "Removed from saved",
       description: nowSaved ? "You can find this in your saved items" : "",
     });
-  }, [toast]);
+  }, [toast, serverSave, serverUnsave]);
 
   const handleLike = useCallback((postId: number) => {
     setLikedPosts((prev) => {

@@ -178,7 +178,7 @@ export interface IStorage {
   createSavedList(data: InsertSavedList): Promise<SavedList>;
   updateSavedList(id: number, updates: Partial<InsertSavedList>): Promise<SavedList | undefined>;
   deleteSavedList(id: number): Promise<void>;
-  getSavedListItems(listId: number): Promise<SavedListItem[]>;
+  getSavedListItems(listId: number, offset?: number, limit?: number): Promise<SavedListItem[]>;
   addSavedListItem(data: InsertSavedListItem): Promise<SavedListItem>;
   removeSavedListItem(listId: number, restaurantId: number): Promise<void>;
   getOrCreateDefaultLists(userId: string): Promise<{ mine: SavedList; partner: SavedList }>;
@@ -872,10 +872,13 @@ export class DatabaseStorage implements IStorage {
     await db.delete(savedLists).where(eq(savedLists.id, id));
   }
 
-  async getSavedListItems(listId: number): Promise<SavedListItem[]> {
-    return await db.select().from(savedListItems)
+  async getSavedListItems(listId: number, offset?: number, limit?: number): Promise<SavedListItem[]> {
+    let query = db.select().from(savedListItems)
       .where(eq(savedListItems.listId, listId))
       .orderBy(desc(savedListItems.id));
+    if (typeof offset === "number" && offset > 0) query = query.offset(offset) as typeof query;
+    if (typeof limit === "number" && limit > 0) query = query.limit(limit) as typeof query;
+    return await query;
   }
 
   async addSavedListItem(data: InsertSavedListItem): Promise<SavedListItem> {

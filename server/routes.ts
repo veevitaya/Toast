@@ -1267,8 +1267,15 @@ export async function registerRoutes(
         return res.status(429).json({ message: "Too many requests" });
       }
       const defaults = await storage.getOrCreateDefaultLists(userId);
+      const offset = parseInt(req.query.offset as string) || 0;
+      const limit = parseInt(req.query.limit as string) || 50;
       const lists = await storage.getSavedListsWithItems(userId);
-      res.json(lists);
+      const paginated = lists.map(list => ({
+        ...list,
+        items: list.items.slice(offset, offset + limit),
+        totalItems: list.items.length,
+      }));
+      res.json(paginated);
     } catch (err) {
       console.error("Get saved lists error:", err);
       res.status(500).json({ message: "Internal server error" });
