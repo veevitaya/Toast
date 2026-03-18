@@ -172,7 +172,6 @@ export function useSavedRestaurants() {
     } else {
       const current = getStoredData();
       if (current.mine.includes(id)) return;
-      current.partner = current.partner.filter(i => i !== id);
       current.mine = [...current.mine, id];
       persistAndNotify(current);
     }
@@ -184,7 +183,6 @@ export function useSavedRestaurants() {
     } else {
       const current = getStoredData();
       if (current.partner.includes(id)) return;
-      current.mine = current.mine.filter(i => i !== id);
       current.partner = [...current.partner, id];
       persistAndNotify(current);
     }

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, jsonb, real, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, jsonb, real, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -454,7 +454,7 @@ export const savedListItems = pgTable("saved_list_items", {
   addedAt: text("added_at").notNull(),
 }, (table) => ({
   listIdIdx: index("saved_list_items_list_id_idx").on(table.listId),
-  listRestaurantIdx: index("saved_list_items_list_restaurant_idx").on(table.listId, table.restaurantId),
+  listRestaurantUniq: uniqueIndex("saved_list_items_list_restaurant_uniq").on(table.listId, table.restaurantId),
 }));
 
 export const insertSavedListItemSchema = createInsertSchema(savedListItems).omit({ id: true });

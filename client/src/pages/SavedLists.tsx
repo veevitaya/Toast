@@ -4,7 +4,9 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { BottomNav } from "@/components/BottomNav";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
-import { Heart, ChevronRight, Star, Bookmark, ArrowLeft, Trash2 } from "lucide-react";
+import { useLineProfile } from "@/lib/useLineProfile";
+import { apiRequest } from "@/lib/queryClient";
+import { Heart, ChevronRight, Star, ArrowLeft, Trash2, Play, Share2, Search, TrendingUp } from "lucide-react";
 import type { RestaurantResponse } from "@shared/routes";
 import { handleImageError } from "@/lib/imageUtils";
 
@@ -60,9 +62,61 @@ function SavedCard({ restaurant, onNavigate, onRemove }: {
   );
 }
 
+function ListHeader({
+  listName,
+  emoji,
+  count,
+  isActive,
+  onSwipe,
+  onInvite,
+}: {
+  listName: string;
+  emoji: string;
+  count: number;
+  isActive: boolean;
+  onSwipe: () => void;
+  onInvite: () => void;
+}) {
+  if (!isActive || count === 0) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-center gap-2 mb-4"
+    >
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <span className="text-lg">{emoji}</span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold tracking-tight truncate">{listName}</p>
+          <p className="text-[10px] text-muted-foreground">{count} restaurant{count !== 1 ? "s" : ""}</p>
+        </div>
+      </div>
+      <div className="flex gap-1.5 flex-shrink-0">
+        <button
+          onClick={onSwipe}
+          className="flex items-center gap-1 px-3 py-1.5 bg-[#FFCC02] rounded-full text-[11px] font-semibold active:scale-95 transition-transform"
+          data-testid="button-swipe-from-list"
+        >
+          <Play className="w-3 h-3" />
+          Swipe
+        </button>
+        <button
+          onClick={onInvite}
+          className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 rounded-full text-[11px] font-medium active:scale-95 transition-transform"
+          data-testid="button-invite-from-list"
+        >
+          <Share2 className="w-3 h-3" />
+          Invite
+        </button>
+      </div>
+    </motion.div>
+  );
+}
+
 export default function SavedLists() {
   const [, navigate] = useLocation();
-  const { data: savedData, unsave } = useSavedRestaurants();
+  const { data: savedData, unsave, serverLists } = useSavedRestaurants();
+  const { profile } = useLineProfile();
   const [activeTab, setActiveTab] = useState<"mine" | "partner">("mine");
 
   const { data: allRestaurants = [] } = useQuery<RestaurantResponse[]>({
@@ -82,6 +136,48 @@ export default function SavedLists() {
   }, [savedData.partner, allRestaurants]);
 
   const displayedRestaurants = activeTab === "mine" ? mineRestaurants : partnerRestaurants;
+
+  const activeList = useMemo(() => {
+    const name = activeTab === "mine" ? "My Saves" : "With Partner";
+    return serverLists.find(l => l.isDefault && l.name === name);
+  }, [activeTab, serverLists]);
+
+  const handleSwipeFromList = async () => {
+    if (!activeList || !profile?.userId) return;
+    try {
+      const res = await apiRequest("POST", `/api/saved-lists/${activeList.id}/start-session`, {
+        userId: profile.userId,
+        displayName: profile.displayName,
+      });
+      const data = await res.json();
+      if (data.sessionCode) {
+        navigate(`/group/waiting?session=${data.sessionCode}`);
+      }
+    } catch (err) {
+      console.error("Failed to start session from list:", err);
+    }
+  };
+
+  const handleInviteFromList = async () => {
+    if (!activeList || !profile?.userId) return;
+    try {
+      const res = await apiRequest("POST", `/api/saved-lists/${activeList.id}/invite`, {
+        userId: profile.userId,
+      });
+      const data = await res.json();
+      if (data.inviteUrl && navigator.share) {
+        navigator.share({
+          title: `Let's decide from ${data.listName}!`,
+          text: `Help me pick from ${data.restaurantCount} saved restaurants on Toast!`,
+          url: window.location.origin + data.inviteUrl,
+        }).catch(() => {});
+      } else if (data.inviteUrl) {
+        navigator.clipboard?.writeText(window.location.origin + data.inviteUrl);
+      }
+    } catch (err) {
+      console.error("Failed to create invite:", err);
+    }
+  };
 
   return (
     <div className="w-full min-h-[100dvh] bg-[#FCFCFC]" data-testid="saved-lists-page">
@@ -124,10 +220,19 @@ export default function SavedLists() {
             }`}
             data-testid="tab-partner"
           >
-            <Bookmark className={`w-3.5 h-3.5 ${activeTab === "partner" ? "fill-pink-500 text-pink-500" : ""}`} />
+            <span className="text-sm">💕</span>
             With Partner ({partnerRestaurants.length})
           </button>
         </div>
+
+        <ListHeader
+          listName={activeTab === "mine" ? "My Saves" : "With Partner"}
+          emoji={activeTab === "mine" ? "❤️" : "💕"}
+          count={displayedRestaurants.length}
+          isActive={true}
+          onSwipe={handleSwipeFromList}
+          onInvite={handleInviteFromList}
+        />
 
         <AnimatePresence mode="popLayout">
           {displayedRestaurants.length > 0 ? (
@@ -153,19 +258,38 @@ export default function SavedLists() {
               <p className="text-sm font-medium text-muted-foreground mb-1">
                 {activeTab === "mine" ? "No saved restaurants yet" : "No partner picks yet"}
               </p>
-              <p className="text-xs text-muted-foreground/60">
+              <p className="text-xs text-muted-foreground/60 mb-6">
                 {activeTab === "mine"
                   ? "Tap the heart icon on any restaurant to save it"
                   : "Save restaurants to share date night ideas"
                 }
               </p>
-              <button
-                onClick={() => navigate("/swipe")}
-                className="mt-6 px-6 py-2.5 bg-[#FFCC02] rounded-full text-sm font-semibold active:scale-95 transition-transform"
-                data-testid="button-start-swiping"
-              >
-                Start Swiping
-              </button>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <button
+                  onClick={() => navigate("/swipe")}
+                  className="flex items-center gap-1.5 px-5 py-2.5 bg-[#FFCC02] rounded-full text-sm font-semibold active:scale-95 transition-transform"
+                  data-testid="button-start-swiping"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  Browse & Swipe
+                </button>
+                <button
+                  onClick={() => navigate("/trending")}
+                  className="flex items-center gap-1.5 px-5 py-2.5 bg-gray-100 rounded-full text-sm font-medium active:scale-95 transition-transform"
+                  data-testid="button-go-trending"
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  Trending
+                </button>
+                <button
+                  onClick={() => navigate("/")}
+                  className="flex items-center gap-1.5 px-5 py-2.5 bg-gray-100 rounded-full text-sm font-medium active:scale-95 transition-transform"
+                  data-testid="button-go-search"
+                >
+                  <Search className="w-3.5 h-3.5" />
+                  Search
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

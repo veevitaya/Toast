@@ -1334,6 +1334,7 @@ export async function registerRoutes(
       const listId = parseInt(req.params.id);
       const { userId, restaurantId } = req.body;
       if (!userId || !restaurantId) return res.status(400).json({ message: "userId and restaurantId required" });
+      if (typeof restaurantId !== "number" || restaurantId < 1) return res.status(400).json({ message: "Invalid restaurantId" });
       const ip = req.ip || "unknown";
       if (rateLimit(`saved-item-add:${ip}`, 30, 10000)) {
         return res.status(429).json({ message: "Too many requests" });
@@ -1341,11 +1342,6 @@ export async function registerRoutes(
       const lists = await storage.getSavedLists(userId);
       const target = lists.find(l => l.id === listId);
       if (!target) return res.status(404).json({ message: "List not found" });
-      for (const list of lists) {
-        if (list.id !== listId) {
-          await storage.removeSavedListItem(list.id, restaurantId);
-        }
-      }
       const item = await storage.addSavedListItem({
         listId, restaurantId, addedAt: new Date().toISOString()
       });
@@ -1369,6 +1365,101 @@ export async function registerRoutes(
       res.json({ ok: true });
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/saved-lists/:id/start-session", async (req, res) => {
+    try {
+      const listId = parseInt(req.params.id);
+      const { userId, displayName } = req.body;
+      if (!userId) return res.status(400).json({ message: "userId required" });
+      const ip = req.ip || "unknown";
+      if (rateLimit(`saved-session:${ip}`, 5, 30000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+      const lists = await storage.getSavedLists(userId);
+      const target = lists.find(l => l.id === listId);
+      if (!target) return res.status(404).json({ message: "List not found" });
+      const items = await storage.getSavedListItems(listId);
+      if (items.length === 0) return res.status(400).json({ message: "List is empty" });
+
+      const sessionCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const session = await storage.createGroupSession({
+        sessionCode,
+        hostLineUserId: userId,
+        status: "waiting",
+        sessionType: "saved_list",
+        sourceData: JSON.stringify({ listId, listName: target.name, restaurantIds: items.map(i => i.restaurantId) }),
+        expectedMembers: null,
+        createdAt: new Date().toISOString(),
+      });
+      await storage.addGroupMember({
+        sessionCode,
+        lineUserId: userId,
+        displayName: displayName || "Host",
+        pictureUrl: null,
+        latitude: null,
+        longitude: null,
+        joinedAt: new Date().toISOString(),
+      });
+      res.status(201).json({ sessionCode, listName: target.name, restaurantCount: items.length });
+    } catch (err) {
+      console.error("Start session from list error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/saved-lists/:id/invite", async (req, res) => {
+    try {
+      const listId = parseInt(req.params.id);
+      const { userId } = req.body;
+      if (!userId) return res.status(400).json({ message: "userId required" });
+      const ip = req.ip || "unknown";
+      if (rateLimit(`saved-invite:${ip}`, 10, 30000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+      const lists = await storage.getSavedLists(userId);
+      const target = lists.find(l => l.id === listId);
+      if (!target) return res.status(404).json({ message: "List not found" });
+      const items = await storage.getSavedListItems(listId);
+
+      const token = Buffer.from(JSON.stringify({
+        listId,
+        userId,
+        restaurantIds: items.map(i => i.restaurantId),
+        exp: Date.now() + 7 * 24 * 60 * 60 * 1000,
+        nonce: Math.random().toString(36).substring(2, 10),
+      })).toString("base64url");
+
+      res.json({
+        inviteToken: token,
+        inviteUrl: `/group/setup?listInvite=${token}`,
+        listName: target.name,
+        restaurantCount: items.length,
+      });
+    } catch (err) {
+      console.error("Create invite from list error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/saved-lists/invite/:token", async (req, res) => {
+    try {
+      const token = req.params.token;
+      const decoded = JSON.parse(Buffer.from(token, "base64url").toString());
+      if (!decoded.listId || !decoded.exp) {
+        return res.status(400).json({ message: "Invalid invite token" });
+      }
+      if (Date.now() > decoded.exp) {
+        return res.status(410).json({ message: "Invite expired" });
+      }
+      res.json({
+        listId: decoded.listId,
+        userId: decoded.userId,
+        restaurantIds: decoded.restaurantIds || [],
+      });
+    } catch (err) {
+      res.status(400).json({ message: "Invalid invite token" });
     }
   });
 
