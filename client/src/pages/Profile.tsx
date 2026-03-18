@@ -5,7 +5,7 @@ import { useLineProfile } from "@/hooks/use-line-profile";
 import { sendGroupInvite } from "@/lib/liff";
 import { BottomNav } from "@/components/BottomNav";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
-import { ChevronRight, UserPlus, Unlink, LogIn, LogOut, X, Store, User, Star, TrendingUp, Image, Sparkles, Plus, Check, Crown, Eye, ExternalLink, MapPin, Clock, BarChart3, ArrowUpRight, ArrowDownRight, Utensils, Zap, Calendar, Megaphone, Tag, Percent, Trash2, Send, Users, Target, Search, Shield, AlertTriangle, Upload, FileText, Building2, Phone, Mail, ChevronDown, ShieldCheck, Globe } from "lucide-react";
+import { ChevronRight, UserPlus, Unlink, LogIn, LogOut, X, Store, User, Star, TrendingUp, Image, Sparkles, Plus, Check, Crown, Eye, ExternalLink, MapPin, Clock, BarChart3, ArrowUpRight, ArrowDownRight, Utensils, Zap, Calendar, Megaphone, Tag, Percent, Trash2, Send, Users, Target, Search, Shield, AlertTriangle, Upload, FileText, Building2, Phone, Mail, ChevronDown, ShieldCheck, Globe, Pencil } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient, fetchWithTimeout } from "@/lib/queryClient";
 import type { RestaurantResponse } from "@shared/routes";
@@ -3504,6 +3504,10 @@ function PartnerRow({ profile, onInvite, onManualAdd, onUnlink, t, lineUserId }:
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [editingAnniversary, setEditingAnniversary] = useState(false);
+  const [anniversaryInput, setAnniversaryInput] = useState("");
+  const [savingAnniversary, setSavingAnniversary] = useState(false);
+  const [migrated, setMigrated] = useState(false);
 
   const { data: partnerStatus } = useQuery<{
     connected: boolean;
@@ -3514,11 +3518,27 @@ function PartnerRow({ profile, onInvite, onManualAdd, onUnlink, t, lineUserId }:
     anniversaryDate?: string;
     connectedAt?: string;
     daysTogether?: number;
-    sharedStats?: { totalSwipes: number; sharedMatches: number; daysTogether: number };
+    pendingInvite?: { token: string; expiresAt: string; createdAt: string } | null;
+    sharedStats?: { totalSwipes: number; sharedMatches: number; daysTogether: number; sessionsTogether?: number; mostUsedVibe?: string };
   }>({
     queryKey: ["/api/partner/status", lineUserId],
     enabled: !!lineUserId,
   });
+
+  useEffect(() => {
+    if (lineUserId && profile.partnerLinked && !partnerStatus?.connected && !migrated) {
+      fetch("/api/partner/migrate-legacy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: lineUserId }),
+      }).then(res => res.json()).then(data => {
+        if (data.migrated) {
+          queryClient.invalidateQueries({ queryKey: ["/api/partner/status", lineUserId] });
+        }
+        setMigrated(true);
+      }).catch(() => setMigrated(true));
+    }
+  }, [lineUserId, profile.partnerLinked, partnerStatus?.connected, migrated]);
 
   const connected = partnerStatus?.connected || profile.partnerLinked;
   const partnerName = partnerStatus?.partnerDisplayName || profile.partnerName;
@@ -3636,11 +3656,76 @@ function PartnerRow({ profile, onInvite, onManualAdd, onUnlink, t, lineUserId }:
                     </div>
                   )}
 
+                  {partnerStatus?.sharedStats && (partnerStatus.sharedStats.sessionsTogether !== undefined || partnerStatus.sharedStats.mostUsedVibe) && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {partnerStatus.sharedStats.sessionsTogether !== undefined && (
+                        <div className="bg-pink-50 dark:bg-pink-950/20 rounded-xl p-3 text-center">
+                          <p className="text-lg font-bold text-pink-500" data-testid="text-sessions-together">{partnerStatus.sharedStats.sessionsTogether}</p>
+                          <p className="text-[10px] text-muted-foreground">Sessions Together</p>
+                        </div>
+                      )}
+                      {partnerStatus.sharedStats.mostUsedVibe && (
+                        <div className="bg-pink-50 dark:bg-pink-950/20 rounded-xl p-3 text-center">
+                          <p className="text-sm font-bold text-pink-500 truncate" data-testid="text-most-used-vibe">{partnerStatus.sharedStats.mostUsedVibe}</p>
+                          <p className="text-[10px] text-muted-foreground">Fave Vibe</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {partnerStatus?.anniversaryDate && (
                     <div className="flex items-center gap-2 bg-gray-50 dark:bg-muted rounded-xl px-4 py-2.5">
                       <Calendar className="w-3.5 h-3.5 text-pink-400" />
                       <span className="text-[12px] text-muted-foreground">Anniversary</span>
-                      <span className="text-[12px] font-semibold ml-auto" data-testid="text-anniversary">{new Date(partnerStatus.anniversaryDate).toLocaleDateString()}</span>
+                      {editingAnniversary ? (
+                        <div className="ml-auto flex items-center gap-1.5">
+                          <input
+                            type="date"
+                            value={anniversaryInput}
+                            onChange={(e) => setAnniversaryInput(e.target.value)}
+                            className="text-[12px] border border-pink-200 rounded-lg px-2 py-1 bg-white dark:bg-muted"
+                            data-testid="input-anniversary-date"
+                          />
+                          <button
+                            disabled={savingAnniversary || !anniversaryInput}
+                            onClick={async () => {
+                              setSavingAnniversary(true);
+                              try {
+                                const res = await fetch("/api/partner/anniversary", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ userId: lineUserId, anniversaryDate: anniversaryInput }),
+                                });
+                                if (res.ok) {
+                                  queryClient.invalidateQueries({ queryKey: ["/api/partner/status", lineUserId] });
+                                  setEditingAnniversary(false);
+                                }
+                              } finally { setSavingAnniversary(false); }
+                            }}
+                            className="text-[11px] bg-pink-500 text-white rounded-lg px-2 py-1 disabled:opacity-50"
+                            data-testid="button-save-anniversary"
+                          >
+                            {savingAnniversary ? "..." : "Save"}
+                          </button>
+                          <button
+                            onClick={() => setEditingAnniversary(false)}
+                            className="text-[11px] text-muted-foreground px-1"
+                            data-testid="button-cancel-anniversary"
+                          >✕</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setAnniversaryInput(partnerStatus.anniversaryDate || "");
+                            setEditingAnniversary(true);
+                          }}
+                          className="text-[12px] font-semibold ml-auto flex items-center gap-1 hover:text-pink-500 transition-colors"
+                          data-testid="button-edit-anniversary"
+                        >
+                          <span data-testid="text-anniversary">{new Date(partnerStatus.anniversaryDate).toLocaleDateString()}</span>
+                          <Pencil className="w-3 h-3 text-muted-foreground" />
+                        </button>
+                      )}
                     </div>
                   )}
 

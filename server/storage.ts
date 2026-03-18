@@ -194,6 +194,7 @@ export interface IStorage {
   getPartnerInviteByToken(token: string): Promise<PartnerInvite | undefined>;
   getPartnerInviteByNonce(nonce: string): Promise<PartnerInvite | undefined>;
   updatePartnerInvite(id: number, updates: Partial<InsertPartnerInvite>): Promise<PartnerInvite | undefined>;
+  claimPartnerInvite(id: number, redeemedBy: string): Promise<PartnerInvite | undefined>;
   getPendingPartnerInvites(fromUserId: string): Promise<PartnerInvite[]>;
 
   createPartnerConnection(conn: InsertPartnerConnection): Promise<PartnerConnection>;
@@ -968,6 +969,17 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async claimPartnerInvite(id: number, redeemedBy: string): Promise<PartnerInvite | undefined> {
+    const [updated] = await db.update(partnerInvites)
+      .set({ status: "accepted", redeemedBy })
+      .where(and(
+        eq(partnerInvites.id, id),
+        eq(partnerInvites.status, "pending"),
+      ))
+      .returning();
+    return updated;
+  }
+
   async getPendingPartnerInvites(fromUserId: string): Promise<PartnerInvite[]> {
     return await db.select().from(partnerInvites)
       .where(and(
@@ -978,6 +990,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPartnerConnection(conn: InsertPartnerConnection): Promise<PartnerConnection> {
+    const existingA = await this.getActivePartnerConnection(conn.userALineId);
+    if (existingA) throw new Error("User A already has an active partner connection");
+    const existingB = await this.getActivePartnerConnection(conn.userBLineId);
+    if (existingB) throw new Error("User B already has an active partner connection");
     const [created] = await db.insert(partnerConnections).values(conn).returning();
     return created;
   }

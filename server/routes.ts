@@ -3806,10 +3806,12 @@ export async function registerRoutes(
       const existingB = await storage.getActivePartnerConnection(invite.fromUserId);
       if (existingB) return res.status(409).json({ message: "Inviter is already connected to someone" });
 
-      const nonceKey = `partner-invite:${invite.nonce}`;
-      const used = await storage.checkIdempotencyKey(nonceKey);
-      if (used) return res.status(409).json({ message: "Invite already redeemed" });
+      const claimed = await storage.claimPartnerInvite(invite.id, userId);
+      if (!claimed) {
+        return res.status(409).json({ message: "Invite already redeemed by another user" });
+      }
 
+      const nonceKey = `partner-invite:${invite.nonce}`;
       await storage.createSessionEvent({
         sessionCode: "partner",
         eventType: "PARTNER_INVITE_REDEEMED",
@@ -3819,17 +3821,24 @@ export async function registerRoutes(
         createdAt: new Date().toISOString(),
       });
 
-      await storage.updatePartnerInvite(invite.id, { status: "accepted", redeemedBy: userId });
-
       const [userA, userB] = [invite.fromUserId, userId].sort();
-      const connection = await storage.createPartnerConnection({
-        userALineId: userA,
-        userBLineId: userB,
-        anniversaryDate: new Date().toISOString().split("T")[0],
-        connectedAt: new Date().toISOString(),
-        disconnectedAt: null,
-        status: "active",
-      });
+      let connection;
+      try {
+        connection = await storage.createPartnerConnection({
+          userALineId: userA,
+          userBLineId: userB,
+          anniversaryDate: new Date().toISOString().split("T")[0],
+          connectedAt: new Date().toISOString(),
+          disconnectedAt: null,
+          status: "active",
+        });
+      } catch (connErr: any) {
+        const recheckInvite = await storage.getPartnerInviteByToken(token);
+        if (recheckInvite && recheckInvite.redeemedBy === userId) {
+          await storage.updatePartnerInvite(invite.id, { status: "pending", redeemedBy: null });
+        }
+        return res.status(409).json({ message: connErr?.message || "Could not create connection" });
+      }
 
       await storage.updateProfile(invite.fromUserId, {
         partnerLineUserId: userId,
@@ -3841,6 +3850,15 @@ export async function registerRoutes(
         partnerDisplayName: invite.fromDisplayName,
         partnerPictureUrl: invite.fromPictureUrl || null,
       });
+
+      const fromPending = await storage.getPendingPartnerInvites(invite.fromUserId);
+      for (const p of fromPending) {
+        if (p.id !== invite.id) await storage.updatePartnerInvite(p.id, { status: "expired" });
+      }
+      const toPending = await storage.getPendingPartnerInvites(userId);
+      for (const p of toPending) {
+        await storage.updatePartnerInvite(p.id, { status: "expired" });
+      }
 
       logAudit("partner_connected", "user", userId, "partner", invite.fromUserId);
 
@@ -3864,7 +3882,16 @@ export async function registerRoutes(
 
       const connection = await storage.getActivePartnerConnection(userId);
       if (!connection) {
-        return res.json({ connected: false });
+        const pendingInvites = await storage.getPendingPartnerInvites(userId);
+        const activePending = pendingInvites.find(p => new Date(p.expiresAt).getTime() > Date.now());
+        return res.json({
+          connected: false,
+          pendingInvite: activePending ? {
+            token: activePending.token,
+            expiresAt: activePending.expiresAt,
+            createdAt: activePending.createdAt,
+          } : null,
+        });
       }
 
       const partnerId = connection.userALineId === userId ? connection.userBLineId : connection.userALineId;
@@ -3879,6 +3906,8 @@ export async function registerRoutes(
 
       let sharedSwipes = 0;
       let sharedMatches = 0;
+      let sessionsTogether = 0;
+      let mostUsedVibe = "";
       try {
         const userEvents = await storage.getUserBehaviorEvents(userId, 500);
         const partnerEvents = await storage.getUserBehaviorEvents(partnerId, 500);
@@ -3888,6 +3917,31 @@ export async function registerRoutes(
           if (rid && partnerRestaurants.has(rid)) sharedMatches++;
         }
         sharedSwipes = (swipeStats?.totalSwipes || 0) + (partnerSwipeStats?.totalSwipes || 0);
+
+        const userGroupSessions = await storage.getAllSwipesForUser(userId);
+        const partnerGroupSessions = await storage.getAllSwipesForUser(partnerId);
+        const userSessionCodes = new Set(userGroupSessions.map(s => s.sessionCode));
+        const sharedSessionCodes = new Set<string>();
+        for (const ps of partnerGroupSessions) {
+          if (userSessionCodes.has(ps.sessionCode)) sharedSessionCodes.add(ps.sessionCode);
+        }
+        sessionsTogether = sharedSessionCodes.size;
+
+        const vibeCounts: Record<string, number> = {};
+        for (const e of [...userEvents, ...partnerEvents]) {
+          if (e.eventType === "swipe_right" && e.metadata) {
+            try {
+              const meta = typeof e.metadata === "string" ? JSON.parse(e.metadata) : e.metadata;
+              if (meta.vibes) {
+                for (const v of meta.vibes) {
+                  vibeCounts[v] = (vibeCounts[v] || 0) + 1;
+                }
+              }
+            } catch {}
+          }
+        }
+        const sortedVibes = Object.entries(vibeCounts).sort((a, b) => b[1] - a[1]);
+        if (sortedVibes.length > 0) mostUsedVibe = sortedVibes[0][0];
       } catch {}
 
       res.json({
@@ -3903,6 +3957,8 @@ export async function registerRoutes(
           totalSwipes: sharedSwipes,
           sharedMatches,
           daysTogether,
+          sessionsTogether,
+          mostUsedVibe,
         },
       });
     } catch (err) {
@@ -3953,6 +4009,9 @@ export async function registerRoutes(
       const { userId, anniversaryDate } = req.body;
       if (!userId || !anniversaryDate) return res.status(400).json({ message: "userId and anniversaryDate required" });
 
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(anniversaryDate)) return res.status(400).json({ message: "anniversaryDate must be YYYY-MM-DD" });
+
       const connection = await storage.getActivePartnerConnection(userId);
       if (!connection) return res.status(404).json({ message: "No active partner connection" });
 
@@ -3960,6 +4019,68 @@ export async function registerRoutes(
       res.json({ updated: true, anniversaryDate });
     } catch (err) {
       console.error("Partner anniversary error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/partner/migrate-legacy", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) return res.status(400).json({ message: "userId required" });
+      const ip = req.ip || "unknown";
+      if (rateLimit(`partner-migrate:${ip}`, 3, 60000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+
+      const profile = await storage.getProfile(userId);
+      if (!profile || !profile.partnerLineUserId) {
+        return res.json({ migrated: false, reason: "No legacy partner data" });
+      }
+
+      const existing = await storage.getActivePartnerConnection(userId);
+      if (existing) {
+        return res.json({ migrated: false, reason: "Already has active connection" });
+      }
+
+      const partnerProfile = await storage.getProfile(profile.partnerLineUserId);
+      if (!partnerProfile) {
+        return res.json({ migrated: false, reason: "Partner profile not found" });
+      }
+
+      const existingPartner = await storage.getActivePartnerConnection(profile.partnerLineUserId);
+      if (existingPartner) {
+        return res.json({ migrated: false, reason: "Partner already connected to someone else" });
+      }
+
+      const [userA, userB] = [userId, profile.partnerLineUserId].sort();
+      try {
+        await storage.createPartnerConnection({
+          userALineId: userA,
+          userBLineId: userB,
+          anniversaryDate: new Date().toISOString().split("T")[0],
+          connectedAt: new Date().toISOString(),
+          disconnectedAt: null,
+          status: "active",
+        });
+      } catch {
+        return res.json({ migrated: false, reason: "Connection already exists" });
+      }
+
+      await storage.updateProfile(userId, {
+        partnerLineUserId: profile.partnerLineUserId,
+        partnerDisplayName: profile.partnerDisplayName || partnerProfile.displayName || null,
+        partnerPictureUrl: profile.partnerPictureUrl || partnerProfile.pictureUrl || null,
+      });
+      await storage.updateProfile(profile.partnerLineUserId, {
+        partnerLineUserId: userId,
+        partnerDisplayName: profile.displayName || null,
+        partnerPictureUrl: profile.pictureUrl || null,
+      });
+
+      logAudit("partner_migrated", "user", userId, "partner", profile.partnerLineUserId);
+      res.json({ migrated: true, partnerId: profile.partnerLineUserId });
+    } catch (err) {
+      console.error("Partner migrate error:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
