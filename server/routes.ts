@@ -3832,12 +3832,13 @@ export async function registerRoutes(
           disconnectedAt: null,
           status: "active",
         });
-      } catch (connErr: any) {
+      } catch (connErr) {
         const recheckInvite = await storage.getPartnerInviteByToken(token);
         if (recheckInvite && recheckInvite.redeemedBy === userId) {
           await storage.updatePartnerInvite(invite.id, { status: "pending", redeemedBy: null });
         }
-        return res.status(409).json({ message: connErr?.message || "Could not create connection" });
+        const errMsg = connErr instanceof Error ? connErr.message : "Could not create connection";
+        return res.status(409).json({ message: errMsg });
       }
 
       await storage.updateProfile(invite.fromUserId, {
