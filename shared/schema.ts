@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, jsonb, real, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -472,6 +473,8 @@ export const partnerConnections = pgTable("partner_connections", {
 }, (table) => ({
   userAIdx: index("partner_connections_user_a_idx").on(table.userALineId),
   userBIdx: index("partner_connections_user_b_idx").on(table.userBLineId),
+  activeUserAUnique: uniqueIndex("partner_connections_active_user_a_unique").on(table.userALineId).where(sql`status = 'active'`),
+  activeUserBUnique: uniqueIndex("partner_connections_active_user_b_unique").on(table.userBLineId).where(sql`status = 'active'`),
 }));
 
 export const insertPartnerConnectionSchema = createInsertSchema(partnerConnections).omit({ id: true });

@@ -990,12 +990,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPartnerConnection(conn: InsertPartnerConnection): Promise<PartnerConnection> {
-    const existingA = await this.getActivePartnerConnection(conn.userALineId);
-    if (existingA) throw new Error("User A already has an active partner connection");
-    const existingB = await this.getActivePartnerConnection(conn.userBLineId);
-    if (existingB) throw new Error("User B already has an active partner connection");
-    const [created] = await db.insert(partnerConnections).values(conn).returning();
-    return created;
+    try {
+      const [created] = await db.insert(partnerConnections).values(conn).returning();
+      return created;
+    } catch (err) {
+      if (err instanceof Error && err.message.includes("unique")) {
+        throw new Error("One or both users already have an active partner connection");
+      }
+      throw err;
+    }
   }
 
   async getActivePartnerConnection(lineUserId: string): Promise<PartnerConnection | undefined> {
