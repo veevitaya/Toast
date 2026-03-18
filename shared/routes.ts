@@ -20,10 +20,11 @@ export const api = {
       method: 'GET' as const,
       path: '/api/restaurants' as const,
       input: z.object({
-        mode: z.string().optional(), // 'trending', 'hot', 'new', 'nearby'
+        mode: z.string().optional(),
         lat: z.coerce.number().optional(),
         lng: z.coerce.number().optional(),
         query: z.string().optional(),
+        location: z.string().optional(),
       }).optional(),
       responses: {
         200: z.array(z.custom<typeof restaurants.$inferSelect>()),

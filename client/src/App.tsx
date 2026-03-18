@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/i18n/LanguageProvider";
 import { lazy, Suspense } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { SessionBar } from "@/components/SessionBar";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 
@@ -77,11 +78,21 @@ function PageLoader() {
   );
 }
 
+const SESSION_BAR_HIDDEN_PREFIXES = ["/admin", "/onboarding", "/group/waiting", "/group/swipe", "/group/setup"];
+
+function GlobalSessionBar() {
+  const [location] = useLocation();
+  const hidden = SESSION_BAR_HIDDEN_PREFIXES.some((p) => location.startsWith(p));
+  if (hidden) return null;
+  return <SessionBar />;
+}
+
 function Router() {
   const [location] = useLocation();
 
   return (
     <Suspense fallback={<PageLoader />}>
+        <GlobalSessionBar />
         <Switch location={location}>
           <Route path="/">
             <AnimatedPage><Home /></AnimatedPage>

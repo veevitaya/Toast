@@ -226,6 +226,7 @@ export const groupSessionMembers = pgTable("group_session_members", {
   joinedAt: text("joined_at").notNull(),
 }, (table) => ({
   sessionCodeIdx: index("group_session_members_session_code_idx").on(table.sessionCode),
+  lineUserIdIdx: index("group_session_members_line_user_id_idx").on(table.lineUserId),
 }));
 
 export const insertGroupSessionMemberSchema = createInsertSchema(groupSessionMembers).omit({ id: true });

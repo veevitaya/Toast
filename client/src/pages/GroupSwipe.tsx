@@ -8,7 +8,7 @@ import { useLineProfile } from "@/lib/useLineProfile";
 import { handleImageError } from "@/lib/imageUtils";
 import { throttleTap } from "@/lib/requestLock";
 import { fetchWithTimeout } from "@/lib/queryClient";
-import { Square, X, Trophy, ChevronRight, Crown, Medal, Award, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils } from "lucide-react";
+import { Square, X, Trophy, ChevronRight, Crown, Medal, Award, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils, MapPin } from "lucide-react";
 
 interface MenuItem {
   id: number;
@@ -298,6 +298,8 @@ export default function GroupSwipe() {
   const [loading, setLoading] = useState(true);
   const [pollError, setPollError] = useState(false);
   const pollFailCount = useRef(0);
+  const [sessionLocationLabel, setSessionLocationLabel] = useState<string | null>(null);
+  const sessionLocationLabelRef = useRef<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [matchNotification, setMatchNotification] = useState<string | null>(null);
   const [fullMatch, setFullMatch] = useState(false);
@@ -339,6 +341,11 @@ export default function GroupSwipe() {
           if (cancelled) return;
           if (sessionRes.ok) {
             const sessionData = await sessionRes.json();
+            const sessionLocation = sessionData.session?.locationName;
+            if (sessionLocation) {
+              setSessionLocationLabel(sessionLocation);
+              sessionLocationLabelRef.current = sessionLocation;
+            }
             if (sessionData.session?.sessionType === "trending") {
               const trendingRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/trending-restaurants`, { signal: controller.signal });
               if (cancelled) return;
@@ -366,7 +373,8 @@ export default function GroupSwipe() {
         }
 
         if (data.length === 0) {
-          const res = await fetchWithTimeout("/api/restaurants", { signal: controller.signal });
+          const locationParam = sessionLocationLabelRef.current ? `?location=${encodeURIComponent(sessionLocationLabelRef.current)}` : "";
+          const res = await fetchWithTimeout(`/api/restaurants${locationParam}`, { signal: controller.signal });
           if (cancelled) return;
           if (res.ok) {
             data = await res.json();
@@ -1283,9 +1291,17 @@ export default function GroupSwipe() {
         <div className="text-left flex items-center gap-2">
           <div>
             <h1 className="font-bold text-[22px] tracking-tight" data-testid="text-group-title">Group Swipe</h1>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              {members.map(m => m.lineUserId === profile?.userId ? "You" : m.displayName).join(", ")}
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              {sessionLocationLabel && (
+                <span className="inline-flex items-center gap-0.5 text-[11px] text-muted-foreground" data-testid="text-session-location-header">
+                  <MapPin className="w-3 h-3" />{sessionLocationLabel}
+                  <span className="mx-0.5">·</span>
+                </span>
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                {members.map(m => m.lineUserId === profile?.userId ? "You" : m.displayName).join(", ")}
+              </p>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">

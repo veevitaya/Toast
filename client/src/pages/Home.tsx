@@ -6,7 +6,6 @@ import {
   Sparkles, SlidersHorizontal, Users, Navigation,
 } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
-import { SessionBar } from "@/components/SessionBar";
 import { RestaurantRow } from "@/components/RestaurantRow";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { useRestaurants, useSuggestions } from "@/hooks/use-restaurants";
@@ -1198,7 +1197,6 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      <SessionBar />
       <BottomNav showBack={false} hidden={searchOpen || moreVibesOpen || refineOpen} />
     </div>
   );

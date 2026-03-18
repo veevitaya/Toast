@@ -1669,10 +1669,19 @@ export async function registerRoutes(
   app.get(api.restaurants.list.path, async (req, res) => {
     try {
       const input = api.restaurants.list.input ? api.restaurants.list.input.parse(req.query) : {};
-      const cacheKey = `restaurants:${input.mode || ''}:${input.query || ''}`;
-      const restaurants = await getCached(cacheKey, 30000, () =>
+      const locationFilter = (input as any)?.location as string | undefined;
+      const cacheKey = `restaurants:${input.mode || ''}:${input.query || ''}:${locationFilter || ''}`;
+      let restaurants = await getCached(cacheKey, 30000, () =>
         storage.getRestaurants(input.mode, input.lat, input.lng, input.query)
       );
+      if (locationFilter) {
+        const loc = locationFilter.toLowerCase();
+        restaurants = restaurants.filter((r: any) => {
+          const addr = (r.address || "").toLowerCase();
+          const district = (r.district || "").toLowerCase();
+          return addr.includes(loc) || district.includes(loc);
+        });
+      }
       res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=120");
       res.json(restaurants);
     } catch (err) {
