@@ -721,6 +721,7 @@ export default function Profile() {
                     onManualAdd={() => setShowPartnerModal(true)}
                     onUnlink={unlinkPartner}
                     t={t}
+                    lineUserId={lineProfile?.userId}
                   />
 
                   <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
@@ -3488,82 +3489,247 @@ function StatsRow({ t }: { t: (key: string, params?: Record<string, string | num
   );
 }
 
-function PartnerRow({ profile, onInvite, onManualAdd, onUnlink, t }: {
+function PartnerRow({ profile, onInvite, onManualAdd, onUnlink, t, lineUserId }: {
   profile: LocalProfile;
   onInvite: () => void;
   onManualAdd: () => void;
   onUnlink: () => void;
   t: (key: string, params?: Record<string, string | number>) => string;
+  lineUserId?: string;
 }) {
   const [, navigate] = useLocation();
   const { partnerCount } = useSavedRestaurants();
+  const [expanded, setExpanded] = useState(false);
+  const [inviting, setInviting] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  const { data: partnerStatus } = useQuery<{
+    connected: boolean;
+    connectionId?: number;
+    partnerId?: string;
+    partnerDisplayName?: string;
+    partnerPictureUrl?: string | null;
+    anniversaryDate?: string;
+    connectedAt?: string;
+    daysTogether?: number;
+    sharedStats?: { totalSwipes: number; sharedMatches: number; daysTogether: number };
+  }>({
+    queryKey: ["/api/partner/status", lineUserId],
+    enabled: !!lineUserId,
+  });
+
+  const connected = partnerStatus?.connected || profile.partnerLinked;
+  const partnerName = partnerStatus?.partnerDisplayName || profile.partnerName;
+  const partnerPic = partnerStatus?.partnerPictureUrl || profile.partnerPictureUrl;
+
+  const handleInvitePartner = async () => {
+    if (!lineUserId) {
+      onInvite();
+      return;
+    }
+    setInviting(true);
+    try {
+      const res = await fetch("/api/partner/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: lineUserId,
+          displayName: profile.displayName || "Toast Lover",
+          pictureUrl: profile.pictureUrl || null,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const baseUrl = window.location.origin;
+        setInviteUrl(`${baseUrl}${data.inviteUrl}`);
+      }
+    } catch {} finally {
+      setInviting(false);
+    }
+  };
+
+  const handleShareInvite = async () => {
+    if (!inviteUrl) return;
+    const text = `Join me as Toast partners! 💕\n\nTap to connect:\n${inviteUrl}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: "Toast Partner Invite", text, url: inviteUrl }); } catch {}
+    } else {
+      try { await navigator.clipboard.writeText(text); } catch {}
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!lineUserId) { onUnlink(); return; }
+    setDisconnecting(true);
+    try {
+      await fetch("/api/partner/disconnect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: lineUserId }),
+      });
+      onUnlink();
+      queryClient.invalidateQueries({ queryKey: ["/api/partner/status", lineUserId] });
+    } catch {} finally {
+      setDisconnecting(false);
+      setShowDisconnectConfirm(false);
+    }
+  };
 
   return (
     <div data-testid="button-partner-section">
-      <div className="px-5 py-4 flex items-center gap-4">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
+      >
         <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #FCE4EC 0%, #F8BBD0 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
           💕
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 text-left">
           <p className="font-bold text-[15px]">{t("profile.partner")}</p>
-          {profile.partnerLinked ? (
+          {connected ? (
             <div className="flex items-center gap-2 mt-0.5">
               <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-muted overflow-hidden flex items-center justify-center text-[10px]">
-                {profile.partnerPictureUrl ? (
-                  <img src={profile.partnerPictureUrl} alt={profile.partnerName} className="w-full h-full object-cover" />
+                {partnerPic ? (
+                  <img src={partnerPic} alt={partnerName} className="w-full h-full object-cover" />
                 ) : "👤"}
               </div>
-              <p className="text-[11px] text-muted-foreground truncate" data-testid="text-partner-name">{profile.partnerName}</p>
-              {partnerCount > 0 && (
-                <span className="text-[10px] text-pink-500 font-medium ml-1">{partnerCount} {t("profile.shared")}</span>
+              <p className="text-[11px] text-muted-foreground truncate" data-testid="text-partner-name">{partnerName}</p>
+              {partnerStatus?.daysTogether !== undefined && (
+                <span className="text-[10px] text-pink-500 font-medium ml-1">{partnerStatus.daysTogether}d</span>
               )}
             </div>
           ) : (
             <p className="text-[11px] text-muted-foreground mt-0.5">{t("profile.invite_partner")}</p>
           )}
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {profile.partnerLinked ? (
-            <>
-              {partnerCount > 0 && (
-                <button
-                  onClick={() => navigate("/restaurants?bucket=partner")}
-                  className="text-[11px] text-pink-500 font-semibold active:scale-95 transition-transform"
-                  data-testid="button-view-partner-saves"
-                >
-                  {t("common.view")}
-                </button>
+        <ChevronRight className={`w-4 h-4 text-muted-foreground/40 transition-transform duration-300 ${expanded ? "rotate-90" : ""}`} />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: "auto" }}
+            exit={{ height: 0 }}
+            transition={{ type: "spring", damping: 26, stiffness: 260, mass: 0.8 }}
+            className="overflow-hidden"
+          >
+            <div className="px-5 pb-5">
+              {connected ? (
+                <div className="space-y-3">
+                  {partnerStatus?.sharedStats && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-pink-50 dark:bg-pink-950/20 rounded-xl p-3 text-center">
+                        <p className="text-lg font-bold text-pink-500" data-testid="text-days-together">{partnerStatus.sharedStats.daysTogether}</p>
+                        <p className="text-[10px] text-muted-foreground">Days</p>
+                      </div>
+                      <div className="bg-pink-50 dark:bg-pink-950/20 rounded-xl p-3 text-center">
+                        <p className="text-lg font-bold text-pink-500" data-testid="text-shared-matches">{partnerStatus.sharedStats.sharedMatches}</p>
+                        <p className="text-[10px] text-muted-foreground">Matches</p>
+                      </div>
+                      <div className="bg-pink-50 dark:bg-pink-950/20 rounded-xl p-3 text-center">
+                        <p className="text-lg font-bold text-pink-500" data-testid="text-total-swipes">{partnerStatus.sharedStats.totalSwipes}</p>
+                        <p className="text-[10px] text-muted-foreground">Swipes</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {partnerStatus?.anniversaryDate && (
+                    <div className="flex items-center gap-2 bg-gray-50 dark:bg-muted rounded-xl px-4 py-2.5">
+                      <Calendar className="w-3.5 h-3.5 text-pink-400" />
+                      <span className="text-[12px] text-muted-foreground">Anniversary</span>
+                      <span className="text-[12px] font-semibold ml-auto" data-testid="text-anniversary">{new Date(partnerStatus.anniversaryDate).toLocaleDateString()}</span>
+                    </div>
+                  )}
+
+                  {partnerCount > 0 && (
+                    <button
+                      onClick={() => navigate("/restaurants?bucket=partner")}
+                      className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-muted rounded-xl active:scale-[0.98] transition-transform"
+                      data-testid="button-view-partner-saves"
+                    >
+                      <span className="text-[12px] font-medium">Shared saves</span>
+                      <span className="text-[12px] text-pink-500 font-semibold">{partnerCount} →</span>
+                    </button>
+                  )}
+
+                  {showDisconnectConfirm ? (
+                    <div className="bg-red-50 dark:bg-red-950/20 rounded-xl p-4">
+                      <p className="text-[12px] text-red-600 dark:text-red-400 font-medium mb-3">Disconnect from {partnerName}?</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setShowDisconnectConfirm(false)}
+                          className="flex-1 py-2 rounded-xl bg-white dark:bg-muted text-[12px] font-medium active:scale-95 transition-transform"
+                          data-testid="button-cancel-disconnect"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleDisconnect}
+                          disabled={disconnecting}
+                          className="flex-1 py-2 rounded-xl bg-red-500 text-white text-[12px] font-medium active:scale-95 transition-transform disabled:opacity-50"
+                          data-testid="button-confirm-disconnect"
+                        >
+                          {disconnecting ? "..." : "Disconnect"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowDisconnectConfirm(true)}
+                      className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[12px] text-red-400 font-medium active:scale-95 transition-transform"
+                      data-testid="button-unlink-partner"
+                    >
+                      <Unlink className="w-3.5 h-3.5" />
+                      Disconnect
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {inviteUrl ? (
+                    <div className="space-y-3">
+                      <div className="bg-green-50 dark:bg-green-950/20 rounded-xl p-4">
+                        <p className="text-[12px] font-medium text-green-700 dark:text-green-400 mb-2">Invite link created!</p>
+                        <p className="text-[11px] text-muted-foreground break-all select-all font-mono" data-testid="text-invite-url">{inviteUrl}</p>
+                      </div>
+                      <button
+                        onClick={handleShareInvite}
+                        className="w-full py-3 rounded-2xl bg-[#06C755] text-white text-[13px] font-semibold active:scale-[0.97] transition-transform flex items-center justify-center gap-2"
+                        data-testid="button-share-invite"
+                      >
+                        <Send className="w-4 h-4" />
+                        Share via LINE
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleInvitePartner}
+                        disabled={inviting}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-2xl bg-[#06C755] text-white text-[13px] font-semibold active:scale-[0.97] transition-transform disabled:opacity-50"
+                        data-testid="button-invite-partner-line"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        {inviting ? "Creating..." : t("common.invite")}
+                      </button>
+                      <button
+                        onClick={onManualAdd}
+                        className="px-4 py-3 rounded-2xl bg-gray-100 dark:bg-muted text-foreground text-[13px] font-medium active:scale-[0.97] transition-transform"
+                        data-testid="button-add-partner-manual"
+                      >
+                        {t("common.add")}
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
-              <button
-                onClick={onUnlink}
-                className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform text-red-400"
-                data-testid="button-unlink-partner"
-              >
-                <Unlink className="w-4 h-4" />
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={onInvite}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#06C755] text-white text-[11px] font-semibold active:scale-95 transition-transform"
-                data-testid="button-invite-partner-line"
-              >
-                <UserPlus className="w-3 h-3" />
-                {t("common.invite")}
-              </button>
-              <button
-                onClick={onManualAdd}
-                className="text-[11px] text-muted-foreground font-medium active:scale-95 transition-transform"
-                data-testid="button-add-partner-manual"
-              >
-                {t("common.add")}
-              </button>
-              <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
-            </>
-          )}
-        </div>
-      </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

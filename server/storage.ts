@@ -64,6 +64,8 @@ import {
   auditLogs,
   savedLists,
   savedListItems,
+  partnerConnections,
+  partnerInvites,
   type SessionEvent,
   type InsertSessionEvent,
   type AuditLog,
@@ -72,6 +74,10 @@ import {
   type InsertSavedList,
   type SavedListItem,
   type InsertSavedListItem,
+  type PartnerConnection,
+  type InsertPartnerConnection,
+  type PartnerInvite,
+  type InsertPartnerInvite,
 } from "@shared/schema";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -183,6 +189,17 @@ export interface IStorage {
   removeSavedListItem(listId: number, restaurantId: number): Promise<void>;
   getOrCreateDefaultLists(userId: string): Promise<{ mine: SavedList; partner: SavedList }>;
   getSavedListsWithItems(userId: string): Promise<(SavedList & { items: SavedListItem[] })[]>;
+
+  createPartnerInvite(invite: InsertPartnerInvite): Promise<PartnerInvite>;
+  getPartnerInviteByToken(token: string): Promise<PartnerInvite | undefined>;
+  getPartnerInviteByNonce(nonce: string): Promise<PartnerInvite | undefined>;
+  updatePartnerInvite(id: number, updates: Partial<InsertPartnerInvite>): Promise<PartnerInvite | undefined>;
+  getPendingPartnerInvites(fromUserId: string): Promise<PartnerInvite[]>;
+
+  createPartnerConnection(conn: InsertPartnerConnection): Promise<PartnerConnection>;
+  getActivePartnerConnection(lineUserId: string): Promise<PartnerConnection | undefined>;
+  disconnectPartner(connectionId: number): Promise<void>;
+  updatePartnerConnection(id: number, updates: Partial<InsertPartnerConnection>): Promise<PartnerConnection | undefined>;
 }
 
 const MAX_CACHE_ENTRIES = 200;
@@ -926,6 +943,65 @@ export class DatabaseStorage implements IStorage {
       return { ...list, items };
     }));
     return result;
+  }
+
+  async createPartnerInvite(invite: InsertPartnerInvite): Promise<PartnerInvite> {
+    const [created] = await db.insert(partnerInvites).values(invite).returning();
+    return created;
+  }
+
+  async getPartnerInviteByToken(token: string): Promise<PartnerInvite | undefined> {
+    const [invite] = await db.select().from(partnerInvites)
+      .where(eq(partnerInvites.token, token)).limit(1);
+    return invite;
+  }
+
+  async getPartnerInviteByNonce(nonce: string): Promise<PartnerInvite | undefined> {
+    const [invite] = await db.select().from(partnerInvites)
+      .where(eq(partnerInvites.nonce, nonce)).limit(1);
+    return invite;
+  }
+
+  async updatePartnerInvite(id: number, updates: Partial<InsertPartnerInvite>): Promise<PartnerInvite | undefined> {
+    const [updated] = await db.update(partnerInvites)
+      .set(updates).where(eq(partnerInvites.id, id)).returning();
+    return updated;
+  }
+
+  async getPendingPartnerInvites(fromUserId: string): Promise<PartnerInvite[]> {
+    return await db.select().from(partnerInvites)
+      .where(and(
+        eq(partnerInvites.fromUserId, fromUserId),
+        eq(partnerInvites.status, "pending")
+      ))
+      .orderBy(desc(partnerInvites.id));
+  }
+
+  async createPartnerConnection(conn: InsertPartnerConnection): Promise<PartnerConnection> {
+    const [created] = await db.insert(partnerConnections).values(conn).returning();
+    return created;
+  }
+
+  async getActivePartnerConnection(lineUserId: string): Promise<PartnerConnection | undefined> {
+    const [conn] = await db.select().from(partnerConnections)
+      .where(and(
+        sql`(${partnerConnections.userALineId} = ${lineUserId} OR ${partnerConnections.userBLineId} = ${lineUserId})`,
+        eq(partnerConnections.status, "active")
+      ))
+      .limit(1);
+    return conn;
+  }
+
+  async disconnectPartner(connectionId: number): Promise<void> {
+    await db.update(partnerConnections)
+      .set({ status: "disconnected", disconnectedAt: new Date().toISOString() })
+      .where(eq(partnerConnections.id, connectionId));
+  }
+
+  async updatePartnerConnection(id: number, updates: Partial<InsertPartnerConnection>): Promise<PartnerConnection | undefined> {
+    const [updated] = await db.update(partnerConnections)
+      .set(updates).where(eq(partnerConnections.id, id)).returning();
+    return updated;
   }
 }
 

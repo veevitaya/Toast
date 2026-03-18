@@ -3677,6 +3677,293 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/partner/invite", async (req, res) => {
+    try {
+      const { userId, displayName, pictureUrl } = req.body;
+      if (!userId || !displayName) return res.status(400).json({ message: "userId and displayName required" });
+      const ip = req.ip || "unknown";
+      if (rateLimit(`partner-invite:${ip}`, 5, 60000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+
+      const existing = await storage.getActivePartnerConnection(userId);
+      if (existing) return res.status(409).json({ message: "Already connected to a partner" });
+
+      const pending = await storage.getPendingPartnerInvites(userId);
+      for (const p of pending) {
+        if (new Date(p.expiresAt).getTime() > Date.now()) {
+          return res.json({
+            inviteToken: p.token,
+            inviteUrl: `/partner/accept?token=${p.token}`,
+            expiresAt: p.expiresAt,
+          });
+        }
+      }
+
+      const crypto = await import("crypto");
+      const secret = process.env.SESSION_SECRET;
+      if (!secret) return res.status(500).json({ message: "Server configuration error" });
+      const nonce = crypto.randomBytes(16).toString("hex");
+      const exp = Date.now() + 7 * 24 * 60 * 60 * 1000;
+      const payload = JSON.stringify({ fromUserId: userId, exp, nonce, type: "partner_invite" });
+      const hmac = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+      const token = Buffer.from(payload).toString("base64url") + "." + hmac;
+
+      await storage.createPartnerInvite({
+        fromUserId: userId,
+        fromDisplayName: displayName,
+        fromPictureUrl: pictureUrl || null,
+        token,
+        nonce,
+        expiresAt: new Date(exp).toISOString(),
+        status: "pending",
+        redeemedBy: null,
+        createdAt: new Date().toISOString(),
+      });
+
+      logSessionEvent("partner", "PARTNER_INVITE_CREATED", userId, { nonce });
+
+      res.json({
+        inviteToken: token,
+        inviteUrl: `/partner/accept?token=${token}`,
+        expiresAt: new Date(exp).toISOString(),
+      });
+    } catch (err) {
+      console.error("Partner invite error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/partner/invite/:token", async (req, res) => {
+    try {
+      const token = req.params.token;
+      const parts = token.split(".");
+      if (parts.length !== 2) return res.status(400).json({ message: "Invalid invite token" });
+
+      const [payloadB64, sig] = parts;
+      const crypto = await import("crypto");
+      const secret = process.env.SESSION_SECRET;
+      if (!secret) return res.status(500).json({ message: "Server configuration error" });
+      const payload = Buffer.from(payloadB64, "base64url").toString();
+      const expectedSig = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+      if (sig !== expectedSig) return res.status(403).json({ message: "Invalid token signature" });
+
+      const decoded = JSON.parse(payload);
+      if (decoded.type !== "partner_invite") return res.status(400).json({ message: "Invalid token type" });
+      if (Date.now() > decoded.exp) return res.status(410).json({ message: "Invite expired" });
+
+      const invite = await storage.getPartnerInviteByToken(token);
+      if (!invite) return res.status(404).json({ message: "Invite not found" });
+      if (invite.status !== "pending") return res.status(409).json({ message: "Invite already used" });
+
+      res.json({
+        fromDisplayName: invite.fromDisplayName,
+        fromPictureUrl: invite.fromPictureUrl,
+        fromUserId: invite.fromUserId,
+        expiresAt: invite.expiresAt,
+      });
+    } catch (err) {
+      console.error("Partner invite verify error:", err);
+      res.status(400).json({ message: "Invalid invite token" });
+    }
+  });
+
+  app.post("/api/partner/accept", async (req, res) => {
+    try {
+      const { token, userId, displayName, pictureUrl } = req.body;
+      if (!token || !userId || !displayName) {
+        return res.status(400).json({ message: "token, userId, and displayName required" });
+      }
+      const ip = req.ip || "unknown";
+      if (rateLimit(`partner-accept:${ip}`, 5, 60000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+
+      const parts = token.split(".");
+      if (parts.length !== 2) return res.status(400).json({ message: "Invalid invite token" });
+      const [payloadB64, sig] = parts;
+      const crypto = await import("crypto");
+      const secret = process.env.SESSION_SECRET;
+      if (!secret) return res.status(500).json({ message: "Server configuration error" });
+      const payload = Buffer.from(payloadB64, "base64url").toString();
+      const expectedSig = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+      if (sig !== expectedSig) return res.status(403).json({ message: "Invalid token signature" });
+
+      const decoded = JSON.parse(payload);
+      if (decoded.type !== "partner_invite") return res.status(400).json({ message: "Invalid token type" });
+      if (Date.now() > decoded.exp) return res.status(410).json({ message: "Invite expired" });
+
+      const invite = await storage.getPartnerInviteByToken(token);
+      if (!invite) return res.status(404).json({ message: "Invite not found" });
+      if (invite.status !== "pending") return res.status(409).json({ message: "Invite already used" });
+
+      if (invite.fromUserId === userId) {
+        return res.status(400).json({ message: "Cannot accept your own invite" });
+      }
+
+      const existingA = await storage.getActivePartnerConnection(userId);
+      if (existingA) return res.status(409).json({ message: "You are already connected to a partner" });
+      const existingB = await storage.getActivePartnerConnection(invite.fromUserId);
+      if (existingB) return res.status(409).json({ message: "Inviter is already connected to someone" });
+
+      const nonceKey = `partner-invite:${invite.nonce}`;
+      const used = await storage.checkIdempotencyKey(nonceKey);
+      if (used) return res.status(409).json({ message: "Invite already redeemed" });
+
+      await storage.createSessionEvent({
+        sessionCode: "partner",
+        eventType: "PARTNER_INVITE_REDEEMED",
+        actorId: userId,
+        payload: { nonce: invite.nonce, fromUserId: invite.fromUserId },
+        idempotencyKey: nonceKey,
+        createdAt: new Date().toISOString(),
+      });
+
+      await storage.updatePartnerInvite(invite.id, { status: "accepted", redeemedBy: userId });
+
+      const [userA, userB] = [invite.fromUserId, userId].sort();
+      const connection = await storage.createPartnerConnection({
+        userALineId: userA,
+        userBLineId: userB,
+        anniversaryDate: new Date().toISOString().split("T")[0],
+        connectedAt: new Date().toISOString(),
+        disconnectedAt: null,
+        status: "active",
+      });
+
+      await storage.updateProfile(invite.fromUserId, {
+        partnerLineUserId: userId,
+        partnerDisplayName: displayName,
+        partnerPictureUrl: pictureUrl || null,
+      });
+      await storage.updateProfile(userId, {
+        partnerLineUserId: invite.fromUserId,
+        partnerDisplayName: invite.fromDisplayName,
+        partnerPictureUrl: invite.fromPictureUrl || null,
+      });
+
+      logAudit("partner_connected", "user", userId, "partner", invite.fromUserId);
+
+      res.json({
+        connectionId: connection.id,
+        partnerId: invite.fromUserId,
+        partnerDisplayName: invite.fromDisplayName,
+        partnerPictureUrl: invite.fromPictureUrl,
+        anniversaryDate: connection.anniversaryDate,
+      });
+    } catch (err) {
+      console.error("Partner accept error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/partner/status/:userId", async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      if (!userId) return res.status(400).json({ message: "userId required" });
+
+      const connection = await storage.getActivePartnerConnection(userId);
+      if (!connection) {
+        return res.json({ connected: false });
+      }
+
+      const partnerId = connection.userALineId === userId ? connection.userBLineId : connection.userALineId;
+      const partnerProfile = await storage.getProfile(partnerId);
+
+      const swipeStats = await storage.getUserSwipeStats(userId);
+      const partnerSwipeStats = await storage.getUserSwipeStats(partnerId);
+
+      const connectedDate = new Date(connection.connectedAt);
+      const now = new Date();
+      const daysTogether = Math.floor((now.getTime() - connectedDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      let sharedSwipes = 0;
+      let sharedMatches = 0;
+      try {
+        const userEvents = await storage.getUserBehaviorEvents(userId, 500);
+        const partnerEvents = await storage.getUserBehaviorEvents(partnerId, 500);
+        const userRestaurants = new Set(userEvents.filter(e => e.eventType === "swipe_right").map(e => e.restaurantId));
+        const partnerRestaurants = new Set(partnerEvents.filter(e => e.eventType === "swipe_right").map(e => e.restaurantId));
+        for (const rid of userRestaurants) {
+          if (rid && partnerRestaurants.has(rid)) sharedMatches++;
+        }
+        sharedSwipes = (swipeStats?.totalSwipes || 0) + (partnerSwipeStats?.totalSwipes || 0);
+      } catch {}
+
+      res.json({
+        connected: true,
+        connectionId: connection.id,
+        partnerId,
+        partnerDisplayName: partnerProfile?.displayName || "Partner",
+        partnerPictureUrl: partnerProfile?.pictureUrl || null,
+        anniversaryDate: connection.anniversaryDate,
+        connectedAt: connection.connectedAt,
+        daysTogether,
+        sharedStats: {
+          totalSwipes: sharedSwipes,
+          sharedMatches,
+          daysTogether,
+        },
+      });
+    } catch (err) {
+      console.error("Partner status error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/partner/disconnect", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) return res.status(400).json({ message: "userId required" });
+      const ip = req.ip || "unknown";
+      if (rateLimit(`partner-disconnect:${ip}`, 3, 60000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+
+      const connection = await storage.getActivePartnerConnection(userId);
+      if (!connection) return res.status(404).json({ message: "No active partner connection" });
+
+      const partnerId = connection.userALineId === userId ? connection.userBLineId : connection.userALineId;
+
+      await storage.disconnectPartner(connection.id);
+
+      await storage.updateProfile(userId, {
+        partnerLineUserId: null,
+        partnerDisplayName: null,
+        partnerPictureUrl: null,
+      });
+      await storage.updateProfile(partnerId, {
+        partnerLineUserId: null,
+        partnerDisplayName: null,
+        partnerPictureUrl: null,
+      });
+
+      logAudit("partner_disconnected", "user", userId, "partner", partnerId);
+      logSessionEvent("partner", "PARTNER_DISCONNECTED", userId, { partnerId });
+
+      res.json({ disconnected: true });
+    } catch (err) {
+      console.error("Partner disconnect error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/partner/anniversary", async (req, res) => {
+    try {
+      const { userId, anniversaryDate } = req.body;
+      if (!userId || !anniversaryDate) return res.status(400).json({ message: "userId and anniversaryDate required" });
+
+      const connection = await storage.getActivePartnerConnection(userId);
+      if (!connection) return res.status(404).json({ message: "No active partner connection" });
+
+      await storage.updatePartnerConnection(connection.id, { anniversaryDate });
+      res.json({ updated: true, anniversaryDate });
+    } catch (err) {
+      console.error("Partner anniversary error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   return httpServer;
 }
 

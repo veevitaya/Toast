@@ -460,3 +460,40 @@ export const savedListItems = pgTable("saved_list_items", {
 export const insertSavedListItemSchema = createInsertSchema(savedListItems).omit({ id: true });
 export type SavedListItem = typeof savedListItems.$inferSelect;
 export type InsertSavedListItem = z.infer<typeof insertSavedListItemSchema>;
+
+export const partnerConnections = pgTable("partner_connections", {
+  id: serial("id").primaryKey(),
+  userALineId: text("user_a_line_id").notNull(),
+  userBLineId: text("user_b_line_id").notNull(),
+  anniversaryDate: text("anniversary_date"),
+  connectedAt: text("connected_at").notNull(),
+  disconnectedAt: text("disconnected_at"),
+  status: text("status").notNull().default("active"),
+}, (table) => ({
+  userAIdx: index("partner_connections_user_a_idx").on(table.userALineId),
+  userBIdx: index("partner_connections_user_b_idx").on(table.userBLineId),
+}));
+
+export const insertPartnerConnectionSchema = createInsertSchema(partnerConnections).omit({ id: true });
+export type PartnerConnection = typeof partnerConnections.$inferSelect;
+export type InsertPartnerConnection = z.infer<typeof insertPartnerConnectionSchema>;
+
+export const partnerInvites = pgTable("partner_invites", {
+  id: serial("id").primaryKey(),
+  fromUserId: text("from_user_id").notNull(),
+  fromDisplayName: text("from_display_name").notNull(),
+  fromPictureUrl: text("from_picture_url"),
+  token: text("token").notNull().unique(),
+  nonce: text("nonce").notNull().unique(),
+  expiresAt: text("expires_at").notNull(),
+  status: text("status").notNull().default("pending"),
+  redeemedBy: text("redeemed_by"),
+  createdAt: text("created_at").notNull(),
+}, (table) => ({
+  fromUserIdx: index("partner_invites_from_user_idx").on(table.fromUserId),
+  tokenIdx: index("partner_invites_token_idx").on(table.token),
+}));
+
+export const insertPartnerInviteSchema = createInsertSchema(partnerInvites).omit({ id: true });
+export type PartnerInvite = typeof partnerInvites.$inferSelect;
+export type InsertPartnerInvite = z.infer<typeof insertPartnerInviteSchema>;
