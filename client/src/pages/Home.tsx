@@ -144,6 +144,7 @@ const VIBE_TILES_MAIN = [
 ];
 
 const VIBE_TILES_EXTRA = [
+  { mode: "saved", label: "Saved", emoji: "❤️", bg: "hsl(0, 55%, 95%)" },
   { mode: "delivery", label: "Delivery", emoji: "🛵", bg: "hsl(25, 55%, 94%)" },
   { mode: "late", label: "Late Night", emoji: "🌙", bg: "hsl(250, 40%, 94%)" },
   { mode: "sweet", label: "Sweets", emoji: "🍰", bg: "hsl(340, 45%, 95%)" },
@@ -303,6 +304,10 @@ export default function Home() {
 
   const handleVibeClick = useCallback((mode: string) => {
     recordVibe(mode);
+    if (mode === "saved") {
+      navigate("/saved");
+      return;
+    }
     const vibeTag = mode === "trending" ? "popular" : MODE_TO_VIBE[mode];
     if (vibeTag) {
       navigate(`/solo/results?vibe=${vibeTag}`);

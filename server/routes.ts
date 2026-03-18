@@ -1258,6 +1258,153 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/saved-lists", async (req, res) => {
+    try {
+      const userId = req.query.userId as string;
+      if (!userId) return res.status(400).json({ message: "userId required" });
+      const ip = req.ip || "unknown";
+      if (rateLimit(`saved-lists:${ip}`, 30, 10000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+      const defaults = await storage.getOrCreateDefaultLists(userId);
+      const lists = await storage.getSavedListsWithItems(userId);
+      res.json(lists);
+    } catch (err) {
+      console.error("Get saved lists error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/saved-lists", async (req, res) => {
+    try {
+      const { userId, name, emoji } = req.body;
+      if (!userId || !name) return res.status(400).json({ message: "userId and name required" });
+      const ip = req.ip || "unknown";
+      if (rateLimit(`saved-lists-create:${ip}`, 10, 10000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+      const existing = await storage.getSavedLists(userId);
+      if (existing.length >= 20) {
+        return res.status(400).json({ message: "Maximum 20 lists allowed" });
+      }
+      const list = await storage.createSavedList({
+        userId, name, emoji: emoji || "📋", isDefault: false, createdAt: new Date().toISOString()
+      });
+      res.json(list);
+    } catch (err) {
+      console.error("Create saved list error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/saved-lists/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { userId, name, emoji } = req.body;
+      if (!userId) return res.status(400).json({ message: "userId required" });
+      const lists = await storage.getSavedLists(userId);
+      const target = lists.find(l => l.id === id);
+      if (!target) return res.status(404).json({ message: "List not found" });
+      if (target.isDefault) return res.status(400).json({ message: "Cannot rename default lists" });
+      const updated = await storage.updateSavedList(id, { name, emoji });
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/saved-lists/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.query.userId as string;
+      if (!userId) return res.status(400).json({ message: "userId required" });
+      const lists = await storage.getSavedLists(userId);
+      const target = lists.find(l => l.id === id);
+      if (!target) return res.status(404).json({ message: "List not found" });
+      if (target.isDefault) return res.status(400).json({ message: "Cannot delete default lists" });
+      await storage.deleteSavedList(id);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/saved-lists/:id/items", async (req, res) => {
+    try {
+      const listId = parseInt(req.params.id);
+      const { userId, restaurantId } = req.body;
+      if (!userId || !restaurantId) return res.status(400).json({ message: "userId and restaurantId required" });
+      const ip = req.ip || "unknown";
+      if (rateLimit(`saved-item-add:${ip}`, 30, 10000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+      const lists = await storage.getSavedLists(userId);
+      const target = lists.find(l => l.id === listId);
+      if (!target) return res.status(404).json({ message: "List not found" });
+      for (const list of lists) {
+        if (list.id !== listId) {
+          await storage.removeSavedListItem(list.id, restaurantId);
+        }
+      }
+      const item = await storage.addSavedListItem({
+        listId, restaurantId, addedAt: new Date().toISOString()
+      });
+      res.json(item);
+    } catch (err) {
+      console.error("Add saved list item error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/saved-lists/:id/items/:restaurantId", async (req, res) => {
+    try {
+      const listId = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const userId = req.query.userId as string;
+      if (!userId) return res.status(400).json({ message: "userId required" });
+      const lists = await storage.getSavedLists(userId);
+      const target = lists.find(l => l.id === listId);
+      if (!target) return res.status(404).json({ message: "List not found" });
+      await storage.removeSavedListItem(listId, restaurantId);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/saved-lists/migrate", async (req, res) => {
+    try {
+      const { userId, mine, partner } = req.body;
+      if (!userId) return res.status(400).json({ message: "userId required" });
+      const ip = req.ip || "unknown";
+      if (rateLimit(`saved-migrate:${ip}`, 5, 60000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+      const defaults = await storage.getOrCreateDefaultLists(userId);
+      const existingMineItems = await storage.getSavedListItems(defaults.mine.id);
+      const existingPartnerItems = await storage.getSavedListItems(defaults.partner.id);
+      const now = new Date().toISOString();
+      if (Array.isArray(mine)) {
+        for (const rid of mine) {
+          if (!existingMineItems.some(i => i.restaurantId === rid)) {
+            await storage.addSavedListItem({ listId: defaults.mine.id, restaurantId: rid, addedAt: now });
+          }
+        }
+      }
+      if (Array.isArray(partner)) {
+        for (const rid of partner) {
+          if (!existingPartnerItems.some(i => i.restaurantId === rid)) {
+            await storage.addSavedListItem({ listId: defaults.partner.id, restaurantId: rid, addedAt: now });
+          }
+        }
+      }
+      res.json({ ok: true, migrated: true });
+    } catch (err) {
+      console.error("Migrate saved lists error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get("/api/toast-decides/taste-dna-summary", async (req, res) => {
     try {
       const userId = req.query.userId as string;

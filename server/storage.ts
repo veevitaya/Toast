@@ -62,10 +62,16 @@ import {
   type InsertMoodChoiceLink,
   sessionEvents,
   auditLogs,
+  savedLists,
+  savedListItems,
   type SessionEvent,
   type InsertSessionEvent,
   type AuditLog,
   type InsertAuditLog,
+  type SavedList,
+  type InsertSavedList,
+  type SavedListItem,
+  type InsertSavedListItem,
 } from "@shared/schema";
 import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
 
@@ -167,6 +173,16 @@ export interface IStorage {
   checkIdempotencyKey(key: string): Promise<boolean>;
   createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
   getAuditLogs(filters?: { actorType?: string; action?: string; limit?: number }): Promise<AuditLog[]>;
+
+  getSavedLists(userId: string): Promise<SavedList[]>;
+  createSavedList(data: InsertSavedList): Promise<SavedList>;
+  updateSavedList(id: number, updates: Partial<InsertSavedList>): Promise<SavedList | undefined>;
+  deleteSavedList(id: number): Promise<void>;
+  getSavedListItems(listId: number): Promise<SavedListItem[]>;
+  addSavedListItem(data: InsertSavedListItem): Promise<SavedListItem>;
+  removeSavedListItem(listId: number, restaurantId: number): Promise<void>;
+  getOrCreateDefaultLists(userId: string): Promise<{ mine: SavedList; partner: SavedList }>;
+  getSavedListsWithItems(userId: string): Promise<(SavedList & { items: SavedListItem[] })[]>;
 }
 
 const MAX_CACHE_ENTRIES = 200;
@@ -830,6 +846,83 @@ export class DatabaseStorage implements IStorage {
     if (filters?.action) conditions.push(eq(auditLogs.action, filters.action));
     if (conditions.length > 0) query = query.where(and(...conditions)) as any;
     return await (query as any).orderBy(desc(auditLogs.id)).limit(filters?.limit || 100);
+  }
+
+  async getSavedLists(userId: string): Promise<SavedList[]> {
+    return await db.select().from(savedLists)
+      .where(eq(savedLists.userId, userId))
+      .orderBy(savedLists.id);
+  }
+
+  async createSavedList(data: InsertSavedList): Promise<SavedList> {
+    const [created] = await db.insert(savedLists).values(data).returning();
+    return created;
+  }
+
+  async updateSavedList(id: number, updates: Partial<InsertSavedList>): Promise<SavedList | undefined> {
+    const [updated] = await db.update(savedLists)
+      .set(updates)
+      .where(eq(savedLists.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSavedList(id: number): Promise<void> {
+    await db.delete(savedListItems).where(eq(savedListItems.listId, id));
+    await db.delete(savedLists).where(eq(savedLists.id, id));
+  }
+
+  async getSavedListItems(listId: number): Promise<SavedListItem[]> {
+    return await db.select().from(savedListItems)
+      .where(eq(savedListItems.listId, listId))
+      .orderBy(desc(savedListItems.id));
+  }
+
+  async addSavedListItem(data: InsertSavedListItem): Promise<SavedListItem> {
+    const [existing] = await db.select().from(savedListItems)
+      .where(and(
+        eq(savedListItems.listId, data.listId),
+        eq(savedListItems.restaurantId, data.restaurantId)
+      ))
+      .limit(1);
+    if (existing) return existing;
+    const [created] = await db.insert(savedListItems).values(data).returning();
+    return created;
+  }
+
+  async removeSavedListItem(listId: number, restaurantId: number): Promise<void> {
+    await db.delete(savedListItems)
+      .where(and(
+        eq(savedListItems.listId, listId),
+        eq(savedListItems.restaurantId, restaurantId)
+      ));
+  }
+
+  async getOrCreateDefaultLists(userId: string): Promise<{ mine: SavedList; partner: SavedList }> {
+    const existing = await this.getSavedLists(userId);
+    let mine = existing.find(l => l.isDefault && l.name === "My Saves");
+    let partner = existing.find(l => l.isDefault && l.name === "With Partner");
+    const now = new Date().toISOString();
+    if (!mine) {
+      mine = await this.createSavedList({
+        userId, name: "My Saves", emoji: "❤️", isDefault: true, createdAt: now
+      });
+    }
+    if (!partner) {
+      partner = await this.createSavedList({
+        userId, name: "With Partner", emoji: "💕", isDefault: true, createdAt: now
+      });
+    }
+    return { mine, partner };
+  }
+
+  async getSavedListsWithItems(userId: string): Promise<(SavedList & { items: SavedListItem[] })[]> {
+    const lists = await this.getSavedLists(userId);
+    const result = await Promise.all(lists.map(async (list) => {
+      const items = await this.getSavedListItems(list.id);
+      return { ...list, items };
+    }));
+    return result;
   }
 }
 

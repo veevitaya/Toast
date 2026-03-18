@@ -431,3 +431,32 @@ export const auditLogs = pgTable("audit_logs", {
 export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true });
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+
+export const savedLists = pgTable("saved_lists", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  emoji: text("emoji").default("❤️"),
+  isDefault: boolean("is_default").default(false),
+  createdAt: text("created_at").notNull(),
+}, (table) => ({
+  userIdIdx: index("saved_lists_user_id_idx").on(table.userId),
+}));
+
+export const insertSavedListSchema = createInsertSchema(savedLists).omit({ id: true });
+export type SavedList = typeof savedLists.$inferSelect;
+export type InsertSavedList = z.infer<typeof insertSavedListSchema>;
+
+export const savedListItems = pgTable("saved_list_items", {
+  id: serial("id").primaryKey(),
+  listId: integer("list_id").notNull(),
+  restaurantId: integer("restaurant_id").notNull(),
+  addedAt: text("added_at").notNull(),
+}, (table) => ({
+  listIdIdx: index("saved_list_items_list_id_idx").on(table.listId),
+  listRestaurantIdx: index("saved_list_items_list_restaurant_idx").on(table.listId, table.restaurantId),
+}));
+
+export const insertSavedListItemSchema = createInsertSchema(savedListItems).omit({ id: true });
+export type SavedListItem = typeof savedListItems.$inferSelect;
+export type InsertSavedListItem = z.infer<typeof insertSavedListItemSchema>;

@@ -18,7 +18,7 @@ The design adopts an Airbnb-inspired aesthetic, featuring a #FFCC02 golden yello
 - **Group Decision Making:** Enables users to create group sessions, invite friends via LINE, and collectively decide on a restaurant through synchronized swiping and a waiting room.
 - **Trending Feed:** A vertical, snap-scrolling feed of restaurant cards.
 - **Taste Profile:** Tracks user swipe behavior to personalize recommendations and offers a "TasteDNA" panel.
-- **Restaurant Details & Saving:** Provides comprehensive restaurant information, deep links to delivery services, and a "Save Bucket System."
+- **Restaurant Details & Saving:** Provides comprehensive restaurant information, deep links to delivery services, and a server-persisted "Save Bucket System" with `saved_lists` and `saved_list_items` DB tables. Supports custom lists, localStorage-to-server migration for authenticated users, and a dedicated `/saved` page. Default lists: "My Saves" and "With Partner".
 - **User Profile & Preferences:** Manages dietary restrictions, preferences, and LINE integration.
 - **Vibe Tagging System:** Categorizes restaurants using 14 distinct vibe tags with auto-assignment.
 - **Admin Panel:** A data analytics platform for managing restaurants, users, campaigns, and viewing detailed analytics with an RBAC system.
