@@ -79,7 +79,7 @@ import {
   type PartnerInvite,
   type InsertPartnerInvite,
 } from "@shared/schema";
-import { eq, desc, and, gte, lte, count, sql } from "drizzle-orm";
+import { eq, desc, and, or, gte, lte, count, sql } from "drizzle-orm";
 
 export interface IStorage {
   getRestaurants(mode?: string, lat?: number, lng?: number, query?: string): Promise<Restaurant[]>;
@@ -990,15 +990,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPartnerConnection(conn: InsertPartnerConnection): Promise<PartnerConnection> {
-    try {
-      const [created] = await db.insert(partnerConnections).values(conn).returning();
+    return await db.transaction(async (tx) => {
+      const [existingA] = await tx.select().from(partnerConnections)
+        .where(and(
+          or(
+            eq(partnerConnections.userALineId, conn.userALineId),
+            eq(partnerConnections.userBLineId, conn.userALineId),
+          ),
+          eq(partnerConnections.status, "active"),
+        )).limit(1);
+      if (existingA) throw new Error("User already has an active partner connection");
+
+      const [existingB] = await tx.select().from(partnerConnections)
+        .where(and(
+          or(
+            eq(partnerConnections.userALineId, conn.userBLineId),
+            eq(partnerConnections.userBLineId, conn.userBLineId),
+          ),
+          eq(partnerConnections.status, "active"),
+        )).limit(1);
+      if (existingB) throw new Error("Partner already has an active partner connection");
+
+      const [created] = await tx.insert(partnerConnections).values(conn).returning();
       return created;
-    } catch (err) {
-      if (err instanceof Error && err.message.includes("unique")) {
-        throw new Error("One or both users already have an active partner connection");
-      }
-      throw err;
-    }
+    }, { isolationLevel: "serializable" });
   }
 
   async getActivePartnerConnection(lineUserId: string): Promise<PartnerConnection | undefined> {
