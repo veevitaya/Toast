@@ -34,9 +34,9 @@ The design adopts an Airbnb-inspired aesthetic, featuring a #FFCC02 golden yello
 **Technical Implementations:**
 - **Personalization & Recommendation Engine:** A multi-layered system that uses "Taste DNA" (long-term preferences), a "Moment Engine" (context-aware scoring), candidate generation, and a ranking engine. It also includes a confidence model and an explanation engine.
 - **LINE LIFF Integration:** Deep integration for user authentication, profile retrieval, and social sharing.
-- **Real-time Group Sessions:** Backend-powered sessions using PostgreSQL, supporting trending sessions and tracking member fingerprints for historical trend analysis.
+- **Real-time Group Sessions:** Backend-powered sessions using PostgreSQL, supporting trending sessions, tracking member fingerprints for historical trend analysis, and server-side session recovery via `GET /api/sessions/active/:userId`. Sessions have optional group location fields (`locationName`, `locationLat`, `locationLng`) with a host-only location setting endpoint. Expired (24h) and completed sessions show graceful end-state UI.
 - **Data Model:** Structured PostgreSQL tables for all core entities.
-- **Session Management:** Utilizes `sessionStorage` for persistent, global session tracking.
+- **Session Management:** Hybrid client+server session tracking. SessionBar checks server for active sessions on mount (via `getActiveSessionForUser`), supplementing `sessionStorage`-based tracking. InteractiveMap includes a "My Location" recenter button using geolocation.
 - **Google Places API Integration:** Backend support for fetching and importing restaurant data, including auto-deduplication and vibe assignment.
 - **Performance Optimizations:** Includes lazy loading, preloading, database indexing, optimized queries, server-side caching, and frontend route lazy-loading.
 - **Reliability & Hardening:** Features React ErrorBoundary, API request timeouts, auto-retry for network errors, double-submit prevention, image error fallbacks, server-side rate limiting, and comprehensive error logging.

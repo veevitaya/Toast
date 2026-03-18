@@ -14,6 +14,7 @@ export interface ActiveSession {
   matchCount?: number;
   members?: SessionMemberInfo[];
   startedAt: number;
+  status?: "waiting" | "swiping" | "completed" | "expired";
 }
 
 let sessions: ActiveSession[] = [];

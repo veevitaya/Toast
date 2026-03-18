@@ -79,7 +79,7 @@ import {
   type PartnerInvite,
   type InsertPartnerInvite,
 } from "@shared/schema";
-import { eq, desc, and, or, gte, lte, count, sql } from "drizzle-orm";
+import { eq, desc, and, or, gte, lte, gt, inArray, count, sql } from "drizzle-orm";
 
 export interface IStorage {
   getRestaurants(mode?: string, lat?: number, lng?: number, query?: string): Promise<Restaurant[]>;
@@ -201,6 +201,9 @@ export interface IStorage {
   getActivePartnerConnection(lineUserId: string): Promise<PartnerConnection | undefined>;
   disconnectPartner(connectionId: number): Promise<void>;
   updatePartnerConnection(id: number, updates: Partial<InsertPartnerConnection>): Promise<PartnerConnection | undefined>;
+
+  getActiveSessionForUser(lineUserId: string): Promise<(GroupSession & { members: GroupSessionMember[] }) | null>;
+  updateGroupSessionLocation(sessionCode: string, locationName: string | null, locationLat: string | null, locationLng: string | null): Promise<void>;
 }
 
 const MAX_CACHE_ENTRIES = 200;
@@ -1036,6 +1039,35 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db.update(partnerConnections)
       .set(updates).where(eq(partnerConnections.id, id)).returning();
     return updated;
+  }
+
+  async getActiveSessionForUser(lineUserId: string): Promise<(GroupSession & { members: GroupSessionMember[] }) | null> {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const memberRows = await db.select().from(groupSessionMembers)
+      .where(eq(groupSessionMembers.lineUserId, lineUserId));
+    if (memberRows.length === 0) return null;
+
+    const sessionCodes = memberRows.map(m => m.sessionCode);
+    const activeSessions = await db.select().from(groupSessions)
+      .where(and(
+        inArray(groupSessions.sessionCode, sessionCodes),
+        inArray(groupSessions.status, ["waiting", "swiping"]),
+        gt(groupSessions.createdAt, cutoff),
+      ))
+      .orderBy(desc(groupSessions.id))
+      .limit(1);
+
+    if (activeSessions.length === 0) return null;
+    const session = activeSessions[0];
+    const members = await db.select().from(groupSessionMembers)
+      .where(eq(groupSessionMembers.sessionCode, session.sessionCode));
+    return { ...session, members };
+  }
+
+  async updateGroupSessionLocation(sessionCode: string, locationName: string | null, locationLat: string | null, locationLng: string | null): Promise<void> {
+    await db.update(groupSessions)
+      .set({ locationName, locationLat, locationLng })
+      .where(eq(groupSessions.sessionCode, sessionCode));
   }
 }
 

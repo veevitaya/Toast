@@ -205,6 +205,9 @@ export const groupSessions = pgTable("group_sessions", {
   sourceData: text("source_data"),
   expectedMembers: integer("expected_members"),
   memberFingerprint: text("member_fingerprint"),
+  locationName: text("location_name"),
+  locationLat: text("location_lat"),
+  locationLng: text("location_lng"),
   createdAt: text("created_at").notNull(),
 });
 

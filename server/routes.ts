@@ -3358,6 +3358,63 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/sessions/active/:userId", async (req, res) => {
+    try {
+      const { userId } = req.params;
+      if (!userId) return res.status(400).json({ message: "userId required" });
+      const result = await storage.getActiveSessionForUser(userId);
+      if (!result) return res.json({ session: null });
+      const { members, ...session } = result;
+      const sanitized = members.map(m => ({
+        displayName: m.displayName,
+        pictureUrl: m.pictureUrl,
+      }));
+      res.json({
+        session: {
+          sessionCode: session.sessionCode,
+          status: session.status,
+          hostLineUserId: session.hostLineUserId,
+          memberCount: members.length,
+          locationName: session.locationName,
+          createdAt: session.createdAt,
+        },
+        members: sanitized,
+      });
+    } catch {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/group/sessions/:code/session-location", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const schema = z.object({
+        lineUserId: z.string().min(1),
+        locationName: z.string().optional(),
+        locationLat: z.string().optional(),
+        locationLng: z.string().optional(),
+      });
+      const input = schema.parse(req.body);
+      const session = await storage.getGroupSession(code);
+      if (!session) return res.status(404).json({ message: "Session not found" });
+      if (session.hostLineUserId !== input.lineUserId) {
+        return res.status(403).json({ message: "Only host can set session location" });
+      }
+      await storage.updateGroupSessionLocation(
+        code,
+        input.locationName || null,
+        input.locationLat || null,
+        input.locationLng || null,
+      );
+      res.json({ success: true });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get("/api/group/sessions/:code/trending-restaurants", async (req, res) => {
     try {
       const { code } = req.params;

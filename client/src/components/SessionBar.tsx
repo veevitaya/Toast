@@ -1,7 +1,9 @@
-import { useRef } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
-import { useSessions, removeSession, type ActiveSession } from "@/lib/sessionStore";
+import { useSessions, addSession, removeSession, type ActiveSession } from "@/lib/sessionStore";
+import { useLineProfile } from "@/lib/useLineProfile";
+import { fetchWithTimeout } from "@/lib/queryClient";
 
 function SessionCard({ session, onNavigate }: { session: ActiveSession; onNavigate: (route: string) => void }) {
   const elapsed = Math.floor((Date.now() - session.startedAt) / 60000);
@@ -12,6 +14,8 @@ function SessionCard({ session, onNavigate }: { session: ActiveSession; onNaviga
     : [];
 
   const memberCount = session.memberCount || displayMembers.length || 0;
+
+  const statusLabel = session.status === "completed" ? "Completed" : session.status === "expired" ? "Expired" : null;
 
   return (
     <motion.div
@@ -63,15 +67,25 @@ function SessionCard({ session, onNavigate }: { session: ActiveSession; onNaviga
           <div className="min-w-0">
             <p className="font-bold text-sm text-foreground truncate">{session.label}</p>
             <p className="text-[11px] text-muted-foreground truncate">
-              {session.type === "group"
-                ? `${memberCount} member${memberCount !== 1 ? "s" : ""} · ${session.matchCount || 0} match${(session.matchCount || 0) !== 1 ? "es" : ""}`
-                : timeLabel}
+              {statusLabel ? (
+                statusLabel
+              ) : session.type === "group" ? (
+                `${memberCount} member${memberCount !== 1 ? "s" : ""} · ${session.matchCount || 0} match${(session.matchCount || 0) !== 1 ? "es" : ""}`
+              ) : (
+                timeLabel
+              )}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-[10px] font-medium text-muted-foreground">Live</span>
+          {statusLabel ? (
+            <span className="text-[10px] font-medium text-muted-foreground">{statusLabel}</span>
+          ) : (
+            <>
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-[10px] font-medium text-muted-foreground">Live</span>
+            </>
+          )}
         </div>
 
         <button
@@ -93,6 +107,44 @@ export function SessionBar() {
   const sessions = useSessions();
   const [, navigate] = useLocation();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { profile } = useLineProfile({ requireAuth: false });
+  const [serverChecked, setServerChecked] = useState(false);
+
+  const checkServerSession = useCallback(async () => {
+    if (!profile?.userId || serverChecked) return;
+    setServerChecked(true);
+    try {
+      const res = await fetchWithTimeout(`/api/sessions/active/${encodeURIComponent(profile.userId)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.session) {
+        const { session: s, members } = data;
+        const existing = sessions.find(ss => ss.id === s.sessionCode);
+        if (!existing) {
+          const route = s.status === "swiping"
+            ? `/group/swipe?session=${s.sessionCode}`
+            : `/group/waiting?session=${s.sessionCode}`;
+          addSession({
+            id: s.sessionCode,
+            type: "group",
+            label: s.locationName || "Group Session",
+            route,
+            memberCount: s.memberCount,
+            matchCount: 0,
+            members: members?.map((m: any) => ({
+              displayName: m.displayName,
+              pictureUrl: m.pictureUrl,
+            })),
+            startedAt: new Date(s.createdAt).getTime(),
+          });
+        }
+      }
+    } catch {}
+  }, [profile?.userId, serverChecked, sessions]);
+
+  useEffect(() => {
+    checkServerSession();
+  }, [checkServerSession]);
 
   if (sessions.length === 0) return null;
 

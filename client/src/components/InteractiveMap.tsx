@@ -1,6 +1,7 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { Navigation } from "lucide-react";
 
 interface MapPin {
   id: number;
@@ -20,9 +21,10 @@ interface InteractiveMapProps {
   onPinSelect: (id: number) => void;
   filteredCategory: string | null;
   userLocation?: [number, number] | null;
+  showRecenterButton?: boolean;
 }
 
-export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSelect, filteredCategory, userLocation }: InteractiveMapProps) {
+export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSelect, filteredCategory, userLocation, showRecenterButton = true }: InteractiveMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<number, L.Marker>>(new Map());
@@ -130,9 +132,44 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
     });
   }, [pins, selectedPinId, filteredCategory]);
 
+  const [recentering, setRecentering] = useState(false);
+
+  const handleRecenter = useCallback(() => {
+    setRecentering(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const map = leafletMap.current;
+        if (map) {
+          map.flyTo([pos.coords.latitude, pos.coords.longitude], 15, { duration: 0.8 });
+        }
+        setRecentering(false);
+      },
+      () => {
+        const map = leafletMap.current;
+        if (map && userLocation) {
+          map.flyTo(userLocation, 15, { duration: 0.8 });
+        }
+        setRecentering(false);
+      },
+      { timeout: 5000, maximumAge: 30000 }
+    );
+  }, [userLocation]);
+
   return (
     <>
       <div ref={mapRef} className="w-full h-full" />
+      {showRecenterButton && (
+        <button
+          onClick={handleRecenter}
+          disabled={recentering}
+          className="absolute bottom-4 right-4 z-[10] w-10 h-10 bg-white rounded-full flex items-center justify-center border border-gray-200/80 active:scale-95 transition-transform"
+          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
+          data-testid="button-recenter-map"
+          aria-label="Center on my location"
+        >
+          <Navigation className={`w-4.5 h-4.5 text-[#4285F4] ${recentering ? "animate-pulse" : ""}`} />
+        </button>
+      )}
       <style>{`
         .custom-pin-icon {
           background: none !important;

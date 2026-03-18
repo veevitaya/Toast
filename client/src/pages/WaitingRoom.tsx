@@ -99,11 +99,18 @@ export default function WaitingRoom() {
     try {
       if (hostOfSession) {
         const checkRes = await fetchWithTimeout(`/api/group/sessions/${sessionId}`);
+        if (checkRes.status === 410) {
+          setSessionExpired(true);
+          return;
+        }
         if (checkRes.ok) {
           setSessionCreated(true);
           const data = await checkRes.json();
           if (data.members) setMembers(data.members);
           if (data.session) setSessionInfo(data.session);
+          if (data.session?.status === "completed") {
+            setSessionCompleted(true);
+          }
           return;
         }
       }
@@ -123,7 +130,9 @@ export default function WaitingRoom() {
         }),
       });
 
-      if (joinRes.ok) {
+      if (joinRes.status === 410) {
+        setSessionExpired(true);
+      } else if (joinRes.ok) {
         setSessionCreated(true);
         const data = await joinRes.json();
         if (data.members) setMembers(data.members);
@@ -221,6 +230,9 @@ export default function WaitingRoom() {
     }
   }, [sessionCreated, sessionId]);
 
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const [sessionCompleted, setSessionCompleted] = useState(false);
+
   useEffect(() => {
     if (!sessionCreated || !sessionId) return;
     const controller = new AbortController();
@@ -235,6 +247,13 @@ export default function WaitingRoom() {
           if (data.session?.status === "swiping") {
             navigate(`/group/swipe?session=${sessionId}`);
           }
+          if (data.session?.status === "completed") {
+            setSessionCompleted(true);
+          }
+        } else if (res.status === 410) {
+          setSessionExpired(true);
+        } else if (res.status === 404) {
+          setError("This session no longer exists.");
         }
       } catch {}
     };
@@ -491,6 +510,69 @@ export default function WaitingRoom() {
           Session code: <span className="font-mono font-bold">{sessionId}</span>
         </motion.p>
 
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (sessionExpired || sessionCompleted) {
+    return (
+      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6" data-testid="session-ended-page">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-[15%] left-[10%] w-32 h-32 bg-amber-50/40 rounded-full blur-3xl" />
+          <div className="absolute bottom-[20%] right-[15%] w-40 h-40 bg-amber-50/40 rounded-full blur-3xl" />
+        </div>
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", damping: 18, stiffness: 200 }}
+          className="mb-5"
+        >
+          <div className="w-28 h-28 rounded-full bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+            <img src={mascotImg} alt="Toast mascot" className="h-20 w-20 object-contain opacity-60" draggable={false} />
+          </div>
+        </motion.div>
+        <motion.h1
+          initial={{ y: 16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.15 }}
+          className="text-[22px] font-bold mb-2 text-center"
+        >
+          {sessionExpired ? "Session Expired" : "Session Complete"}
+        </motion.h1>
+        <motion.p
+          initial={{ y: 16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-muted-foreground text-center text-sm mb-6 max-w-[280px]"
+          data-testid="text-session-ended-message"
+        >
+          {sessionExpired
+            ? "This session has expired after 24 hours. Start a new one to keep the party going!"
+            : "This session has already finished. Check your results or start a fresh round!"}
+        </motion.p>
+        <motion.div
+          initial={{ y: 16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.25 }}
+          className="flex gap-3"
+        >
+          <button
+            onClick={() => navigate("/group")}
+            className="px-6 py-3 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-sm active:scale-[0.96] transition-transform"
+            style={{ boxShadow: "var(--shadow-glow-primary)" }}
+            data-testid="button-new-session"
+          >
+            New Session
+          </button>
+          <button
+            onClick={() => navigate("/")}
+            className="px-6 py-3 rounded-full bg-gray-100 text-foreground font-bold text-sm active:scale-[0.96] transition-transform"
+            data-testid="button-go-home"
+          >
+            Home
+          </button>
+        </motion.div>
         <BottomNav />
       </div>
     );

@@ -413,6 +413,10 @@ export default function GroupSwipe() {
       try {
         const res = await fetchWithTimeout(`/api/group/sessions/${sessionCode}`, { signal: pollController.signal });
         if (cancelled) return;
+        if (res.status === 410) {
+          setSessionEnded(true);
+          return;
+        }
         if (!res.ok) {
           pollFailCount.current += 1;
           if (pollFailCount.current >= 5) setPollError(true);
