@@ -1423,13 +1423,19 @@ export async function registerRoutes(
       if (!target) return res.status(404).json({ message: "List not found" });
       const items = await storage.getSavedListItems(listId);
 
-      const token = Buffer.from(JSON.stringify({
+      const crypto = await import("crypto");
+      const secret = process.env.SESSION_SECRET;
+      if (!secret) return res.status(500).json({ message: "Server configuration error" });
+      const nonce = crypto.randomBytes(12).toString("hex");
+      const payload = JSON.stringify({
         listId,
         userId,
         restaurantIds: items.map(i => i.restaurantId),
         exp: Date.now() + 7 * 24 * 60 * 60 * 1000,
-        nonce: Math.random().toString(36).substring(2, 10),
-      })).toString("base64url");
+        nonce,
+      });
+      const hmac = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+      const token = Buffer.from(payload).toString("base64url") + "." + hmac;
 
       res.json({
         inviteToken: token,
@@ -1446,13 +1452,29 @@ export async function registerRoutes(
   app.get("/api/saved-lists/invite/:token", async (req, res) => {
     try {
       const token = req.params.token;
-      const decoded = JSON.parse(Buffer.from(token, "base64url").toString());
-      if (!decoded.listId || !decoded.exp) {
-        return res.status(400).json({ message: "Invalid invite token" });
-      }
-      if (Date.now() > decoded.exp) {
-        return res.status(410).json({ message: "Invite expired" });
-      }
+      const parts = token.split(".");
+      if (parts.length !== 2) return res.status(400).json({ message: "Invalid invite token" });
+      const [payloadB64, sig] = parts;
+      const crypto = await import("crypto");
+      const secret = process.env.SESSION_SECRET;
+      if (!secret) return res.status(500).json({ message: "Server configuration error" });
+      const payload = Buffer.from(payloadB64, "base64url").toString();
+      const expectedSig = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+      if (sig !== expectedSig) return res.status(403).json({ message: "Invalid token signature" });
+      const decoded = JSON.parse(payload);
+      if (!decoded.listId || !decoded.exp) return res.status(400).json({ message: "Invalid invite token" });
+      if (Date.now() > decoded.exp) return res.status(410).json({ message: "Invite expired" });
+      const nonceKey = `list-invite:${decoded.nonce}`;
+      const used = await storage.checkIdempotencyKey(nonceKey);
+      if (used) return res.status(409).json({ message: "Invite already used" });
+      await storage.createSessionEvent({
+        sessionCode: `list-invite-${decoded.listId}`,
+        eventType: "INVITE_REDEEMED",
+        actorId: "system",
+        payload: { nonce: decoded.nonce, listId: decoded.listId },
+        idempotencyKey: nonceKey,
+        createdAt: new Date().toISOString(),
+      });
       res.json({
         listId: decoded.listId,
         userId: decoded.userId,

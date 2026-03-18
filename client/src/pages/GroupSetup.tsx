@@ -162,10 +162,26 @@ export default function GroupSetup() {
   const upcomingDays = getNext14Days();
 
   const [expandedSection, setExpandedSection] = useState<string>("when");
+  const [listInviteData, setListInviteData] = useState<{ listId: number; restaurantIds: number[] } | null>(null);
 
   const toggleSection = (key: string) => {
     setExpandedSection(prev => prev === key ? "" : key);
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const inviteToken = params.get("listInvite");
+    if (inviteToken) {
+      fetch(`/api/saved-lists/invite/${encodeURIComponent(inviteToken)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.restaurantIds) {
+            setListInviteData({ listId: data.listId, restaurantIds: data.restaurantIds });
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -193,6 +209,10 @@ export default function GroupSetup() {
             hostLineUserId: profile.userId,
             hostDisplayName: profile.displayName,
             hostPictureUrl: profile.pictureUrl || "",
+            ...(listInviteData ? {
+              sessionType: "saved_list",
+              sourceData: JSON.stringify({ listId: listInviteData.listId, restaurantIds: listInviteData.restaurantIds }),
+            } : {}),
           }),
         });
         if (resp.ok) {
@@ -262,6 +282,16 @@ export default function GroupSetup() {
       </div>
 
       <div className="flex-1 overflow-y-auto pb-6 hide-scrollbar">
+        {listInviteData && (
+          <div className="mx-4 mt-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl">
+            <p className="text-sm font-semibold text-amber-900" data-testid="text-list-invite-banner">
+              Swiping from a saved list
+            </p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              {listInviteData.restaurantIds.length} restaurants pre-loaded from your friend's list
+            </p>
+          </div>
+        )}
         <div className="px-4 pt-4 space-y-3">
 
           <SectionCard

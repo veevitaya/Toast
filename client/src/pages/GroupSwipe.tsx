@@ -346,6 +346,21 @@ export default function GroupSwipe() {
                 const trendingData = await trendingRes.json();
                 data = trendingData.restaurants || [];
               }
+            } else if (sessionData.session?.sessionType === "saved_list" && sessionData.session?.sourceData) {
+              try {
+                const source = typeof sessionData.session.sourceData === "string"
+                  ? JSON.parse(sessionData.session.sourceData)
+                  : sessionData.session.sourceData;
+                if (source.restaurantIds?.length > 0) {
+                  const allRes = await fetchWithTimeout("/api/restaurants", { signal: controller.signal });
+                  if (cancelled) return;
+                  if (allRes.ok) {
+                    const allData = await allRes.json();
+                    const idSet = new Set(source.restaurantIds);
+                    data = allData.filter((r: any) => idSet.has(r.id));
+                  }
+                }
+              } catch {}
             }
           }
         }

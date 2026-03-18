@@ -137,7 +137,28 @@ export function useSavedRestaurants() {
       if (!listId) return;
       await apiRequest("POST", `/api/saved-lists/${listId}/items`, { userId, restaurantId });
     },
-    onSuccess: () => {
+    onMutate: async ({ restaurantId, bucket }) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/saved-lists", userId] });
+      const previous = queryClient.getQueryData<ServerList[]>(["/api/saved-lists", userId]);
+      if (previous) {
+        const name = bucket === "mine" ? "My Saves" : "With Partner";
+        queryClient.setQueryData<ServerList[]>(["/api/saved-lists", userId], prev =>
+          prev?.map(list => {
+            if (list.isDefault && list.name === name && !list.items.some(i => i.restaurantId === restaurantId)) {
+              return { ...list, items: [...list.items, { id: -Date.now(), listId: list.id, restaurantId, addedAt: new Date().toISOString() }] };
+            }
+            return list;
+          })
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["/api/saved-lists", userId], context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/saved-lists", userId] });
     },
   });
@@ -151,7 +172,25 @@ export function useSavedRestaurants() {
         }
       }
     },
-    onSuccess: () => {
+    onMutate: async ({ restaurantId }) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/saved-lists", userId] });
+      const previous = queryClient.getQueryData<ServerList[]>(["/api/saved-lists", userId]);
+      if (previous) {
+        queryClient.setQueryData<ServerList[]>(["/api/saved-lists", userId], prev =>
+          prev?.map(list => ({
+            ...list,
+            items: list.items.filter(i => i.restaurantId !== restaurantId),
+          }))
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["/api/saved-lists", userId], context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/saved-lists", userId] });
     },
   });
