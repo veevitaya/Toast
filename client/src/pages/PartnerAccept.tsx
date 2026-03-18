@@ -69,9 +69,9 @@ export default function PartnerAccept() {
         anniversaryDate: data.anniversaryDate,
       });
       setStatus("success");
-    } catch (err: any) {
+    } catch (err) {
       setStatus("error");
-      setErrorMsg(err?.message || "Failed to accept invite");
+      setErrorMsg(err instanceof Error ? err.message : "Failed to accept invite");
     }
   };
 

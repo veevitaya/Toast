@@ -3789,6 +3789,27 @@ function PartnerRow({ profile, onInvite, onManualAdd, onUnlink, t, lineUserId }:
                         Share via LINE
                       </button>
                     </div>
+                  ) : partnerStatus?.pendingInvite ? (
+                    <div className="space-y-3">
+                      <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-4" data-testid="pending-invite-status">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <Clock className="w-3.5 h-3.5 text-amber-500" />
+                          <p className="text-[12px] font-medium text-amber-700 dark:text-amber-400">Invite pending</p>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          Expires {new Date(partnerStatus.pendingInvite.expiresAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleInvitePartner}
+                        disabled={inviting}
+                        className="w-full py-3 rounded-2xl bg-[#06C755] text-white text-[13px] font-semibold active:scale-[0.97] transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+                        data-testid="button-resend-invite"
+                      >
+                        <Send className="w-4 h-4" />
+                        {inviting ? "Creating..." : "Send New Invite"}
+                      </button>
+                    </div>
                   ) : (
                     <div className="flex gap-2">
                       <button
