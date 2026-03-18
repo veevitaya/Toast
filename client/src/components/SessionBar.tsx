@@ -121,9 +121,12 @@ export function SessionBar() {
         const { session: s, members } = data;
         const existing = sessions.find(ss => ss.id === s.sessionCode);
         if (!existing) {
-          const route = s.status === "swiping"
+          const route = s.status === "completed"
             ? `/group/swipe?session=${s.sessionCode}`
-            : `/group/waiting?session=${s.sessionCode}`;
+            : s.status === "swiping"
+              ? `/group/swipe?session=${s.sessionCode}`
+              : `/group/waiting?session=${s.sessionCode}`;
+          const sessionStatus = s.status === "completed" ? "completed" as const : undefined;
           addSession({
             id: s.sessionCode,
             type: "group",
@@ -131,11 +134,12 @@ export function SessionBar() {
             route,
             memberCount: s.memberCount,
             matchCount: 0,
-            members: members?.map((m: any) => ({
+            members: members?.map((m: { displayName: string; pictureUrl?: string }) => ({
               displayName: m.displayName,
               pictureUrl: m.pictureUrl,
             })),
             startedAt: new Date(s.createdAt).getTime(),
+            status: sessionStatus,
           });
         }
       }

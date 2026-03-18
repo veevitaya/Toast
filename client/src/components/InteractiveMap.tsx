@@ -135,6 +135,12 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
   const [recentering, setRecentering] = useState(false);
 
   const handleRecenter = useCallback(() => {
+    if (!navigator.geolocation) {
+      if (leafletMap.current && userLocation) {
+        leafletMap.current.flyTo(userLocation, 15, { duration: 0.8 });
+      }
+      return;
+    }
     setRecentering(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -144,16 +150,20 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
         }
         setRecentering(false);
       },
-      () => {
+      (err) => {
         const map = leafletMap.current;
-        if (map && userLocation) {
-          map.flyTo(userLocation, 15, { duration: 0.8 });
+        if (map) {
+          if (userLocation) {
+            map.flyTo(userLocation, 15, { duration: 0.8 });
+          } else {
+            map.flyTo(center, zoom, { duration: 0.8 });
+          }
         }
         setRecentering(false);
       },
       { timeout: 5000, maximumAge: 30000 }
     );
-  }, [userLocation]);
+  }, [userLocation, center, zoom]);
 
   return (
     <>

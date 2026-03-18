@@ -1,13 +1,26 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
-import { TrendingUp, Copy, Check, X, Share2 } from "lucide-react";
+import { TrendingUp, Copy, Check, X, Share2, MapPin } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import mascotImg from "@assets/toast_mascot_nobg.png";
 import { sendGroupInviteNoRedirect, getAccessToken, getGroupInviteUrl } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { getSavedDisplayName, getOnboardingProfile } from "@/hooks/use-onboarding";
 import { fetchWithTimeout } from "@/lib/queryClient";
+
+const BANGKOK_LOCATIONS = [
+  { name: "Ari", lat: "13.7710", lng: "100.5450" },
+  { name: "Chinatown", lat: "13.7410", lng: "100.5100" },
+  { name: "Ekkamai", lat: "13.7310", lng: "100.5690" },
+  { name: "Old Town", lat: "13.7560", lng: "100.5018" },
+  { name: "Riverside", lat: "13.7230", lng: "100.5130" },
+  { name: "Sathorn", lat: "13.7220", lng: "100.5290" },
+  { name: "Siam", lat: "13.7454", lng: "100.5341" },
+  { name: "Silom", lat: "13.7285", lng: "100.5310" },
+  { name: "Sukhumvit", lat: "13.7420", lng: "100.5400" },
+  { name: "Thonglor", lat: "13.7320", lng: "100.5783" },
+];
 
 interface SessionMember {
   id: number;
@@ -25,6 +38,7 @@ interface SessionData {
   sessionType: string | null;
   sourceData: string | null;
   hostDisplayName?: string;
+  locationName?: string | null;
 }
 
 function getHostProfile(): { userId: string; displayName: string; pictureUrl?: string } | null {
@@ -77,6 +91,8 @@ export default function WaitingRoom() {
   const [guestName, setGuestName] = useState(() => getSavedDisplayName() || "");
   const [guestJoining, setGuestJoining] = useState(false);
   const joiningRef = useRef(false);
+  const [sessionLocationName, setSessionLocationName] = useState<string | null>(null);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   const getUserLocation = useCallback(async (): Promise<{ latitude: string; longitude: string } | null> => {
     try {
@@ -243,7 +259,12 @@ export default function WaitingRoom() {
         if (res.ok) {
           const data = await res.json();
           setMembers(data.members);
-          if (data.session) setSessionInfo(data.session);
+          if (data.session) {
+            setSessionInfo(data.session);
+            if (data.session.locationName && !sessionLocationName) {
+              setSessionLocationName(data.session.locationName);
+            }
+          }
           if (data.session?.status === "swiping") {
             navigate(`/group/swipe?session=${sessionId}`);
           }
@@ -732,6 +753,82 @@ export default function WaitingRoom() {
           <span className="text-[11px] font-semibold text-muted-foreground">via LINE</span>
         </motion.div>
       </div>
+
+      {hostOfSession && sessionCreated && (
+        <motion.div
+          initial={{ y: 16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.45 }}
+          className="mb-6 w-full max-w-xs"
+        >
+          <button
+            onClick={() => setShowLocationPicker(!showLocationPicker)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200/80 text-sm font-medium active:scale-[0.97] transition-transform"
+            style={{ boxShadow: "0 2px 8px -2px rgba(0,0,0,0.08)" }}
+            data-testid="button-set-location"
+          >
+            <MapPin className="w-4 h-4 text-muted-foreground" />
+            <span>{sessionLocationName || "Set group location"}</span>
+          </button>
+          <AnimatePresence>
+            {showLocationPicker && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-2 grid grid-cols-2 gap-2" data-testid="location-picker-grid">
+                  {BANGKOK_LOCATIONS.map((loc) => (
+                    <button
+                      key={loc.name}
+                      onClick={async () => {
+                        setSessionLocationName(loc.name);
+                        setShowLocationPicker(false);
+                        try {
+                          await fetchWithTimeout(`/api/group/sessions/${sessionId}/session-location`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              lineUserId: profile?.userId,
+                              locationName: loc.name,
+                              locationLat: loc.lat,
+                              locationLng: loc.lng,
+                            }),
+                          });
+                        } catch {}
+                      }}
+                      className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-all active:scale-[0.96] ${
+                        sessionLocationName === loc.name
+                          ? "bg-[#FFCC02] text-[#2d2000]"
+                          : "bg-gray-50 text-foreground hover:bg-gray-100"
+                      }`}
+                      data-testid={`location-option-${loc.name.toLowerCase().replace(/\s+/g, "-")}`}
+                    >
+                      {loc.name}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
+
+      {!hostOfSession && sessionInfo?.locationName && (
+        <motion.div
+          initial={{ y: 16, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.45 }}
+          className="mb-6 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200/80 text-sm font-medium"
+          style={{ boxShadow: "0 2px 8px -2px rgba(0,0,0,0.08)" }}
+          data-testid="text-session-location"
+        >
+          <MapPin className="w-4 h-4 text-muted-foreground" />
+          <span>{sessionInfo.locationName}</span>
+        </motion.div>
+      )}
 
       {error && (
         <div className="flex flex-col items-center gap-2 mb-4">

@@ -1042,7 +1042,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getActiveSessionForUser(lineUserId: string): Promise<(GroupSession & { members: GroupSessionMember[] }) | null> {
-    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const activeCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const completedCutoff = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
     const memberRows = await db.select().from(groupSessionMembers)
       .where(eq(groupSessionMembers.lineUserId, lineUserId));
     if (memberRows.length === 0) return null;
@@ -1051,8 +1052,16 @@ export class DatabaseStorage implements IStorage {
     const activeSessions = await db.select().from(groupSessions)
       .where(and(
         inArray(groupSessions.sessionCode, sessionCodes),
-        inArray(groupSessions.status, ["waiting", "swiping"]),
-        gt(groupSessions.createdAt, cutoff),
+        or(
+          and(
+            inArray(groupSessions.status, ["waiting", "swiping"]),
+            gt(groupSessions.createdAt, activeCutoff),
+          ),
+          and(
+            eq(groupSessions.status, "completed"),
+            gt(groupSessions.createdAt, completedCutoff),
+          ),
+        ),
       ))
       .orderBy(desc(groupSessions.id))
       .limit(1);
