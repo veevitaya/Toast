@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { useLineProfile } from "@/hooks/use-line-profile";
 import { BottomNav } from "@/components/BottomNav";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
+import { TRENDING_POSTS } from "@/pages/TrendingFeed";
 import { ChevronRight, UserPlus, Unlink, LogIn, LogOut, X, Store, User, Star, TrendingUp, Image, Sparkles, Plus, Check, Crown, Eye, ExternalLink, MapPin, Clock, BarChart3, ArrowUpRight, ArrowDownRight, Utensils, Zap, Calendar, Megaphone, Tag, Percent, Trash2, Send, Users, Target, Search, Shield, AlertTriangle, Upload, FileText, Building2, Phone, Mail, ChevronDown, ShieldCheck, Globe, Pencil } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient, fetchWithTimeout } from "@/lib/queryClient";
@@ -3834,22 +3835,62 @@ function PartnerRow({ profile, onManualAdd, onUnlink, t, lineUserId }: {
   );
 }
 
+interface SavedDisplayItem {
+  id: number;
+  name: string;
+  imageUrl: string;
+  rating: string;
+  category: string;
+  bucket: "mine" | "partner" | null;
+}
+
 function SavedSection({ t }: { t: (key: string, params?: Record<string, string | number>) => string }) {
   const [, navigate] = useLocation();
-  const { data, isSaved, getBucket, unsave, mineCount, partnerCount } = useSavedRestaurants();
+  const { data, getBucket, unsave, mineCount, partnerCount } = useSavedRestaurants();
   const [expanded, setExpanded] = useState(false);
   const totalSaved = mineCount + partnerCount;
 
-  const allSavedIds = useMemo(() => [...data.mine, ...data.partner], [data]);
+  const allSavedIds = useMemo(() => [...new Set([...data.mine, ...data.partner])], [data]);
 
   const { data: allRestaurants = [] } = useQuery<RestaurantResponse[]>({
     queryKey: ["/api/restaurants"],
     enabled: allSavedIds.length > 0,
   });
 
-  const savedRestaurants = useMemo(() => {
-    return allRestaurants.filter(r => allSavedIds.includes(r.id));
-  }, [allRestaurants, allSavedIds]);
+  const savedItems: SavedDisplayItem[] = useMemo(() => {
+    return allSavedIds.map(id => {
+      const fromApi = allRestaurants.find(r => r.id === id);
+      if (fromApi) {
+        return {
+          id: fromApi.id,
+          name: fromApi.name,
+          imageUrl: fromApi.imageUrl,
+          rating: fromApi.rating,
+          category: fromApi.category,
+          bucket: getBucket(fromApi.id),
+        };
+      }
+      const fromTrending = TRENDING_POSTS.find(p => p.restaurantId === id);
+      if (fromTrending) {
+        return {
+          id: fromTrending.restaurantId,
+          name: fromTrending.restaurantName,
+          imageUrl: fromTrending.mediaItems[0]?.url || "",
+          rating: fromTrending.rating,
+          category: fromTrending.category,
+          bucket: getBucket(fromTrending.restaurantId),
+        };
+      }
+      return {
+        id,
+        name: `Restaurant #${id}`,
+        imageUrl: "",
+        rating: "–",
+        category: "",
+        bucket: getBucket(id),
+      };
+    });
+  }, [allSavedIds, allRestaurants, getBucket]);
 
   return (
     <div>
@@ -3879,52 +3920,58 @@ function SavedSection({ t }: { t: (key: string, params?: Record<string, string |
             className="overflow-hidden"
           >
             <div className="px-5 pb-5 pt-1">
-              {savedRestaurants.length === 0 ? (
+              {savedItems.length === 0 ? (
                 <div className="text-center py-6">
                   <span className="text-3xl block mb-2">🍽️</span>
                   <p className="text-sm text-muted-foreground">{t("profile.no_saved_yet")}</p>
                   <p className="text-xs text-muted-foreground/60 mt-1">{t("profile.tap_heart_to_save")}</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {savedRestaurants.map((r) => {
-                    const bucket = getBucket(r.id);
-                    return (
-                      <div
-                        key={r.id}
-                        className="flex items-center gap-3 p-2.5 rounded-2xl bg-gray-50 dark:bg-muted active:bg-gray-100 dark:active:bg-muted/80 transition-colors"
-                        data-testid={`saved-restaurant-${r.id}`}
+                <div className="space-y-2 max-h-[320px] overflow-y-auto">
+                  {savedItems.map((r) => (
+                    <div
+                      key={r.id}
+                      className="flex items-center gap-3 p-2.5 rounded-2xl bg-gray-50 dark:bg-muted active:bg-gray-100 dark:active:bg-muted/80 transition-colors"
+                      data-testid={`saved-restaurant-${r.id}`}
+                    >
+                      <button
+                        onClick={() => navigate(`/restaurant/${r.id}`)}
+                        className="flex items-center gap-3 flex-1 min-w-0"
                       >
-                        <button
-                          onClick={() => navigate(`/restaurant/${r.id}`)}
-                          className="flex items-center gap-3 flex-1 min-w-0"
-                        >
-                          <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
-                            <img src={r.imageUrl} alt={r.name} className="w-full h-full object-cover" />
-                          </div>
-                          <div className="flex-1 min-w-0 text-left">
-                            <p className="text-sm font-semibold truncate">{r.name}</p>
-                            <p className="text-[11px] text-muted-foreground truncate">
-                              ★ {r.rating} · {r.category}
-                            </p>
-                          </div>
-                        </button>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="text-xs">
-                            {bucket === "partner" ? "💕" : "❤️"}
-                          </span>
-                          <button
-                            onClick={() => unsave(r.id)}
-                            className="w-7 h-7 rounded-full bg-white dark:bg-background flex items-center justify-center active:scale-90 transition-transform border border-gray-100 dark:border-border"
-                            data-testid={`button-unsave-${r.id}`}
-                          >
-                            <X className="w-3 h-3 text-muted-foreground" />
-                          </button>
+                        <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-gray-200 dark:bg-zinc-700">
+                          {r.imageUrl && <img src={r.imageUrl} alt={r.name} className="w-full h-full object-cover" />}
                         </div>
+                        <div className="flex-1 min-w-0 text-left">
+                          <p className="text-sm font-semibold truncate">{r.name}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            ★ {r.rating} · {r.category}
+                          </p>
+                        </div>
+                      </button>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs">
+                          {r.bucket === "partner" ? "💕" : "❤️"}
+                        </span>
+                        <button
+                          onClick={() => unsave(r.id)}
+                          className="w-7 h-7 rounded-full bg-white dark:bg-background flex items-center justify-center active:scale-90 transition-transform border border-gray-100 dark:border-border"
+                          data-testid={`button-unsave-${r.id}`}
+                        >
+                          <X className="w-3 h-3 text-muted-foreground" />
+                        </button>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
+              )}
+              {savedItems.length > 0 && (
+                <button
+                  onClick={() => navigate("/saved")}
+                  className="w-full mt-3 py-2.5 text-[13px] font-medium text-[#FFCC02] active:opacity-70 transition-opacity"
+                  data-testid="button-view-all-saved"
+                >
+                  View All Saved Restaurants →
+                </button>
               )}
             </div>
           </motion.div>

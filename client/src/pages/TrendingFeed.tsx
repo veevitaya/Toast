@@ -26,7 +26,7 @@ interface TrendingPost {
   isNew?: boolean;
 }
 
-const TRENDING_POSTS: TrendingPost[] = [
+export const TRENDING_POSTS: TrendingPost[] = [
   {
     id: 1,
     restaurantId: 201,
@@ -793,9 +793,9 @@ export default function TrendingFeed() {
           <FullScreenSlide
             key={post.id}
             post={post}
-            isSaved={savedPosts.has(post.id)}
+            isSaved={savedPosts.has(post.restaurantId)}
             isLiked={likedPosts.has(post.id)}
-            onSave={() => handleSave(post.id)}
+            onSave={() => handleSave(post.restaurantId)}
             onLike={() => handleLike(post.id)}
             onShare={() => handleShare(post)}
             onNavigate={() => handleNavigate(post)}
