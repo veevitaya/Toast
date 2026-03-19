@@ -1311,12 +1311,21 @@ export class DatabaseStorage implements IStorage {
         }
       }
 
-      if (rule.priceLevelMin && r.priceLevel < rule.priceLevelMin && !entry.matched) {
+      if (rule.priceLevelMin && r.priceLevel < rule.priceLevelMin) {
+        entry.matched = false;
         entry.reasons.push(`price level ${r.priceLevel} below minimum ${rule.priceLevelMin}`);
       }
       if (rule.priceLevelMax && r.priceLevel > rule.priceLevelMax) {
         entry.matched = false;
         entry.reasons.push(`price level ${r.priceLevel} above maximum ${rule.priceLevelMax}`);
+      }
+
+      if (entry.matched && rule.excludedTags && rule.excludedTags.length > 0) {
+        const excluded = rule.excludedTags.filter(t => catLower.includes(t.toLowerCase()));
+        if (excluded.length > 0) {
+          entry.matched = false;
+          entry.reasons.push(`excluded by tag: ${excluded.join(", ")}`);
+        }
       }
       results.push(entry);
     }
@@ -1476,68 +1485,92 @@ export class DatabaseStorage implements IStorage {
           vibe: "drinks", ruleType: "hard_filter", hardFilter: true, priority: 100,
           requiredCategoryTypes: ["bar", "pub", "cocktail bar", "cocktail", "speakeasy", "wine bar", "brewery", "taproom", "izakaya", "beer bar", "craft beer", "whisky bar", "whiskey bar", "rum bar", "gin bar", "tiki bar", "lounge", "rooftop bar", "jazz bar", "sports bar"],
           excludeCategoryTypes: ["restaurant", "cafe", "bakery", "dessert", "brunch", "breakfast", "noodle", "rice", "curry", "sushi", "ramen", "pizza", "burger", "steak", "seafood"],
-          categoryKeywords: [], descriptionKeywords: [], isActive: true,
+          categoryKeywords: [], descriptionKeywords: [],
+          preferredTags: ["bar", "pub", "cocktail", "speakeasy", "izakaya"], excludedTags: ["cafe", "restaurant"],
+          rankingWeight: 90, fallbackStrategy: "none", fallbackMinResults: 0, isActive: true,
         },
         {
           vibe: "cafe", ruleType: "hard_filter", hardFilter: true, priority: 90,
           requiredCategoryTypes: ["cafe", "coffee", "coffee shop", "tea house", "tea room", "bakery cafe", "specialty coffee"],
           categoryKeywords: ["cafe", "coffee", "tea"],
           descriptionKeywords: ["cafe", "coffee", "latte", "espresso", "pour over", "drip", "brew"],
-          excludeCategoryTypes: [], isActive: true,
+          excludeCategoryTypes: [],
+          preferredTags: ["cafe", "coffee", "tea"], excludedTags: [],
+          rankingWeight: 80, fallbackStrategy: "none", fallbackMinResults: 0, isActive: true,
         },
         {
           vibe: "spicy", ruleType: "keyword", hardFilter: false, priority: 80,
           categoryKeywords: ["spicy", "isaan", "chili", "hot pot"],
           descriptionKeywords: ["spicy", "chili", "hot", "fiery", "capsicum"],
-          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+          requiredCategoryTypes: [], excludeCategoryTypes: [],
+          preferredTags: ["thai", "indian", "mexican", "korean", "isaan"], excludedTags: [],
+          rankingWeight: 70, fallbackStrategy: "relax_keywords", fallbackMinResults: 3, isActive: true,
         },
         {
           vibe: "healthy", ruleType: "keyword", hardFilter: false, priority: 70,
           categoryKeywords: ["salad", "vegan", "vegetarian", "organic", "poke", "healthy", "acai", "smoothie", "juice"],
           descriptionKeywords: ["healthy", "organic", "plant-based", "vegan", "vegetarian", "clean eating", "superfood"],
-          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+          requiredCategoryTypes: [], excludeCategoryTypes: [],
+          preferredTags: ["salad", "vegan", "organic"], excludedTags: ["fast food", "fried"],
+          rankingWeight: 60, fallbackStrategy: "relax_keywords", fallbackMinResults: 3, isActive: true,
         },
         {
           vibe: "outdoor", ruleType: "keyword", hardFilter: false, priority: 60,
           categoryKeywords: ["outdoor", "garden", "terrace", "riverside", "by the river"],
           descriptionKeywords: ["outdoor", "terrace", "garden", "open-air", "al fresco", "riverside"],
-          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+          requiredCategoryTypes: [], excludeCategoryTypes: [],
+          preferredTags: ["garden", "terrace", "riverside"], excludedTags: [],
+          rankingWeight: 50, fallbackStrategy: "relax_keywords", fallbackMinResults: 3, isActive: true,
         },
         {
           vibe: "date_night", ruleType: "keyword", hardFilter: false, priority: 70, priceLevelMin: 3,
           categoryKeywords: ["fine dining", "omakase", "kaiseki", "premium", "upscale"],
           descriptionKeywords: ["romantic", "intimate", "fine dining", "upscale", "elegant", "premium"],
-          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+          requiredCategoryTypes: [], excludeCategoryTypes: [],
+          preferredTags: ["fine dining", "omakase", "premium"], excludedTags: ["fast food", "street food"],
+          rankingWeight: 75, fallbackStrategy: "relax_price", fallbackMinResults: 5, isActive: true,
         },
         {
           vibe: "sweets", ruleType: "keyword", hardFilter: false, priority: 70,
           categoryKeywords: ["dessert", "bakery", "ice cream", "kakigori", "cake", "pastry", "sweet", "honey toast", "gelato", "chocolate"],
           descriptionKeywords: ["dessert", "sweet", "pastry", "cake", "ice cream", "gelato", "chocolate", "confection"],
-          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+          requiredCategoryTypes: [], excludeCategoryTypes: [],
+          preferredTags: ["dessert", "bakery", "ice cream"], excludedTags: [],
+          rankingWeight: 65, fallbackStrategy: "relax_keywords", fallbackMinResults: 3, isActive: true,
         },
         {
           vibe: "brunch", ruleType: "keyword", hardFilter: false, priority: 60,
           categoryKeywords: ["brunch", "breakfast", "morning", "pancake", "waffle"],
           descriptionKeywords: ["brunch", "breakfast", "morning", "eggs benedict", "pancake", "waffle"],
-          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+          requiredCategoryTypes: [], excludeCategoryTypes: [],
+          preferredTags: ["brunch", "breakfast"], excludedTags: [],
+          rankingWeight: 55, fallbackStrategy: "relax_keywords", fallbackMinResults: 3, isActive: true,
         },
         {
-          vibe: "street_food", ruleType: "keyword", hardFilter: false, priority: 70,
+          vibe: "street_food", ruleType: "hard_filter", hardFilter: true, priority: 70,
+          requiredCategoryTypes: ["street food", "night market", "hawker", "stall", "cart", "food truck", "roadside"],
           categoryKeywords: ["street food", "night market", "hawker", "stall", "cart", "food truck"],
           descriptionKeywords: ["street food", "night market", "roadside", "hawker", "food truck", "stall"],
-          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+          excludeCategoryTypes: ["fine dining", "omakase", "premium"],
+          preferredTags: ["street food", "night market"], excludedTags: ["fine dining"],
+          rankingWeight: 70, fallbackStrategy: "relax_to_keyword", fallbackMinResults: 3, isActive: true,
         },
         {
-          vibe: "rooftop", ruleType: "keyword", hardFilter: false, priority: 60,
+          vibe: "rooftop", ruleType: "hard_filter", hardFilter: true, priority: 60,
+          requiredCategoryTypes: ["rooftop", "rooftop bar", "sky bar"],
           categoryKeywords: ["rooftop"],
           descriptionKeywords: ["rooftop", "sky bar", "skyline", "panoramic view"],
-          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+          excludeCategoryTypes: [],
+          preferredTags: ["rooftop"], excludedTags: [],
+          rankingWeight: 60, fallbackStrategy: "relax_to_keyword", fallbackMinResults: 2, isActive: true,
         },
         {
           vibe: "family", ruleType: "keyword", hardFilter: false, priority: 50,
           categoryKeywords: ["family", "buffet", "food court", "casual", "home-style", "traditional", "home cooking"],
           descriptionKeywords: ["family", "kid-friendly", "casual dining", "home-style", "home cooking", "comfort"],
-          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+          requiredCategoryTypes: [], excludeCategoryTypes: [],
+          preferredTags: ["family", "buffet", "casual"], excludedTags: ["bar", "pub", "nightclub"],
+          rankingWeight: 45, fallbackStrategy: "relax_keywords", fallbackMinResults: 5, isActive: true,
         },
       ];
       await db.insert(vibeMatchingRules).values(rules);
@@ -1547,42 +1580,99 @@ export class DatabaseStorage implements IStorage {
     return { definitionsSeeded, rulesSeeded };
   }
 
-  async getRestaurantsByVibeStructured(vibe: string, limit: number): Promise<(Restaurant & { vibeMatch: number; matchReasons?: string[] })[]> {
-    const vibeRestaurants = await this.getRestaurantsByVibe(vibe);
+  private computeRelevanceScore(r: Restaurant, rule: VibeMatchingRule, reasons: string[]): number {
+    const baseWeight = Math.min((rule.rankingWeight || 50) * 0.6, 55);
+    const ratingBonus = (parseFloat(r.rating) - 3.5) * 12;
+    const trendingBonus = (r.trendingScore || 0) * 0.2;
+    const catLower = r.category.toLowerCase();
+    let preferredBonus = 0;
+    if (rule.preferredTags && rule.preferredTags.length > 0) {
+      const matched = rule.preferredTags.filter(t => catLower.includes(t.toLowerCase()));
+      preferredBonus = matched.length * 4;
+    }
+    const reasonBonus = Math.min(reasons.length * 2, 10);
+    return Math.min(99, Math.max(20, Math.round(baseWeight + ratingBonus + trendingBonus + preferredBonus + reasonBonus)));
+  }
 
-    if (vibeRestaurants.length > 0) {
-      return vibeRestaurants.slice(0, limit).map(r => ({
+  async getRestaurantsByVibeStructured(vibe: string, limit: number): Promise<(Restaurant & { vibeMatch: number; matchReasons?: string[] })[]> {
+    const dbRules = await this.getVibeMatchingRules();
+    const vibeRule = dbRules.find(r => r.vibe === vibe);
+    const allRestaurants = await this.getRestaurants();
+
+    if (dbRules.length === 0) {
+      const preTagged = allRestaurants.filter(r => r.vibes?.includes(vibe));
+      return preTagged.slice(0, limit).map(r => ({
         ...r,
-        vibeMatch: Math.min(99, Math.round(
-          50 + (parseFloat(r.rating) - 4.0) * 15 + (r.trendingScore || 0) * 0.2
-        )),
+        vibeMatch: Math.min(99, Math.round(50 + (parseFloat(r.rating) - 4.0) * 15 + (r.trendingScore || 0) * 0.2)),
       }));
     }
 
-    const dbRules = await this.getVibeMatchingRules();
-    if (dbRules.length === 0) {
-      return [];
-    }
-
-    const allRestaurants = await this.getRestaurants();
-    const candidates: (Restaurant & { vibeMatch: number; matchReasons: string[] })[] = [];
-
+    const strictCandidates: (Restaurant & { vibeMatch: number; matchReasons: string[] })[] = [];
     for (const r of allRestaurants) {
       const evaluations = this.evaluateRulesForRestaurant(r, dbRules);
       const vibeExpl = evaluations.find(e => e.vibe === vibe);
       if (vibeExpl?.matched) {
-        candidates.push({
+        strictCandidates.push({
           ...r,
-          vibeMatch: Math.min(99, Math.round(
-            50 + (parseFloat(r.rating) - 4.0) * 15 + (r.trendingScore || 0) * 0.2
-          )),
+          vibeMatch: this.computeRelevanceScore(r, vibeRule || dbRules[0], vibeExpl.reasons),
           matchReasons: vibeExpl.reasons,
         });
       }
     }
 
-    candidates.sort((a, b) => b.vibeMatch - a.vibeMatch);
-    return candidates.slice(0, limit);
+    strictCandidates.sort((a, b) => b.vibeMatch - a.vibeMatch);
+
+    const fallbackMin = vibeRule?.fallbackMinResults || 3;
+    const fallbackStrategy = vibeRule?.fallbackStrategy || "relax_keywords";
+
+    if (strictCandidates.length >= fallbackMin || fallbackStrategy === "none") {
+      return strictCandidates.slice(0, limit);
+    }
+
+    const strictIds = new Set(strictCandidates.map(c => c.id));
+    const fallbackCandidates: (Restaurant & { vibeMatch: number; matchReasons: string[] })[] = [];
+
+    if (fallbackStrategy === "relax_keywords" || fallbackStrategy === "relax_to_keyword") {
+      for (const r of allRestaurants) {
+        if (strictIds.has(r.id)) continue;
+        const catLower = r.category.toLowerCase();
+        const descLower = (r.description || "").toLowerCase();
+        const allKeywords = [
+          ...(vibeRule?.categoryKeywords || []),
+          ...(vibeRule?.descriptionKeywords || []),
+        ];
+        const matched = allKeywords.filter(kw => catLower.includes(kw) || descLower.includes(kw));
+        if (matched.length > 0) {
+          fallbackCandidates.push({
+            ...r,
+            vibeMatch: Math.min(70, Math.round(30 + matched.length * 5 + (parseFloat(r.rating) - 4.0) * 8)),
+            matchReasons: [`fallback: keyword match (${matched.join(", ")})`],
+          });
+        }
+      }
+    } else if (fallbackStrategy === "relax_price" && vibeRule?.priceLevelMin) {
+      const relaxedMin = Math.max(1, vibeRule.priceLevelMin - 1);
+      for (const r of allRestaurants) {
+        if (strictIds.has(r.id)) continue;
+        if (r.priceLevel >= relaxedMin) {
+          const catLower = r.category.toLowerCase();
+          const descLower = (r.description || "").toLowerCase();
+          const allKw = [...(vibeRule.categoryKeywords || []), ...(vibeRule.descriptionKeywords || [])];
+          const matched = allKw.filter(kw => catLower.includes(kw) || descLower.includes(kw));
+          if (matched.length > 0) {
+            fallbackCandidates.push({
+              ...r,
+              vibeMatch: Math.min(65, Math.round(25 + matched.length * 5 + (parseFloat(r.rating) - 4.0) * 8)),
+              matchReasons: [`fallback: relaxed price (min ${relaxedMin}), keyword match (${matched.join(", ")})`],
+            });
+          }
+        }
+      }
+    }
+
+    fallbackCandidates.sort((a, b) => b.vibeMatch - a.vibeMatch);
+    const combined = [...strictCandidates, ...fallbackCandidates];
+    return combined.slice(0, limit);
   }
 }
 

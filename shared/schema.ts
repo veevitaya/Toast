@@ -613,8 +613,13 @@ export const vibeMatchingRules = pgTable("vibe_matching_rules", {
   categoryKeywords: text("category_keywords").array().default([]),
   descriptionKeywords: text("description_keywords").array().default([]),
   excludeCategoryTypes: text("exclude_category_types").array().default([]),
+  preferredTags: text("preferred_tags").array().default([]),
+  excludedTags: text("excluded_tags").array().default([]),
   priceLevelMin: integer("price_level_min"),
   priceLevelMax: integer("price_level_max"),
+  rankingWeight: integer("ranking_weight").default(50),
+  fallbackStrategy: text("fallback_strategy").default("relax_keywords"),
+  fallbackMinResults: integer("fallback_min_results").default(3),
   isActive: boolean("is_active").default(true),
   priority: integer("priority").default(0),
 }, (table) => ({
