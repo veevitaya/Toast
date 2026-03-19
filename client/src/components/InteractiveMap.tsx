@@ -133,21 +133,39 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
   }, [pins, selectedPinId, filteredCategory]);
 
   const [recentering, setRecentering] = useState(false);
+  const [recenterError, setRecenterError] = useState<string | null>(null);
+  const lastRecenterTime = useRef(0);
+  const cachedGeoPosition = useRef<[number, number] | null>(null);
 
   const handleRecenter = useCallback(() => {
+    const now = Date.now();
+    if (now - lastRecenterTime.current < 2000) return;
+    lastRecenterTime.current = now;
+
+    setRecenterError(null);
+
+    if (cachedGeoPosition.current && now - lastRecenterTime.current < 30000) {
+      const map = leafletMap.current;
+      if (map) map.flyTo(cachedGeoPosition.current, 15, { duration: 0.8 });
+      return;
+    }
+
     if (!navigator.geolocation) {
       if (leafletMap.current && userLocation) {
         leafletMap.current.flyTo(userLocation, 15, { duration: 0.8 });
+      } else {
+        setRecenterError("Location not available");
+        setTimeout(() => setRecenterError(null), 3000);
       }
       return;
     }
     setRecentering(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        cachedGeoPosition.current = coords;
         const map = leafletMap.current;
-        if (map) {
-          map.flyTo([pos.coords.latitude, pos.coords.longitude], 15, { duration: 0.8 });
-        }
+        if (map) map.flyTo(coords, 15, { duration: 0.8 });
         setRecentering(false);
       },
       (err) => {
@@ -159,6 +177,12 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
             map.flyTo(center, zoom, { duration: 0.8 });
           }
         }
+        if (err.code === 1) {
+          setRecenterError("Location permission denied");
+        } else {
+          setRecenterError("Could not get location");
+        }
+        setTimeout(() => setRecenterError(null), 3000);
         setRecentering(false);
       },
       { timeout: 5000, maximumAge: 30000 }
@@ -169,16 +193,23 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
     <>
       <div ref={mapRef} className="w-full h-full" />
       {showRecenterButton && (
-        <button
-          onClick={handleRecenter}
-          disabled={recentering}
-          className="absolute bottom-4 right-4 z-[10] w-10 h-10 bg-white rounded-full flex items-center justify-center border border-gray-200/80 active:scale-95 transition-transform"
-          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
-          data-testid="button-recenter-map"
-          aria-label="Center on my location"
-        >
-          <Navigation className={`w-4.5 h-4.5 text-[#4285F4] ${recentering ? "animate-pulse" : ""}`} />
-        </button>
+        <div className="absolute bottom-4 right-4 z-[10] flex flex-col items-end gap-1">
+          {recenterError && (
+            <div className="px-2.5 py-1 rounded-lg bg-red-50 text-red-600 text-[11px] font-medium whitespace-nowrap" data-testid="text-recenter-error">
+              {recenterError}
+            </div>
+          )}
+          <button
+            onClick={handleRecenter}
+            disabled={recentering}
+            className="w-10 h-10 bg-white rounded-full flex items-center justify-center border border-gray-200/80 active:scale-95 transition-transform"
+            style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
+            data-testid="button-recenter-map"
+            aria-label="Center on my location"
+          >
+            <Navigation className={`w-4.5 h-4.5 text-[#4285F4] ${recentering ? "animate-pulse" : ""}`} />
+          </button>
+        </div>
       )}
       <style>{`
         .custom-pin-icon {

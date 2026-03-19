@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
-import { TrendingUp, Copy, Check, X, Share2, MapPin } from "lucide-react";
+import { TrendingUp, Copy, Check, X, Share2, MapPin, Navigation, Search } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import mascotImg from "@assets/toast_mascot_nobg.png";
 import { sendGroupInviteNoRedirect, getAccessToken, getGroupInviteUrl } from "@/lib/liff";
@@ -93,6 +93,8 @@ export default function WaitingRoom() {
   const joiningRef = useRef(false);
   const [sessionLocationName, setSessionLocationName] = useState<string | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [locationSearch, setLocationSearch] = useState("");
+  const [detectingLocation, setDetectingLocation] = useState(false);
 
   const getUserLocation = useCallback(async (): Promise<{ latitude: string; longitude: string } | null> => {
     try {
@@ -248,6 +250,7 @@ export default function WaitingRoom() {
 
   const [sessionExpired, setSessionExpired] = useState(false);
   const [sessionCompleted, setSessionCompleted] = useState(false);
+  const [sessionDeleted, setSessionDeleted] = useState(false);
 
   useEffect(() => {
     if (!sessionCreated || !sessionId) return;
@@ -271,10 +274,13 @@ export default function WaitingRoom() {
           if (data.session?.status === "completed") {
             setSessionCompleted(true);
           }
+          if (data.session?.status === "deleted") {
+            setSessionDeleted(true);
+          }
         } else if (res.status === 410) {
           setSessionExpired(true);
         } else if (res.status === 404) {
-          setError("This session no longer exists.");
+          setSessionDeleted(true);
         }
       } catch {}
     };
@@ -536,7 +542,12 @@ export default function WaitingRoom() {
     );
   }
 
-  if (sessionExpired || sessionCompleted) {
+  if (sessionCompleted && sessionId) {
+    navigate(`/group/swipe?session=${sessionId}`);
+    return null;
+  }
+
+  if (sessionExpired || sessionDeleted) {
     return (
       <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6" data-testid="session-ended-page">
         <div className="absolute inset-0 pointer-events-none">
@@ -559,7 +570,7 @@ export default function WaitingRoom() {
           transition={{ delay: 0.15 }}
           className="text-[22px] font-bold mb-2 text-center"
         >
-          {sessionExpired ? "Session Expired" : "Session Complete"}
+          {sessionDeleted ? "Session Removed" : "Session Expired"}
         </motion.h1>
         <motion.p
           initial={{ y: 16, opacity: 0 }}
@@ -568,9 +579,9 @@ export default function WaitingRoom() {
           className="text-muted-foreground text-center text-sm mb-6 max-w-[280px]"
           data-testid="text-session-ended-message"
         >
-          {sessionExpired
-            ? "This session has expired after 24 hours. Start a new one to keep the party going!"
-            : "This session has already finished. Check your results or start a fresh round!"}
+          {sessionDeleted
+            ? "This session was removed by the host. Start a new group session to swipe together!"
+            : "This session has expired after 24 hours. Start a new one to keep the party going!"}
         </motion.p>
         <motion.div
           initial={{ y: 16, opacity: 0 }}
@@ -779,36 +790,88 @@ export default function WaitingRoom() {
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="mt-2 grid grid-cols-2 gap-2" data-testid="location-picker-grid">
-                  {BANGKOK_LOCATIONS.map((loc) => (
-                    <button
-                      key={loc.name}
-                      onClick={async () => {
-                        setSessionLocationName(loc.name);
+                <div className="mt-2 space-y-2">
+                  <button
+                    onClick={async () => {
+                      setDetectingLocation(true);
+                      try {
+                        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+                          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000, maximumAge: 60000 });
+                        });
+                        const lat = pos.coords.latitude.toString();
+                        const lng = pos.coords.longitude.toString();
+                        let nearest = BANGKOK_LOCATIONS[0];
+                        let minDist = Infinity;
+                        for (const loc of BANGKOK_LOCATIONS) {
+                          const d = Math.hypot(parseFloat(loc.lat) - pos.coords.latitude, parseFloat(loc.lng) - pos.coords.longitude);
+                          if (d < minDist) { minDist = d; nearest = loc; }
+                        }
+                        setSessionLocationName(nearest.name);
                         setShowLocationPicker(false);
                         try {
                           await fetchWithTimeout(`/api/group/sessions/${sessionId}/session-location`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              lineUserId: profile?.userId,
-                              locationName: loc.name,
-                              locationLat: loc.lat,
-                              locationLng: loc.lng,
-                            }),
+                            body: JSON.stringify({ lineUserId: profile?.userId, locationName: nearest.name, locationLat: lat, locationLng: lng }),
                           });
                         } catch {}
-                      }}
-                      className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-all active:scale-[0.96] ${
-                        sessionLocationName === loc.name
-                          ? "bg-[#FFCC02] text-[#2d2000]"
-                          : "bg-gray-50 text-foreground hover:bg-gray-100"
-                      }`}
-                      data-testid={`location-option-${loc.name.toLowerCase().replace(/\s+/g, "-")}`}
-                    >
-                      {loc.name}
-                    </button>
-                  ))}
+                      } catch {
+                        setDetectingLocation(false);
+                      }
+                      setDetectingLocation(false);
+                    }}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-[13px] font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 active:scale-[0.97] transition-all"
+                    disabled={detectingLocation}
+                    data-testid="button-use-current-location"
+                  >
+                    <Navigation className={`w-3.5 h-3.5 ${detectingLocation ? "animate-pulse" : ""}`} />
+                    {detectingLocation ? "Detecting location..." : "Use my current location"}
+                  </button>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search area..."
+                      value={locationSearch}
+                      onChange={(e) => setLocationSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-200 text-[13px] bg-white focus:outline-none focus:ring-1 focus:ring-[#FFCC02]"
+                      data-testid="input-location-search"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2" data-testid="location-picker-grid">
+                    {BANGKOK_LOCATIONS.filter((loc) =>
+                      !locationSearch || loc.name.toLowerCase().includes(locationSearch.toLowerCase())
+                    ).map((loc) => (
+                      <button
+                        key={loc.name}
+                        onClick={async () => {
+                          setSessionLocationName(loc.name);
+                          setShowLocationPicker(false);
+                          setLocationSearch("");
+                          try {
+                            await fetchWithTimeout(`/api/group/sessions/${sessionId}/session-location`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                lineUserId: profile?.userId,
+                                locationName: loc.name,
+                                locationLat: loc.lat,
+                                locationLng: loc.lng,
+                              }),
+                            });
+                          } catch {}
+                        }}
+                        className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-all active:scale-[0.96] ${
+                          sessionLocationName === loc.name
+                            ? "bg-[#FFCC02] text-[#2d2000]"
+                            : "bg-gray-50 text-foreground hover:bg-gray-100"
+                        }`}
+                        data-testid={`location-option-${loc.name.toLowerCase().replace(/\s+/g, "-")}`}
+                      >
+                        {loc.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </motion.div>
             )}

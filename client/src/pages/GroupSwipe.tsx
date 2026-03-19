@@ -421,7 +421,7 @@ export default function GroupSwipe() {
       try {
         const res = await fetchWithTimeout(`/api/group/sessions/${sessionCode}`, { signal: pollController.signal });
         if (cancelled) return;
-        if (res.status === 410) {
+        if (res.status === 410 || res.status === 404) {
           setSessionEnded(true);
           return;
         }
@@ -431,6 +431,10 @@ export default function GroupSwipe() {
           return;
         }
         const data = await res.json();
+        if (data.session?.status === "deleted") {
+          setSessionEnded(true);
+          return;
+        }
         setMembers(data.members);
         if (profile && data.session?.hostLineUserId === profile.userId) {
           setIsHost(true);
