@@ -6,7 +6,7 @@ import type { GroupSessionMember } from "@shared/schema";
 import { z } from "zod";
 import { createHash, randomBytes } from "crypto";
 import { classifyRestaurant, VERIFICATION_CHECKLIST_TEMPLATE } from "./classifier";
-import { autoAssignVibes, autoDetectDistrict } from "@shared/vibeConfig";
+import { autoDetectDistrict } from "@shared/vibeConfig";
 
 function hashPassword(password: string): string {
   return createHash("sha256").update(password).digest("hex");
@@ -1587,16 +1587,6 @@ export async function registerRoutes(
           })
           .filter(Boolean);
         return res.json(results);
-      }
-
-      if (vibe === "budget") {
-        const all = await storage.getRestaurants();
-        const budget = all
-          .filter(r => r.priceLevel <= 2)
-          .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
-          .slice(0, limit)
-          .map(r => ({ ...r, vibeMatch: Math.round(90 - (r.priceLevel - 1) * 20 + parseFloat(r.rating) * 2) }));
-        return res.json(budget);
       }
 
       const results = await storage.getRestaurantsByVibeStructured(vibe, limit);
@@ -3363,7 +3353,7 @@ export async function registerRoutes(
       const all = await storage.getRestaurants();
       let updated = 0;
       for (const r of all) {
-        const vibes = autoAssignVibes(r);
+        const vibes = await storage.assignVibesFromDB(r);
         const district = r.district || autoDetectDistrict(r.address);
         const changes: Record<string, any> = {};
         if (JSON.stringify(vibes) !== JSON.stringify(r.vibes || [])) {
@@ -3392,7 +3382,7 @@ export async function registerRoutes(
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const restaurant = await storage.getRestaurantById(id);
       if (!restaurant) return res.status(404).json({ message: "Not found" });
-      const vibes = autoAssignVibes(restaurant);
+      const vibes = await storage.assignVibesFromDB(restaurant);
       const district = restaurant.district || autoDetectDistrict(restaurant.address);
       const updates: Record<string, any> = { vibes };
       if (district) updates.district = district;
@@ -3524,7 +3514,7 @@ export async function registerRoutes(
         let district: string | null = null;
 
         if (input.autoAssign) {
-          vibes = autoAssignVibes({
+          vibes = await storage.assignVibesFromDB({
             category: r.category,
             priceLevel: r.priceLevel,
             address: r.address,
@@ -4058,7 +4048,7 @@ export async function registerRoutes(
                 }
 
                 const classified = classifyRestaurant(place);
-                const vibes = autoAssignVibes({
+                const vibes = await storage.assignVibesFromDB({
                   category: classified.category,
                   priceLevel: classified.priceLevel,
                   address: place.vicinity || "",

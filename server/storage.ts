@@ -254,6 +254,8 @@ export interface IStorage {
   getVibeMatchingRules(vibe?: string): Promise<VibeMatchingRule[]>;
   seedVibeDefinitionsAndRules(): Promise<{ definitionsSeeded: number; rulesSeeded: number }>;
   getRestaurantsByVibeStructured(vibe: string, limit: number): Promise<(Restaurant & { vibeMatch: number; matchReasons?: string[] })[]>;
+  evaluateVibesFromDB(r: { category: string; priceLevel: number; address: string; operatingHours?: string | null; description?: string }): Promise<{ vibe: string; matched: boolean; reasons: string[] }[]>;
+  assignVibesFromDB(r: { category: string; priceLevel: number; address: string; operatingHours?: string | null; description?: string }): Promise<string[]>;
 }
 
 const MAX_CACHE_ENTRIES = 200;
@@ -1284,13 +1286,16 @@ export class DatabaseStorage implements IStorage {
 
       if (rule.hardFilter && rule.requiredCategoryTypes && rule.requiredCategoryTypes.length > 0) {
         const matchedType = rule.requiredCategoryTypes.find(t => matchesCatType(t));
-        if (rule.excludeCategoryTypes && rule.excludeCategoryTypes.length > 0 && !matchedType) {
-          if (rule.excludeCategoryTypes.some(exc => matchesCatType(exc))) {
-            entry.reasons.push("excluded: category contains excluded type");
+
+        if (rule.excludeCategoryTypes && rule.excludeCategoryTypes.length > 0) {
+          const excludedMatch = rule.excludeCategoryTypes.find(exc => matchesCatType(exc));
+          if (excludedMatch) {
+            entry.reasons.push(`excluded: category contains excluded type '${excludedMatch}'`);
             results.push(entry);
             continue;
           }
         }
+
         if (!matchedType) {
           const hasKw = (rule.categoryKeywords || []).some(kw => catLower.includes(kw)) ||
                         (rule.descriptionKeywords || []).some(kw => descLower.includes(kw));
@@ -1342,16 +1347,40 @@ export class DatabaseStorage implements IStorage {
       }
     }
 
-    if (r.priceLevel <= 2) {
-      results.push({ vibe: "budget", matched: true, reasons: [`price level ${r.priceLevel} <= 2`] });
-    } else {
-      results.push({ vibe: "budget", matched: false, reasons: [`price level ${r.priceLevel} > 2`] });
+    const budgetEntry = results.find(e => e.vibe === "budget");
+    if (budgetEntry) {
+      const budgetRule = rules.find(r => r.vibe === "budget");
+      const maxPrice = budgetRule?.priceLevelMax || 2;
+      if (r.priceLevel <= maxPrice) {
+        budgetEntry.matched = true;
+        budgetEntry.reasons.push(`price level ${r.priceLevel} <= ${maxPrice}`);
+      } else {
+        budgetEntry.reasons.push(`price level ${r.priceLevel} > ${maxPrice}`);
+      }
+    } else if (!results.find(e => e.vibe === "budget")) {
+      results.push({
+        vibe: "budget",
+        matched: r.priceLevel <= 2,
+        reasons: [r.priceLevel <= 2 ? `price level ${r.priceLevel} <= 2` : `price level ${r.priceLevel} > 2`],
+      });
     }
 
-    if (r.priceLevel <= 3) {
-      results.push({ vibe: "delivery", matched: true, reasons: [`price level ${r.priceLevel} <= 3`] });
-    } else {
-      results.push({ vibe: "delivery", matched: false, reasons: [`price level ${r.priceLevel} > 3`] });
+    const deliveryEntry = results.find(e => e.vibe === "delivery");
+    if (deliveryEntry) {
+      const deliveryRule = rules.find(r => r.vibe === "delivery");
+      const maxPrice = deliveryRule?.priceLevelMax || 3;
+      if (r.priceLevel <= maxPrice) {
+        deliveryEntry.matched = true;
+        deliveryEntry.reasons.push(`price level ${r.priceLevel} <= ${maxPrice}, delivery eligible`);
+      } else {
+        deliveryEntry.reasons.push(`price level ${r.priceLevel} > ${maxPrice}`);
+      }
+    } else if (!results.find(e => e.vibe === "delivery")) {
+      results.push({
+        vibe: "delivery",
+        matched: r.priceLevel <= 3,
+        reasons: [r.priceLevel <= 3 ? `price level ${r.priceLevel} <= 3, delivery eligible` : `price level ${r.priceLevel} > 3`],
+      });
     }
 
     if (r.operatingHours) {
@@ -1359,7 +1388,9 @@ export class DatabaseStorage implements IStorage {
       if (m) {
         const openHour = parseInt(m[1]), closeHour = parseInt(m[2]);
         if (closeHour >= 0 && closeHour <= 5) {
-          results.push({ vibe: "late_night", matched: true, reasons: [`closes at ${closeHour}:xx (after midnight)`] });
+          const lateEntry = results.find(e => e.vibe === "late_night");
+          if (lateEntry) { lateEntry.matched = true; lateEntry.reasons.push(`closes at ${closeHour}:xx (after midnight)`); }
+          else results.push({ vibe: "late_night", matched: true, reasons: [`closes at ${closeHour}:xx (after midnight)`] });
         }
         if (openHour >= 6 && openHour <= 10) {
           const brunchEntry = results.find(e => e.vibe === "brunch");
@@ -1390,6 +1421,11 @@ export class DatabaseStorage implements IStorage {
   async evaluateVibesFromDB(r: { category: string; priceLevel: number; address: string; operatingHours?: string | null; description?: string }): Promise<{ vibe: string; matched: boolean; reasons: string[] }[]> {
     const dbRules = await this.getVibeMatchingRules();
     return this.evaluateRulesForRestaurant(r, dbRules);
+  }
+
+  async assignVibesFromDB(r: { category: string; priceLevel: number; address: string; operatingHours?: string | null; description?: string }): Promise<string[]> {
+    const evaluations = await this.evaluateVibesFromDB(r);
+    return evaluations.filter(e => e.matched).map(e => e.vibe);
   }
 
   async updateAllRestaurantVibes(): Promise<{ updated: number; details: { id: number; name: string; oldVibes: string[]; newVibes: string[] }[] }> {
@@ -1571,6 +1607,30 @@ export class DatabaseStorage implements IStorage {
           requiredCategoryTypes: [], excludeCategoryTypes: [],
           preferredTags: ["family", "buffet", "casual"], excludedTags: ["bar", "pub", "nightclub"],
           rankingWeight: 45, fallbackStrategy: "relax_keywords", fallbackMinResults: 5, isActive: true,
+        },
+        {
+          vibe: "budget", ruleType: "price_filter", hardFilter: false, priority: 80,
+          categoryKeywords: [], descriptionKeywords: [],
+          requiredCategoryTypes: [], excludeCategoryTypes: [],
+          preferredTags: ["street food", "local", "casual"], excludedTags: [],
+          priceLevelMax: 2, rankingWeight: 60,
+          fallbackStrategy: "relax_keywords", fallbackMinResults: 5, isActive: true,
+        },
+        {
+          vibe: "delivery", ruleType: "price_filter", hardFilter: false, priority: 60,
+          categoryKeywords: [], descriptionKeywords: [],
+          requiredCategoryTypes: [], excludeCategoryTypes: ["fine dining", "omakase"],
+          preferredTags: [], excludedTags: [],
+          priceLevelMax: 3, rankingWeight: 50,
+          fallbackStrategy: "relax_keywords", fallbackMinResults: 5, isActive: true,
+        },
+        {
+          vibe: "late_night", ruleType: "hours_filter", hardFilter: false, priority: 60,
+          categoryKeywords: ["late night", "night", "after hours"],
+          descriptionKeywords: ["late night", "open late", "after midnight", "24 hours", "24hr"],
+          requiredCategoryTypes: [], excludeCategoryTypes: [],
+          preferredTags: ["bar", "izakaya", "ramen", "street food"], excludedTags: [],
+          rankingWeight: 55, fallbackStrategy: "relax_keywords", fallbackMinResults: 3, isActive: true,
         },
       ];
       await db.insert(vibeMatchingRules).values(rules);
