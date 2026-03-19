@@ -1975,6 +1975,22 @@ export async function registerRoutes(
     }
   };
 
+  function requireOwnerOrManager(req: any, res: any): boolean {
+    if (req.teamMemberRole === "staff") {
+      res.status(403).json({ message: "This action requires manager or owner access" });
+      return false;
+    }
+    return true;
+  }
+
+  function requireOwnerOnly(req: any, res: any): boolean {
+    if (req.teamMemberRole) {
+      res.status(403).json({ message: "This action requires owner access" });
+      return false;
+    }
+    return true;
+  }
+
   function requirePermission(req: any, res: any, permission: string): boolean {
     const admin = req.adminUser;
     if (!admin) { res.status(401).json({ message: "Unauthorized" }); return false; }
@@ -2083,9 +2099,10 @@ export async function registerRoutes(
     }
   });
 
-  // Owner Promotions routes
+  // Owner Promotions routes (owner + manager only, staff cannot manage)
   app.post("/api/owner/promotions", ownerAuth, async (req: any, res) => {
     try {
+      if (!requireOwnerOrManager(req, res)) return;
       const schema = z.object({
         title: z.string().min(1),
         dealType: z.string().min(1),
@@ -2141,6 +2158,7 @@ export async function registerRoutes(
 
   app.patch("/api/owner/promotions/:id", ownerAuth, async (req: any, res) => {
     try {
+      if (!requireOwnerOrManager(req, res)) return;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const promo = await storage.getRestaurantPromotionById(id);
@@ -2170,6 +2188,7 @@ export async function registerRoutes(
 
   app.delete("/api/owner/promotions/:id", ownerAuth, async (req: any, res) => {
     try {
+      if (!requireOwnerOrManager(req, res)) return;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const promo = await storage.getRestaurantPromotionById(id);
@@ -2197,6 +2216,7 @@ export async function registerRoutes(
 
   app.post("/api/owner/team", ownerAuth, async (req: any, res) => {
     try {
+      if (!requireOwnerOnly(req, res)) return;
       const schema = z.object({
         email: z.string().email(),
         displayName: z.string().min(1),
@@ -2230,6 +2250,7 @@ export async function registerRoutes(
 
   app.patch("/api/owner/team/:id", ownerAuth, async (req: any, res) => {
     try {
+      if (!requireOwnerOnly(req, res)) return;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const members = await storage.getOwnerTeamMembers(req.ownerUser.id);
@@ -2251,6 +2272,7 @@ export async function registerRoutes(
 
   app.delete("/api/owner/team/:id", ownerAuth, async (req: any, res) => {
     try {
+      if (!requireOwnerOnly(req, res)) return;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const members = await storage.getOwnerTeamMembers(req.ownerUser.id);
@@ -2266,6 +2288,7 @@ export async function registerRoutes(
 
   app.post("/api/owner/team/:id/resend", ownerAuth, async (req: any, res) => {
     try {
+      if (!requireOwnerOnly(req, res)) return;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const members = await storage.getOwnerTeamMembers(req.ownerUser.id);

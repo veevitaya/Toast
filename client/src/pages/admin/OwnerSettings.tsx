@@ -871,7 +871,10 @@ export default function OwnerSettings() {
                 <div className="p-4 text-center">
                   <Loader2 className="w-5 h-5 animate-spin text-gray-300 mx-auto" />
                 </div>
-              ) : teamMembers.map((member) => (
+              ) : teamMembers.map((member) => {
+                const isExpired = member.status === "pending" && member.inviteExpiresAt && new Date(member.inviteExpiresAt) < new Date();
+                const displayStatus = isExpired ? "Expired" : member.status === "active" ? "Active" : member.status === "deactivated" ? "Deactivated" : "Invited";
+                return (
                 <div key={member.id} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100" data-testid={`team-member-${member.id}`}>
                   <div className="w-10 h-10 rounded-full bg-[#00B14F]/10 flex items-center justify-center text-sm font-bold text-[#00B14F]">
                     {member.displayName.charAt(0).toUpperCase()}
@@ -884,10 +887,11 @@ export default function OwnerSettings() {
                     member.role === "manager" ? "bg-[var(--admin-blue-10)] text-[var(--admin-blue)]" : "bg-gray-100 text-gray-500"
                   }`}>{member.role}</span>
                   <span className={`text-[10px] font-medium rounded-full px-2 py-0.5 ${
-                    member.status === "active" ? "bg-[#00B14F]/10 text-[#00B14F]" :
-                    member.status === "deactivated" ? "bg-red-50 text-red-400" :
+                    displayStatus === "Active" ? "bg-[#00B14F]/10 text-[#00B14F]" :
+                    displayStatus === "Deactivated" ? "bg-red-50 text-red-400" :
+                    displayStatus === "Expired" ? "bg-gray-100 text-gray-400" :
                     "bg-amber-50 text-amber-600"
-                  }`}>{member.status === "active" ? "Active" : member.status === "deactivated" ? "Deactivated" : "Pending"}</span>
+                  }`}>{displayStatus}</span>
                   <div className="flex items-center gap-1">
                     {member.status === "pending" && (
                       <button
@@ -929,7 +933,8 @@ export default function OwnerSettings() {
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           </div>
 
