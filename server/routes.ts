@@ -1948,10 +1948,28 @@ export async function registerRoutes(
       const [email, password] = decoded.split(":");
       if (!email || !password) return res.status(401).json({ message: "Unauthorized" });
       const owner = await storage.getRestaurantOwnerByEmail(email);
-      if (!owner) return res.status(401).json({ message: "Unauthorized" });
-      if (owner.passwordHash !== hashPassword(password)) return res.status(401).json({ message: "Unauthorized" });
-      req.ownerUser = owner;
-      next();
+      if (owner && owner.passwordHash === hashPassword(password)) {
+        req.ownerUser = owner;
+        req.teamMemberRole = null;
+        return next();
+      }
+      const allOwners = await storage.getAllRestaurantOwners();
+      for (const o of allOwners) {
+        const members = await storage.getOwnerTeamMembers(o.id);
+        const match = members.find(m => m.email === email && m.status === "active" && m.passwordHash);
+        if (match && match.passwordHash) {
+          const { scryptSync, timingSafeEqual } = await import("crypto");
+          const [salt, storedHash] = match.passwordHash.split(":");
+          const derivedHash = scryptSync(password, salt, 64).toString("hex");
+          if (timingSafeEqual(Buffer.from(storedHash, "hex"), Buffer.from(derivedHash, "hex"))) {
+            req.ownerUser = o;
+            req.teamMemberId = match.id;
+            req.teamMemberRole = match.role;
+            return next();
+          }
+        }
+      }
+      return res.status(401).json({ message: "Unauthorized" });
     } catch {
       return res.status(401).json({ message: "Unauthorized" });
     }
