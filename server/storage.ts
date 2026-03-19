@@ -80,10 +80,13 @@ import {
   type InsertPartnerInvite,
   restaurantPromotions,
   ownerTeamMembers,
+  ownerTeamInvites,
   type RestaurantPromotion,
   type InsertRestaurantPromotion,
   type OwnerTeamMember,
   type InsertOwnerTeamMember,
+  type OwnerTeamInvite,
+  type InsertOwnerTeamInvite,
 } from "@shared/schema";
 import { eq, desc, and, or, gte, lte, gt, inArray, count, sql } from "drizzle-orm";
 
@@ -226,6 +229,11 @@ export interface IStorage {
   getOwnerTeamMemberByEmail(ownerId: number, email: string): Promise<OwnerTeamMember | undefined>;
   updateOwnerTeamMember(id: number, updates: Partial<InsertOwnerTeamMember>): Promise<OwnerTeamMember | undefined>;
   deleteOwnerTeamMember(id: number): Promise<void>;
+
+  createOwnerTeamInvite(invite: InsertOwnerTeamInvite): Promise<OwnerTeamInvite>;
+  getOwnerTeamInviteByToken(token: string): Promise<OwnerTeamInvite | undefined>;
+  getOwnerTeamInvitesByOwner(ownerId: number): Promise<OwnerTeamInvite[]>;
+  updateOwnerTeamInvite(id: number, updates: Partial<InsertOwnerTeamInvite>): Promise<OwnerTeamInvite | undefined>;
 }
 
 const MAX_CACHE_ENTRIES = 200;
@@ -1175,6 +1183,27 @@ export class DatabaseStorage implements IStorage {
 
   async deleteOwnerTeamMember(id: number): Promise<void> {
     await db.delete(ownerTeamMembers).where(eq(ownerTeamMembers.id, id));
+  }
+
+  async createOwnerTeamInvite(invite: InsertOwnerTeamInvite): Promise<OwnerTeamInvite> {
+    const [created] = await db.insert(ownerTeamInvites).values(invite).returning();
+    return created;
+  }
+
+  async getOwnerTeamInviteByToken(token: string): Promise<OwnerTeamInvite | undefined> {
+    const [invite] = await db.select().from(ownerTeamInvites).where(eq(ownerTeamInvites.token, token));
+    return invite;
+  }
+
+  async getOwnerTeamInvitesByOwner(ownerId: number): Promise<OwnerTeamInvite[]> {
+    return await db.select().from(ownerTeamInvites)
+      .where(eq(ownerTeamInvites.ownerId, ownerId))
+      .orderBy(desc(ownerTeamInvites.id));
+  }
+
+  async updateOwnerTeamInvite(id: number, updates: Partial<InsertOwnerTeamInvite>): Promise<OwnerTeamInvite | undefined> {
+    const [updated] = await db.update(ownerTeamInvites).set(updates).where(eq(ownerTeamInvites.id, id)).returning();
+    return updated;
   }
 }
 

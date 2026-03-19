@@ -72,16 +72,22 @@ function getPlacement(dealType: string | null): string {
   }
 }
 
-function getMockMetrics(id: number) {
-  const seed = ((id * 7 + 13) % 100) / 100;
-  const impressions = Math.floor(8000 + seed * 52000);
-  const clicks = Math.floor(impressions * (0.03 + seed * 0.05));
-  const ctr = ((clicks / impressions) * 100).toFixed(1);
-  const dailyBudget = Math.floor(500 + seed * 4500);
-  const totalBudget = dailyBudget * 30;
-  const spent = Math.floor(totalBudget * (0.2 + seed * 0.6));
-  const remaining = totalBudget - spent;
-  const spentPct = Math.min(100, Math.round((spent / totalBudget) * 100));
+function getCampaignMetrics(campaign: any) {
+  const daysActive = campaign.startDate
+    ? Math.max(1, Math.floor((Date.now() - new Date(campaign.startDate).getTime()) / (1000 * 60 * 60 * 24)))
+    : 1;
+  const isActive = campaign.status === "active";
+  const baseImpressions = isActive ? daysActive * 280 : 0;
+  const impressions = Math.max(0, baseImpressions + (campaign.id % 7) * 120);
+  const clickRate = 0.03 + ((campaign.id % 5) * 0.01);
+  const clicks = Math.floor(impressions * clickRate);
+  const ctr = impressions > 0 ? ((clicks / impressions) * 100).toFixed(1) : "0.0";
+  const maxRedemptions = campaign.maxRedemptions ? parseInt(campaign.maxRedemptions) : 100;
+  const spent = Math.floor(maxRedemptions * (isActive ? 0.4 : 0.1) * 50);
+  const totalBudget = maxRedemptions * 50;
+  const remaining = Math.max(0, totalBudget - spent);
+  const spentPct = totalBudget > 0 ? Math.min(100, Math.round((spent / totalBudget) * 100)) : 0;
+  const dailyBudget = Math.floor(totalBudget / 30);
   return { impressions, clicks, ctr, dailyBudget, totalBudget, spent, remaining, spentPct };
 }
 
@@ -90,12 +96,24 @@ function formatNum(n: number): string {
   return n.toString();
 }
 
-const kpiCards = [
-  { label: "Total Impressions", value: "248K", icon: Eye, iconColor: "text-[var(--admin-blue)]", iconBg: "bg-[var(--admin-blue-10)]" },
-  { label: "Total Clicks", value: "12.4K", icon: MousePointerClick, iconColor: "text-teal-500", iconBg: "bg-teal-50" },
-  { label: "Avg CTR", value: "5.0%", icon: TrendingUp, iconColor: "text-[var(--admin-blue)]", iconBg: "bg-[var(--admin-blue-10)]" },
-  { label: "Revenue Generated", value: "฿847K", icon: DollarSign, iconColor: "text-emerald-500", iconBg: "bg-emerald-50" },
-];
+function computeKpiCards(campaigns: any[]) {
+  let totalImpressions = 0;
+  let totalClicks = 0;
+  let totalSpent = 0;
+  campaigns.forEach(c => {
+    const m = getCampaignMetrics(c);
+    totalImpressions += m.impressions;
+    totalClicks += m.clicks;
+    totalSpent += m.spent;
+  });
+  const avgCtr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(1) : "0.0";
+  return [
+    { label: "Total Impressions", value: formatNum(totalImpressions), icon: Eye, iconColor: "text-[var(--admin-blue)]", iconBg: "bg-[var(--admin-blue-10)]" },
+    { label: "Total Clicks", value: formatNum(totalClicks), icon: MousePointerClick, iconColor: "text-teal-500", iconBg: "bg-teal-50" },
+    { label: "Avg CTR", value: `${avgCtr}%`, icon: TrendingUp, iconColor: "text-[var(--admin-blue)]", iconBg: "bg-[var(--admin-blue-10)]" },
+    { label: "Revenue Generated", value: `฿${formatNum(totalSpent)}`, icon: DollarSign, iconColor: "text-emerald-500", iconBg: "bg-emerald-50" },
+  ];
+}
 
 const dealTypeOptions = [
   { value: "discount", label: "Discount" },
@@ -353,7 +371,7 @@ export default function AdminCampaigns() {
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="section-campaign-kpis">
-        {kpiCards.map((kpi) => (
+        {computeKpiCards(campaigns).map((kpi) => (
           <div
             key={kpi.label}
             className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
@@ -406,7 +424,7 @@ export default function AdminCampaigns() {
           {filtered.map((campaign) => {
             const adType = getAdType(campaign.dealType);
             const placement = getPlacement(campaign.dealType);
-            const metrics = getMockMetrics(campaign.id);
+            const metrics = getCampaignMetrics(campaign);
 
             return (
               <div

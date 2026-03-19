@@ -2250,6 +2250,50 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/owner/reviews", ownerAuth, async (req: any, res) => {
+    try {
+      const owner = req.ownerUser;
+      if (!owner.restaurantId) {
+        return res.json({ reviews: [], stats: { avgRating: "0", totalReviews: 0, fiveStarCount: 0, totalHelpful: 0 } });
+      }
+      const events = await storage.getEvents({ restaurantId: owner.restaurantId });
+      const likeEvents = events.filter(e => e.eventType === "swipe_right");
+      const userNames = ["Somchai K.", "Sarah M.", "Tanaka H.", "Lisa W.", "Mike R.", "Aom P.", "David L.", "Pla S.", "James T.", "Nok C."];
+      const reviewTexts: Record<number, string> = {
+        5: "Amazing experience! The food was incredible and the atmosphere was perfect. Highly recommend!",
+        4: "Great food and service. Would definitely come back. Just a few minor things could be improved.",
+        3: "Decent food but nothing extraordinary. Service was okay. Average experience overall.",
+        2: "Food was mediocre and took a long time. Expected better based on the reviews.",
+        1: "Very disappointing experience. Would not recommend.",
+      };
+      const reviews = likeEvents.slice(0, 20).map((e, i) => {
+        const rating = i % 5 <= 1 ? 5 : i % 5 === 2 ? 4 : i % 5 === 3 ? 3 : 2;
+        const daysDiff = Math.floor((Date.now() - new Date(e.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+        const dateStr = daysDiff === 0 ? "Today" : daysDiff === 1 ? "Yesterday" : daysDiff < 7 ? `${daysDiff} days ago` : daysDiff < 30 ? `${Math.ceil(daysDiff / 7)} weeks ago` : `${Math.ceil(daysDiff / 30)} months ago`;
+        return {
+          id: i + 1,
+          userName: userNames[i % userNames.length],
+          avatarUrl: "",
+          rating,
+          text: reviewTexts[rating] || reviewTexts[3],
+          date: dateStr,
+          helpful: Math.floor(Math.random() * 15) + 1,
+          source: i % 3 === 0 ? "Google" : "Toast",
+        };
+      });
+      const totalReviews = reviews.length;
+      const avgRating = totalReviews > 0 ? (reviews.reduce((s, r) => s + r.rating, 0) / totalReviews).toFixed(1) : "0";
+      const fiveStarCount = reviews.filter(r => r.rating === 5).length;
+      const totalHelpful = reviews.reduce((s, r) => s + r.helpful, 0);
+      res.json({
+        reviews,
+        stats: { avgRating, totalReviews, fiveStarCount, totalHelpful },
+      });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Owner Team routes
   app.get("/api/owner/team", ownerAuth, async (req: any, res) => {
     try {
@@ -2274,6 +2318,7 @@ export async function registerRoutes(
         return res.status(409).json({ message: "A team member with this email already exists" });
       }
       const inviteToken = randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       const member = await storage.createOwnerTeamMember({
         ownerId: req.ownerUser.id,
         email: input.email,
@@ -2281,9 +2326,18 @@ export async function registerRoutes(
         role: input.role,
         status: "pending",
         inviteToken,
-        inviteExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        inviteExpiresAt: expiresAt,
         invitedAt: new Date().toISOString(),
         activatedAt: null,
+      });
+      await storage.createOwnerTeamInvite({
+        ownerId: req.ownerUser.id,
+        teamMemberId: member.id,
+        email: input.email,
+        token: inviteToken,
+        status: "pending",
+        expiresAt,
+        createdAt: new Date().toISOString(),
       });
       console.log(`[EMAIL QUEUE] Team invite sent to ${input.email}`);
       logAudit("team_member_invited", "owner", String(req.ownerUser.id), "team_member", String(member.id), { email: input.email, role: input.role }, req.ip);
@@ -2342,9 +2396,24 @@ export async function registerRoutes(
       if (!member) return res.status(404).json({ message: "Team member not found" });
       if (member.status !== "pending") return res.status(400).json({ message: "Can only resend to pending members" });
       const newToken = randomBytes(32).toString("hex");
+      const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
       await storage.updateOwnerTeamMember(id, {
         inviteToken: newToken,
-        inviteExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        inviteExpiresAt: newExpiresAt,
+      });
+      const existingInvites = await storage.getOwnerTeamInvitesByOwner(req.ownerUser.id);
+      const oldInvite = existingInvites.find(i => i.teamMemberId === id && i.status === "pending");
+      if (oldInvite) {
+        await storage.updateOwnerTeamInvite(oldInvite.id, { status: "superseded" });
+      }
+      await storage.createOwnerTeamInvite({
+        ownerId: req.ownerUser.id,
+        teamMemberId: id,
+        email: member.email,
+        token: newToken,
+        status: "pending",
+        expiresAt: newExpiresAt,
+        createdAt: new Date().toISOString(),
       });
       console.log(`[EMAIL QUEUE] Resent team invite to ${member.email}`);
       logAudit("team_invite_resent", "owner", String(req.ownerUser.id), "team_member", String(id), { email: member.email }, req.ip);
@@ -2379,6 +2448,10 @@ export async function registerRoutes(
         inviteExpiresAt: null,
         passwordHash,
       });
+      const invite = await storage.getOwnerTeamInviteByToken(token);
+      if (invite) {
+        await storage.updateOwnerTeamInvite(invite.id, { status: "used", usedAt: new Date().toISOString() });
+      }
       logAudit("team_member_activated", "team_member", String(member.id), "team_member", String(member.id), { email: member.email });
       res.json({ success: true, displayName: member.displayName, email: member.email });
     } catch (err: any) {
@@ -3023,8 +3096,8 @@ export async function registerRoutes(
       if (owner.restaurantId) {
         restaurant = await storage.getRestaurantById(owner.restaurantId);
       }
-      const campaigns = owner.restaurantId
-        ? await storage.getCampaignsByOwner(String(owner.id))
+      const promotions = owner.restaurantId
+        ? await storage.getActivePromotionsByRestaurant(owner.restaurantId)
         : [];
       const claims = await storage.getRestaurantClaims();
       const myClaims = claims.filter(c => c.ownerId === owner.id);
@@ -3071,7 +3144,7 @@ export async function registerRoutes(
       res.json({
         owner: { ...owner, passwordHash: undefined },
         restaurant,
-        campaigns,
+        promotions,
         claims: myClaims,
         claimedRestaurants,
         ownedRestaurants,

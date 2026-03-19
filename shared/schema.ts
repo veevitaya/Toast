@@ -246,6 +246,25 @@ export const insertOwnerTeamMemberSchema = createInsertSchema(ownerTeamMembers).
 export type OwnerTeamMember = typeof ownerTeamMembers.$inferSelect;
 export type InsertOwnerTeamMember = z.infer<typeof insertOwnerTeamMemberSchema>;
 
+export const ownerTeamInvites = pgTable("owner_team_invites", {
+  id: serial("id").primaryKey(),
+  ownerId: integer("owner_id").notNull(),
+  teamMemberId: integer("team_member_id"),
+  email: text("email").notNull(),
+  token: text("token").notNull().unique(),
+  status: text("status").default("pending"),
+  expiresAt: text("expires_at").notNull(),
+  createdAt: text("created_at").notNull(),
+  usedAt: text("used_at"),
+}, (table) => ({
+  ownerIdx: index("owner_team_invites_owner_idx").on(table.ownerId),
+  tokenIdx: index("owner_team_invites_token_idx").on(table.token),
+}));
+
+export const insertOwnerTeamInviteSchema = createInsertSchema(ownerTeamInvites).omit({ id: true });
+export type OwnerTeamInvite = typeof ownerTeamInvites.$inferSelect;
+export type InsertOwnerTeamInvite = z.infer<typeof insertOwnerTeamInviteSchema>;
+
 export const groupSessions = pgTable("group_sessions", {
   id: serial("id").primaryKey(),
   sessionCode: text("session_code").notNull().unique(),
