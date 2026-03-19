@@ -1669,14 +1669,15 @@ export async function registerRoutes(
   app.get(api.restaurants.list.path, async (req, res) => {
     try {
       const input = api.restaurants.list.input ? api.restaurants.list.input.parse(req.query) : {};
-      const locationFilter = (input as any)?.location as string | undefined;
-      const cacheKey = `restaurants:${input.mode || ''}:${input.query || ''}:${locationFilter || ''}`;
+      const parsed = input || {};
+      const locationFilter = "location" in parsed ? (parsed as { location?: string }).location : undefined;
+      const cacheKey = `restaurants:${parsed.mode || ''}:${parsed.query || ''}:${locationFilter || ''}`;
       let restaurants = await getCached(cacheKey, 30000, () =>
-        storage.getRestaurants(input.mode, input.lat, input.lng, input.query)
+        storage.getRestaurants(parsed.mode, parsed.lat, parsed.lng, parsed.query)
       );
       if (locationFilter) {
         const loc = locationFilter.toLowerCase();
-        restaurants = restaurants.filter((r: any) => {
+        restaurants = restaurants.filter((r) => {
           const addr = (r.address || "").toLowerCase();
           const district = (r.district || "").toLowerCase();
           return addr.includes(loc) || district.includes(loc);
@@ -3140,6 +3141,9 @@ export async function registerRoutes(
       if (!session) {
         return res.status(404).json({ message: "Session not found" });
       }
+      if (session.status === "expired" || session.status === "deleted") {
+        return res.status(410).json({ message: session.status === "deleted" ? "Session was removed" : "Session has expired" });
+      }
       const sessionAge = Date.now() - new Date(session.createdAt).getTime();
       if (sessionAge > 24 * 60 * 60 * 1000) {
         return res.status(410).json({ message: "Session has expired" });
@@ -3371,6 +3375,10 @@ export async function registerRoutes(
 
   app.get("/api/sessions/active/:userId", async (req, res) => {
     try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`active-session:${ip}`, 10, 60000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
       const { userId } = req.params;
       if (!userId) return res.status(400).json({ message: "userId required" });
       const result = await storage.getActiveSessionForUser(userId);
