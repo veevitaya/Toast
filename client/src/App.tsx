@@ -27,6 +27,7 @@ const SavedLists = lazy(() => import("@/pages/SavedLists"));
 const LegalCenter = lazy(() => import("@/pages/LegalCenter"));
 const LegalDocumentViewer = lazy(() => import("@/pages/LegalDocumentViewer"));
 const PartnerAccept = lazy(() => import("@/pages/PartnerAccept"));
+const TeamMemberActivate = lazy(() => import("@/pages/TeamMemberActivate"));
 
 const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
 const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout"));
@@ -147,6 +148,9 @@ function Router() {
           </Route>
           <Route path="/partner/accept">
             <AnimatedPage><PartnerAccept /></AnimatedPage>
+          </Route>
+          <Route path="/team/activate">
+            <Suspense fallback={<PageLoader />}><TeamMemberActivate /></Suspense>
           </Route>
           <Route path="/admin/login">
             <AdminLogin />

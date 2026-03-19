@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { getAdminSession } from "./AdminLayout";
+import type { RestaurantPromotion } from "@shared/schema";
 import {
   Megaphone,
   Plus,
@@ -17,6 +17,9 @@ import {
   Clock,
   X,
   Loader2,
+  Trash2,
+  Pause,
+  Play,
 } from "lucide-react";
 
 function getOwnerHeaders() {
@@ -24,75 +27,6 @@ function getOwnerHeaders() {
   if (!session || session.sessionType !== "owner") return {};
   return { "x-owner-token": btoa(`${session.email}:${session._k || ""}`) };
 }
-
-interface Promotion {
-  id: number;
-  title: string;
-  type: "discount" | "bundle" | "freeItem" | "happyHour";
-  status: "active" | "draft" | "ended" | "scheduled";
-  startDate: string;
-  endDate: string;
-  impressions: number;
-  clicks: number;
-  redemptions: number;
-  budget: number;
-  spent: number;
-}
-
-const MOCK_PROMOTIONS: Promotion[] = [
-  {
-    id: 1,
-    title: "20% Off All Mains",
-    type: "discount",
-    status: "active",
-    startDate: "Mar 1, 2026",
-    endDate: "Mar 31, 2026",
-    impressions: 3420,
-    clicks: 287,
-    redemptions: 45,
-    budget: 5000,
-    spent: 2340,
-  },
-  {
-    id: 2,
-    title: "Free Dessert with ฿500+",
-    type: "freeItem",
-    status: "active",
-    startDate: "Mar 5, 2026",
-    endDate: "Mar 20, 2026",
-    impressions: 1890,
-    clicks: 156,
-    redemptions: 28,
-    budget: 3000,
-    spent: 1680,
-  },
-  {
-    id: 3,
-    title: "Happy Hour 4-6PM",
-    type: "happyHour",
-    status: "scheduled",
-    startDate: "Mar 15, 2026",
-    endDate: "Apr 15, 2026",
-    impressions: 0,
-    clicks: 0,
-    redemptions: 0,
-    budget: 2000,
-    spent: 0,
-  },
-  {
-    id: 4,
-    title: "Lunch Set Menu ฿199",
-    type: "bundle",
-    status: "ended",
-    startDate: "Feb 1, 2026",
-    endDate: "Feb 28, 2026",
-    impressions: 5200,
-    clicks: 430,
-    redemptions: 89,
-    budget: 4000,
-    spent: 4000,
-  },
-];
 
 const typeIcons: Record<string, typeof Percent> = {
   discount: Percent,
@@ -130,24 +64,45 @@ export default function OwnerPromotions() {
   const qc = useQueryClient();
   const { toast } = useToast();
 
+  const { data: promotions = [], isLoading } = useQuery<RestaurantPromotion[]>({
+    queryKey: ["/api/owner/promotions"],
+    queryFn: async () => {
+      const res = await fetch("/api/owner/promotions", {
+        headers: getOwnerHeaders() as Record<string, string>,
+      });
+      if (!res.ok) throw new Error("Failed to load promotions");
+      return res.json();
+    },
+    enabled: session?.sessionType === "owner",
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const ownerKey = session?.email || "";
-      const res = await apiRequest("POST", "/api/campaigns", {
-        restaurantOwnerKey: ownerKey,
-        title: data.title,
-        dealType: data.dealType,
-        dealValue: data.dealValue,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        targetGroups: data.targetGroups,
-        description: `Budget: ${data.budget}`,
-        status: "draft",
+      const res = await fetch("/api/owner/promotions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getOwnerHeaders() as Record<string, string>,
+        },
+        body: JSON.stringify({
+          title: data.title,
+          dealType: data.dealType,
+          dealValue: data.dealValue,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          targetGroups: data.targetGroups,
+          budget: parseInt(data.budget) || 0,
+          status: "draft",
+        }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: "Failed to create promotion" }));
+        throw new Error(err.message);
+      }
       return res.json();
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      qc.invalidateQueries({ queryKey: ["/api/owner/promotions"] });
       setShowCreate(false);
       setFormData({
         title: "",
@@ -162,6 +117,46 @@ export default function OwnerPromotions() {
     },
     onError: (err: Error) => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      const res = await fetch(`/api/owner/promotions/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...getOwnerHeaders() as Record<string, string>,
+        },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/owner/promotions"] });
+      toast({ title: "Status updated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message || "Failed to update status", variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/owner/promotions/${id}`, {
+        method: "DELETE",
+        headers: getOwnerHeaders() as Record<string, string>,
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/owner/promotions"] });
+      toast({ title: "Promotion deleted" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message || "Failed to delete promotion", variant: "destructive" });
     },
   });
 
@@ -180,9 +175,10 @@ export default function OwnerPromotions() {
     }));
   };
 
-  const activePromos = MOCK_PROMOTIONS.filter((p) => p.status === "active");
-  const totalImpressions = MOCK_PROMOTIONS.reduce((s, p) => s + p.impressions, 0);
-  const totalRedemptions = MOCK_PROMOTIONS.reduce((s, p) => s + p.redemptions, 0);
+  const activePromos = promotions.filter((p) => p.status === "active");
+  const totalImpressions = promotions.reduce((s, p) => s + (p.impressions || 0), 0);
+  const totalRedemptions = promotions.reduce((s, p) => s + (p.redemptions || 0), 0);
+  const totalClicks = promotions.reduce((s, p) => s + (p.clicks || 0), 0);
 
   if (!session || session.sessionType !== "owner") {
     return (
@@ -213,10 +209,10 @@ export default function OwnerPromotions() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-testid="section-campaign-analytics">
         {[
-          { label: "Total Impressions", value: totalImpressions.toLocaleString(), trend: "+24%", icon: Eye },
-          { label: "Active Campaigns", value: activePromos.length.toString(), trend: `of ${MOCK_PROMOTIONS.length}`, icon: Megaphone },
-          { label: "Total Redemptions", value: totalRedemptions.toLocaleString(), trend: "+18%", icon: Target },
-          { label: "Avg. CTR", value: `${((MOCK_PROMOTIONS.reduce((s, p) => s + p.clicks, 0) / totalImpressions) * 100).toFixed(1)}%`, trend: "+2.3%", icon: MousePointer },
+          { label: "Total Impressions", value: totalImpressions.toLocaleString(), trend: promotions.length > 0 ? "+24%" : "—", icon: Eye },
+          { label: "Active Campaigns", value: activePromos.length.toString(), trend: `of ${promotions.length}`, icon: Megaphone },
+          { label: "Total Redemptions", value: totalRedemptions.toLocaleString(), trend: promotions.length > 0 ? "+18%" : "—", icon: Target },
+          { label: "Avg. CTR", value: totalImpressions > 0 ? `${((totalClicks / totalImpressions) * 100).toFixed(1)}%` : "0.0%", trend: promotions.length > 0 ? "+2.3%" : "—", icon: MousePointer },
         ].map((stat, i) => (
           <div key={i} className="bg-white rounded-xl border border-gray-100 p-4" data-testid={`campaign-stat-${i}`}>
             <div className="flex items-center gap-2 mb-2">
@@ -236,14 +232,20 @@ export default function OwnerPromotions() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="p-3 rounded-xl border border-gray-100">
-            <p className="text-xs font-medium text-gray-700">Best performing: "20% Off All Mains"</p>
-            <p className="text-[11px] text-gray-500 mt-0.5">8.3% CTR — 2x above your category average. This deal type works well for your audience.</p>
-            <p className="text-[10px] text-[#00B14F] font-medium mt-1">Recommended: Extend this campaign through April</p>
+            <p className="text-xs font-medium text-gray-700">Promotion performance</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">
+              {promotions.length === 0
+                ? "Create your first promotion to start attracting diners and tracking performance."
+                : `You have ${activePromos.length} active promotion${activePromos.length !== 1 ? "s" : ""} running. Keep an eye on redemption rates.`}
+            </p>
+            <p className="text-[10px] text-[#00B14F] font-medium mt-1">
+              {promotions.length === 0 ? "Tip: Discount deals perform best on weekdays" : "Recommended: Extend high-performing campaigns"}
+            </p>
           </div>
           <div className="p-3 rounded-xl border border-gray-100">
             <p className="text-xs font-medium text-gray-700">Best time for promotions: 6-8 PM</p>
-            <p className="text-[11px] text-gray-500 mt-0.5">72% of your promotion clicks happen during dinner hours. Consider scheduling happy hour deals.</p>
-            <p className="text-[10px] text-[#00B14F] font-medium mt-1">Opportunity: ฿3,200 estimated additional revenue</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">72% of promotion clicks happen during dinner hours. Consider scheduling happy hour deals.</p>
+            <p className="text-[10px] text-[#00B14F] font-medium mt-1">Opportunity: Schedule promotions for peak dining hours</p>
           </div>
         </div>
       </div>
@@ -424,72 +426,118 @@ export default function OwnerPromotions() {
         </div>
       </div>
 
-      <div className="space-y-4" data-testid="section-promotions-list">
-        {MOCK_PROMOTIONS.map((promo) => {
-          const TypeIcon = typeIcons[promo.type] || Megaphone;
-          const budgetPct = promo.budget > 0 ? Math.round((promo.spent / promo.budget) * 100) : 0;
-          const ctr = promo.impressions > 0 ? ((promo.clicks / promo.impressions) * 100).toFixed(1) : "0.0";
+      {isLoading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 h-32 animate-pulse" />
+          ))}
+        </div>
+      ) : promotions.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center" data-testid="section-no-promotions">
+          <Megaphone className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+          <p className="text-sm font-medium text-gray-600">No promotions yet</p>
+          <p className="text-xs text-gray-400 mt-1">Create your first promotion to start attracting more diners.</p>
+        </div>
+      ) : (
+        <div className="space-y-4" data-testid="section-promotions-list">
+          {promotions.map((promo) => {
+            const TypeIcon = typeIcons[promo.dealType] || Megaphone;
+            const budgetPct = (promo.budget || 0) > 0 ? Math.round(((promo.spent || 0) / (promo.budget || 1)) * 100) : 0;
+            const ctr = (promo.impressions || 0) > 0 ? (((promo.clicks || 0) / (promo.impressions || 1)) * 100).toFixed(1) : "0.0";
 
-          return (
-            <div
-              key={promo.id}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5"
-              data-testid={`promo-card-${promo.id}`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${typeColors[promo.type]}`}>
-                    <TypeIcon className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="text-sm font-semibold text-gray-800">{promo.title}</h4>
-                      <span className={`text-[10px] font-medium rounded-full px-2 py-0.5 ${statusColors[promo.status]}`}>
-                        {promo.status}
-                      </span>
+            return (
+              <div
+                key={promo.id}
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5"
+                data-testid={`promo-card-${promo.id}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${typeColors[promo.dealType] || "bg-gray-100 text-gray-500"}`}>
+                      <TypeIcon className="w-5 h-5" />
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
-                      <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{promo.startDate} – {promo.endDate}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-sm font-semibold text-gray-800">{promo.title}</h4>
+                        <span className={`text-[10px] font-medium rounded-full px-2 py-0.5 ${statusColors[promo.status || "draft"] || "bg-gray-100 text-gray-500"}`}>
+                          {promo.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                        <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{promo.startDate || "No start"} – {promo.endDate || "No end"}</span>
+                      </div>
                     </div>
                   </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {promo.status === "draft" && (
+                      <button
+                        onClick={() => updateStatusMutation.mutate({ id: promo.id, status: "active" })}
+                        className="p-1.5 rounded-lg border border-gray-100 hover:bg-[#00B14F]/10 transition-colors"
+                        title="Activate"
+                        data-testid={`button-activate-${promo.id}`}
+                      >
+                        <Play className="w-3.5 h-3.5 text-[#00B14F]" />
+                      </button>
+                    )}
+                    {promo.status === "active" && (
+                      <button
+                        onClick={() => updateStatusMutation.mutate({ id: promo.id, status: "draft" })}
+                        className="p-1.5 rounded-lg border border-gray-100 hover:bg-amber-50 transition-colors"
+                        title="Pause"
+                        data-testid={`button-pause-${promo.id}`}
+                      >
+                        <Pause className="w-3.5 h-3.5 text-amber-500" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => deleteMutation.mutate(promo.id)}
+                      className="p-1.5 rounded-lg border border-gray-100 hover:bg-red-50 transition-colors"
+                      title="Delete"
+                      data-testid={`button-delete-${promo.id}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-gray-50">
-                <div>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">Impressions</p>
-                  <p className="text-sm font-semibold text-gray-800 mt-0.5">{promo.impressions.toLocaleString()}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-gray-50">
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">Impressions</p>
+                    <p className="text-sm font-semibold text-gray-800 mt-0.5">{(promo.impressions || 0).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">Clicks</p>
+                    <p className="text-sm font-semibold text-gray-800 mt-0.5">{(promo.clicks || 0).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">CTR</p>
+                    <p className="text-sm font-semibold text-gray-800 mt-0.5">{ctr}%</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">Redeemed</p>
+                    <p className="text-sm font-semibold text-gray-800 mt-0.5">{promo.redemptions || 0}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">Clicks</p>
-                  <p className="text-sm font-semibold text-gray-800 mt-0.5">{promo.clicks.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">CTR</p>
-                  <p className="text-sm font-semibold text-gray-800 mt-0.5">{ctr}%</p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">Redeemed</p>
-                  <p className="text-sm font-semibold text-gray-800 mt-0.5">{promo.redemptions}</p>
-                </div>
-              </div>
 
-              <div className="mt-3">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-gray-400">Budget: ฿{promo.spent.toLocaleString()} / ฿{promo.budget.toLocaleString()}</span>
-                  <span className="text-gray-500 font-medium">{budgetPct}%</span>
-                </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all bg-[#FFCC02]"
-                    style={{ width: `${Math.min(budgetPct, 100)}%` }}
-                  />
-                </div>
+                {(promo.budget || 0) > 0 && (
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-gray-400">Budget: ฿{(promo.spent || 0).toLocaleString()} / ฿{(promo.budget || 0).toLocaleString()}</span>
+                      <span className="text-gray-500 font-medium">{budgetPct}%</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all bg-[#FFCC02]"
+                        style={{ width: `${Math.min(budgetPct, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

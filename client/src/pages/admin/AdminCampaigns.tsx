@@ -179,7 +179,7 @@ export default function AdminCampaigns() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
           <h2 className="text-xl font-semibold text-gray-800" data-testid="text-campaigns-title">
-            Ad Platform Manager
+            Toast Campaigns / Ads
           </h2>
           <span className="bg-[#FFCC02] text-gray-900 text-xs font-medium rounded-full px-3 py-0.5">
             {campaigns.length}

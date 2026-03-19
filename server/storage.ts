@@ -78,6 +78,12 @@ import {
   type InsertPartnerConnection,
   type PartnerInvite,
   type InsertPartnerInvite,
+  restaurantPromotions,
+  ownerTeamMembers,
+  type RestaurantPromotion,
+  type InsertRestaurantPromotion,
+  type OwnerTeamMember,
+  type InsertOwnerTeamMember,
 } from "@shared/schema";
 import { eq, desc, and, or, gte, lte, gt, inArray, count, sql } from "drizzle-orm";
 
@@ -204,6 +210,20 @@ export interface IStorage {
 
   getActiveSessionForUser(lineUserId: string): Promise<(GroupSession & { members: GroupSessionMember[] }) | null>;
   updateGroupSessionLocation(sessionCode: string, locationName: string | null, locationLat: string | null, locationLng: string | null): Promise<void>;
+
+  createRestaurantPromotion(promo: InsertRestaurantPromotion): Promise<RestaurantPromotion>;
+  getRestaurantPromotionsByOwner(ownerId: number): Promise<RestaurantPromotion[]>;
+  getRestaurantPromotionById(id: number): Promise<RestaurantPromotion | undefined>;
+  updateRestaurantPromotion(id: number, updates: Partial<InsertRestaurantPromotion>): Promise<RestaurantPromotion | undefined>;
+  deleteRestaurantPromotion(id: number): Promise<void>;
+  getActivePromotionsByRestaurant(restaurantId: number): Promise<RestaurantPromotion[]>;
+
+  createOwnerTeamMember(member: InsertOwnerTeamMember): Promise<OwnerTeamMember>;
+  getOwnerTeamMembers(ownerId: number): Promise<OwnerTeamMember[]>;
+  getOwnerTeamMemberByToken(token: string): Promise<OwnerTeamMember | undefined>;
+  getOwnerTeamMemberByEmail(ownerId: number, email: string): Promise<OwnerTeamMember | undefined>;
+  updateOwnerTeamMember(id: number, updates: Partial<InsertOwnerTeamMember>): Promise<OwnerTeamMember | undefined>;
+  deleteOwnerTeamMember(id: number): Promise<void>;
 }
 
 const MAX_CACHE_ENTRIES = 200;
@@ -1077,6 +1097,71 @@ export class DatabaseStorage implements IStorage {
     await db.update(groupSessions)
       .set({ locationName, locationLat, locationLng })
       .where(eq(groupSessions.sessionCode, sessionCode));
+  }
+
+  async createRestaurantPromotion(promo: InsertRestaurantPromotion): Promise<RestaurantPromotion> {
+    const [created] = await db.insert(restaurantPromotions).values(promo).returning();
+    return created;
+  }
+
+  async getRestaurantPromotionsByOwner(ownerId: number): Promise<RestaurantPromotion[]> {
+    return await db.select().from(restaurantPromotions)
+      .where(eq(restaurantPromotions.ownerId, ownerId))
+      .orderBy(desc(restaurantPromotions.id));
+  }
+
+  async getRestaurantPromotionById(id: number): Promise<RestaurantPromotion | undefined> {
+    const [promo] = await db.select().from(restaurantPromotions).where(eq(restaurantPromotions.id, id));
+    return promo;
+  }
+
+  async updateRestaurantPromotion(id: number, updates: Partial<InsertRestaurantPromotion>): Promise<RestaurantPromotion | undefined> {
+    const [updated] = await db.update(restaurantPromotions).set(updates).where(eq(restaurantPromotions.id, id)).returning();
+    return updated;
+  }
+
+  async deleteRestaurantPromotion(id: number): Promise<void> {
+    await db.delete(restaurantPromotions).where(eq(restaurantPromotions.id, id));
+  }
+
+  async getActivePromotionsByRestaurant(restaurantId: number): Promise<RestaurantPromotion[]> {
+    return await db.select().from(restaurantPromotions)
+      .where(and(
+        eq(restaurantPromotions.restaurantId, restaurantId),
+        eq(restaurantPromotions.status, "active"),
+      ))
+      .orderBy(desc(restaurantPromotions.id));
+  }
+
+  async createOwnerTeamMember(member: InsertOwnerTeamMember): Promise<OwnerTeamMember> {
+    const [created] = await db.insert(ownerTeamMembers).values(member).returning();
+    return created;
+  }
+
+  async getOwnerTeamMembers(ownerId: number): Promise<OwnerTeamMember[]> {
+    return await db.select().from(ownerTeamMembers)
+      .where(eq(ownerTeamMembers.ownerId, ownerId))
+      .orderBy(desc(ownerTeamMembers.id));
+  }
+
+  async getOwnerTeamMemberByToken(token: string): Promise<OwnerTeamMember | undefined> {
+    const [member] = await db.select().from(ownerTeamMembers).where(eq(ownerTeamMembers.inviteToken, token));
+    return member;
+  }
+
+  async getOwnerTeamMemberByEmail(ownerId: number, email: string): Promise<OwnerTeamMember | undefined> {
+    const [member] = await db.select().from(ownerTeamMembers)
+      .where(and(eq(ownerTeamMembers.ownerId, ownerId), eq(ownerTeamMembers.email, email)));
+    return member;
+  }
+
+  async updateOwnerTeamMember(id: number, updates: Partial<InsertOwnerTeamMember>): Promise<OwnerTeamMember | undefined> {
+    const [updated] = await db.update(ownerTeamMembers).set(updates).where(eq(ownerTeamMembers.id, id)).returning();
+    return updated;
+  }
+
+  async deleteOwnerTeamMember(id: number): Promise<void> {
+    await db.delete(ownerTeamMembers).where(eq(ownerTeamMembers.id, id));
   }
 }
 

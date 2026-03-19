@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAdminSession } from "./AdminLayout";
 import { useToast } from "@/hooks/use-toast";
+import type { OwnerTeamMember } from "@shared/schema";
 import {
   Settings2,
   User,
@@ -23,6 +24,10 @@ import {
   Clock,
   XCircle,
   Landmark,
+  Plus,
+  RefreshCw,
+  Loader2,
+  UserMinus,
 } from "lucide-react";
 
 function getOwnerHeaders() {
@@ -34,7 +39,10 @@ function getOwnerHeaders() {
 export default function OwnerSettings() {
   const session = getAdminSession();
   const { toast } = useToast();
+  const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<"profile" | "notifications" | "subscription" | "payments" | "team">("profile");
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ email: "", displayName: "", role: "staff" as "manager" | "staff" });
 
   const { data: dashData, isLoading } = useQuery<any>({
     queryKey: ["/api/admin/owner/dashboard"],
@@ -49,6 +57,96 @@ export default function OwnerSettings() {
   });
 
   const owner = dashData?.owner;
+
+  const { data: teamMembers = [], isLoading: teamLoading } = useQuery<OwnerTeamMember[]>({
+    queryKey: ["/api/owner/team"],
+    queryFn: async () => {
+      const res = await fetch("/api/owner/team", {
+        headers: getOwnerHeaders() as Record<string, string>,
+      });
+      if (!res.ok) throw new Error("Failed to load team");
+      return res.json();
+    },
+    enabled: session?.sessionType === "owner",
+  });
+
+  const inviteMutation = useMutation({
+    mutationFn: async (data: { email: string; displayName: string; role: string }) => {
+      const res = await fetch("/api/owner/team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getOwnerHeaders() as Record<string, string> },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: "Failed to invite" }));
+        throw new Error(err.message);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/owner/team"] });
+      setShowInviteForm(false);
+      setInviteForm({ email: "", displayName: "", role: "staff" });
+      toast({ title: "Invitation sent", description: "Team member has been invited via email." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const updateTeamMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: number; updates: Record<string, string> }) => {
+      const res = await fetch(`/api/owner/team/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getOwnerHeaders() as Record<string, string> },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error("Failed to update");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/owner/team"] });
+      toast({ title: "Team member updated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message || "Failed to update team member", variant: "destructive" });
+    },
+  });
+
+  const resendInviteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/owner/team/${id}/resend`, {
+        method: "POST",
+        headers: getOwnerHeaders() as Record<string, string>,
+      });
+      if (!res.ok) throw new Error("Failed to resend");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Invitation resent", description: "A new invite email has been sent." });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message || "Failed to resend invitation", variant: "destructive" });
+    },
+  });
+
+  const deleteTeamMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/owner/team/${id}`, {
+        method: "DELETE",
+        headers: getOwnerHeaders() as Record<string, string>,
+      });
+      if (!res.ok) throw new Error("Failed to remove");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/owner/team"] });
+      toast({ title: "Team member removed" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message || "Failed to remove team member", variant: "destructive" });
+    },
+  });
 
   const [profile, setProfile] = useState({
     displayName: "",
@@ -678,38 +776,158 @@ export default function OwnerSettings() {
               <div className="flex items-center gap-2">
                 <div className="w-[3px] h-4 bg-[#00B14F] rounded-full" />
                 <h3 className="text-[15px] font-semibold text-gray-800">Team Members</h3>
-                <span className="bg-[#00B14F]/10 text-[#00B14F] text-[10px] font-bold rounded-full px-2 py-0.5">3</span>
+                <span className="bg-[#00B14F]/10 text-[#00B14F] text-[10px] font-bold rounded-full px-2 py-0.5">
+                  {teamMembers.length + 1}
+                </span>
               </div>
               <button
-                onClick={() => toast({ title: "Coming Soon", description: "Team invitations will be available in your next update." })}
-                className="text-xs font-medium bg-[#FFCC02] text-gray-900 rounded-lg px-3 py-1.5 hover:bg-[#FFCC02]/90 transition-colors"
+                onClick={() => setShowInviteForm(!showInviteForm)}
+                className="text-xs font-medium bg-[#FFCC02] text-gray-900 rounded-lg px-3 py-1.5 hover:bg-[#FFCC02]/90 transition-colors flex items-center gap-1"
                 data-testid="button-invite-member"
               >
-                Invite Member
+                <Plus className="w-3 h-3" /> Invite Member
               </button>
             </div>
+
+            {showInviteForm && (
+              <div className="mb-5 p-4 rounded-xl border border-[#00B14F]/20 bg-[#00B14F]/[0.03] space-y-3" data-testid="form-invite-member">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1 block">Name</label>
+                    <input
+                      type="text"
+                      value={inviteForm.displayName}
+                      onChange={(e) => setInviteForm({ ...inviteForm, displayName: e.target.value })}
+                      placeholder="Full name"
+                      className="w-full text-sm border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#00B14F]/30"
+                      data-testid="input-invite-name"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-500 mb-1 block">Email</label>
+                    <input
+                      type="email"
+                      value={inviteForm.email}
+                      onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                      placeholder="team@restaurant.com"
+                      className="w-full text-sm border border-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#00B14F]/30"
+                      data-testid="input-invite-email"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">Role</label>
+                  <select
+                    value={inviteForm.role}
+                    onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value as "manager" | "staff" })}
+                    className="w-full text-sm border border-gray-100 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-[#00B14F]/30"
+                    data-testid="select-invite-role"
+                  >
+                    <option value="staff">Staff</option>
+                    <option value="manager">Manager</option>
+                  </select>
+                </div>
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => { setShowInviteForm(false); setInviteForm({ email: "", displayName: "", role: "staff" }); }}
+                    className="text-xs text-gray-400 hover:text-gray-600 px-3 py-1.5"
+                    data-testid="button-cancel-invite"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!inviteForm.email || !inviteForm.displayName) {
+                        toast({ title: "Missing fields", description: "Name and email are required.", variant: "destructive" });
+                        return;
+                      }
+                      inviteMutation.mutate(inviteForm);
+                    }}
+                    disabled={inviteMutation.isPending}
+                    className="bg-[#00B14F] text-white text-xs font-medium rounded-lg px-4 py-1.5 hover:bg-[#00B14F]/90 transition-colors flex items-center gap-1 disabled:opacity-50"
+                    data-testid="button-send-invite"
+                  >
+                    {inviteMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+                    Send Invite
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-3">
-              {[
-                { name: owner?.displayName || "Somchai", email: owner?.email || "owner@toastbkk.com", role: "Owner", status: "active", initials: (owner?.displayName || "S").charAt(0) },
-                { name: "Nattaporn K.", email: "nattaporn@jayfai.co.th", role: "Manager", status: "active", initials: "N" },
-                { name: "Wichai S.", email: "wichai@jayfai.co.th", role: "Staff", status: "pending", initials: "W" },
-              ].map((member, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100" data-testid={`team-member-${i}`}>
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100" data-testid="team-member-owner">
+                <div className="w-10 h-10 rounded-full bg-[#FFCC02]/15 flex items-center justify-center text-sm font-bold text-[#FFCC02]">
+                  {(owner?.displayName || "O").charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800">{owner?.displayName || "Owner"}</p>
+                  <p className="text-xs text-gray-400">{owner?.email}</p>
+                </div>
+                <span className="text-[10px] font-medium rounded-full px-2 py-0.5 bg-[#FFCC02]/15 text-gray-700">Owner</span>
+                <span className="text-[10px] font-medium rounded-full px-2 py-0.5 bg-[#00B14F]/10 text-[#00B14F]">Active</span>
+              </div>
+
+              {teamLoading ? (
+                <div className="p-4 text-center">
+                  <Loader2 className="w-5 h-5 animate-spin text-gray-300 mx-auto" />
+                </div>
+              ) : teamMembers.map((member) => (
+                <div key={member.id} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100" data-testid={`team-member-${member.id}`}>
                   <div className="w-10 h-10 rounded-full bg-[#00B14F]/10 flex items-center justify-center text-sm font-bold text-[#00B14F]">
-                    {member.initials}
+                    {member.displayName.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800">{member.name}</p>
+                    <p className="text-sm font-medium text-gray-800">{member.displayName}</p>
                     <p className="text-xs text-gray-400">{member.email}</p>
                   </div>
                   <span className={`text-[10px] font-medium rounded-full px-2 py-0.5 ${
-                    member.role === "Owner" ? "bg-[#FFCC02]/15 text-gray-700" :
-                    member.role === "Manager" ? "bg-[var(--admin-blue-10)] text-[var(--admin-blue)]" :
-                    "bg-gray-100 text-gray-500"
+                    member.role === "manager" ? "bg-[var(--admin-blue-10)] text-[var(--admin-blue)]" : "bg-gray-100 text-gray-500"
                   }`}>{member.role}</span>
                   <span className={`text-[10px] font-medium rounded-full px-2 py-0.5 ${
-                    member.status === "active" ? "bg-[#00B14F]/10 text-[#00B14F]" : "bg-amber-50 text-amber-600"
-                  }`}>{member.status === "active" ? "Active" : "Pending"}</span>
+                    member.status === "active" ? "bg-[#00B14F]/10 text-[#00B14F]" :
+                    member.status === "deactivated" ? "bg-red-50 text-red-400" :
+                    "bg-amber-50 text-amber-600"
+                  }`}>{member.status === "active" ? "Active" : member.status === "deactivated" ? "Deactivated" : "Pending"}</span>
+                  <div className="flex items-center gap-1">
+                    {member.status === "pending" && (
+                      <button
+                        onClick={() => resendInviteMutation.mutate(member.id)}
+                        className="p-1.5 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
+                        title="Resend invite"
+                        data-testid={`button-resend-${member.id}`}
+                      >
+                        <RefreshCw className="w-3 h-3 text-gray-400" />
+                      </button>
+                    )}
+                    {member.status === "active" && (
+                      <button
+                        onClick={() => updateTeamMutation.mutate({ id: member.id, updates: { status: "deactivated" } })}
+                        className="p-1.5 rounded-lg border border-gray-100 hover:bg-amber-50 transition-colors"
+                        title="Deactivate"
+                        data-testid={`button-deactivate-${member.id}`}
+                      >
+                        <UserMinus className="w-3 h-3 text-amber-500" />
+                      </button>
+                    )}
+                    {member.status === "deactivated" && (
+                      <button
+                        onClick={() => updateTeamMutation.mutate({ id: member.id, updates: { status: "active" } })}
+                        className="p-1.5 rounded-lg border border-gray-100 hover:bg-[#00B14F]/10 transition-colors"
+                        title="Reactivate"
+                        data-testid={`button-reactivate-${member.id}`}
+                      >
+                        <CheckCircle2 className="w-3 h-3 text-[#00B14F]" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => deleteTeamMutation.mutate(member.id)}
+                      className="p-1.5 rounded-lg border border-gray-100 hover:bg-red-50 transition-colors"
+                      title="Remove"
+                      data-testid={`button-remove-${member.id}`}
+                    >
+                      <Trash2 className="w-3 h-3 text-red-400" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

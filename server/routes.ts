@@ -2074,6 +2074,245 @@ export async function registerRoutes(
     }
   });
 
+  // Owner Promotions routes
+  app.post("/api/owner/promotions", ownerAuth, async (req: any, res) => {
+    try {
+      const schema = z.object({
+        title: z.string().min(1),
+        dealType: z.string().min(1),
+        dealValue: z.string().optional().default(""),
+        description: z.string().optional().default(""),
+        startDate: z.string().optional().default(""),
+        endDate: z.string().optional().default(""),
+        budget: z.number().optional().default(0),
+        targetGroups: z.array(z.string()).optional().default([]),
+        status: z.string().optional().default("draft"),
+      });
+      const input = schema.parse(req.body);
+      const owner = req.ownerUser;
+      const restaurantId = owner.restaurantId;
+      if (!restaurantId) {
+        return res.status(400).json({ message: "No restaurant linked to this owner account" });
+      }
+      const promo = await storage.createRestaurantPromotion({
+        ownerId: owner.id,
+        restaurantId,
+        title: input.title,
+        dealType: input.dealType,
+        dealValue: input.dealValue,
+        description: input.description,
+        startDate: input.startDate,
+        endDate: input.endDate,
+        budget: input.budget,
+        spent: 0,
+        impressions: 0,
+        clicks: 0,
+        redemptions: 0,
+        targetGroups: input.targetGroups,
+        status: input.status,
+        createdAt: new Date().toISOString(),
+      });
+      logAudit("promotion_created", "owner", String(owner.id), "promotion", String(promo.id), { title: input.title }, req.ip);
+      res.json(promo);
+    } catch (err: any) {
+      if (err?.name === "ZodError") return res.status(400).json({ message: "Validation error", errors: err.errors });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/owner/promotions", ownerAuth, async (req: any, res) => {
+    try {
+      const owner = req.ownerUser;
+      const promos = await storage.getRestaurantPromotionsByOwner(owner.id);
+      res.json(promos);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/owner/promotions/:id", ownerAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const promo = await storage.getRestaurantPromotionById(id);
+      if (!promo) return res.status(404).json({ message: "Not found" });
+      if (promo.ownerId !== req.ownerUser.id) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      const allowedUpdates = z.object({
+        title: z.string().min(1).optional(),
+        dealType: z.string().optional(),
+        dealValue: z.string().optional(),
+        description: z.string().optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        budget: z.number().optional(),
+        targetGroups: z.array(z.string()).optional(),
+        status: z.string().optional(),
+      }).parse(req.body);
+      const updated = await storage.updateRestaurantPromotion(id, allowedUpdates);
+      logAudit("promotion_updated", "owner", String(req.ownerUser.id), "promotion", String(id), allowedUpdates, req.ip);
+      res.json(updated);
+    } catch (err: any) {
+      if (err?.name === "ZodError") return res.status(400).json({ message: "Validation error", errors: err.errors });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/owner/promotions/:id", ownerAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const promo = await storage.getRestaurantPromotionById(id);
+      if (!promo) return res.status(404).json({ message: "Not found" });
+      if (promo.ownerId !== req.ownerUser.id) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      await storage.deleteRestaurantPromotion(id);
+      logAudit("promotion_deleted", "owner", String(req.ownerUser.id), "promotion", String(id), undefined, req.ip);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Owner Team routes
+  app.get("/api/owner/team", ownerAuth, async (req: any, res) => {
+    try {
+      const members = await storage.getOwnerTeamMembers(req.ownerUser.id);
+      res.json(members);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/owner/team", ownerAuth, async (req: any, res) => {
+    try {
+      const schema = z.object({
+        email: z.string().email(),
+        displayName: z.string().min(1),
+        role: z.enum(["manager", "staff"]).default("staff"),
+      });
+      const input = schema.parse(req.body);
+      const existing = await storage.getOwnerTeamMemberByEmail(req.ownerUser.id, input.email);
+      if (existing) {
+        return res.status(409).json({ message: "A team member with this email already exists" });
+      }
+      const inviteToken = randomBytes(32).toString("hex");
+      const member = await storage.createOwnerTeamMember({
+        ownerId: req.ownerUser.id,
+        email: input.email,
+        displayName: input.displayName,
+        role: input.role,
+        status: "pending",
+        inviteToken,
+        invitedAt: new Date().toISOString(),
+        activatedAt: null,
+      });
+      console.log(`[EMAIL QUEUE] Team invite sent to ${input.email}`);
+      logAudit("team_member_invited", "owner", String(req.ownerUser.id), "team_member", String(member.id), { email: input.email, role: input.role }, req.ip);
+      res.json(member);
+    } catch (err: any) {
+      if (err?.name === "ZodError") return res.status(400).json({ message: "Validation error", errors: err.errors });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/owner/team/:id", ownerAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const members = await storage.getOwnerTeamMembers(req.ownerUser.id);
+      const member = members.find(m => m.id === id);
+      if (!member) return res.status(404).json({ message: "Team member not found" });
+      const allowedUpdates = z.object({
+        role: z.enum(["manager", "staff"]).optional(),
+        status: z.enum(["active", "pending", "deactivated"]).optional(),
+        displayName: z.string().min(1).optional(),
+      }).parse(req.body);
+      const updated = await storage.updateOwnerTeamMember(id, allowedUpdates);
+      logAudit("team_member_updated", "owner", String(req.ownerUser.id), "team_member", String(id), allowedUpdates, req.ip);
+      res.json(updated);
+    } catch (err: any) {
+      if (err?.name === "ZodError") return res.status(400).json({ message: "Validation error", errors: err.errors });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/owner/team/:id", ownerAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const members = await storage.getOwnerTeamMembers(req.ownerUser.id);
+      const member = members.find(m => m.id === id);
+      if (!member) return res.status(404).json({ message: "Team member not found" });
+      await storage.deleteOwnerTeamMember(id);
+      logAudit("team_member_deleted", "owner", String(req.ownerUser.id), "team_member", String(id), undefined, req.ip);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/owner/team/:id/resend", ownerAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const members = await storage.getOwnerTeamMembers(req.ownerUser.id);
+      const member = members.find(m => m.id === id);
+      if (!member) return res.status(404).json({ message: "Team member not found" });
+      if (member.status !== "pending") return res.status(400).json({ message: "Can only resend to pending members" });
+      const newToken = randomBytes(32).toString("hex");
+      await storage.updateOwnerTeamMember(id, { inviteToken: newToken });
+      console.log(`[EMAIL QUEUE] Resent team invite to ${member.email}`);
+      logAudit("team_invite_resent", "owner", String(req.ownerUser.id), "team_member", String(id), { email: member.email }, req.ip);
+      res.json({ success: true });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/owner/team/activate", async (req, res) => {
+    try {
+      const schema = z.object({
+        token: z.string().min(1),
+      });
+      const { token } = schema.parse(req.body);
+      const member = await storage.getOwnerTeamMemberByToken(token);
+      if (!member) return res.status(404).json({ message: "Invalid or expired invite token" });
+      if (member.status === "active") return res.status(400).json({ message: "This invitation has already been activated" });
+      if (member.status === "deactivated") return res.status(400).json({ message: "This team membership has been deactivated" });
+      await storage.updateOwnerTeamMember(member.id, {
+        status: "active",
+        activatedAt: new Date().toISOString(),
+        inviteToken: null,
+      });
+      logAudit("team_member_activated", "team_member", String(member.id), "team_member", String(member.id), { email: member.email });
+      res.json({ success: true, displayName: member.displayName, email: member.email });
+    } catch (err: any) {
+      if (err?.name === "ZodError") return res.status(400).json({ message: "Validation error" });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/owner/team/validate-token/:token", async (req, res) => {
+    try {
+      const member = await storage.getOwnerTeamMemberByToken(req.params.token);
+      if (!member) return res.status(404).json({ valid: false, message: "Invalid or expired invite token" });
+      if (member.status !== "pending") return res.status(400).json({ valid: false, message: "This invitation is no longer valid" });
+      const owner = await storage.getRestaurantOwnerById(member.ownerId);
+      res.json({
+        valid: true,
+        displayName: member.displayName,
+        email: member.email,
+        role: member.role,
+        ownerName: owner?.displayName || "Restaurant Owner",
+      });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Analytics routes
   app.post("/api/analytics/event", async (req, res) => {
     try {
