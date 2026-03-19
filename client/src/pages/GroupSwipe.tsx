@@ -369,6 +369,35 @@ export default function GroupSwipe() {
                   }
                 }
               } catch {}
+            } else if ((sessionData.session?.sessionType === "vibe_swipe" || sessionData.session?.sessionType === "toast_decides") && sessionData.session?.sourceData) {
+              try {
+                const source = typeof sessionData.session.sourceData === "string"
+                  ? JSON.parse(sessionData.session.sourceData)
+                  : sessionData.session.sourceData;
+                if (source.source === "vibe_swipe" && source.vibe) {
+                  const vibeRes = await fetchWithTimeout("/api/restaurants/by-vibe", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ vibe: source.vibe }),
+                    signal: controller.signal,
+                  });
+                  if (cancelled) return;
+                  if (vibeRes.ok) {
+                    data = await vibeRes.json();
+                  }
+                } else if (source.source === "toast_decides" && source.results?.length > 0) {
+                  const resultIds = new Set(source.results.map((r: any) => r.id));
+                  const allRes = await fetchWithTimeout("/api/restaurants", { signal: controller.signal });
+                  if (cancelled) return;
+                  if (allRes.ok) {
+                    const allData = await allRes.json();
+                    data = allData.filter((r: any) => resultIds.has(r.id));
+                    if (data.length === 0) {
+                      data = source.results;
+                    }
+                  }
+                }
+              } catch {}
             }
           }
         }

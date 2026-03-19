@@ -1,11 +1,14 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { fetchWithTimeout } from "@/lib/queryClient";
 import { BottomNav } from "@/components/BottomNav";
-import { Sparkles, Clock, Wallet, TrendingUp, MapPin, Search, UtensilsCrossed, X, Check, Star } from "lucide-react";
+import { Sparkles, Clock, Wallet, TrendingUp, MapPin, UtensilsCrossed, X, Check, Star, Users } from "lucide-react";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
+import { useLineProfile } from "@/lib/useLineProfile";
+import { sendGroupInviteNoRedirect } from "@/lib/liff";
+import { useToast } from "@/hooks/use-toast";
 import { VIBE_LABELS, VIBE_EMOJI } from "@shared/vibeConfig";
 import type { VibeTag } from "@shared/vibeConfig";
 import mascotPath from "@assets/toast_mascot_nobg.png";
@@ -328,6 +331,9 @@ function mapVibeRestaurantToMenuItem(r: VibeRestaurant, index: number): MenuItem
 export default function SoloResults() {
   const [, navigate] = useLocation();
   const { topPreference, profile: tasteProfile, activityLog, searchHistory, getMoodSignal } = useTasteProfile();
+  const { profile: userProfile } = useLineProfile();
+  const { toast } = useToast();
+  const [swipeLoading, setSwipeLoading] = useState(false);
 
   const quizAnswers = useMemo(() => parseQuizParams(), []);
   const vibeParam = quizAnswers.vibe;
@@ -442,6 +448,93 @@ export default function SoloResults() {
       if (thinkingTimerRef.current) clearTimeout(thinkingTimerRef.current);
     };
   }, []);
+
+  const handleSwipeInvite = useCallback(async () => {
+    const userId = userProfile?.userId;
+    const displayName = userProfile?.displayName || "Toast Lover";
+    const pictureUrl = userProfile?.pictureUrl || "";
+
+    if (!userId || userId.startsWith("guest_")) {
+      toast({ title: "Log in with LINE", description: "Connect with LINE to start a group swipe session" });
+      return;
+    }
+
+    setSwipeLoading(true);
+    try {
+      let latitude: string | undefined;
+      let longitude: string | undefined;
+      try {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000 })
+        );
+        latitude = pos.coords.latitude.toString();
+        longitude = pos.coords.longitude.toString();
+      } catch {}
+
+      const restaurantList = filteredMenus.slice(0, 10).map(m => ({
+        id: m.id,
+        name: m.name,
+        type: m.type,
+        imageUrl: m.imageUrl,
+        budget: m.budget,
+      }));
+
+      const sourceData = JSON.stringify({
+        source: "vibe_swipe",
+        vibe: vibeParam || null,
+        quizFilters: {
+          cuisines: quizAnswers.cuisines,
+          budget: quizAnswers.budget,
+          interests: quizAnswers.interests,
+          diet: quizAnswers.diet,
+          locations: quizAnswers.locations,
+        },
+        restaurants: restaurantList,
+      });
+
+      const createRes = await fetchWithTimeout("/api/group/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hostLineUserId: userId,
+          hostDisplayName: displayName,
+          hostPictureUrl: pictureUrl,
+          sessionType: "vibe_swipe",
+          sourceData,
+          latitude,
+          longitude,
+        }),
+      });
+
+      if (!createRes.ok) throw new Error("Failed to create session");
+      const createdSession = await createRes.json();
+      const sessionCode = createdSession.sessionCode;
+
+      try {
+        const shareResult = await sendGroupInviteNoRedirect(sessionCode);
+        toast({
+          title: "Group swipe session created!",
+          description: shareResult.shared ? "Invite sent — heading to waiting room" : "Heading to waiting room",
+        });
+      } catch {
+        toast({
+          title: "Group swipe session created!",
+          description: "Heading to waiting room",
+        });
+      }
+
+      sessionStorage.setItem("toast_group_host_session", sessionCode);
+      navigate(`/group/waiting?session=${sessionCode}`);
+    } catch {
+      toast({
+        title: "Couldn't create session",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setSwipeLoading(false);
+    }
+  }, [userProfile, filteredMenus, vibeParam, quizAnswers, navigate, toast]);
 
   const getNextMenu = () => {
     const currentIds = new Set([leftOption.id, rightOption.id]);
@@ -815,14 +908,15 @@ export default function SoloResults() {
 
       <div className="flex items-end gap-2.5 w-full max-w-md">
         <motion.button
-          onClick={() => navigate("/?search=1")}
-          data-testid="button-search"
+          onClick={handleSwipeInvite}
+          disabled={swipeLoading}
+          data-testid="button-swipe-invite"
           whileTap={{ scale: 0.95 }}
-          className="flex-1 flex flex-col items-center gap-1.5 py-3.5 rounded-2xl bg-white border border-gray-200/80 text-xs font-medium text-muted-foreground"
-          style={{ boxShadow: "0 2px 8px -2px rgba(0,0,0,0.04)" }}
+          className="flex-1 flex flex-col items-center gap-1.5 py-3.5 rounded-2xl text-xs font-semibold text-white"
+          style={{ background: "#06C755", boxShadow: "0 4px 14px -3px rgba(6,199,85,0.35)" }}
         >
-          <Search className="w-4 h-4" />
-          Search
+          <Users className="w-4 h-4" />
+          {swipeLoading ? "..." : "Swipe"}
         </motion.button>
         <motion.button
           onClick={handleDecideForMe}
