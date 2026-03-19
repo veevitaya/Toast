@@ -1976,12 +1976,10 @@ export async function registerRoutes(
     return ownerLevel >= requiredLevel;
   }
 
-  // Campaign routes (requires growth tier)
-  app.post("/api/campaigns", ownerAuth, async (req: any, res) => {
+  // Campaign routes (admin-only — Toast Campaigns / Ads)
+  app.post("/api/campaigns", adminAuth, async (req: any, res) => {
     try {
-      if (!requireTier(req.ownerUser, "growth")) {
-        return res.status(403).json({ message: "Campaign management requires Growth tier or above" });
-      }
+      if (!requirePermission(req, res, "manage_campaigns")) return;
       const schema = z.object({
         restaurantOwnerKey: z.string().min(1),
         title: z.string().min(1),
@@ -1999,7 +1997,6 @@ export async function registerRoutes(
       const input = schema.parse(req.body);
       const campaign = await storage.createCampaign({
         ...input,
-        restaurantOwnerKey: String(req.ownerUser.id),
         createdAt: new Date().toISOString(),
       });
       res.status(201).json(campaign);
@@ -2019,11 +2016,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/campaigns/owner/:ownerKey", ownerAuth, async (req: any, res) => {
+  app.get("/api/campaigns/owner/:ownerKey", adminAuth, async (req: any, res) => {
     try {
-      if (String(req.ownerUser?.id) !== req.params.ownerKey) {
-        return res.status(403).json({ message: "Not authorized to view these campaigns" });
-      }
+      if (!requirePermission(req, res, "manage_campaigns")) return;
       const list = await storage.getCampaignsByOwner(req.params.ownerKey);
       res.json(list);
     } catch (err) {
@@ -2031,8 +2026,9 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/campaigns/:id", ownerAuth, async (req: any, res) => {
+  app.patch("/api/campaigns/:id", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_campaigns")) return;
       const ip = req.ip || "unknown";
       if (rateLimit(`campaign-update:${ip}`, 10, 60000)) {
         return res.status(429).json({ message: "Too many requests" });
@@ -2041,9 +2037,6 @@ export async function registerRoutes(
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const campaign = await storage.getCampaignById(id);
       if (!campaign) return res.status(404).json({ message: "Not found" });
-      if (campaign.restaurantOwnerKey !== String(req.ownerUser?.id)) {
-        return res.status(403).json({ message: "Not authorized to edit this campaign" });
-      }
       const allowedFields: Record<string, any> = {};
       const campaignSafeKeys = ["title", "dealType", "dealValue", "description", "status", "startDate", "endDate", "conditions", "minSpend", "maxRedemptions", "targetGroups"];
       for (const key of campaignSafeKeys) {
@@ -2057,17 +2050,15 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/campaigns/:id", ownerAuth, async (req: any, res) => {
+  app.delete("/api/campaigns/:id", adminAuth, async (req: any, res) => {
     try {
+      if (!requirePermission(req, res, "manage_campaigns")) return;
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const campaign = await storage.getCampaignById(id);
       if (!campaign) return res.status(404).json({ message: "Not found" });
-      if (campaign.restaurantOwnerKey !== String(req.ownerUser?.id)) {
-        return res.status(403).json({ message: "Not authorized to delete this campaign" });
-      }
       await storage.deleteCampaign(id);
-      logAudit("campaign_deleted", "owner", String(req.ownerUser?.id), "campaign", String(id), undefined, req.ip);
+      logAudit("campaign_deleted", "admin", String(req.session?.adminUser), "campaign", String(id), undefined, req.ip);
       res.json({ success: true });
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
@@ -2206,6 +2197,7 @@ export async function registerRoutes(
         role: input.role,
         status: "pending",
         inviteToken,
+        inviteExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         invitedAt: new Date().toISOString(),
         activatedAt: null,
       });
@@ -2263,7 +2255,10 @@ export async function registerRoutes(
       if (!member) return res.status(404).json({ message: "Team member not found" });
       if (member.status !== "pending") return res.status(400).json({ message: "Can only resend to pending members" });
       const newToken = randomBytes(32).toString("hex");
-      await storage.updateOwnerTeamMember(id, { inviteToken: newToken });
+      await storage.updateOwnerTeamMember(id, {
+        inviteToken: newToken,
+        inviteExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      });
       console.log(`[EMAIL QUEUE] Resent team invite to ${member.email}`);
       logAudit("team_invite_resent", "owner", String(req.ownerUser.id), "team_member", String(id), { email: member.email }, req.ip);
       res.json({ success: true });
@@ -2274,23 +2269,33 @@ export async function registerRoutes(
 
   app.post("/api/owner/team/activate", async (req, res) => {
     try {
-      const schema = z.object({
+      const activateSchema = z.object({
         token: z.string().min(1),
+        password: z.string().min(6, "Password must be at least 6 characters"),
       });
-      const { token } = schema.parse(req.body);
+      const { token, password } = activateSchema.parse(req.body);
       const member = await storage.getOwnerTeamMemberByToken(token);
       if (!member) return res.status(404).json({ message: "Invalid or expired invite token" });
       if (member.status === "active") return res.status(400).json({ message: "This invitation has already been activated" });
       if (member.status === "deactivated") return res.status(400).json({ message: "This team membership has been deactivated" });
+      if (member.inviteExpiresAt && new Date(member.inviteExpiresAt) < new Date()) {
+        return res.status(400).json({ message: "This invitation has expired. Please ask your team owner to resend." });
+      }
+      const { scryptSync } = await import("crypto");
+      const salt = randomBytes(16).toString("hex");
+      const hash = scryptSync(password, salt, 64).toString("hex");
+      const passwordHash = `${salt}:${hash}`;
       await storage.updateOwnerTeamMember(member.id, {
         status: "active",
         activatedAt: new Date().toISOString(),
         inviteToken: null,
+        inviteExpiresAt: null,
+        passwordHash,
       });
       logAudit("team_member_activated", "team_member", String(member.id), "team_member", String(member.id), { email: member.email });
       res.json({ success: true, displayName: member.displayName, email: member.email });
     } catch (err: any) {
-      if (err?.name === "ZodError") return res.status(400).json({ message: "Validation error" });
+      if (err?.name === "ZodError") return res.status(400).json({ message: err.errors?.[0]?.message || "Validation error" });
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -2300,6 +2305,9 @@ export async function registerRoutes(
       const member = await storage.getOwnerTeamMemberByToken(req.params.token);
       if (!member) return res.status(404).json({ valid: false, message: "Invalid or expired invite token" });
       if (member.status !== "pending") return res.status(400).json({ valid: false, message: "This invitation is no longer valid" });
+      if (member.inviteExpiresAt && new Date(member.inviteExpiresAt) < new Date()) {
+        return res.status(400).json({ valid: false, message: "This invitation has expired. Please ask your team owner to resend." });
+      }
       const owner = await storage.getRestaurantOwnerById(member.ownerId);
       res.json({
         valid: true,
@@ -2562,6 +2570,64 @@ export async function registerRoutes(
         isVerified: owner.isVerified,
         subscriptionTier: owner.subscriptionTier,
         sessionType: "owner",
+        loggedIn: true,
+      });
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/team-login", async (req, res) => {
+    try {
+      const teamLoginSchema = z.object({
+        email: z.string().email(),
+        password: z.string().min(1),
+      });
+      const input = teamLoginSchema.parse(req.body);
+      const ip = req.ip || "unknown";
+      if (rateLimit(`team-login:${ip}`, 5, 60000)) {
+        return res.status(429).json({ message: "Too many login attempts" });
+      }
+      const allOwners = await storage.getAllRestaurantOwners();
+      let foundMember = null;
+      let ownerRecord = null;
+      for (const owner of allOwners) {
+        const members = await storage.getOwnerTeamMembers(owner.id);
+        const match = members.find(m => m.email === input.email && m.status === "active" && m.passwordHash);
+        if (match) {
+          foundMember = match;
+          ownerRecord = owner;
+          break;
+        }
+      }
+      if (!foundMember || !foundMember.passwordHash) {
+        logAudit("team_login_failed", "team_member", input.email, undefined, undefined, undefined, ip);
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      const { scryptSync, timingSafeEqual } = await import("crypto");
+      const [salt, storedHash] = foundMember.passwordHash.split(":");
+      const derivedHash = scryptSync(input.password, salt, 64).toString("hex");
+      if (!timingSafeEqual(Buffer.from(storedHash, "hex"), Buffer.from(derivedHash, "hex"))) {
+        logAudit("team_login_failed", "team_member", input.email, undefined, undefined, undefined, ip);
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      logAudit("team_login_success", "team_member", input.email, "owner", String(ownerRecord!.id), undefined, ip);
+      let restaurant = null;
+      if (ownerRecord?.restaurantId) {
+        restaurant = await storage.getRestaurantById(ownerRecord.restaurantId);
+      }
+      res.json({
+        id: ownerRecord!.id,
+        email: foundMember.email,
+        displayName: foundMember.displayName,
+        restaurantId: ownerRecord?.restaurantId || null,
+        restaurantName: restaurant?.name || null,
+        isVerified: ownerRecord?.isVerified || false,
+        subscriptionTier: ownerRecord?.subscriptionTier || "starter",
+        sessionType: "owner",
+        teamMemberId: foundMember.id,
+        teamRole: foundMember.role,
         loggedIn: true,
       });
     } catch (err) {

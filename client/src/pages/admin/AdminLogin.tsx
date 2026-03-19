@@ -52,8 +52,14 @@ export default function AdminLogin() {
         );
         setLocation("/admin/dashboard");
       } else {
-        const res = await apiRequest("POST", "/api/admin/owner-login", { email, password });
-        const data = await res.json();
+        let data: any;
+        try {
+          const res = await apiRequest("POST", "/api/admin/owner-login", { email, password });
+          data = await res.json();
+        } catch {
+          const teamRes = await apiRequest("POST", "/api/admin/team-login", { email, password });
+          data = await teamRes.json();
+        }
         localStorage.setItem(
           "toast_admin_session",
           JSON.stringify({
@@ -65,6 +71,8 @@ export default function AdminLogin() {
             isVerified: data.isVerified,
             subscriptionTier: data.subscriptionTier,
             sessionType: "owner",
+            teamMemberId: data.teamMemberId || null,
+            teamRole: data.teamRole || null,
             _k: password,
             loggedIn: true,
           })

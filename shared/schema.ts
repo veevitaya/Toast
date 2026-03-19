@@ -232,6 +232,8 @@ export const ownerTeamMembers = pgTable("owner_team_members", {
   role: text("role").default("staff"),
   status: text("status").default("pending"),
   inviteToken: text("invite_token"),
+  inviteExpiresAt: text("invite_expires_at"),
+  passwordHash: text("password_hash"),
   invitedAt: text("invited_at").notNull(),
   activatedAt: text("activated_at"),
 }, (table) => ({
