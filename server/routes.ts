@@ -3161,7 +3161,7 @@ export async function registerRoutes(
     try {
       const { code } = req.params;
       const schema = z.object({
-        status: z.enum(["waiting", "swiping", "completed"]),
+        status: z.enum(["waiting", "swiping", "completed", "expired", "deleted"]),
         lineUserId: z.string().min(1),
       });
       const input = schema.parse(req.body);
@@ -3177,9 +3177,11 @@ export async function registerRoutes(
       }
 
       const validTransitions: Record<string, string[]> = {
-        waiting: ["swiping"],
-        swiping: ["completed"],
-        completed: [],
+        waiting: ["swiping", "deleted"],
+        swiping: ["completed", "deleted"],
+        completed: ["expired"],
+        expired: [],
+        deleted: [],
       };
       const currentStatus = session.status || "waiting";
       if (!validTransitions[currentStatus]?.includes(input.status)) {

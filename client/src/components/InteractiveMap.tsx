@@ -135,6 +135,7 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
   const [recentering, setRecentering] = useState(false);
   const [recenterError, setRecenterError] = useState<string | null>(null);
   const lastRecenterTime = useRef(0);
+  const lastGeoFetchAt = useRef(0);
   const cachedGeoPosition = useRef<[number, number] | null>(null);
 
   const handleRecenter = useCallback(() => {
@@ -144,7 +145,7 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
 
     setRecenterError(null);
 
-    if (cachedGeoPosition.current && now - lastRecenterTime.current < 30000) {
+    if (cachedGeoPosition.current && now - lastGeoFetchAt.current < 30000) {
       const map = leafletMap.current;
       if (map) map.flyTo(cachedGeoPosition.current, 15, { duration: 0.8 });
       return;
@@ -164,6 +165,7 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
       (pos) => {
         const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
         cachedGeoPosition.current = coords;
+        lastGeoFetchAt.current = Date.now();
         const map = leafletMap.current;
         if (map) map.flyTo(coords, 15, { duration: 0.8 });
         setRecentering(false);

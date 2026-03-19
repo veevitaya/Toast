@@ -127,10 +127,16 @@ export function SessionBar() {
               ? `/group/swipe?session=${s.sessionCode}`
               : `/group/waiting?session=${s.sessionCode}`;
           const sessionStatus = s.status === "completed" ? "completed" as const : undefined;
+          const label = s.status === "completed"
+            ? "View Results"
+            : s.status === "swiping"
+              ? "Continue Group Session"
+              : "Rejoin Session";
+          const locationSuffix = s.locationName ? ` · ${s.locationName}` : "";
           addSession({
             id: s.sessionCode,
             type: "group",
-            label: s.locationName || "Group Session",
+            label: `${label}${locationSuffix}`,
             route,
             memberCount: s.memberCount,
             matchCount: 0,

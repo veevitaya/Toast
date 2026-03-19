@@ -316,6 +316,7 @@ export default function GroupSwipe() {
   const [isHost, setIsHost] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [sessionEnded, setSessionEnded] = useState(false);
+  const [sessionUnavailable, setSessionUnavailable] = useState(false);
   const [rankedResults, setRankedResults] = useState<RankedResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [loadingResults, setLoadingResults] = useState(false);
@@ -422,7 +423,7 @@ export default function GroupSwipe() {
         const res = await fetchWithTimeout(`/api/group/sessions/${sessionCode}`, { signal: pollController.signal });
         if (cancelled) return;
         if (res.status === 410 || res.status === 404) {
-          setSessionEnded(true);
+          setSessionUnavailable(true);
           return;
         }
         if (!res.ok) {
@@ -432,7 +433,7 @@ export default function GroupSwipe() {
         }
         const data = await res.json();
         if (data.session?.status === "deleted") {
-          setSessionEnded(true);
+          setSessionUnavailable(true);
           return;
         }
         setMembers(data.members);
@@ -785,6 +786,36 @@ export default function GroupSwipe() {
     return (
       <div className="w-full h-[100dvh] bg-[#FCFCFC] flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-gray-300 border-t-foreground animate-spin" />
+      </div>
+    );
+  }
+
+  if (sessionUnavailable) {
+    return (
+      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6" data-testid="session-unavailable-page">
+        <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-5">
+          <X className="w-8 h-8 text-gray-400" />
+        </div>
+        <h1 className="text-[22px] font-bold mb-2 text-center">Session Unavailable</h1>
+        <p className="text-muted-foreground text-center text-sm mb-6 max-w-[280px]" data-testid="text-unavailable-message">
+          This session has expired, been removed, or is no longer available. Start a new group session to swipe together!
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate("/group/setup")}
+            className="px-6 py-3 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-sm active:scale-[0.96] transition-transform"
+            data-testid="button-new-session"
+          >
+            New Session
+          </button>
+          <button
+            onClick={() => navigate("/")}
+            className="px-6 py-3 rounded-full bg-gray-100 text-foreground font-bold text-sm active:scale-[0.96] transition-transform"
+            data-testid="button-go-home"
+          >
+            Home
+          </button>
+        </div>
       </div>
     );
   }
