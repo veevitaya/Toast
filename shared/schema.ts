@@ -589,3 +589,38 @@ export const vibeOverrides = pgTable("vibe_overrides", {
 export const insertVibeOverrideSchema = createInsertSchema(vibeOverrides).omit({ id: true });
 export type VibeOverride = typeof vibeOverrides.$inferSelect;
 export type InsertVibeOverride = z.infer<typeof insertVibeOverrideSchema>;
+
+export const vibeDefinitions = pgTable("vibe_definitions", {
+  id: serial("id").primaryKey(),
+  vibe: text("vibe").notNull().unique(),
+  label: text("label").notNull(),
+  emoji: text("emoji").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+});
+
+export const insertVibeDefinitionSchema = createInsertSchema(vibeDefinitions).omit({ id: true });
+export type VibeDefinition = typeof vibeDefinitions.$inferSelect;
+export type InsertVibeDefinition = z.infer<typeof insertVibeDefinitionSchema>;
+
+export const vibeMatchingRules = pgTable("vibe_matching_rules", {
+  id: serial("id").primaryKey(),
+  vibe: text("vibe").notNull(),
+  ruleType: text("rule_type").notNull(),
+  hardFilter: boolean("hard_filter").default(false),
+  requiredCategoryTypes: text("required_category_types").array().default([]),
+  categoryKeywords: text("category_keywords").array().default([]),
+  descriptionKeywords: text("description_keywords").array().default([]),
+  excludeCategoryTypes: text("exclude_category_types").array().default([]),
+  priceLevelMin: integer("price_level_min"),
+  priceLevelMax: integer("price_level_max"),
+  isActive: boolean("is_active").default(true),
+  priority: integer("priority").default(0),
+}, (table) => ({
+  vibeIdx: index("vibe_matching_rules_vibe_idx").on(table.vibe),
+}));
+
+export const insertVibeMatchingRuleSchema = createInsertSchema(vibeMatchingRules).omit({ id: true });
+export type VibeMatchingRule = typeof vibeMatchingRules.$inferSelect;
+export type InsertVibeMatchingRule = z.infer<typeof insertVibeMatchingRuleSchema>;

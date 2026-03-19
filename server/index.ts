@@ -116,6 +116,20 @@ app.get("/api/health", (_req, res) => {
 (async () => {
   await registerRoutes(httpServer, app);
 
+  try {
+    const { storage } = await import("./storage");
+    const seedResult = await storage.seedVibeDefinitionsAndRules();
+    if (seedResult.definitionsSeeded > 0 || seedResult.rulesSeeded > 0) {
+      log(`Vibe system seeded: ${seedResult.definitionsSeeded} definitions, ${seedResult.rulesSeeded} rules`);
+    }
+    const retagResult = await storage.updateAllRestaurantVibes();
+    if (retagResult.updated > 0) {
+      log(`Startup vibe retag: ${retagResult.updated} restaurants updated`);
+    }
+  } catch (err) {
+    console.error("Vibe startup seeding/retag failed (non-fatal):", err);
+  }
+
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";

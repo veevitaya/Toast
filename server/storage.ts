@@ -90,6 +90,12 @@ import {
   vibeOverrides,
   type VibeOverride,
   type InsertVibeOverride,
+  vibeDefinitions,
+  vibeMatchingRules,
+  type VibeDefinition,
+  type InsertVibeDefinition,
+  type VibeMatchingRule,
+  type InsertVibeMatchingRule,
 } from "@shared/schema";
 import { eq, desc, and, or, gte, lte, gt, inArray, count, sql } from "drizzle-orm";
 
@@ -243,6 +249,11 @@ export interface IStorage {
   upsertVibeOverride(override: InsertVibeOverride): Promise<VibeOverride>;
   deleteVibeOverride(id: number): Promise<void>;
   updateAllRestaurantVibes(): Promise<{ updated: number; details: { id: number; name: string; oldVibes: string[]; newVibes: string[] }[] }>;
+
+  getVibeDefinitions(): Promise<VibeDefinition[]>;
+  getVibeMatchingRules(vibe?: string): Promise<VibeMatchingRule[]>;
+  seedVibeDefinitionsAndRules(): Promise<{ definitionsSeeded: number; rulesSeeded: number }>;
+  getRestaurantsByVibeStructured(vibe: string, limit: number): Promise<(Restaurant & { vibeMatch: number; matchReasons?: string[] })[]>;
 }
 
 const MAX_CACHE_ENTRIES = 200;
@@ -1239,8 +1250,141 @@ export class DatabaseStorage implements IStorage {
     await db.delete(vibeOverrides).where(eq(vibeOverrides.id, id));
   }
 
+  private evaluateRulesForRestaurant(
+    r: { category: string; priceLevel: number; address: string; operatingHours?: string | null; description?: string },
+    rules: VibeMatchingRule[]
+  ): { vibe: string; matched: boolean; reasons: string[] }[] {
+    const catLower = r.category.toLowerCase();
+    const descLower = (r.description || "").toLowerCase();
+    const catSegments = catLower.split(/[·•/,]+/).map(s => s.trim()).filter(Boolean);
+    const catTokens = [...new Set([...catSegments, ...catSegments.flatMap(s => s.split(/\s+/))])];
+
+    const matchesCatType = (reqType: string): boolean => {
+      const tl = reqType.toLowerCase();
+      const tw = tl.split(/\s+/);
+      if (tw.length > 1) return catLower.includes(tl);
+      return catTokens.some(tok => {
+        if (tok === tl) return true;
+        if (tok.length > tl.length && tok.endsWith(tl)) {
+          const p = tok.slice(0, tok.length - tl.length);
+          return p.endsWith(" ") || p.endsWith("-");
+        }
+        if (tok.length > tl.length && tok.startsWith(tl)) {
+          const s = tok.slice(tl.length);
+          return s.startsWith(" ") || s.startsWith("-") || s.startsWith("s");
+        }
+        return false;
+      });
+    };
+
+    const results: { vibe: string; matched: boolean; reasons: string[] }[] = [];
+
+    for (const rule of rules) {
+      const entry = { vibe: rule.vibe, matched: false, reasons: [] as string[] };
+
+      if (rule.hardFilter && rule.requiredCategoryTypes && rule.requiredCategoryTypes.length > 0) {
+        const matchedType = rule.requiredCategoryTypes.find(t => matchesCatType(t));
+        if (rule.excludeCategoryTypes && rule.excludeCategoryTypes.length > 0 && !matchedType) {
+          if (rule.excludeCategoryTypes.some(exc => matchesCatType(exc))) {
+            entry.reasons.push("excluded: category contains excluded type");
+            results.push(entry);
+            continue;
+          }
+        }
+        if (!matchedType) {
+          const hasKw = (rule.categoryKeywords || []).some(kw => catLower.includes(kw)) ||
+                        (rule.descriptionKeywords || []).some(kw => descLower.includes(kw));
+          entry.reasons.push(hasKw ? "keyword match but missing required category type for hard-filter" : "no required category type found");
+          results.push(entry);
+          continue;
+        }
+        entry.matched = true;
+        entry.reasons.push(`category contains required type: ${matchedType}`);
+      } else {
+        if (rule.categoryKeywords && rule.categoryKeywords.length > 0) {
+          const m = rule.categoryKeywords.filter(kw => catLower.includes(kw));
+          if (m.length > 0) { entry.matched = true; entry.reasons.push(`category keyword: ${m.join(", ")}`); }
+        }
+        if (rule.descriptionKeywords && rule.descriptionKeywords.length > 0) {
+          const m = rule.descriptionKeywords.filter(kw => descLower.includes(kw));
+          if (m.length > 0) { entry.matched = true; entry.reasons.push(`description keyword: ${m.join(", ")}`); }
+        }
+      }
+
+      if (rule.priceLevelMin && r.priceLevel < rule.priceLevelMin && !entry.matched) {
+        entry.reasons.push(`price level ${r.priceLevel} below minimum ${rule.priceLevelMin}`);
+      }
+      if (rule.priceLevelMax && r.priceLevel > rule.priceLevelMax) {
+        entry.matched = false;
+        entry.reasons.push(`price level ${r.priceLevel} above maximum ${rule.priceLevelMax}`);
+      }
+      results.push(entry);
+    }
+
+    const CUISINE_SPICY = ["thai", "indian", "mexican", "korean", "isaan", "northern", "southern"];
+    const spicyEntry = results.find(e => e.vibe === "spicy");
+    if (spicyEntry) {
+      for (const tok of catTokens) {
+        if (CUISINE_SPICY.some(c => tok.includes(c))) {
+          spicyEntry.matched = true;
+          spicyEntry.reasons.push(`cuisine typically spicy: ${tok}`);
+          break;
+        }
+      }
+    }
+
+    if (r.priceLevel <= 2) {
+      results.push({ vibe: "budget", matched: true, reasons: [`price level ${r.priceLevel} <= 2`] });
+    } else {
+      results.push({ vibe: "budget", matched: false, reasons: [`price level ${r.priceLevel} > 2`] });
+    }
+
+    if (r.priceLevel <= 3) {
+      results.push({ vibe: "delivery", matched: true, reasons: [`price level ${r.priceLevel} <= 3`] });
+    } else {
+      results.push({ vibe: "delivery", matched: false, reasons: [`price level ${r.priceLevel} > 3`] });
+    }
+
+    if (r.operatingHours) {
+      const m = r.operatingHours.match(/(\d{2}):\d{2}\s*-\s*(\d{2}):\d{2}/);
+      if (m) {
+        const openHour = parseInt(m[1]), closeHour = parseInt(m[2]);
+        if (closeHour >= 0 && closeHour <= 5) {
+          results.push({ vibe: "late_night", matched: true, reasons: [`closes at ${closeHour}:xx (after midnight)`] });
+        }
+        if (openHour >= 6 && openHour <= 10) {
+          const brunchEntry = results.find(e => e.vibe === "brunch");
+          if (brunchEntry) { brunchEntry.matched = true; brunchEntry.reasons.push(`opens at ${openHour}:xx (morning)`); }
+          else results.push({ vibe: "brunch", matched: true, reasons: [`opens at ${openHour}:xx (morning)`] });
+        }
+      }
+    }
+
+    const rooftopEntry = results.find(e => e.vibe === "rooftop");
+    if (rooftopEntry?.matched) {
+      const outdoorEntry = results.find(e => e.vibe === "outdoor");
+      if (outdoorEntry) { outdoorEntry.matched = true; outdoorEntry.reasons.push("rooftop implies outdoor"); }
+    }
+
+    const seen = new Set<string>();
+    const deduped: { vibe: string; matched: boolean; reasons: string[] }[] = [];
+    for (const entry of results) {
+      if (!seen.has(entry.vibe)) { seen.add(entry.vibe); deduped.push(entry); }
+      else {
+        const existing = deduped.find(e => e.vibe === entry.vibe);
+        if (existing) { if (entry.matched) existing.matched = true; existing.reasons.push(...entry.reasons); }
+      }
+    }
+    return deduped;
+  }
+
+  async evaluateVibesFromDB(r: { category: string; priceLevel: number; address: string; operatingHours?: string | null; description?: string }): Promise<{ vibe: string; matched: boolean; reasons: string[] }[]> {
+    const dbRules = await this.getVibeMatchingRules();
+    return this.evaluateRulesForRestaurant(r, dbRules);
+  }
+
   async updateAllRestaurantVibes(): Promise<{ updated: number; details: { id: number; name: string; oldVibes: string[]; newVibes: string[] }[] }> {
-    const { autoAssignVibes } = await import("@shared/vibeConfig");
+    const dbRules = await this.getVibeMatchingRules();
     const allRestaurants = await this.getRestaurants();
     const allOverrides = await this.getAllVibeOverrides();
     const overrideMap = new Map<number, VibeOverride[]>();
@@ -1249,12 +1393,21 @@ export class DatabaseStorage implements IStorage {
       overrideMap.get(ov.restaurantId)!.push(ov);
     }
 
+    const useFallback = dbRules.length === 0;
     const details: { id: number; name: string; oldVibes: string[]; newVibes: string[] }[] = [];
     let updated = 0;
 
     for (const r of allRestaurants) {
       const oldVibes = r.vibes || [];
-      let newVibes = autoAssignVibes(r);
+      let newVibes: string[];
+
+      if (useFallback) {
+        const { autoAssignVibes } = await import("@shared/vibeConfig");
+        newVibes = autoAssignVibes(r);
+      } else {
+        const evaluations = this.evaluateRulesForRestaurant(r, dbRules);
+        newVibes = evaluations.filter(e => e.matched).map(e => e.vibe);
+      }
 
       const overrides = overrideMap.get(r.id) || [];
       for (const ov of overrides) {
@@ -1275,6 +1428,161 @@ export class DatabaseStorage implements IStorage {
     }
 
     return { updated, details };
+  }
+
+  async getVibeDefinitions(): Promise<VibeDefinition[]> {
+    return cached("vibe_definitions", 300_000, async () => {
+      return await db.select().from(vibeDefinitions).orderBy(vibeDefinitions.sortOrder);
+    });
+  }
+
+  async getVibeMatchingRules(vibe?: string): Promise<VibeMatchingRule[]> {
+    const cacheKey = vibe ? `vibe_rules_${vibe}` : "vibe_rules_all";
+    return cached(cacheKey, 300_000, async () => {
+      if (vibe) {
+        return await db.select().from(vibeMatchingRules)
+          .where(and(eq(vibeMatchingRules.vibe, vibe), eq(vibeMatchingRules.isActive, true)))
+          .orderBy(desc(vibeMatchingRules.priority));
+      }
+      return await db.select().from(vibeMatchingRules)
+        .where(eq(vibeMatchingRules.isActive, true))
+        .orderBy(desc(vibeMatchingRules.priority));
+    });
+  }
+
+  async seedVibeDefinitionsAndRules(): Promise<{ definitionsSeeded: number; rulesSeeded: number }> {
+    const { VIBE_TAGS, VIBE_LABELS, VIBE_EMOJI } = await import("@shared/vibeConfig");
+
+    const existingDefs = await db.select().from(vibeDefinitions);
+    let definitionsSeeded = 0;
+    if (existingDefs.length === 0) {
+      const defs: InsertVibeDefinition[] = VIBE_TAGS.map((vibe, idx) => ({
+        vibe,
+        label: VIBE_LABELS[vibe],
+        emoji: VIBE_EMOJI[vibe],
+        description: `${VIBE_LABELS[vibe]} restaurants and venues`,
+        isActive: true,
+        sortOrder: idx,
+      }));
+      await db.insert(vibeDefinitions).values(defs);
+      definitionsSeeded = defs.length;
+    }
+
+    const existingRules = await db.select().from(vibeMatchingRules);
+    let rulesSeeded = 0;
+    if (existingRules.length === 0) {
+      const rules: InsertVibeMatchingRule[] = [
+        {
+          vibe: "drinks", ruleType: "hard_filter", hardFilter: true, priority: 100,
+          requiredCategoryTypes: ["bar", "pub", "cocktail bar", "cocktail", "speakeasy", "wine bar", "brewery", "taproom", "izakaya", "beer bar", "craft beer", "whisky bar", "whiskey bar", "rum bar", "gin bar", "tiki bar", "lounge", "rooftop bar", "jazz bar", "sports bar"],
+          excludeCategoryTypes: ["restaurant", "cafe", "bakery", "dessert", "brunch", "breakfast", "noodle", "rice", "curry", "sushi", "ramen", "pizza", "burger", "steak", "seafood"],
+          categoryKeywords: [], descriptionKeywords: [], isActive: true,
+        },
+        {
+          vibe: "cafe", ruleType: "hard_filter", hardFilter: true, priority: 90,
+          requiredCategoryTypes: ["cafe", "coffee", "coffee shop", "tea house", "tea room", "bakery cafe", "specialty coffee"],
+          categoryKeywords: ["cafe", "coffee", "tea"],
+          descriptionKeywords: ["cafe", "coffee", "latte", "espresso", "pour over", "drip", "brew"],
+          excludeCategoryTypes: [], isActive: true,
+        },
+        {
+          vibe: "spicy", ruleType: "keyword", hardFilter: false, priority: 80,
+          categoryKeywords: ["spicy", "isaan", "chili", "hot pot"],
+          descriptionKeywords: ["spicy", "chili", "hot", "fiery", "capsicum"],
+          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+        },
+        {
+          vibe: "healthy", ruleType: "keyword", hardFilter: false, priority: 70,
+          categoryKeywords: ["salad", "vegan", "vegetarian", "organic", "poke", "healthy", "acai", "smoothie", "juice"],
+          descriptionKeywords: ["healthy", "organic", "plant-based", "vegan", "vegetarian", "clean eating", "superfood"],
+          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+        },
+        {
+          vibe: "outdoor", ruleType: "keyword", hardFilter: false, priority: 60,
+          categoryKeywords: ["outdoor", "garden", "terrace", "riverside", "by the river"],
+          descriptionKeywords: ["outdoor", "terrace", "garden", "open-air", "al fresco", "riverside"],
+          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+        },
+        {
+          vibe: "date_night", ruleType: "keyword", hardFilter: false, priority: 70, priceLevelMin: 3,
+          categoryKeywords: ["fine dining", "omakase", "kaiseki", "premium", "upscale"],
+          descriptionKeywords: ["romantic", "intimate", "fine dining", "upscale", "elegant", "premium"],
+          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+        },
+        {
+          vibe: "sweets", ruleType: "keyword", hardFilter: false, priority: 70,
+          categoryKeywords: ["dessert", "bakery", "ice cream", "kakigori", "cake", "pastry", "sweet", "honey toast", "gelato", "chocolate"],
+          descriptionKeywords: ["dessert", "sweet", "pastry", "cake", "ice cream", "gelato", "chocolate", "confection"],
+          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+        },
+        {
+          vibe: "brunch", ruleType: "keyword", hardFilter: false, priority: 60,
+          categoryKeywords: ["brunch", "breakfast", "morning", "pancake", "waffle"],
+          descriptionKeywords: ["brunch", "breakfast", "morning", "eggs benedict", "pancake", "waffle"],
+          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+        },
+        {
+          vibe: "street_food", ruleType: "keyword", hardFilter: false, priority: 70,
+          categoryKeywords: ["street food", "night market", "hawker", "stall", "cart", "food truck"],
+          descriptionKeywords: ["street food", "night market", "roadside", "hawker", "food truck", "stall"],
+          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+        },
+        {
+          vibe: "rooftop", ruleType: "keyword", hardFilter: false, priority: 60,
+          categoryKeywords: ["rooftop"],
+          descriptionKeywords: ["rooftop", "sky bar", "skyline", "panoramic view"],
+          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+        },
+        {
+          vibe: "family", ruleType: "keyword", hardFilter: false, priority: 50,
+          categoryKeywords: ["family", "buffet", "food court", "casual", "home-style", "traditional", "home cooking"],
+          descriptionKeywords: ["family", "kid-friendly", "casual dining", "home-style", "home cooking", "comfort"],
+          requiredCategoryTypes: [], excludeCategoryTypes: [], isActive: true,
+        },
+      ];
+      await db.insert(vibeMatchingRules).values(rules);
+      rulesSeeded = rules.length;
+    }
+
+    return { definitionsSeeded, rulesSeeded };
+  }
+
+  async getRestaurantsByVibeStructured(vibe: string, limit: number): Promise<(Restaurant & { vibeMatch: number; matchReasons?: string[] })[]> {
+    const vibeRestaurants = await this.getRestaurantsByVibe(vibe);
+
+    if (vibeRestaurants.length > 0) {
+      return vibeRestaurants.slice(0, limit).map(r => ({
+        ...r,
+        vibeMatch: Math.min(99, Math.round(
+          50 + (parseFloat(r.rating) - 4.0) * 15 + (r.trendingScore || 0) * 0.2
+        )),
+      }));
+    }
+
+    const dbRules = await this.getVibeMatchingRules();
+    if (dbRules.length === 0) {
+      return [];
+    }
+
+    const allRestaurants = await this.getRestaurants();
+    const candidates: (Restaurant & { vibeMatch: number; matchReasons: string[] })[] = [];
+
+    for (const r of allRestaurants) {
+      const evaluations = this.evaluateRulesForRestaurant(r, dbRules);
+      const vibeExpl = evaluations.find(e => e.vibe === vibe);
+      if (vibeExpl?.matched) {
+        candidates.push({
+          ...r,
+          vibeMatch: Math.min(99, Math.round(
+            50 + (parseFloat(r.rating) - 4.0) * 15 + (r.trendingScore || 0) * 0.2
+          )),
+          matchReasons: vibeExpl.reasons,
+        });
+      }
+    }
+
+    candidates.sort((a, b) => b.vibeMatch - a.vibeMatch);
+    return candidates.slice(0, limit);
   }
 }
 

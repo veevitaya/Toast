@@ -1566,7 +1566,7 @@ export async function registerRoutes(
 
   app.post("/api/restaurants/by-vibe", async (req, res) => {
     try {
-      const { vibe, limit = 20, debug = false } = req.body;
+      const { vibe, limit = 20 } = req.body;
       if (!vibe) return res.status(400).json({ message: "vibe is required" });
 
       if (vibe === "popular") {
@@ -1599,30 +1599,8 @@ export async function registerRoutes(
         return res.json(budget);
       }
 
-      const vibeRestaurants = await storage.getRestaurantsByVibe(vibe);
-
-      if (debug) {
-        const { autoAssignVibesWithExplanation } = await import("@shared/vibeConfig");
-        const results = vibeRestaurants.slice(0, limit).map(r => {
-          const explanations = autoAssignVibesWithExplanation(r);
-          const vibeExplanation = explanations.find(e => e.vibe === vibe);
-          return {
-            ...r,
-            vibeMatch: Math.min(99, Math.round(50 + (parseFloat(r.rating) - 4.0) * 15 + (r.trendingScore || 0) * 0.2)),
-            _debug: {
-              matchReasons: vibeExplanation?.reasons || [],
-              allVibes: explanations.filter(e => e.matched).map(e => e.vibe),
-            },
-          };
-        });
-        return res.json(results);
-      }
-
-      const results = vibeRestaurants.slice(0, limit).map(r => ({
-        ...r,
-        vibeMatch: Math.min(99, Math.round(50 + (parseFloat(r.rating) - 4.0) * 15 + (r.trendingScore || 0) * 0.2)),
-      }));
-      res.json(results);
+      const results = await storage.getRestaurantsByVibeStructured(vibe, limit);
+      res.json(results.map(({ matchReasons, ...rest }) => rest));
     } catch (err) {
       console.error("By-vibe error:", err);
       res.status(500).json({ message: "Internal server error" });
@@ -2980,16 +2958,40 @@ export async function registerRoutes(
       if (!restaurantId) return res.status(400).json({ message: "restaurantId required" });
       const restaurant = await storage.getRestaurantById(restaurantId);
       if (!restaurant) return res.status(404).json({ message: "Restaurant not found" });
-      const { autoAssignVibesWithExplanation } = await import("@shared/vibeConfig");
-      const explanations = autoAssignVibesWithExplanation(restaurant);
+      const explanations = await storage.evaluateVibesFromDB(restaurant);
       const overrides = await storage.getVibeOverrides(restaurantId);
+      const dbRules = await storage.getVibeMatchingRules();
       res.json({
         restaurant: { id: restaurant.id, name: restaurant.name, category: restaurant.category, currentVibes: restaurant.vibes },
         explanations,
         overrides,
+        dbRulesCount: dbRules.length,
       });
     } catch (err) {
       console.error("Vibe explain error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/vibes/debug-by-vibe", adminAuth, async (req: any, res) => {
+    try {
+      const { vibe, limit = 20 } = req.body;
+      if (!vibe) return res.status(400).json({ message: "vibe is required" });
+      const results = await storage.getRestaurantsByVibeStructured(vibe, limit);
+      const debugResults = await Promise.all(results.map(async r => {
+        const evaluations = await storage.evaluateVibesFromDB(r);
+        const vibeExplanation = evaluations.find(e => e.vibe === vibe);
+        return {
+          ...r,
+          _debug: {
+            matchReasons: vibeExplanation?.reasons || r.matchReasons || [],
+            allVibes: evaluations.filter(e => e.matched).map(e => e.vibe),
+          },
+        };
+      }));
+      res.json(debugResults);
+    } catch (err) {
+      console.error("Debug by-vibe error:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
