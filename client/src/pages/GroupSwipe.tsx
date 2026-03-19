@@ -426,6 +426,10 @@ export default function GroupSwipe() {
           setSessionUnavailable(true);
           return;
         }
+        if (res.status === 403) {
+          setSessionUnavailable(true);
+          return;
+        }
         if (!res.ok) {
           pollFailCount.current += 1;
           if (pollFailCount.current >= 5) setPollError(true);
@@ -433,6 +437,10 @@ export default function GroupSwipe() {
         }
         const data = await res.json();
         if (data.session?.status === "deleted") {
+          setSessionUnavailable(true);
+          return;
+        }
+        if (profile && data.members && !data.members.some((m: { lineUserId: string }) => m.lineUserId === profile.userId)) {
           setSessionUnavailable(true);
           return;
         }
