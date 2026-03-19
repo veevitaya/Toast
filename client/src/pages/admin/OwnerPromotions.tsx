@@ -210,7 +210,7 @@ export default function OwnerPromotions() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3" data-testid="section-campaign-analytics">
         {[
           { label: "Total Impressions", value: totalImpressions.toLocaleString(), trend: promotions.length > 0 ? "+24%" : "—", icon: Eye },
-          { label: "Active Campaigns", value: activePromos.length.toString(), trend: `of ${promotions.length}`, icon: Megaphone },
+          { label: "Active Promotions", value: activePromos.length.toString(), trend: `of ${promotions.length}`, icon: Megaphone },
           { label: "Total Redemptions", value: totalRedemptions.toLocaleString(), trend: promotions.length > 0 ? "+18%" : "—", icon: Target },
           { label: "Avg. CTR", value: totalImpressions > 0 ? `${((totalClicks / totalImpressions) * 100).toFixed(1)}%` : "0.0%", trend: promotions.length > 0 ? "+2.3%" : "—", icon: MousePointer },
         ].map((stat, i) => (
@@ -228,7 +228,7 @@ export default function OwnerPromotions() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-campaign-insights">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-[3px] h-4 bg-[#00B14F] rounded-full" />
-          <h3 className="text-[15px] font-semibold text-gray-800">Campaign Insights</h3>
+          <h3 className="text-[15px] font-semibold text-gray-800">Promotion Insights</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="p-3 rounded-xl border border-gray-100">

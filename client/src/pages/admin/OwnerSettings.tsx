@@ -125,6 +125,7 @@ export default function OwnerSettings() {
       return res.json();
     },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/owner/team"] });
       toast({ title: "Invitation resent", description: "A new invite email has been sent." });
     },
     onError: (err: Error) => {
