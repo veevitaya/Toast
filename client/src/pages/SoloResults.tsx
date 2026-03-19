@@ -912,8 +912,8 @@ export default function SoloResults() {
           disabled={swipeLoading}
           data-testid="button-swipe-invite"
           whileTap={{ scale: 0.95 }}
-          className="flex-1 flex flex-col items-center gap-1.5 py-3.5 rounded-2xl text-xs font-semibold text-white"
-          style={{ background: "#06C755", boxShadow: "0 4px 14px -3px rgba(6,199,85,0.35)" }}
+          className="flex-1 flex flex-col items-center gap-1.5 py-3.5 rounded-2xl bg-white border border-gray-200/80 text-xs font-medium text-muted-foreground"
+          style={{ boxShadow: "0 2px 8px -2px rgba(0,0,0,0.04)" }}
         >
           <Users className="w-4 h-4" />
           {swipeLoading ? "..." : "Swipe"}
