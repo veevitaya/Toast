@@ -1237,7 +1237,16 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(vibeOverrides);
   }
 
+  private invalidateVibeCache(): void {
+    for (const key of memCache.keys()) {
+      if (key.startsWith("vibe_structured_") || key.startsWith("vibe_rules_")) {
+        memCache.delete(key);
+      }
+    }
+  }
+
   async upsertVibeOverride(override: InsertVibeOverride): Promise<VibeOverride> {
+    this.invalidateVibeCache();
     const [result] = await db.insert(vibeOverrides)
       .values(override)
       .onConflictDoUpdate({
@@ -1249,6 +1258,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteVibeOverride(id: number): Promise<void> {
+    this.invalidateVibeCache();
     await db.delete(vibeOverrides).where(eq(vibeOverrides.id, id));
   }
 
@@ -1655,84 +1665,107 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRestaurantsByVibeStructured(vibe: string, limit: number): Promise<(Restaurant & { vibeMatch: number; matchReasons?: string[] })[]> {
-    const dbRules = await this.getVibeMatchingRules();
-    const vibeRule = dbRules.find(r => r.vibe === vibe);
-    const allRestaurants = await this.getRestaurants();
+    return cached(`vibe_structured_${vibe}_${limit}`, 60_000, async () => {
+      const dbRules = await this.getVibeMatchingRules();
+      const vibeRule = dbRules.find(r => r.vibe === vibe);
+      const allRestaurants = await this.getRestaurants();
+      const allOverrides = await this.getAllVibeOverrides();
 
-    if (dbRules.length === 0) {
-      const preTagged = allRestaurants.filter(r => r.vibes?.includes(vibe));
-      return preTagged.slice(0, limit).map(r => ({
-        ...r,
-        vibeMatch: Math.min(99, Math.round(50 + (parseFloat(r.rating) - 4.0) * 15 + (r.trendingScore || 0) * 0.2)),
-      }));
-    }
-
-    const strictCandidates: (Restaurant & { vibeMatch: number; matchReasons: string[] })[] = [];
-    for (const r of allRestaurants) {
-      const evaluations = this.evaluateRulesForRestaurant(r, dbRules);
-      const vibeExpl = evaluations.find(e => e.vibe === vibe);
-      if (vibeExpl?.matched) {
-        strictCandidates.push({
-          ...r,
-          vibeMatch: this.computeRelevanceScore(r, vibeRule || dbRules[0], vibeExpl.reasons),
-          matchReasons: vibeExpl.reasons,
-        });
+      const includeOverrides = new Set<number>();
+      const excludeOverrides = new Set<number>();
+      for (const ov of allOverrides) {
+        if (ov.vibe !== vibe) continue;
+        if (ov.action === "include") includeOverrides.add(ov.restaurantId);
+        else if (ov.action === "exclude") excludeOverrides.add(ov.restaurantId);
       }
-    }
 
-    strictCandidates.sort((a, b) => b.vibeMatch - a.vibeMatch);
+      if (dbRules.length === 0) {
+        const preTagged = allRestaurants
+          .filter(r => !excludeOverrides.has(r.id) && (r.vibes?.includes(vibe) || includeOverrides.has(r.id)));
+        return preTagged.slice(0, limit).map(r => ({
+          ...r,
+          vibeMatch: Math.min(99, Math.round(50 + (parseFloat(r.rating) - 4.0) * 15 + (r.trendingScore || 0) * 0.2)),
+        }));
+      }
 
-    const fallbackMin = vibeRule?.fallbackMinResults || 3;
-    const fallbackStrategy = vibeRule?.fallbackStrategy || "relax_keywords";
-
-    if (strictCandidates.length >= fallbackMin || fallbackStrategy === "none") {
-      return strictCandidates.slice(0, limit);
-    }
-
-    const strictIds = new Set(strictCandidates.map(c => c.id));
-    const fallbackCandidates: (Restaurant & { vibeMatch: number; matchReasons: string[] })[] = [];
-
-    if (fallbackStrategy === "relax_keywords" || fallbackStrategy === "relax_to_keyword") {
+      const strictCandidates: (Restaurant & { vibeMatch: number; matchReasons: string[] })[] = [];
       for (const r of allRestaurants) {
-        if (strictIds.has(r.id)) continue;
-        const catLower = r.category.toLowerCase();
-        const descLower = (r.description || "").toLowerCase();
-        const allKeywords = [
-          ...(vibeRule?.categoryKeywords || []),
-          ...(vibeRule?.descriptionKeywords || []),
-        ];
-        const matched = allKeywords.filter(kw => catLower.includes(kw) || descLower.includes(kw));
-        if (matched.length > 0) {
-          fallbackCandidates.push({
+        if (excludeOverrides.has(r.id)) continue;
+
+        if (includeOverrides.has(r.id)) {
+          strictCandidates.push({
             ...r,
-            vibeMatch: Math.min(70, Math.round(30 + matched.length * 5 + (parseFloat(r.rating) - 4.0) * 8)),
-            matchReasons: [`fallback: keyword match (${matched.join(", ")})`],
+            vibeMatch: 95,
+            matchReasons: ["manual override: included by admin"],
+          });
+          continue;
+        }
+
+        const evaluations = this.evaluateRulesForRestaurant(r, dbRules);
+        const vibeExpl = evaluations.find(e => e.vibe === vibe);
+        if (vibeExpl?.matched) {
+          strictCandidates.push({
+            ...r,
+            vibeMatch: this.computeRelevanceScore(r, vibeRule || dbRules[0], vibeExpl.reasons),
+            matchReasons: vibeExpl.reasons,
           });
         }
       }
-    } else if (fallbackStrategy === "relax_price" && vibeRule?.priceLevelMin) {
-      const relaxedMin = Math.max(1, vibeRule.priceLevelMin - 1);
-      for (const r of allRestaurants) {
-        if (strictIds.has(r.id)) continue;
-        if (r.priceLevel >= relaxedMin) {
+
+      strictCandidates.sort((a, b) => b.vibeMatch - a.vibeMatch);
+
+      const fallbackMin = vibeRule?.fallbackMinResults || 3;
+      const fallbackStrategy = vibeRule?.fallbackStrategy || "relax_keywords";
+
+      if (strictCandidates.length >= fallbackMin || fallbackStrategy === "none") {
+        return strictCandidates.slice(0, limit);
+      }
+
+      const strictIds = new Set(strictCandidates.map(c => c.id));
+      const fallbackCandidates: (Restaurant & { vibeMatch: number; matchReasons: string[] })[] = [];
+
+      if (fallbackStrategy === "relax_keywords" || fallbackStrategy === "relax_to_keyword") {
+        for (const r of allRestaurants) {
+          if (strictIds.has(r.id) || excludeOverrides.has(r.id)) continue;
           const catLower = r.category.toLowerCase();
           const descLower = (r.description || "").toLowerCase();
-          const allKw = [...(vibeRule.categoryKeywords || []), ...(vibeRule.descriptionKeywords || [])];
-          const matched = allKw.filter(kw => catLower.includes(kw) || descLower.includes(kw));
+          const allKeywords = [
+            ...(vibeRule?.categoryKeywords || []),
+            ...(vibeRule?.descriptionKeywords || []),
+          ];
+          const matched = allKeywords.filter(kw => catLower.includes(kw) || descLower.includes(kw));
           if (matched.length > 0) {
             fallbackCandidates.push({
               ...r,
-              vibeMatch: Math.min(65, Math.round(25 + matched.length * 5 + (parseFloat(r.rating) - 4.0) * 8)),
-              matchReasons: [`fallback: relaxed price (min ${relaxedMin}), keyword match (${matched.join(", ")})`],
+              vibeMatch: Math.min(70, Math.round(30 + matched.length * 5 + (parseFloat(r.rating) - 4.0) * 8)),
+              matchReasons: [`fallback: keyword match (${matched.join(", ")})`],
             });
           }
         }
+      } else if (fallbackStrategy === "relax_price" && vibeRule?.priceLevelMin) {
+        const relaxedMin = Math.max(1, vibeRule.priceLevelMin - 1);
+        for (const r of allRestaurants) {
+          if (strictIds.has(r.id) || excludeOverrides.has(r.id)) continue;
+          if (r.priceLevel >= relaxedMin) {
+            const catLower = r.category.toLowerCase();
+            const descLower = (r.description || "").toLowerCase();
+            const allKw = [...(vibeRule.categoryKeywords || []), ...(vibeRule.descriptionKeywords || [])];
+            const matched = allKw.filter(kw => catLower.includes(kw) || descLower.includes(kw));
+            if (matched.length > 0) {
+              fallbackCandidates.push({
+                ...r,
+                vibeMatch: Math.min(65, Math.round(25 + matched.length * 5 + (parseFloat(r.rating) - 4.0) * 8)),
+                matchReasons: [`fallback: relaxed price (min ${relaxedMin}), keyword match (${matched.join(", ")})`],
+              });
+            }
+          }
+        }
       }
-    }
 
-    fallbackCandidates.sort((a, b) => b.vibeMatch - a.vibeMatch);
-    const combined = [...strictCandidates, ...fallbackCandidates];
-    return combined.slice(0, limit);
+      fallbackCandidates.sort((a, b) => b.vibeMatch - a.vibeMatch);
+      const combined = [...strictCandidates, ...fallbackCandidates];
+      return combined.slice(0, limit);
+    });
   }
 }
 
