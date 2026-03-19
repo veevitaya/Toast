@@ -214,6 +214,7 @@ export interface IStorage {
   createRestaurantPromotion(promo: InsertRestaurantPromotion): Promise<RestaurantPromotion>;
   getRestaurantPromotionsByOwner(ownerId: number): Promise<RestaurantPromotion[]>;
   getRestaurantPromotionById(id: number): Promise<RestaurantPromotion | undefined>;
+  getAllActivePromotions(): Promise<RestaurantPromotion[]>;
   updateRestaurantPromotion(id: number, updates: Partial<InsertRestaurantPromotion>): Promise<RestaurantPromotion | undefined>;
   deleteRestaurantPromotion(id: number): Promise<void>;
   getActivePromotionsByRestaurant(restaurantId: number): Promise<RestaurantPromotion[]>;
@@ -1130,6 +1131,12 @@ export class DatabaseStorage implements IStorage {
         eq(restaurantPromotions.restaurantId, restaurantId),
         eq(restaurantPromotions.status, "active"),
       ))
+      .orderBy(desc(restaurantPromotions.id));
+  }
+
+  async getAllActivePromotions(): Promise<RestaurantPromotion[]> {
+    return await db.select().from(restaurantPromotions)
+      .where(eq(restaurantPromotions.status, "active"))
       .orderBy(desc(restaurantPromotions.id));
   }
 

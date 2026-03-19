@@ -1667,6 +1667,36 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/promotions/active", async (req, res) => {
+    try {
+      const promotions = await storage.getAllActivePromotions();
+      const enriched = await Promise.all(promotions.map(async (p) => {
+        const restaurant = await storage.getRestaurantById(p.restaurantId);
+        return {
+          ...p,
+          restaurantName: restaurant?.name || "Restaurant",
+          restaurantImage: restaurant?.imageUrl || "",
+        };
+      }));
+      res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=120");
+      res.json(enriched);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/promotions/restaurant/:restaurantId", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      if (isNaN(restaurantId)) return res.status(400).json({ message: "Invalid restaurant ID" });
+      const promotions = await storage.getActivePromotionsByRestaurant(restaurantId);
+      res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=120");
+      res.json(promotions);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get(api.restaurants.list.path, async (req, res) => {
     try {
       const input = api.restaurants.list.input ? api.restaurants.list.input.parse(req.query) : {};
