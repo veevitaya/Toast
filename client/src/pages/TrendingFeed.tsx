@@ -562,11 +562,12 @@ export default function TrendingFeed() {
   const { toast } = useToast();
   const { profile } = useLineProfile();
   const containerRef = useRef<HTMLDivElement>(null);
-  const { isSaved: isServerSaved, saveToMine: serverSave, unsave: serverUnsave } = useSavedRestaurants();
+  const { isSaved: isServerSaved, saveToMine: serverSaveToMine, saveToPartner: serverSaveToPartner, unsave: serverUnsave } = useSavedRestaurants();
   const [savedPosts, setSavedPosts] = useState<Set<number>>(new Set(getSavedPosts()));
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [activeIndex, setActiveIndex] = useState(0);
   const [headerBrightness, setHeaderBrightness] = useState<Record<number, boolean>>({});
+  const [savePickerPostId, setSavePickerPostId] = useState<number | null>(null);
   const headerIsDark = headerBrightness[activeIndex] ?? true;
 
   const deepLinkId = new URLSearchParams(window.location.search).get("id");
@@ -611,23 +612,40 @@ export default function TrendingFeed() {
   }, [activeIndex]);
 
   const handleSave = useCallback((postId: number) => {
-    const nowSaved = toggleSavedPost(postId);
+    if (savedPosts.has(postId)) {
+      const nowSaved = toggleSavedPost(postId);
+      setSavedPosts((prev) => {
+        const next = new Set(prev);
+        next.delete(postId);
+        return next;
+      });
+      serverUnsave(postId);
+      toast({ title: "Removed from saved" });
+    } else {
+      setSavePickerPostId(postId);
+    }
+  }, [savedPosts, serverUnsave, toast]);
+
+  const confirmSave = useCallback((bucket: "mine" | "partner") => {
+    if (savePickerPostId === null) return;
+    const postId = savePickerPostId;
+    toggleSavedPost(postId);
     setSavedPosts((prev) => {
       const next = new Set(prev);
-      if (nowSaved) next.add(postId);
-      else next.delete(postId);
+      next.add(postId);
       return next;
     });
-    if (nowSaved) {
-      serverSave(postId);
+    if (bucket === "mine") {
+      serverSaveToMine(postId);
     } else {
-      serverUnsave(postId);
+      serverSaveToPartner(postId);
     }
+    setSavePickerPostId(null);
     toast({
-      title: nowSaved ? "Saved for later!" : "Removed from saved",
-      description: nowSaved ? "You can find this in your saved items" : "",
+      title: bucket === "mine" ? "Saved to My Saves!" : "Saved to Partner list!",
+      description: "You can find this in your saved items",
     });
-  }, [toast, serverSave, serverUnsave]);
+  }, [savePickerPostId, serverSaveToMine, serverSaveToPartner, toast]);
 
   const handleLike = useCallback((postId: number) => {
     setLikedPosts((prev) => {
@@ -786,6 +804,63 @@ export default function TrendingFeed() {
           />
         ))}
       </div>
+
+      <AnimatePresence>
+        {savePickerPostId !== null && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 z-[60]"
+              onClick={() => setSavePickerPostId(null)}
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-[61] bg-white dark:bg-zinc-900 rounded-t-3xl px-5 pt-5 pb-8 shadow-2xl"
+              data-testid="save-picker-sheet"
+            >
+              <div className="w-10 h-1 bg-gray-300 dark:bg-zinc-600 rounded-full mx-auto mb-4" />
+              <h3 className="text-[17px] font-bold text-center mb-1 text-foreground">Save to which list?</h3>
+              <p className="text-[13px] text-muted-foreground text-center mb-5">Choose where to save this restaurant</p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => confirmSave("mine")}
+                  className="flex items-center gap-3 p-4 rounded-2xl bg-gray-50 dark:bg-zinc-800 active:scale-[0.98] transition-transform"
+                  data-testid="save-to-mine"
+                >
+                  <span className="text-2xl">❤️</span>
+                  <div className="text-left">
+                    <div className="text-[15px] font-semibold text-foreground">My Saves</div>
+                    <div className="text-[12px] text-muted-foreground">Your personal saved list</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => confirmSave("partner")}
+                  className="flex items-center gap-3 p-4 rounded-2xl bg-gray-50 dark:bg-zinc-800 active:scale-[0.98] transition-transform"
+                  data-testid="save-to-partner"
+                >
+                  <span className="text-2xl">💕</span>
+                  <div className="text-left">
+                    <div className="text-[15px] font-semibold text-foreground">With Partner</div>
+                    <div className="text-[12px] text-muted-foreground">Shared list with your partner</div>
+                  </div>
+                </button>
+              </div>
+              <button
+                onClick={() => setSavePickerPostId(null)}
+                className="w-full mt-4 py-3 text-[14px] font-medium text-muted-foreground"
+                data-testid="save-picker-cancel"
+              >
+                Cancel
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <BottomNav />
     </motion.div>
