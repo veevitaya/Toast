@@ -5,10 +5,12 @@ import { useLocation } from "wouter";
 import {
   Sparkles, ArrowRight, X, ChevronRight, ChevronDown, RotateCcw, Zap,
   MapPin, Star, Check, TrendingUp, Clock, Heart, Brain,
-  Footprints, Car, Globe,
+  Footprints, Car, Globe, Layers,
 } from "lucide-react";
 import { useLineProfile } from "@/lib/useLineProfile";
+import { sendGroupInviteNoRedirect } from "@/lib/liff";
 import { trackDecisionEvent } from "@/lib/decisionEvents";
+import { useToast } from "@/hooks/use-toast";
 import { useBootstrapSession, type BootstrapPayload } from "@/hooks/useBootstrapSession";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 
@@ -549,6 +551,85 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
     }
   }, [decisionCraving, decisionAvoid, decisionDistance, fetchRecs]);
 
+  const { toast } = useToast();
+  const [swipeLoading, setSwipeLoading] = useState(false);
+
+  const handleSwipeInvite = useCallback(async () => {
+    const userId = userProfile?.userId;
+    const displayName = userProfile?.displayName || "Toast Lover";
+    const pictureUrl = userProfile?.pictureUrl || "";
+
+    if (!userId || userId.startsWith("guest_")) {
+      toast({ title: "Log in with LINE", description: "Connect with LINE to start a group swipe session" });
+      return;
+    }
+
+    setSwipeLoading(true);
+    try {
+      let latitude: string | undefined;
+      let longitude: string | undefined;
+      try {
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 3000 })
+        );
+        latitude = pos.coords.latitude.toString();
+        longitude = pos.coords.longitude.toString();
+      } catch {}
+
+      const sourceData = JSON.stringify({
+        source: "toast_decides",
+        craving: decisionCraving,
+        distance: decisionDistance,
+        avoid: decisionAvoid,
+        results: decisionResults.length > 0
+          ? decisionResults.map(r => ({ id: r.id, name: r.name, category: r.category, rating: r.rating, imageUrl: r.imageUrl, address: r.address, priceLevel: r.priceLevel }))
+          : recs.slice(0, 5).map(r => ({ id: r.id, name: r.name, category: r.category, rating: r.rating, imageUrl: r.imageUrl, address: r.address, priceLevel: r.priceLevel })),
+      });
+
+      const createRes = await fetchWithTimeout("/api/group/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hostLineUserId: userId,
+          hostDisplayName: displayName,
+          hostPictureUrl: pictureUrl,
+          sessionType: "toast_decides",
+          sourceData,
+          latitude,
+          longitude,
+        }),
+      });
+
+      if (!createRes.ok) throw new Error("Failed to create session");
+      const createdSession = await createRes.json();
+      const sessionCode = createdSession.sessionCode;
+
+      try {
+        const shareResult = await sendGroupInviteNoRedirect(sessionCode);
+        toast({
+          title: "Group swipe session created!",
+          description: shareResult.shared ? "Invite sent — heading to waiting room" : "Heading to waiting room",
+        });
+      } catch {
+        toast({
+          title: "Group swipe session created!",
+          description: "Heading to waiting room",
+        });
+      }
+
+      sessionStorage.setItem("toast_group_host_session", sessionCode);
+      navigate(`/group/waiting?session=${sessionCode}`);
+    } catch {
+      toast({
+        title: "Couldn't create session",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setSwipeLoading(false);
+    }
+  }, [userProfile, decisionCraving, decisionDistance, decisionAvoid, decisionResults, recs, navigate, toast]);
+
   const openDecisionFlow = useCallback(() => {
     setDecisionStep("mood");
     setDecisionCraving(null);
@@ -793,6 +874,8 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
             recs={resultsRecs}
             onClose={() => setUIState("home")}
             onRefineAgain={() => { onRefineToggle?.(true); setUIState("refine_open"); }}
+            onSwipeInvite={handleSwipeInvite}
+            swipeLoading={swipeLoading}
           />
         )}
       </AnimatePresence>
@@ -819,6 +902,8 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
             onSubmit={handleDecisionSubmit}
             onClose={() => setUIState("home")}
             onNavigate={navigate}
+            onSwipeInvite={handleSwipeInvite}
+            swipeLoading={swipeLoading}
           />
         )}
       </AnimatePresence>
@@ -1092,9 +1177,11 @@ interface ResultsScreenProps {
   recs: PersonalizedRec[];
   onClose: () => void;
   onRefineAgain: () => void;
+  onSwipeInvite: () => void;
+  swipeLoading: boolean;
 }
 
-function ResultsScreen({ recs, onClose, onRefineAgain }: ResultsScreenProps) {
+function ResultsScreen({ recs, onClose, onRefineAgain, onSwipeInvite, swipeLoading }: ResultsScreenProps) {
   const displayRecs = recs.length > 0 ? recs : FALLBACK_RECOMMENDATIONS;
   const mealPeriod = useMemo(getMealPeriod, []);
 
@@ -1157,8 +1244,28 @@ function ResultsScreen({ recs, onClose, onRefineAgain }: ResultsScreenProps) {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="mt-5 mb-2"
+          >
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={onSwipeInvite}
+              disabled={swipeLoading}
+              className={`w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-opacity ${
+                swipeLoading ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-[#06C755] text-white"
+              }`}
+              data-testid="button-results-swipe-invite"
+            >
+              <Layers className="w-4 h-4" />
+              {swipeLoading ? "Creating session..." : "Swipe Together via LINE"}
+            </motion.button>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="mt-5 mb-4 text-center"
+            className="mb-4 text-center"
           >
             <p className="text-[11px] text-muted-foreground mb-3">
               Not quite right? Refine your preferences
@@ -1192,12 +1299,15 @@ interface DecisionFlowProps {
   onSubmit: () => void;
   onClose: () => void;
   onNavigate: (path: string) => void;
+  onSwipeInvite: () => void;
+  swipeLoading: boolean;
 }
 
 function DecisionFlow({
   step, onStepChange, craving, onCravingSelect,
   distance, onDistanceChange, avoid, onAvoidToggle,
   results, loading, onSubmit, onClose, onNavigate,
+  onSwipeInvite, swipeLoading,
 }: DecisionFlowProps) {
   const steps: DecisionStep[] = ["mood", "distance", "avoid", "results"];
   const currentIdx = steps.indexOf(step);
@@ -1373,20 +1483,53 @@ function DecisionFlow({
           </AnimatePresence>
         </div>
 
-        {step !== "results" && (
+        {step !== "results" ? (
+          <div className="px-5 py-4 border-t border-gray-100">
+            <div className="flex gap-2">
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={goNext}
+                disabled={step === "mood" && !craving}
+                className={`flex-1 h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-opacity ${
+                  step === "mood" && !craving
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-[#FFCC02] text-foreground"
+                }`}
+                data-testid="button-decision-next"
+              >
+                {step === "avoid" ? "Show my picks" : "Next"} <ArrowRight className="w-4 h-4" />
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={onSwipeInvite}
+                disabled={swipeLoading || (step === "mood" && !craving)}
+                className={`h-12 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-opacity ${
+                  swipeLoading || (step === "mood" && !craving)
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-[#06C755] text-white"
+                }`}
+                data-testid="button-decision-swipe"
+              >
+                <Layers className="w-4 h-4" />
+                {swipeLoading ? "..." : "Swipe"}
+              </motion.button>
+            </div>
+          </div>
+        ) : (
           <div className="px-5 py-4 border-t border-gray-100">
             <motion.button
               whileTap={{ scale: 0.96 }}
-              onClick={goNext}
-              disabled={step === "mood" && !craving}
+              onClick={onSwipeInvite}
+              disabled={swipeLoading}
               className={`w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-opacity ${
-                step === "mood" && !craving
+                swipeLoading
                   ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  : "bg-[#FFCC02] text-foreground"
+                  : "bg-[#06C755] text-white"
               }`}
-              data-testid="button-decision-next"
+              data-testid="button-results-swipe"
             >
-              {step === "avoid" ? "Show my picks" : "Next"} <ArrowRight className="w-4 h-4" />
+              <Layers className="w-4 h-4" />
+              {swipeLoading ? "Creating session..." : "Swipe Together via LINE"}
             </motion.button>
           </div>
         )}
