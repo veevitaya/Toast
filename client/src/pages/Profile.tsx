@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useLineProfile } from "@/hooks/use-line-profile";
-import { sendGroupInvite } from "@/lib/liff";
 import { BottomNav } from "@/components/BottomNav";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { ChevronRight, UserPlus, Unlink, LogIn, LogOut, X, Store, User, Star, TrendingUp, Image, Sparkles, Plus, Check, Crown, Eye, ExternalLink, MapPin, Clock, BarChart3, ArrowUpRight, ArrowDownRight, Utensils, Zap, Calendar, Megaphone, Tag, Percent, Trash2, Send, Users, Target, Search, Shield, AlertTriangle, Upload, FileText, Building2, Phone, Mail, ChevronDown, ShieldCheck, Globe, Pencil } from "lucide-react";
@@ -357,9 +356,6 @@ export default function Profile() {
     updateProfile({ partnerName: "", partnerPictureUrl: "", partnerLinked: false });
   };
 
-  const invitePartnerViaLine = async () => {
-    await sendGroupInvite("partner-link");
-  };
 
   const displayName = localProfile.displayName || lineProfile?.displayName || "Toast Lover";
   const pictureUrl = localProfile.pictureUrl || lineProfile?.pictureUrl || "";
@@ -717,7 +713,6 @@ export default function Profile() {
 
                   <PartnerRow
                     profile={localProfile}
-                    onInvite={invitePartnerViaLine}
                     onManualAdd={() => setShowPartnerModal(true)}
                     onUnlink={unlinkPartner}
                     t={t}
@@ -3489,9 +3484,8 @@ function StatsRow({ t }: { t: (key: string, params?: Record<string, string | num
   );
 }
 
-function PartnerRow({ profile, onInvite, onManualAdd, onUnlink, t, lineUserId }: {
+function PartnerRow({ profile, onManualAdd, onUnlink, t, lineUserId }: {
   profile: LocalProfile;
-  onInvite: () => void;
   onManualAdd: () => void;
   onUnlink: () => void;
   t: (key: string, params?: Record<string, string | number>) => string;
@@ -3546,7 +3540,7 @@ function PartnerRow({ profile, onInvite, onManualAdd, onUnlink, t, lineUserId }:
 
   const handleInvitePartner = async () => {
     if (!lineUserId) {
-      onInvite();
+      onManualAdd();
       return;
     }
     setInviting(true);
@@ -3819,7 +3813,7 @@ function PartnerRow({ profile, onInvite, onManualAdd, onUnlink, t, lineUserId }:
                         data-testid="button-invite-partner-line"
                       >
                         <UserPlus className="w-4 h-4" />
-                        {inviting ? "Creating..." : t("common.invite")}
+                        {inviting ? "Creating..." : "Connect via LINE"}
                       </button>
                       <button
                         onClick={onManualAdd}
