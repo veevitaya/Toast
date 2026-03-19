@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
-import { useSessions, addSession, removeSession, type ActiveSession } from "@/lib/sessionStore";
+import { useSessions, addSession, updateSession, removeSession, type ActiveSession } from "@/lib/sessionStore";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { fetchWithTimeout } from "@/lib/queryClient";
 
@@ -119,20 +119,27 @@ export function SessionBar() {
       const data = await res.json();
       if (data.session) {
         const { session: s, members } = data;
-        const existing = sessions.find(ss => ss.id === s.sessionCode);
-        if (!existing) {
-          const route = s.status === "completed"
+        const route = s.status === "completed"
+          ? `/group/swipe?session=${s.sessionCode}`
+          : s.status === "swiping"
             ? `/group/swipe?session=${s.sessionCode}`
-            : s.status === "swiping"
-              ? `/group/swipe?session=${s.sessionCode}`
-              : `/group/waiting?session=${s.sessionCode}`;
-          const sessionStatus = s.status === "completed" ? "completed" as const : undefined;
-          const label = s.status === "completed"
-            ? "View Results"
-            : s.status === "swiping"
-              ? "Continue Group Session"
-              : "Rejoin Session";
-          const locationSuffix = s.locationName ? ` · ${s.locationName}` : "";
+            : `/group/waiting?session=${s.sessionCode}`;
+        const sessionStatus = s.status === "completed" ? "completed" as const : undefined;
+        const label = s.status === "completed"
+          ? "View Results"
+          : s.status === "swiping"
+            ? "Continue Group Session"
+            : "Rejoin Session";
+        const locationSuffix = s.locationName ? ` · ${s.locationName}` : "";
+        const existing = sessions.find(ss => ss.id === s.sessionCode);
+        if (existing) {
+          updateSession(s.sessionCode, {
+            label: `${label}${locationSuffix}`,
+            route,
+            memberCount: s.memberCount,
+            status: sessionStatus,
+          });
+        } else {
           addSession({
             id: s.sessionCode,
             type: "group",
@@ -148,6 +155,17 @@ export function SessionBar() {
             status: sessionStatus,
           });
         }
+        sessions.forEach(localSession => {
+          if (localSession.id !== s.sessionCode && localSession.type === "group") {
+            removeSession(localSession.id);
+          }
+        });
+      } else {
+        sessions.forEach(localSession => {
+          if (localSession.type === "group") {
+            removeSession(localSession.id);
+          }
+        });
       }
     } catch {}
   }, [profile?.userId, serverChecked, sessions]);

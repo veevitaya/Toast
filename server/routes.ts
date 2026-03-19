@@ -2,6 +2,7 @@ import type { Express } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
+import type { GroupSessionMember } from "@shared/schema";
 import { z } from "zod";
 import { createHash, randomBytes } from "crypto";
 import { classifyRestaurant, VERIFICATION_CHECKLIST_TEMPLATE } from "./classifier";
@@ -3116,7 +3117,7 @@ export async function registerRoutes(
       logSessionEvent(code, "USER_JOINED", userId, { displayName });
 
       const members = await storage.getGroupMembers(code);
-      const { latitude, longitude, ...safeMember } = member as any;
+      const { latitude: _lat, longitude: _lng, ...safeMember } = member;
       res.status(201).json({ session, members: sanitizeMembers(members), newMember: safeMember });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -3126,7 +3127,7 @@ export async function registerRoutes(
     }
   });
 
-  function sanitizeMembers(members: any[]) {
+  function sanitizeMembers(members: GroupSessionMember[]) {
     return members.map(({ latitude, longitude, ...safe }) => safe);
   }
 
@@ -3145,7 +3146,7 @@ export async function registerRoutes(
         return res.status(410).json({ message: session.status === "deleted" ? "Session was removed" : "Session has expired" });
       }
       const sessionAge = Date.now() - new Date(session.createdAt).getTime();
-      if (sessionAge > 24 * 60 * 60 * 1000) {
+      if (sessionAge > 24 * 60 * 60 * 1000 && session.status !== "completed") {
         return res.status(410).json({ message: "Session has expired" });
       }
       const members = await storage.getGroupMembers(code);
