@@ -562,7 +562,7 @@ export default function TrendingFeed() {
   const { toast } = useToast();
   const { profile } = useLineProfile();
   const containerRef = useRef<HTMLDivElement>(null);
-  const { isSaved: isServerSaved, save: serverSave, unsave: serverUnsave } = useSavedRestaurants();
+  const { isSaved: isServerSaved, saveToMine: serverSave, unsave: serverUnsave } = useSavedRestaurants();
   const [savedPosts, setSavedPosts] = useState<Set<number>>(new Set(getSavedPosts()));
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [activeIndex, setActiveIndex] = useState(0);
@@ -619,7 +619,7 @@ export default function TrendingFeed() {
       return next;
     });
     if (nowSaved) {
-      serverSave(postId, "mine");
+      serverSave(postId);
     } else {
       serverUnsave(postId);
     }
