@@ -133,6 +133,7 @@ export interface IStorage {
   createRestaurantOwner(owner: InsertRestaurantOwner): Promise<RestaurantOwner>;
   getRestaurantOwnerByEmail(email: string): Promise<RestaurantOwner | undefined>;
   getRestaurantOwnerById(id: number): Promise<RestaurantOwner | undefined>;
+  getRestaurantOwnerByRestaurantId(restaurantId: number): Promise<RestaurantOwner | undefined>;
   getAllRestaurantOwners(): Promise<RestaurantOwner[]>;
   updateRestaurantOwner(id: number, updates: Partial<InsertRestaurantOwner>): Promise<RestaurantOwner | undefined>;
 
@@ -497,6 +498,11 @@ export class DatabaseStorage implements IStorage {
 
   async getRestaurantOwnerById(id: number): Promise<RestaurantOwner | undefined> {
     const [owner] = await db.select().from(restaurantOwners).where(eq(restaurantOwners.id, id)).limit(1);
+    return owner;
+  }
+
+  async getRestaurantOwnerByRestaurantId(restaurantId: number): Promise<RestaurantOwner | undefined> {
+    const [owner] = await db.select().from(restaurantOwners).where(eq(restaurantOwners.restaurantId, restaurantId)).limit(1);
     return owner;
   }
 

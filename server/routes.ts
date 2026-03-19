@@ -1685,6 +1685,22 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/campaigns/restaurant/:restaurantId/active", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      if (isNaN(restaurantId)) return res.status(400).json({ message: "Invalid restaurant ID" });
+      const owner = await storage.getRestaurantOwnerByRestaurantId(restaurantId);
+      if (!owner) return res.json([]);
+      const ownerKey = `owner_${owner.id}`;
+      const allCampaigns = await storage.getCampaignsByOwner(ownerKey);
+      const active = allCampaigns.filter(c => c.status === "active");
+      res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=120");
+      res.json(active);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get("/api/promotions/restaurant/:restaurantId", async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
@@ -2040,10 +2056,10 @@ export async function registerRoutes(
     return ownerLevel >= requiredLevel;
   }
 
-  // Campaign routes (admin-only — Toast Campaigns / Ads)
+  // Campaign routes (superadmin-only — Toast Campaigns / Ads)
   app.post("/api/campaigns", adminAuth, async (req: any, res) => {
     try {
-      if (!requirePermission(req, res, "manage_campaigns")) return;
+      if (req.adminUser?.role !== "superadmin") return res.status(403).json({ message: "Superadmin only" });
       const schema = z.object({
         restaurantOwnerKey: z.string().min(1),
         title: z.string().min(1),
@@ -2072,7 +2088,7 @@ export async function registerRoutes(
 
   app.get("/api/campaigns", adminAuth, async (req: any, res) => {
     try {
-      if (!requirePermission(req, res, "manage_campaigns")) return;
+      if (req.adminUser?.role !== "superadmin") return res.status(403).json({ message: "Superadmin only" });
       const all = await storage.getCampaigns();
       res.json(all);
     } catch (err) {
@@ -2082,7 +2098,7 @@ export async function registerRoutes(
 
   app.get("/api/campaigns/owner/:ownerKey", adminAuth, async (req: any, res) => {
     try {
-      if (!requirePermission(req, res, "manage_campaigns")) return;
+      if (req.adminUser?.role !== "superadmin") return res.status(403).json({ message: "Superadmin only" });
       const list = await storage.getCampaignsByOwner(req.params.ownerKey);
       res.json(list);
     } catch (err) {
@@ -2092,7 +2108,7 @@ export async function registerRoutes(
 
   app.patch("/api/campaigns/:id", adminAuth, async (req: any, res) => {
     try {
-      if (!requirePermission(req, res, "manage_campaigns")) return;
+      if (req.adminUser?.role !== "superadmin") return res.status(403).json({ message: "Superadmin only" });
       const ip = req.ip || "unknown";
       if (rateLimit(`campaign-update:${ip}`, 10, 60000)) {
         return res.status(429).json({ message: "Too many requests" });
@@ -2116,7 +2132,7 @@ export async function registerRoutes(
 
   app.delete("/api/campaigns/:id", adminAuth, async (req: any, res) => {
     try {
-      if (!requirePermission(req, res, "manage_campaigns")) return;
+      if (req.adminUser?.role !== "superadmin") return res.status(403).json({ message: "Superadmin only" });
       const id = parseInt(req.params.id);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
       const campaign = await storage.getCampaignById(id);

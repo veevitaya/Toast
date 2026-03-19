@@ -43,6 +43,8 @@ export default function OwnerSettings() {
   const [activeTab, setActiveTab] = useState<"profile" | "notifications" | "subscription" | "payments" | "team">("profile");
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteForm, setInviteForm] = useState({ email: "", displayName: "", role: "staff" as "manager" | "staff" });
+  const [editingMemberId, setEditingMemberId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({ displayName: "", role: "staff" as "manager" | "staff" });
 
   const { data: dashData, isLoading } = useQuery<any>({
     queryKey: ["/api/admin/owner/dashboard"],
@@ -874,64 +876,121 @@ export default function OwnerSettings() {
               ) : teamMembers.map((member) => {
                 const isExpired = member.status === "pending" && member.inviteExpiresAt && new Date(member.inviteExpiresAt) < new Date();
                 const displayStatus = isExpired ? "Expired" : member.status === "active" ? "Active" : member.status === "deactivated" ? "Deactivated" : "Invited";
+                const isEditing = editingMemberId === member.id;
                 return (
-                <div key={member.id} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100" data-testid={`team-member-${member.id}`}>
-                  <div className="w-10 h-10 rounded-full bg-[#00B14F]/10 flex items-center justify-center text-sm font-bold text-[#00B14F]">
-                    {member.displayName.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800">{member.displayName}</p>
-                    <p className="text-xs text-gray-400">{member.email}</p>
-                  </div>
-                  <span className={`text-[10px] font-medium rounded-full px-2 py-0.5 ${
-                    member.role === "manager" ? "bg-[var(--admin-blue-10)] text-[var(--admin-blue)]" : "bg-gray-100 text-gray-500"
-                  }`}>{member.role}</span>
-                  <span className={`text-[10px] font-medium rounded-full px-2 py-0.5 ${
-                    displayStatus === "Active" ? "bg-[#00B14F]/10 text-[#00B14F]" :
-                    displayStatus === "Deactivated" ? "bg-red-50 text-red-400" :
-                    displayStatus === "Expired" ? "bg-gray-100 text-gray-400" :
-                    "bg-amber-50 text-amber-600"
-                  }`}>{displayStatus}</span>
-                  <div className="flex items-center gap-1">
-                    {member.status === "pending" && (
+                <div key={member.id} className="p-3 rounded-xl border border-gray-100" data-testid={`team-member-${member.id}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#00B14F]/10 flex items-center justify-center text-sm font-bold text-[#00B14F]">
+                      {member.displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800">{member.displayName}</p>
+                      <p className="text-xs text-gray-400">{member.email}</p>
+                    </div>
+                    <span className={`text-[10px] font-medium rounded-full px-2 py-0.5 ${
+                      member.role === "manager" ? "bg-[var(--admin-blue-10)] text-[var(--admin-blue)]" : "bg-gray-100 text-gray-500"
+                    }`}>{member.role}</span>
+                    <span className={`text-[10px] font-medium rounded-full px-2 py-0.5 ${
+                      displayStatus === "Active" ? "bg-[#00B14F]/10 text-[#00B14F]" :
+                      displayStatus === "Deactivated" ? "bg-red-50 text-red-400" :
+                      displayStatus === "Expired" ? "bg-gray-100 text-gray-400" :
+                      "bg-amber-50 text-amber-600"
+                    }`}>{displayStatus}</span>
+                    <div className="flex items-center gap-1">
                       <button
-                        onClick={() => resendInviteMutation.mutate(member.id)}
+                        onClick={() => {
+                          if (isEditing) {
+                            setEditingMemberId(null);
+                          } else {
+                            setEditingMemberId(member.id);
+                            setEditForm({ displayName: member.displayName, role: (member.role || "staff") as "manager" | "staff" });
+                          }
+                        }}
                         className="p-1.5 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
-                        title="Resend invite"
-                        data-testid={`button-resend-${member.id}`}
+                        title="Edit"
+                        data-testid={`button-edit-${member.id}`}
                       >
-                        <RefreshCw className="w-3 h-3 text-gray-400" />
+                        <Pencil className="w-3 h-3 text-gray-400" />
                       </button>
-                    )}
-                    {member.status === "active" && (
+                      {member.status === "pending" && (
+                        <button
+                          onClick={() => resendInviteMutation.mutate(member.id)}
+                          className="p-1.5 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
+                          title="Resend invite"
+                          data-testid={`button-resend-${member.id}`}
+                        >
+                          <RefreshCw className="w-3 h-3 text-gray-400" />
+                        </button>
+                      )}
+                      {member.status === "active" && (
+                        <button
+                          onClick={() => updateTeamMutation.mutate({ id: member.id, updates: { status: "deactivated" } })}
+                          className="p-1.5 rounded-lg border border-gray-100 hover:bg-amber-50 transition-colors"
+                          title="Deactivate"
+                          data-testid={`button-deactivate-${member.id}`}
+                        >
+                          <UserMinus className="w-3 h-3 text-amber-500" />
+                        </button>
+                      )}
+                      {member.status === "deactivated" && (
+                        <button
+                          onClick={() => updateTeamMutation.mutate({ id: member.id, updates: { status: "active" } })}
+                          className="p-1.5 rounded-lg border border-gray-100 hover:bg-[#00B14F]/10 transition-colors"
+                          title="Reactivate"
+                          data-testid={`button-reactivate-${member.id}`}
+                        >
+                          <CheckCircle2 className="w-3 h-3 text-[#00B14F]" />
+                        </button>
+                      )}
                       <button
-                        onClick={() => updateTeamMutation.mutate({ id: member.id, updates: { status: "deactivated" } })}
-                        className="p-1.5 rounded-lg border border-gray-100 hover:bg-amber-50 transition-colors"
-                        title="Deactivate"
-                        data-testid={`button-deactivate-${member.id}`}
+                        onClick={() => deleteTeamMutation.mutate(member.id)}
+                        className="p-1.5 rounded-lg border border-gray-100 hover:bg-red-50 transition-colors"
+                        title="Remove"
+                        data-testid={`button-remove-${member.id}`}
                       >
-                        <UserMinus className="w-3 h-3 text-amber-500" />
+                        <Trash2 className="w-3 h-3 text-red-400" />
                       </button>
-                    )}
-                    {member.status === "deactivated" && (
-                      <button
-                        onClick={() => updateTeamMutation.mutate({ id: member.id, updates: { status: "active" } })}
-                        className="p-1.5 rounded-lg border border-gray-100 hover:bg-[#00B14F]/10 transition-colors"
-                        title="Reactivate"
-                        data-testid={`button-reactivate-${member.id}`}
-                      >
-                        <CheckCircle2 className="w-3 h-3 text-[#00B14F]" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => deleteTeamMutation.mutate(member.id)}
-                      className="p-1.5 rounded-lg border border-gray-100 hover:bg-red-50 transition-colors"
-                      title="Remove"
-                      data-testid={`button-remove-${member.id}`}
-                    >
-                      <Trash2 className="w-3 h-3 text-red-400" />
-                    </button>
+                    </div>
                   </div>
+                  {isEditing && (
+                    <div className="mt-3 pt-3 border-t border-gray-50 flex items-end gap-3" data-testid={`edit-form-${member.id}`}>
+                      <div className="flex-1">
+                        <label className="text-[10px] font-medium text-gray-400 mb-0.5 block">Name</label>
+                        <input
+                          type="text"
+                          value={editForm.displayName}
+                          onChange={(e) => setEditForm({ ...editForm, displayName: e.target.value })}
+                          className="w-full text-xs border border-gray-100 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#00B14F]/30"
+                          data-testid={`input-edit-name-${member.id}`}
+                        />
+                      </div>
+                      <div className="w-28">
+                        <label className="text-[10px] font-medium text-gray-400 mb-0.5 block">Role</label>
+                        <select
+                          value={editForm.role}
+                          onChange={(e) => setEditForm({ ...editForm, role: e.target.value as "manager" | "staff" })}
+                          className="w-full text-xs border border-gray-100 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#00B14F]/30"
+                          data-testid={`select-edit-role-${member.id}`}
+                        >
+                          <option value="staff">Staff</option>
+                          <option value="manager">Manager</option>
+                        </select>
+                      </div>
+                      <button
+                        onClick={() => {
+                          updateTeamMutation.mutate({
+                            id: member.id,
+                            updates: { displayName: editForm.displayName, role: editForm.role },
+                          });
+                          setEditingMemberId(null);
+                        }}
+                        className="bg-[#00B14F] text-white text-[10px] font-medium rounded-lg px-3 py-1.5 hover:bg-[#00B14F]/90 transition-colors"
+                        data-testid={`button-save-edit-${member.id}`}
+                      >
+                        Save
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
               })}

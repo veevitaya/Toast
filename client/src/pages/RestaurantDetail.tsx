@@ -10,7 +10,8 @@ import { BottomNav } from "@/components/BottomNav";
 import { SaveBucketPicker } from "@/components/SaveBucketPicker";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { handleImageError } from "@/lib/imageUtils";
-import { RestaurantCampaignBanner } from "@/components/CampaignBanner";
+import { RestaurantCampaignBanner, getDealLabel } from "@/components/CampaignBanner";
+import type { Campaign } from "@shared/schema";
 import noodsPhoto1 from "@assets/IMG_9279_1772025468067.jpeg";
 import noodsPhoto2 from "@assets/IMG_9280_1772025468067.jpeg";
 import noodsPhoto3 from "@assets/IMG_9281_1772025468067.jpeg";
@@ -141,6 +142,48 @@ function StarRating({ rating }: { rating: number }) {
           ★
         </span>
       ))}
+    </div>
+  );
+}
+
+function ToastSponsoredSection({ restaurantId }: { restaurantId: number }) {
+  const { data: campaigns } = useQuery<Campaign[]>({
+    queryKey: ["/api/campaigns/restaurant", restaurantId, "active"],
+    queryFn: async () => {
+      const res = await fetch(`/api/campaigns/restaurant/${restaurantId}/active`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    staleTime: 60000,
+  });
+
+  if (!campaigns || campaigns.length === 0) return null;
+
+  return (
+    <div className="mb-6" data-testid="toast-sponsored-section">
+      <h2 className="font-bold text-[15px] mb-3 flex items-center gap-2">
+        <span className="text-[13px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-bold">AD</span>
+        Sponsored by Toast
+      </h2>
+      <div className="space-y-2.5">
+        {campaigns.map((c) => (
+          <div
+            key={c.id}
+            className="flex items-center gap-3 p-3 rounded-xl border border-amber-100/60 bg-amber-50/30"
+            data-testid={`sponsored-campaign-${c.id}`}
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">{c.title}</p>
+              {c.description && (
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{c.description}</p>
+              )}
+            </div>
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold text-white bg-amber-600 flex-shrink-0">
+              {getDealLabel(c.dealType, c.dealValue || "")}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -393,6 +436,8 @@ export default function RestaurantDetail() {
         </div>
 
         <RestaurantCampaignBanner restaurantId={restaurant.id} />
+
+        <ToastSponsoredSection restaurantId={restaurant.id} />
 
         <div className="border-t border-gray-100/80 pt-5 mb-5">
           <button
