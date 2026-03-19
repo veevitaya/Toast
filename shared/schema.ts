@@ -573,3 +573,19 @@ export const partnerInvites = pgTable("partner_invites", {
 export const insertPartnerInviteSchema = createInsertSchema(partnerInvites).omit({ id: true });
 export type PartnerInvite = typeof partnerInvites.$inferSelect;
 export type InsertPartnerInvite = z.infer<typeof insertPartnerInviteSchema>;
+
+export const vibeOverrides = pgTable("vibe_overrides", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull(),
+  vibe: text("vibe").notNull(),
+  action: text("action").notNull(),
+  reason: text("reason"),
+  createdBy: text("created_by").notNull(),
+  createdAt: text("created_at").notNull(),
+}, (table) => ({
+  restaurantVibeIdx: uniqueIndex("vibe_overrides_restaurant_vibe_idx").on(table.restaurantId, table.vibe),
+}));
+
+export const insertVibeOverrideSchema = createInsertSchema(vibeOverrides).omit({ id: true });
+export type VibeOverride = typeof vibeOverrides.$inferSelect;
+export type InsertVibeOverride = z.infer<typeof insertVibeOverrideSchema>;

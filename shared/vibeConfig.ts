@@ -95,19 +95,89 @@ export const BANGKOK_DISTRICTS = [
   "Wireless",
 ] as const;
 
-const CATEGORY_RULES: { keywords: string[]; vibe: VibeTag }[] = [
-  { keywords: ["spicy", "isaan", "hot", "chili"], vibe: "spicy" },
-  { keywords: ["bar", "cocktail", "wine", "beer", "pub", "izakaya", "spirits"], vibe: "drinks" },
-  { keywords: ["salad", "vegan", "vegetarian", "organic", "poke", "healthy", "acai"], vibe: "healthy" },
-  { keywords: ["outdoor", "garden", "terrace", "riverside", "by the river"], vibe: "outdoor" },
-  { keywords: ["fine dining", "romantic", "omakase", "upscale", "kaiseki", "premium"], vibe: "date_night" },
-  { keywords: ["late night", "night market", "midnight"], vibe: "late_night" },
-  { keywords: ["dessert", "bakery", "ice cream", "kakigori", "cake", "pastry", "sweet", "honey toast"], vibe: "sweets" },
-  { keywords: ["brunch", "breakfast", "morning"], vibe: "brunch" },
-  { keywords: ["street food", "night market", "hawker", "stall", "cart"], vibe: "street_food" },
-  { keywords: ["rooftop"], vibe: "rooftop" },
-  { keywords: ["family", "buffet", "food court", "casual", "home-style", "traditional", "home cooking"], vibe: "family" },
-  { keywords: ["cafe", "coffee", "tea", "latte"], vibe: "cafe" },
+interface VibeRule {
+  vibe: VibeTag;
+  hardFilter?: boolean;
+  requiredCategoryTypes?: string[];
+  categoryKeywords?: string[];
+  descriptionKeywords?: string[];
+  excludeCategoryTypes?: string[];
+  priceLevelMax?: number;
+  priceLevelMin?: number;
+}
+
+const VIBE_RULES: VibeRule[] = [
+  {
+    vibe: "drinks",
+    hardFilter: true,
+    requiredCategoryTypes: [
+      "bar", "pub", "cocktail bar", "cocktail", "speakeasy", "wine bar",
+      "brewery", "taproom", "izakaya", "beer bar", "craft beer",
+      "whisky bar", "whiskey bar", "rum bar", "gin bar", "tiki bar",
+      "lounge", "rooftop bar", "jazz bar", "sports bar",
+    ],
+    excludeCategoryTypes: [
+      "restaurant", "cafe", "bakery", "dessert", "brunch",
+      "breakfast", "noodle", "rice", "curry", "sushi",
+      "ramen", "pizza", "burger", "steak", "seafood",
+    ],
+  },
+  {
+    vibe: "spicy",
+    categoryKeywords: ["spicy", "isaan", "chili", "hot pot"],
+    descriptionKeywords: ["spicy", "chili", "hot", "fiery", "capsicum"],
+  },
+  {
+    vibe: "healthy",
+    categoryKeywords: ["salad", "vegan", "vegetarian", "organic", "poke", "healthy", "acai", "smoothie", "juice"],
+    descriptionKeywords: ["healthy", "organic", "plant-based", "vegan", "vegetarian", "clean eating", "superfood"],
+  },
+  {
+    vibe: "outdoor",
+    categoryKeywords: ["outdoor", "garden", "terrace", "riverside", "by the river"],
+    descriptionKeywords: ["outdoor", "terrace", "garden", "open-air", "al fresco", "riverside"],
+  },
+  {
+    vibe: "date_night",
+    categoryKeywords: ["fine dining", "omakase", "kaiseki", "premium", "upscale"],
+    descriptionKeywords: ["romantic", "intimate", "fine dining", "upscale", "elegant", "premium"],
+    priceLevelMin: 3,
+  },
+  {
+    vibe: "sweets",
+    categoryKeywords: ["dessert", "bakery", "ice cream", "kakigori", "cake", "pastry", "sweet", "honey toast", "gelato", "chocolate"],
+    descriptionKeywords: ["dessert", "sweet", "pastry", "cake", "ice cream", "gelato", "chocolate", "confection"],
+  },
+  {
+    vibe: "brunch",
+    categoryKeywords: ["brunch", "breakfast", "morning", "pancake", "waffle"],
+    descriptionKeywords: ["brunch", "breakfast", "morning", "eggs benedict", "pancake", "waffle"],
+  },
+  {
+    vibe: "street_food",
+    categoryKeywords: ["street food", "night market", "hawker", "stall", "cart", "food truck"],
+    descriptionKeywords: ["street food", "night market", "roadside", "hawker", "food truck", "stall"],
+  },
+  {
+    vibe: "rooftop",
+    categoryKeywords: ["rooftop"],
+    descriptionKeywords: ["rooftop", "sky bar", "skyline", "panoramic view"],
+  },
+  {
+    vibe: "family",
+    categoryKeywords: ["family", "buffet", "food court", "casual", "home-style", "traditional", "home cooking"],
+    descriptionKeywords: ["family", "kid-friendly", "casual dining", "home-style", "home cooking", "comfort"],
+  },
+  {
+    vibe: "cafe",
+    hardFilter: true,
+    requiredCategoryTypes: [
+      "cafe", "coffee", "coffee shop", "tea house", "tea room",
+      "bakery cafe", "specialty coffee",
+    ],
+    categoryKeywords: ["cafe", "coffee", "tea"],
+    descriptionKeywords: ["cafe", "coffee", "latte", "espresso", "pour over", "drip", "brew"],
+  },
 ];
 
 const CUISINE_SPICY = ["thai", "indian", "mexican", "korean", "isaan", "northern", "southern"];
@@ -156,35 +226,138 @@ interface RestaurantLike {
   description?: string;
 }
 
+export interface VibeMatchExplanation {
+  vibe: string;
+  matched: boolean;
+  reasons: string[];
+}
+
+function tokenizeCategory(cat: string): string[] {
+  const segments = cat.split(/[·•/,]+/).map(s => s.trim().toLowerCase()).filter(Boolean);
+  const tokens: string[] = [];
+  for (const seg of segments) {
+    tokens.push(seg);
+    const words = seg.split(/\s+/);
+    tokens.push(...words);
+  }
+  return [...new Set(tokens)];
+}
+
+function matchesCategoryType(catTokens: string[], catLower: string, requiredType: string): boolean {
+  const typeLower = requiredType.toLowerCase();
+  const typeWords = typeLower.split(/\s+/);
+
+  if (typeWords.length > 1) {
+    return catLower.includes(typeLower);
+  }
+
+  return catTokens.some(token => {
+    if (token === typeLower) return true;
+    if (token.length > typeLower.length && token.endsWith(typeLower)) {
+      const prefix = token.slice(0, token.length - typeLower.length);
+      return prefix.endsWith(" ") || prefix.endsWith("-");
+    }
+    if (token.length > typeLower.length && token.startsWith(typeLower)) {
+      const suffix = token.slice(typeLower.length);
+      return suffix.startsWith(" ") || suffix.startsWith("-") || suffix.startsWith("s");
+    }
+    return false;
+  });
+}
+
 export function autoAssignVibes(r: RestaurantLike): string[] {
-  const vibes = new Set<string>();
+  return autoAssignVibesWithExplanation(r).filter(e => e.matched).map(e => e.vibe);
+}
+
+export function autoAssignVibesWithExplanation(r: RestaurantLike): VibeMatchExplanation[] {
   const catLower = r.category.toLowerCase();
   const descLower = (r.description || "").toLowerCase();
-  const combined = catLower + " " + descLower;
+  const catTokens = tokenizeCategory(r.category);
+  const results: VibeMatchExplanation[] = [];
 
-  for (const rule of CATEGORY_RULES) {
-    for (const kw of rule.keywords) {
-      if (combined.includes(kw)) {
-        vibes.add(rule.vibe);
+  for (const rule of VIBE_RULES) {
+    const entry: VibeMatchExplanation = { vibe: rule.vibe, matched: false, reasons: [] };
+
+    if (rule.hardFilter && rule.requiredCategoryTypes) {
+      const matchedType = rule.requiredCategoryTypes.find(type =>
+        matchesCategoryType(catTokens, catLower, type)
+      );
+
+      if (rule.excludeCategoryTypes && !matchedType) {
+        const isExcluded = rule.excludeCategoryTypes.some(exc =>
+          matchesCategoryType(catTokens, catLower, exc)
+        );
+        if (isExcluded) {
+          entry.reasons.push(`excluded: category contains excluded type`);
+          results.push(entry);
+          continue;
+        }
+      }
+
+      if (!matchedType) {
+        const hasKeyword = rule.categoryKeywords?.some(kw => catLower.includes(kw)) ||
+                          rule.descriptionKeywords?.some(kw => descLower.includes(kw));
+        if (hasKeyword) {
+          entry.reasons.push(`keyword match but missing required category type for hard-filter vibe`);
+        } else {
+          entry.reasons.push(`no required category type found`);
+        }
+        results.push(entry);
+        continue;
+      }
+      entry.matched = true;
+      entry.reasons.push(`category contains required type: ${matchedType}`);
+    } else {
+      if (rule.categoryKeywords) {
+        const matchedKw = rule.categoryKeywords.filter(kw => catLower.includes(kw));
+        if (matchedKw.length > 0) {
+          entry.matched = true;
+          entry.reasons.push(`category keyword: ${matchedKw.join(", ")}`);
+        }
+      }
+
+      if (rule.descriptionKeywords) {
+        const matchedKw = rule.descriptionKeywords.filter(kw => descLower.includes(kw));
+        if (matchedKw.length > 0) {
+          entry.matched = true;
+          entry.reasons.push(`description keyword: ${matchedKw.join(", ")}`);
+        }
+      }
+    }
+
+    if (rule.priceLevelMin && r.priceLevel < rule.priceLevelMin && !entry.matched) {
+      entry.reasons.push(`price level ${r.priceLevel} below minimum ${rule.priceLevelMin}`);
+    }
+
+    if (rule.priceLevelMax && r.priceLevel > rule.priceLevelMax) {
+      entry.matched = false;
+      entry.reasons.push(`price level ${r.priceLevel} above maximum ${rule.priceLevelMax}`);
+    }
+
+    results.push(entry);
+  }
+
+  const spicyEntry = results.find(e => e.vibe === "spicy");
+  if (spicyEntry) {
+    for (const token of catTokens) {
+      if (CUISINE_SPICY.some(c => token.includes(c))) {
+        spicyEntry.matched = true;
+        spicyEntry.reasons.push(`cuisine typically spicy: ${token}`);
         break;
       }
     }
   }
 
-  const cuisineParts = catLower.split(/[,·•\s]+/).map(s => s.trim());
-  for (const part of cuisineParts) {
-    if (CUISINE_SPICY.some(c => part.includes(c))) {
-      vibes.add("spicy");
-      break;
-    }
-  }
-
   if (r.priceLevel <= 2) {
-    vibes.add("budget");
+    results.push({ vibe: "budget", matched: true, reasons: [`price level ${r.priceLevel} <= 2`] });
+  } else {
+    results.push({ vibe: "budget", matched: false, reasons: [`price level ${r.priceLevel} > 2`] });
   }
 
   if (r.priceLevel <= 3) {
-    vibes.add("delivery");
+    results.push({ vibe: "delivery", matched: true, reasons: [`price level ${r.priceLevel} <= 3, delivery eligible`] });
+  } else {
+    results.push({ vibe: "delivery", matched: false, reasons: [`price level ${r.priceLevel} > 3`] });
   }
 
   if (r.operatingHours) {
@@ -193,19 +366,45 @@ export function autoAssignVibes(r: RestaurantLike): string[] {
       const openHour = parseInt(match[1]);
       const closeHour = parseInt(match[2]);
       if (closeHour >= 0 && closeHour <= 5) {
-        vibes.add("late_night");
+        results.push({ vibe: "late_night", matched: true, reasons: [`closes at ${closeHour}:xx (after midnight)`] });
       }
       if (openHour >= 6 && openHour <= 10) {
-        vibes.add("brunch");
+        const brunchEntry = results.find(e => e.vibe === "brunch");
+        if (brunchEntry) {
+          brunchEntry.matched = true;
+          brunchEntry.reasons.push(`opens at ${openHour}:xx (morning)`);
+        } else {
+          results.push({ vibe: "brunch", matched: true, reasons: [`opens at ${openHour}:xx (morning)`] });
+        }
       }
     }
   }
 
-  if (combined.includes("rooftop")) {
-    vibes.add("outdoor");
+  const rooftopEntry = results.find(e => e.vibe === "rooftop");
+  if (rooftopEntry?.matched) {
+    const outdoorEntry = results.find(e => e.vibe === "outdoor");
+    if (outdoorEntry) {
+      outdoorEntry.matched = true;
+      outdoorEntry.reasons.push("rooftop implies outdoor");
+    }
   }
 
-  return Array.from(vibes).sort();
+  const seen = new Set<string>();
+  const deduped: VibeMatchExplanation[] = [];
+  for (const entry of results) {
+    if (!seen.has(entry.vibe)) {
+      seen.add(entry.vibe);
+      deduped.push(entry);
+    } else {
+      const existing = deduped.find(e => e.vibe === entry.vibe);
+      if (existing) {
+        if (entry.matched) existing.matched = true;
+        existing.reasons.push(...entry.reasons);
+      }
+    }
+  }
+
+  return deduped.sort((a, b) => a.vibe.localeCompare(b.vibe));
 }
 
 export function autoDetectDistrict(address: string): string | null {

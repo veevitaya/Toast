@@ -87,6 +87,9 @@ import {
   type InsertOwnerTeamMember,
   type OwnerTeamInvite,
   type InsertOwnerTeamInvite,
+  vibeOverrides,
+  type VibeOverride,
+  type InsertVibeOverride,
 } from "@shared/schema";
 import { eq, desc, and, or, gte, lte, gt, inArray, count, sql } from "drizzle-orm";
 
@@ -234,6 +237,12 @@ export interface IStorage {
   getOwnerTeamInviteByToken(token: string): Promise<OwnerTeamInvite | undefined>;
   getOwnerTeamInvitesByOwner(ownerId: number): Promise<OwnerTeamInvite[]>;
   updateOwnerTeamInvite(id: number, updates: Partial<InsertOwnerTeamInvite>): Promise<OwnerTeamInvite | undefined>;
+
+  getVibeOverrides(restaurantId: number): Promise<VibeOverride[]>;
+  getAllVibeOverrides(): Promise<VibeOverride[]>;
+  upsertVibeOverride(override: InsertVibeOverride): Promise<VibeOverride>;
+  deleteVibeOverride(id: number): Promise<void>;
+  updateAllRestaurantVibes(): Promise<{ updated: number; details: { id: number; name: string; oldVibes: string[]; newVibes: string[] }[] }>;
 }
 
 const MAX_CACHE_ENTRIES = 200;
@@ -1204,6 +1213,68 @@ export class DatabaseStorage implements IStorage {
   async updateOwnerTeamInvite(id: number, updates: Partial<InsertOwnerTeamInvite>): Promise<OwnerTeamInvite | undefined> {
     const [updated] = await db.update(ownerTeamInvites).set(updates).where(eq(ownerTeamInvites.id, id)).returning();
     return updated;
+  }
+
+  async getVibeOverrides(restaurantId: number): Promise<VibeOverride[]> {
+    return await db.select().from(vibeOverrides)
+      .where(eq(vibeOverrides.restaurantId, restaurantId));
+  }
+
+  async getAllVibeOverrides(): Promise<VibeOverride[]> {
+    return await db.select().from(vibeOverrides);
+  }
+
+  async upsertVibeOverride(override: InsertVibeOverride): Promise<VibeOverride> {
+    const [result] = await db.insert(vibeOverrides)
+      .values(override)
+      .onConflictDoUpdate({
+        target: [vibeOverrides.restaurantId, vibeOverrides.vibe],
+        set: { action: override.action, reason: override.reason, createdBy: override.createdBy, createdAt: override.createdAt },
+      })
+      .returning();
+    return result;
+  }
+
+  async deleteVibeOverride(id: number): Promise<void> {
+    await db.delete(vibeOverrides).where(eq(vibeOverrides.id, id));
+  }
+
+  async updateAllRestaurantVibes(): Promise<{ updated: number; details: { id: number; name: string; oldVibes: string[]; newVibes: string[] }[] }> {
+    const { autoAssignVibes } = await import("@shared/vibeConfig");
+    const allRestaurants = await this.getRestaurants();
+    const allOverrides = await this.getAllVibeOverrides();
+    const overrideMap = new Map<number, VibeOverride[]>();
+    for (const ov of allOverrides) {
+      if (!overrideMap.has(ov.restaurantId)) overrideMap.set(ov.restaurantId, []);
+      overrideMap.get(ov.restaurantId)!.push(ov);
+    }
+
+    const details: { id: number; name: string; oldVibes: string[]; newVibes: string[] }[] = [];
+    let updated = 0;
+
+    for (const r of allRestaurants) {
+      const oldVibes = r.vibes || [];
+      let newVibes = autoAssignVibes(r);
+
+      const overrides = overrideMap.get(r.id) || [];
+      for (const ov of overrides) {
+        if (ov.action === "include" && !newVibes.includes(ov.vibe)) {
+          newVibes.push(ov.vibe);
+        } else if (ov.action === "exclude") {
+          newVibes = newVibes.filter(v => v !== ov.vibe);
+        }
+      }
+      newVibes.sort();
+
+      const changed = JSON.stringify(oldVibes.sort()) !== JSON.stringify(newVibes);
+      if (changed) {
+        await db.update(restaurants).set({ vibes: newVibes }).where(eq(restaurants.id, r.id));
+        details.push({ id: r.id, name: r.name, oldVibes, newVibes });
+        updated++;
+      }
+    }
+
+    return { updated, details };
   }
 }
 

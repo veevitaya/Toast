@@ -1566,7 +1566,7 @@ export async function registerRoutes(
 
   app.post("/api/restaurants/by-vibe", async (req, res) => {
     try {
-      const { vibe, limit = 20 } = req.body;
+      const { vibe, limit = 20, debug = false } = req.body;
       if (!vibe) return res.status(400).json({ message: "vibe is required" });
 
       if (vibe === "popular") {
@@ -1600,6 +1600,24 @@ export async function registerRoutes(
       }
 
       const vibeRestaurants = await storage.getRestaurantsByVibe(vibe);
+
+      if (debug) {
+        const { autoAssignVibesWithExplanation } = await import("@shared/vibeConfig");
+        const results = vibeRestaurants.slice(0, limit).map(r => {
+          const explanations = autoAssignVibesWithExplanation(r);
+          const vibeExplanation = explanations.find(e => e.vibe === vibe);
+          return {
+            ...r,
+            vibeMatch: Math.min(99, Math.round(50 + (parseFloat(r.rating) - 4.0) * 15 + (r.trendingScore || 0) * 0.2)),
+            _debug: {
+              matchReasons: vibeExplanation?.reasons || [],
+              allVibes: explanations.filter(e => e.matched).map(e => e.vibe),
+            },
+          };
+        });
+        return res.json(results);
+      }
+
       const results = vibeRestaurants.slice(0, limit).map(r => ({
         ...r,
         vibeMatch: Math.min(99, Math.round(50 + (parseFloat(r.rating) - 4.0) * 15 + (r.trendingScore || 0) * 0.2)),
@@ -2882,6 +2900,96 @@ export async function registerRoutes(
       if (!updated) return res.status(404).json({ message: "Not found" });
       res.json({ ...updated, passwordHash: undefined });
     } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/vibes/retag", adminAuth, async (req: any, res) => {
+    try {
+      if (req.adminUser?.role !== "superadmin") {
+        return res.status(403).json({ message: "Only superadmins can retag vibes" });
+      }
+      const result = await storage.updateAllRestaurantVibes();
+      res.json(result);
+    } catch (err) {
+      console.error("Retag error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/admin/vibes/overrides", adminAuth, async (req: any, res) => {
+    try {
+      const overrides = await storage.getAllVibeOverrides();
+      res.json(overrides);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/vibes/overrides", adminAuth, async (req: any, res) => {
+    try {
+      if (req.adminUser?.role !== "superadmin") {
+        return res.status(403).json({ message: "Only superadmins can manage vibe overrides" });
+      }
+      const { VIBE_TAGS } = await import("@shared/vibeConfig");
+      const vibeOverrideSchema = z.object({
+        restaurantId: z.number().int().positive(),
+        vibe: z.string().refine(v => (VIBE_TAGS as readonly string[]).includes(v), { message: "Invalid vibe tag" }),
+        action: z.enum(["include", "exclude"]),
+        reason: z.string().max(500).optional(),
+      });
+      const parsed = vibeOverrideSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Validation error", errors: parsed.error.flatten().fieldErrors });
+      }
+      const { restaurantId, vibe, action, reason } = parsed.data;
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) return res.status(404).json({ message: "Restaurant not found" });
+      const override = await storage.upsertVibeOverride({
+        restaurantId,
+        vibe,
+        action,
+        reason: reason || null,
+        createdBy: req.adminUser?.username || "admin",
+        createdAt: new Date().toISOString(),
+      });
+      res.json(override);
+    } catch (err) {
+      console.error("Vibe override error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/admin/vibes/overrides/:id", adminAuth, async (req: any, res) => {
+    try {
+      if (req.adminUser?.role !== "superadmin") {
+        return res.status(403).json({ message: "Only superadmins can delete vibe overrides" });
+      }
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      await storage.deleteVibeOverride(id);
+      res.json({ message: "Deleted" });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/vibes/explain", adminAuth, async (req: any, res) => {
+    try {
+      const { restaurantId } = req.body;
+      if (!restaurantId) return res.status(400).json({ message: "restaurantId required" });
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) return res.status(404).json({ message: "Restaurant not found" });
+      const { autoAssignVibesWithExplanation } = await import("@shared/vibeConfig");
+      const explanations = autoAssignVibesWithExplanation(restaurant);
+      const overrides = await storage.getVibeOverrides(restaurantId);
+      res.json({
+        restaurant: { id: restaurant.id, name: restaurant.name, category: restaurant.category, currentVibes: restaurant.vibes },
+        explanations,
+        overrides,
+      });
+    } catch (err) {
+      console.error("Vibe explain error:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
