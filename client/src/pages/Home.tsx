@@ -14,6 +14,7 @@ import { SaveBucketPicker } from "@/components/SaveBucketPicker";
 import { FoodIconFromEmoji, FoodIcon, emojiToIconName, getAnimClass } from "@/components/FoodIcon";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { useLineProfile } from "@/lib/useLineProfile";
+import { useWeatherGreeting } from "@/hooks/use-weather-greeting";
 import { MODE_TO_VIBE } from "@shared/vibeConfig";
 import { ToastDecides } from "@/components/ToastDecides";
 import toastLogoPath from "@assets/toast_logo_nobg.png";
@@ -168,20 +169,12 @@ const BANGKOK_LOCATIONS = [
 ];
 
 
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 11) return "what's for breakfast?";
-  if (hour < 14) return "what's for lunch?";
-  if (hour < 17) return "feeling hungry?";
-  if (hour < 21) return "what's for dinner?";
-  return "late night craving?";
-}
-
-function getContextLine(): string {
+function getContextLine(tempC: number | null, emoji: string): string {
   const now = new Date();
   const day = now.toLocaleDateString("en", { weekday: "short" });
   const time = now.toLocaleTimeString("en", { hour: "numeric", minute: "2-digit", hour12: true });
-  return `${day} \u00b7 ${time} \u00b7 14 open near you`;
+  const tempStr = tempC !== null ? ` · ${emoji} ${tempC}°C` : "";
+  return `${day} · ${time}${tempStr} · 14 open near you`;
 }
 
 export default function Home() {
@@ -204,6 +197,7 @@ export default function Home() {
   const { data: suggestions = [], isLoading: suggestionsLoading } = useSuggestions();
   const { data: nearbyRestaurants = [], isLoading: nearbyLoading } = useRestaurants("new");
   const { profile: userProfile } = useLineProfile();
+  const weatherGreeting = useWeatherGreeting();
 
 
   const [drawerOpen, setDrawerOpen] = useState(true);
@@ -738,7 +732,7 @@ export default function Home() {
               data-testid="text-context-line"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              {getContextLine()}
+              {getContextLine(weatherGreeting.tempC, weatherGreeting.emoji)}
             </p>
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
@@ -746,7 +740,8 @@ export default function Home() {
                   className="text-[22px] font-bold text-foreground leading-[1.15] tracking-tight animate-page-in"
                   data-testid="text-greeting"
                 >
-                  Hey there,<br />{getGreeting()}
+                  {weatherGreeting.headline}<br />
+                  <span className="text-[15px] font-medium text-muted-foreground">{weatherGreeting.sub}</span>
                 </h1>
                 <div
                   className="flex items-center gap-2 mt-3 flex-wrap"
