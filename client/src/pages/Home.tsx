@@ -187,7 +187,20 @@ function getContextLine(): string {
 export default function Home() {
   const [, navigate] = useLocation();
   const { profile: tasteProfile, getSuggestionTitle, topPreference, getMoodSignal } = useTasteProfile();
-  const { recordVibe } = useVibeFrequency();
+  const { recordVibe, freq } = useVibeFrequency();
+
+  const ALL_VIBE_TILES = useMemo(() => [...VIBE_TILES_MAIN, ...VIBE_TILES_EXTRA], []);
+  const sortedVibes = useMemo(() => {
+    return [...ALL_VIBE_TILES].sort((a, b) => {
+      const fa = freq[a.mode] || 0;
+      const fb = freq[b.mode] || 0;
+      if (fb !== fa) return fb - fa;
+      return ALL_VIBE_TILES.indexOf(a) - ALL_VIBE_TILES.indexOf(b);
+    });
+  }, [freq, ALL_VIBE_TILES]);
+  const topVibes = sortedVibes.slice(0, 7);
+  const moreVibes = sortedVibes.slice(7);
+
   const { data: suggestions = [], isLoading: suggestionsLoading } = useSuggestions();
   const { data: nearbyRestaurants = [], isLoading: nearbyLoading } = useRestaurants("new");
   const { profile: userProfile } = useLineProfile();
@@ -803,7 +816,7 @@ export default function Home() {
               <span className="text-xs font-medium text-muted-foreground">Opens a world <span className="text-muted-foreground/40">&#8250;</span></span>
             </div>
             <div className="grid grid-cols-4 gap-2.5">
-              {VIBE_TILES_MAIN.map((vibe, idx) => (
+              {topVibes.map((vibe, idx) => (
                   <motion.button
                     key={vibe.mode}
                     initial={{ opacity: 0, y: 16 }}
@@ -1152,30 +1165,10 @@ export default function Home() {
               </div>
 
               <div className="overflow-y-auto flex-1 min-h-0">
-                <div className="px-6 pb-3">
-                  <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-2">Popular</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {VIBE_TILES_MAIN.map((vibe) => (
-                      <motion.button
-                        key={vibe.mode}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={(e) => { setMoreVibesOpen(false); handleVibeClickAnimated(vibe.mode, vibe.emoji, e.currentTarget); }}
-                        className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-gray-50 border border-gray-100/80"
-                        data-testid={`more-vibe-${vibe.mode}`}
-                      >
-                        <div className="flex items-center justify-center">
-                          <FoodIconFromEmoji emoji={vibe.emoji} size={32} />
-                        </div>
-                        <span className="text-[10px] font-semibold text-foreground leading-tight">{vibe.label}</span>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-
                 <div className="px-6 pb-8">
                   <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-2">More Vibes</p>
                   <div className="grid grid-cols-4 gap-2">
-                    {VIBE_TILES_EXTRA.map((vibe) => (
+                    {moreVibes.map((vibe) => (
                       <motion.button
                         key={vibe.mode}
                         whileTap={{ scale: 0.9 }}
