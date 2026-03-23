@@ -416,6 +416,26 @@ export default function AdminAnalytics() {
         </button>
         {showUserIntel && (
           <div className="px-6 pb-6 pt-2 space-y-6">
+            <div className="rounded-xl bg-gray-50 border border-gray-100 p-5" data-testid="section-user-ai-insights">
+              <div className="flex items-center gap-2 mb-3">
+                <Brain className="w-3.5 h-3.5 text-[var(--admin-deep-purple)]" />
+                <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">AI-Generated Insights</h4>
+                <span className="inline-flex items-center text-[10px] font-medium rounded-full px-1.5 py-0.5 bg-[var(--admin-blue-10)] text-foreground">
+                  <Zap className="w-2.5 h-2.5 mr-0.5 text-[var(--admin-deep-purple)]" />Auto
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {USER_AI_INSIGHTS.map((insight, idx) => (
+                  <div key={idx} className="flex items-start gap-2.5 rounded-lg p-2.5 bg-white border border-gray-100" data-testid={`text-user-ai-insight-${idx}`}>
+                    <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: "var(--admin-deep-purple)" }}>
+                      <span className="text-white text-[9px] font-bold">{idx + 1}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{insight}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="section-user-kpis">
               <UserKpiCard icon={<Users className="w-4 h-4" style={{ color: "var(--admin-deep-purple)" }} />} label="Total Users" value={(summary?.totalUsers || 0).toLocaleString()} accentColor="var(--admin-deep-purple)" />
               <UserKpiCard icon={<Activity className="w-4 h-4" style={{ color: "var(--admin-pink)" }} />} label="Active This Week" value="68%" sub="2,422 users" accentColor="var(--admin-pink)" />
@@ -426,18 +446,36 @@ export default function AdminAnalytics() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="rounded-xl border border-gray-100 p-5" data-testid="section-gender-distribution">
                 <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">Gender Distribution</h4>
-                <div className="space-y-2.5">
-                  {USER_GENDER_DATA.map((g) => (
-                    <div key={g.label} className="flex items-center gap-3">
-                      <span className="w-14 text-xs text-muted-foreground">{g.label}</span>
-                      <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
-                        <div className="h-full rounded-full flex items-center pl-2.5 text-[10px] font-medium text-white transition-all" style={{ width: `${g.pct}%`, backgroundColor: g.color }} data-testid={`bar-gender-${g.label.toLowerCase()}`}>
-                          {g.pct}%
-                        </div>
+                {(() => {
+                  const totalPct = USER_GENDER_DATA.reduce((s, g) => s + g.pct, 0);
+                  const r = 36;
+                  const cx = 44;
+                  const cy = 44;
+                  const circ = 2 * Math.PI * r;
+                  let gOff = 0;
+                  return (
+                    <div className="flex items-center gap-4">
+                      <svg width="88" height="88" viewBox="0 0 88 88" className="shrink-0">
+                        {USER_GENDER_DATA.map((g) => {
+                          const segLen = (g.pct / totalPct) * circ;
+                          const dash = `${segLen - 1} ${circ - segLen + 1}`;
+                          const currentOff = gOff;
+                          gOff += segLen;
+                          return <circle key={g.label} cx={cx} cy={cy} r={r} fill="none" stroke={g.color} strokeWidth="12" strokeDasharray={dash} strokeDashoffset={-currentOff} transform={`rotate(-90 ${cx} ${cy})`} />;
+                        })}
+                      </svg>
+                      <div className="flex-1 space-y-2">
+                        {USER_GENDER_DATA.map((g) => (
+                          <div key={g.label} className="flex items-center gap-2" data-testid={`bar-gender-${g.label.toLowerCase()}`}>
+                            <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: g.color }} />
+                            <span className="text-xs text-muted-foreground flex-1">{g.label}</span>
+                            <span className="text-xs font-semibold text-foreground">{g.pct}%</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })()}
               </div>
               <div className="rounded-xl border border-gray-100 p-5" data-testid="section-age-demographics">
                 <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-3">Age Demographics</h4>
@@ -501,58 +539,65 @@ export default function AdminAnalytics() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="rounded-xl border border-gray-100 p-5" data-testid="section-user-day-activity">
-                <div className="flex items-center gap-2 mb-3">
-                  <Calendar className="w-3.5 h-3.5 text-indigo-500" />
-                  <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Day-of-Week Activity</h4>
-                </div>
-                <div className="flex items-end gap-2 h-28">
-                  {USER_DAY_ACTIVITY.map((d) => (
-                    <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
-                      <span className="text-[10px] font-medium text-foreground">{d.pct}%</span>
-                      <div className="w-full bg-gray-100 rounded-md overflow-hidden" style={{ height: "80px" }}>
-                        <div className="w-full rounded-md" style={{ height: `${d.pct}%`, backgroundColor: "var(--admin-deep-purple)", opacity: d.pct > 80 ? 1 : 0.5, marginTop: `${100 - d.pct}%` }} />
-                      </div>
-                      <span className="text-[10px] text-muted-foreground">{d.day}</span>
-                    </div>
-                  ))}
-                </div>
+            <div className="rounded-xl border border-gray-100 p-5" data-testid="section-user-behavior-combined">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+                <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">User Behavior · Day + Peak Hours</h4>
               </div>
-              <div className="rounded-xl border border-gray-100 p-5" data-testid="section-user-peak-hours">
-                <div className="flex items-center gap-2 mb-3">
-                  <Clock className="w-3.5 h-3.5 text-cyan-500" />
-                  <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Peak Hours</h4>
-                </div>
-                <div className="space-y-1.5">
-                  {USER_PEAK_HOURS.map((h) => (
-                    <div key={h.hour} className="flex items-center gap-2">
-                      <span className="w-20 text-[10px] text-muted-foreground">{h.hour}</span>
-                      <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${h.pct}%`, backgroundColor: "var(--admin-deep-purple)", opacity: h.pct > 70 ? 0.9 : 0.4 }} />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-2 font-medium">Day-of-Week Activity</p>
+                  <div className="flex items-end gap-2 h-24">
+                    {USER_DAY_ACTIVITY.map((d) => (
+                      <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
+                        <span className="text-[10px] font-medium text-foreground">{d.pct}%</span>
+                        <div className="w-full bg-gray-100 rounded-md overflow-hidden" style={{ height: "64px" }}>
+                          <div className="w-full rounded-md" style={{ height: `${d.pct}%`, backgroundColor: "var(--admin-deep-purple)", opacity: d.pct > 80 ? 1 : 0.5, marginTop: `${100 - d.pct}%` }} />
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">{d.day}</span>
                       </div>
-                      <span className="w-8 text-right text-[10px] font-medium text-foreground">{h.pct}%</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-2 font-medium">Peak Hours</p>
+                  <div className="space-y-1">
+                    {USER_PEAK_HOURS.map((h) => (
+                      <div key={h.hour} className="flex items-center gap-2">
+                        <span className="w-20 text-[10px] text-muted-foreground">{h.hour}</span>
+                        <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${h.pct}%`, backgroundColor: "var(--admin-deep-purple)", opacity: h.pct > 70 ? 0.9 : 0.4 }} />
+                        </div>
+                        <span className="w-8 text-right text-[10px] font-medium text-foreground">{h.pct}%</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-xl bg-gray-50 border border-gray-100 p-5" data-testid="section-user-ai-insights">
+            <div className="rounded-xl border border-gray-100 p-5" data-testid="section-keyword-search">
               <div className="flex items-center gap-2 mb-3">
-                <Brain className="w-3.5 h-3.5 text-[var(--admin-deep-purple)]" />
-                <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">AI-Generated Insights</h4>
-                <span className="inline-flex items-center text-[10px] font-medium rounded-full px-1.5 py-0.5 bg-[var(--admin-blue-10)] text-foreground">
-                  <Zap className="w-2.5 h-2.5 mr-0.5 text-[var(--admin-deep-purple)]" />Auto
-                </span>
+                <Sparkles className="w-3.5 h-3.5 text-[var(--admin-cyan)]" />
+                <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Keyword Search Insights</h4>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {USER_AI_INSIGHTS.map((insight, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5 rounded-lg p-2.5 bg-white border border-gray-100" data-testid={`text-user-ai-insight-${idx}`}>
-                    <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: "var(--admin-deep-purple)" }}>
-                      <span className="text-white text-[9px] font-bold">{idx + 1}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">{insight}</span>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                {[
+                  { term: "street food", vol: 2840, trend: "+24%" },
+                  { term: "late night", vol: 2210, trend: "+18%" },
+                  { term: "omakase", vol: 1890, trend: "+42%" },
+                  { term: "brunch", vol: 1720, trend: "+15%" },
+                  { term: "spicy", vol: 1540, trend: "+8%" },
+                  { term: "date night", vol: 1380, trend: "+31%" },
+                  { term: "cheap eats", vol: 1250, trend: "+12%" },
+                  { term: "rooftop", vol: 980, trend: "+52%" },
+                  { term: "wagyu", vol: 870, trend: "+28%" },
+                  { term: "vegan", vol: 640, trend: "+67%" },
+                ].map(kw => (
+                  <div key={kw.term} className="rounded-lg bg-gray-50 p-2.5 text-center" data-testid={`keyword-${kw.term.replace(/\s+/g, "-")}`}>
+                    <p className="text-xs font-medium text-gray-800">{kw.term}</p>
+                    <p className="text-[10px] text-muted-foreground">{kw.vol.toLocaleString()} searches</p>
+                    <p className="text-[9px] text-emerald-500 font-medium">{kw.trend}</p>
                   </div>
                 ))}
               </div>

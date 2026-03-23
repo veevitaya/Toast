@@ -199,6 +199,58 @@ export default function OwnerDecisionIntelligence() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-traffic-sources">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-[3px] h-4 bg-[var(--admin-blue)] rounded-full" />
+            <h3 className="text-[15px] font-semibold text-gray-800">Traffic Sources</h3>
+            <MetricTooltip text="Where your restaurant's views originate — search, browsing, promotions, or shared links." />
+          </div>
+          <div className="space-y-3">
+            {[
+              { source: "Swipe Feed", value: 2840, pct: 59, color: "#00B14F", bgColor: "rgba(0,177,79,0.15)" },
+              { source: "Search", value: 1120, pct: 23, color: "#3B82F6", bgColor: "rgba(59,130,246,0.15)" },
+              { source: "Promotions", value: 520, pct: 11, color: "#FFCC02", bgColor: "rgba(255,204,2,0.15)" },
+              { source: "Shared Links", value: 340, pct: 7, color: "#F43F5E", bgColor: "rgba(244,63,94,0.15)" },
+            ].map(s => (
+              <div key={s.source} className="flex items-center gap-3" data-testid={`traffic-${s.source.toLowerCase().replace(/\s+/g, "-")}`}>
+                <span className="text-xs text-gray-500 w-24 shrink-0 font-medium">{s.source}</span>
+                <div className="flex-1 bg-gray-50 rounded-lg h-6 overflow-hidden">
+                  <div className="h-full rounded-lg flex items-center justify-end pr-2 transition-all" style={{ width: `${s.pct}%`, backgroundColor: s.bgColor }}>
+                    <span className="text-[10px] font-semibold" style={{ color: s.color }}>{s.value.toLocaleString()}</span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-medium text-gray-400 w-8 text-right">{s.pct}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-engagement-summary">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-[3px] h-4 bg-[#00B14F] rounded-full" />
+            <h3 className="text-[15px] font-semibold text-gray-800">Engagement Summary</h3>
+            <MetricTooltip text="Overview of how users engage with your restaurant across all decision moments." />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: "Avg. Time on Card", value: "8.4s", sub: "+1.2s vs avg", positive: true },
+              { label: "Photo Views", value: "3,280", sub: "68% of viewers", positive: true },
+              { label: "Menu Taps", value: "1,420", sub: "+22% this week", positive: true },
+              { label: "Save Rate", value: "14.2%", sub: "vs 11% category avg", positive: true },
+              { label: "Share Rate", value: "4.8%", sub: "-0.5% vs last week", positive: false },
+              { label: "Return Visitors", value: "28%", sub: "came back within 7d", positive: true },
+            ].map(m => (
+              <div key={m.label} className="p-3 rounded-xl bg-gray-50 border border-gray-100" data-testid={`engagement-${m.label.toLowerCase().replace(/[\s.]+/g, "-")}`}>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-1">{m.label}</p>
+                <p className="text-lg font-bold text-gray-800">{m.value}</p>
+                <p className={`text-[10px] font-medium mt-0.5 ${m.positive ? "text-[#00B14F]" : "text-red-400"}`}>{m.sub}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-decision-funnel">
           <div className="flex items-center gap-2 mb-5">
             <div className="w-[3px] h-4 bg-[#FFCC02] rounded-full" />
@@ -330,21 +382,22 @@ export default function OwnerDecisionIntelligence() {
           <MetricTooltip text="When users are most actively comparing your restaurant. Darker = more decision activity." />
         </div>
         <div className="overflow-x-auto">
-          <div className="grid grid-cols-8 gap-1.5 min-w-[400px]">
-            <div />
-            {dayLabels.map(d => (
-              <div key={d} className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest pb-1">{d}</div>
-            ))}
-            {TIME_HEATMAP.map(row => (
-              <React.Fragment key={row.hour}>
-                <div className="text-xs text-gray-400 font-medium flex items-center">{row.hour}</div>
-                {dayKeys.map(day => {
+          <div className="min-w-[500px]">
+            <div className="flex gap-1 mb-1 pl-10">
+              {TIME_HEATMAP.map(row => (
+                <div key={row.hour} className="flex-1 text-center text-[9px] font-medium text-gray-400">{row.hour}</div>
+              ))}
+            </div>
+            {dayKeys.map((day, dayIdx) => (
+              <div key={day} className="flex items-center gap-1 mb-0.5" data-testid={`heat-row-${day}`}>
+                <span className="w-8 text-[10px] text-gray-400 font-medium text-right shrink-0">{dayLabels[dayIdx]}</span>
+                {TIME_HEATMAP.map(row => {
                   const val = row[day];
                   const intensity = val / maxHeat;
                   return (
                     <div
                       key={`${row.hour}-${day}`}
-                      className="h-8 rounded-md flex items-center justify-center text-[10px] font-medium transition-colors"
+                      className="flex-1 h-7 rounded-sm flex items-center justify-center text-[9px] font-medium"
                       style={{
                         backgroundColor: `rgba(0, 177, 79, ${Math.max(intensity * 0.8, 0.05)})`,
                         color: intensity > 0.5 ? "white" : "#6B7280",
@@ -355,9 +408,42 @@ export default function OwnerDecisionIntelligence() {
                     </div>
                   );
                 })}
-              </React.Fragment>
+              </div>
             ))}
+            <div className="flex items-center justify-end gap-2 mt-3">
+              <span className="text-[9px] text-gray-400">Low</span>
+              {[0.05, 0.2, 0.4, 0.6, 0.8].map(o => (
+                <div key={o} className="w-4 h-3 rounded-sm" style={{ backgroundColor: `rgba(0, 177, 79, ${o})` }} />
+              ))}
+              <span className="text-[9px] text-gray-400">High</span>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-peak-hours">
+        <div className="flex items-center gap-2 mb-5">
+          <div className="w-[3px] h-4 bg-[#FFCC02] rounded-full" />
+          <h3 className="text-[15px] font-semibold text-gray-800">Peak Hours</h3>
+          <MetricTooltip text="Busiest hours for decision activity across all days of the week." />
+        </div>
+        <div className="flex items-end gap-2 h-40">
+          {TIME_HEATMAP.map(row => {
+            const total = dayKeys.reduce((sum, d) => sum + row[d], 0);
+            const maxTotal = Math.max(...TIME_HEATMAP.map(r => dayKeys.reduce((s, d) => s + r[d], 0)));
+            const pct = (total / maxTotal) * 100;
+            return (
+              <div key={row.hour} className="flex-1 flex flex-col items-center gap-1">
+                <span className="text-[9px] font-medium text-gray-600">{Math.round(pct)}%</span>
+                <div className="w-full rounded-t-md" style={{
+                  height: `${pct}%`,
+                  background: `linear-gradient(180deg, #00B14F ${Math.max(0, 100 - pct)}%, #FFCC02 100%)`,
+                  opacity: pct > 70 ? 1 : 0.6,
+                }} />
+                <span className="text-[9px] text-gray-400 font-medium">{row.hour.replace(":00", "")}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 

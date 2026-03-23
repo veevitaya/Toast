@@ -103,27 +103,21 @@ export default function AdminSwipeSessions() {
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">App open → Partner clickout</p>
           </div>
           <div className="space-y-2">
-            {SESSION_FUNNEL.map((step, idx) => (
-              <div key={step.label} className="flex items-center gap-3" data-testid={`funnel-step-${idx}`}>
-                <div className="w-10 text-right">
-                  <span className="text-xs font-medium text-muted-foreground">{step.pct}%</span>
-                </div>
-                <div className="flex-1 h-8 rounded-lg bg-gray-50 overflow-hidden relative">
-                  <div className="h-full rounded-lg transition-all" style={{ width: `${Math.max(step.pct, 6)}%`, backgroundColor: step.bg }} />
-                </div>
-                <span className="w-44 text-xs text-foreground font-medium">{step.label}</span>
-                <span className="w-16 text-right text-xs text-gray-500 font-medium">{step.value.toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center gap-3 mt-4 pt-3 border-t border-gray-100">
-            {SESSION_FUNNEL.slice(0, -1).map((step, idx) => {
-              const next = SESSION_FUNNEL[idx + 1];
-              const dropoff = Math.round((1 - next.value / step.value) * 100);
+            {SESSION_FUNNEL.map((step, idx) => {
+              const dropoff = idx > 0 ? Math.round((1 - step.value / SESSION_FUNNEL[idx - 1].value) * 100) : 0;
               return (
-                <div key={idx} className="flex-1 text-center">
-                  <p className="text-[10px] text-gray-400">Drop-off</p>
-                  <p className="text-xs font-semibold text-gray-600">{dropoff}%</p>
+                <div key={step.label} className="flex items-center gap-3" data-testid={`funnel-step-${idx}`}>
+                  <span className="w-44 text-xs text-foreground font-medium">{step.label}</span>
+                  <div className="flex-1 h-8 rounded-lg bg-gray-50 overflow-hidden relative">
+                    <div className="h-full rounded-lg flex items-center px-2 transition-all" style={{ width: `${Math.max(step.pct, 6)}%`, backgroundColor: step.bg }}>
+                      {step.pct > 15 && <span className={`text-[10px] font-semibold whitespace-nowrap ${step.textClass}`}>{step.value.toLocaleString()}</span>}
+                    </div>
+                    {step.pct <= 15 && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-gray-500">{step.value.toLocaleString()}</span>}
+                  </div>
+                  <div className="w-16 text-right">
+                    <span className="text-xs font-medium text-muted-foreground">{step.pct}%</span>
+                    {idx > 0 && <p className="text-[9px] text-red-400 font-medium">-{dropoff}%</p>}
+                  </div>
                 </div>
               );
             })}
@@ -173,30 +167,34 @@ export default function AdminSwipeSessions() {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6" data-testid="card-segment-comparison">
           <div className="border-l-[3px] pl-3 mb-5" style={{ borderColor: "var(--admin-pink)" }}>
             <h3 className="text-[15px] font-semibold text-gray-800">Segment Comparison</h3>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Solo vs Group behavior</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Solo vs Group side-by-side</p>
           </div>
-          <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "var(--admin-deep-purple)" }} /><span className="text-gray-600">Solo (72%)</span></div>
+              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "var(--admin-pink)" }} /><span className="text-gray-600">Group (28%)</span></div>
+            </div>
             {[
-              { label: "Solo Sessions", pct: 72, avgSwipes: 7.8, matchRate: "69%", avgTime: "1m 58s", clickoutRate: "36%" },
-              { label: "Group Sessions", pct: 28, avgSwipes: 12.4, matchRate: "62%", avgTime: "3m 45s", clickoutRate: "28%" },
-            ].map(seg => (
-              <div key={seg.label} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-gray-800">{seg.label}</span>
-                  <span className="text-xs text-gray-500">{seg.pct}% of total</span>
-                </div>
-                <div className="space-y-2 text-xs">
-                  {[
-                    ["Avg Swipes", `${seg.avgSwipes}`],
-                    ["Match Rate", seg.matchRate],
-                    ["Avg Time", seg.avgTime],
-                    ["Clickout Rate", seg.clickoutRate],
-                  ].map(([k, v]) => (
-                    <div key={k} className="flex items-center justify-between py-1.5 border-b border-gray-50">
-                      <span className="text-gray-500">{k}</span>
-                      <span className="font-semibold text-gray-800">{v}</span>
+              { metric: "Avg Swipes", solo: 7.8, group: 12.4, max: 15, unit: "" },
+              { metric: "Match Rate", solo: 69, group: 62, max: 100, unit: "%" },
+              { metric: "Avg Time (sec)", solo: 118, group: 225, max: 300, unit: "s" },
+              { metric: "Clickout Rate", solo: 36, group: 28, max: 50, unit: "%" },
+            ].map(row => (
+              <div key={row.metric} className="space-y-1">
+                <span className="text-xs text-gray-500 font-medium">{row.metric}</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex items-center gap-1.5">
+                    <div className="flex-1 bg-gray-50 rounded-md h-6 overflow-hidden">
+                      <div className="h-full rounded-md flex items-center px-2" style={{ width: `${(row.solo / row.max) * 100}%`, backgroundColor: "var(--admin-deep-purple)", opacity: 0.8 }}>
+                        <span className="text-[10px] font-semibold text-white whitespace-nowrap">{row.solo}{row.unit}</span>
+                      </div>
                     </div>
-                  ))}
+                    <div className="flex-1 bg-gray-50 rounded-md h-6 overflow-hidden">
+                      <div className="h-full rounded-md flex items-center px-2" style={{ width: `${(row.group / row.max) * 100}%`, backgroundColor: "var(--admin-pink)", opacity: 0.8 }}>
+                        <span className="text-[10px] font-semibold text-white whitespace-nowrap">{row.group}{row.unit}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}

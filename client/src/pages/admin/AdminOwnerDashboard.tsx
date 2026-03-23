@@ -368,6 +368,104 @@ export default function AdminOwnerDashboard() {
             </div>
           </div>
 
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" data-testid="section-owner-profile-banner">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="w-12 h-12 rounded-xl bg-[#00B14F]/10 flex items-center justify-center text-lg font-bold text-[#00B14F] shrink-0">
+                {(owner?.displayName || "O").charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-800" data-testid="text-owner-name">{owner?.displayName}</p>
+                <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5 flex-wrap">
+                  <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{owner?.email}</span>
+                  {owner?.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{owner.phone}</span>}
+                  <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" />Since {memberSince}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {owner?.isVerified && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-[#00B14F]/10 text-[#00B14F]">
+                    <ShieldCheck className="w-3 h-3" /> Verified
+                  </span>
+                )}
+                <span className={`inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 ${
+                  owner?.subscriptionTier === "premium" ? "bg-[var(--admin-blue-10)] text-[var(--admin-blue)]" :
+                  owner?.subscriptionTier === "enterprise" ? "bg-[#FFCC02]/15 text-gray-700" :
+                  "bg-gray-100 text-gray-500"
+                }`}>
+                  <Crown className="w-3 h-3" />
+                  {(owner?.subscriptionTier || "free").charAt(0).toUpperCase() + (owner?.subscriptionTier || "free").slice(1)} Plan
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-quick-actions">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-[3px] h-4 bg-[#00B14F] rounded-full" />
+                <h3 className="text-[15px] font-semibold text-gray-800">Quick Actions</h3>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                {[
+                  { icon: Megaphone, label: "New Promotion", desc: "Create a deal", href: "/admin/owner/promotions", color: "text-[var(--admin-blue)]", bg: "bg-[var(--admin-blue-10)]" },
+                  { icon: BarChart3, label: "Decision Intel", desc: "Win rate analytics", href: "/admin/owner/decision-intelligence", color: "text-[#00B14F]", bg: "bg-[#00B14F]/10" },
+                  { icon: Utensils, label: "Update Menu", desc: "Edit items & hours", href: "/admin/owner/menu", color: "text-[#FFCC02]", bg: "bg-[#FFCC02]/15" },
+                  { icon: ExternalLink, label: "Delivery Stats", desc: "Track conversions", href: "/admin/owner/delivery-conversions", color: "text-rose-500", bg: "bg-rose-50" },
+                  { icon: Users, label: "Customer Insights", desc: "Behavior data", href: "/admin/owner/customer-insights", color: "text-blue-500", bg: "bg-blue-50" },
+                  { icon: Star, label: "Read Reviews", desc: "Reply to feedback", href: "/admin/owner/reviews", color: "text-amber-500", bg: "bg-amber-50" },
+                ].map(({ icon: Icon, label, desc, href, color, bg }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover-elevate cursor-pointer"
+                    data-testid={`action-${label.toLowerCase().replace(/\s+/g, "-")}`}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bg}`}>
+                      <Icon className={`w-5 h-5 ${color}`} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">{label}</p>
+                      <p className="text-[11px] text-gray-400">{desc}</p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-performance-snapshot">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-[3px] h-4 bg-[#FFCC02] rounded-full" />
+              <h3 className="text-[15px] font-semibold text-gray-800">This Week's Highlights</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 rounded-xl bg-[#00B14F]/5 border border-[#00B14F]/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="w-4 h-4 text-[#00B14F]" />
+                  <span className="text-xs font-medium text-gray-500">Engagement Rate</span>
+                </div>
+                <p className="text-xl font-bold text-gray-800">
+                  {stats.views > 0 ? Math.round(((stats.likes + stats.saves) / stats.views) * 100) : 0}%
+                </p>
+                <p className="text-[11px] text-gray-400 mt-0.5">Likes + Saves per View</p>
+              </div>
+              <div className="p-4 rounded-xl bg-[var(--admin-blue-10)] border border-[var(--admin-blue-10)]">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-4 h-4 text-[var(--admin-blue)]" />
+                  <span className="text-xs font-medium text-gray-500">Unique Visitors</span>
+                </div>
+                <p className="text-xl font-bold text-gray-800">{Math.max(stats.views, 1)}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">People who viewed your page</p>
+              </div>
+              <div className="p-4 rounded-xl bg-[#FFCC02]/5 border border-[#FFCC02]/10">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-[#FFCC02]" />
+                  <span className="text-xs font-medium text-gray-500">Trending Score</span>
+                </div>
+                <p className="text-xl font-bold text-gray-800">{restaurant.trendingScore}/100</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">Your visibility rank</p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="section-owner-stats">
             {[
               { icon: Eye, label: "Views", value: stats.views, color: "text-blue-500", bg: "bg-blue-50", trend: "+12%" },
@@ -421,126 +519,6 @@ export default function AdminOwnerDashboard() {
               </div>
             </div>
           )}
-
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-quick-actions">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-[3px] h-4 bg-[#00B14F] rounded-full" />
-                <h3 className="text-[15px] font-semibold text-gray-800">Quick Actions</h3>
-              </div>
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                {[
-                  { icon: Megaphone, label: "New Promotion", desc: "Create a deal", href: "/admin/owner/promotions", color: "text-[var(--admin-blue)]", bg: "bg-[var(--admin-blue-10)]" },
-                  { icon: BarChart3, label: "Decision Intel", desc: "Win rate analytics", href: "/admin/owner/decision-intelligence", color: "text-[#00B14F]", bg: "bg-[#00B14F]/10" },
-                  { icon: Utensils, label: "Update Menu", desc: "Edit items & hours", href: "/admin/owner/menu", color: "text-[#FFCC02]", bg: "bg-[#FFCC02]/15" },
-                  { icon: ExternalLink, label: "Delivery Stats", desc: "Track conversions", href: "/admin/owner/delivery-conversions", color: "text-rose-500", bg: "bg-rose-50" },
-                  { icon: Users, label: "Customer Insights", desc: "Behavior data", href: "/admin/owner/customer-insights", color: "text-blue-500", bg: "bg-blue-50" },
-                  { icon: Star, label: "Read Reviews", desc: "Reply to feedback", href: "/admin/owner/reviews", color: "text-amber-500", bg: "bg-amber-50" },
-                ].map(({ icon: Icon, label, desc, href, color, bg }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover-elevate cursor-pointer"
-                    data-testid={`action-${label.toLowerCase().replace(/\s+/g, "-")}`}
-                  >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bg}`}>
-                      <Icon className={`w-5 h-5 ${color}`} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{label}</p>
-                      <p className="text-[11px] text-gray-400">{desc}</p>
-                    </div>
-                  </a>
-                ))}
-              </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-owner-profile">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-[3px] h-4 bg-[var(--admin-blue)] rounded-full" />
-                <h3 className="text-[15px] font-semibold text-gray-800">Owner Profile</h3>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-[#00B14F]/10 flex items-center justify-center text-lg font-bold text-[#00B14F]">
-                    {(owner?.displayName || "O").charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800" data-testid="text-owner-name">{owner?.displayName}</p>
-                    <p className="text-xs text-gray-400">Restaurant Owner</p>
-                  </div>
-                </div>
-                <div className="space-y-2 pt-2 border-t border-gray-50">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Mail className="w-3.5 h-3.5 text-gray-300" />
-                    <span className="text-gray-600" data-testid="text-owner-email">{owner?.email}</span>
-                  </div>
-                  {owner?.phone && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="w-3.5 h-3.5 text-gray-300" />
-                      <span className="text-gray-600" data-testid="text-owner-phone">{owner.phone}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 text-sm">
-                    <CalendarDays className="w-3.5 h-3.5 text-gray-300" />
-                    <span className="text-gray-400">Member since {memberSince}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 pt-2 border-t border-gray-50">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {owner?.isVerified && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 bg-[#00B14F]/10 text-[#00B14F]">
-                        <ShieldCheck className="w-3 h-3" /> Verified Business
-                      </span>
-                    )}
-                    <span className={`inline-flex items-center gap-1 text-[11px] font-medium rounded-full px-2.5 py-1 ${
-                      owner?.subscriptionTier === "premium" ? "bg-[var(--admin-blue-10)] text-[var(--admin-blue)]" :
-                      owner?.subscriptionTier === "enterprise" ? "bg-[#FFCC02]/15 text-gray-700" :
-                      "bg-gray-100 text-gray-500"
-                    }`}>
-                      <Crown className="w-3 h-3" />
-                      {(owner?.subscriptionTier || "free").charAt(0).toUpperCase() + (owner?.subscriptionTier || "free").slice(1)} Plan
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-performance-snapshot">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-[3px] h-4 bg-[#FFCC02] rounded-full" />
-              <h3 className="text-[15px] font-semibold text-gray-800">This Week's Highlights</h3>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-[#00B14F]/5 border border-[#00B14F]/10">
-                <div className="flex items-center gap-2 mb-2">
-                  <Zap className="w-4 h-4 text-[#00B14F]" />
-                  <span className="text-xs font-medium text-gray-500">Engagement Rate</span>
-                </div>
-                <p className="text-xl font-bold text-gray-800">
-                  {stats.views > 0 ? Math.round(((stats.likes + stats.saves) / stats.views) * 100) : 0}%
-                </p>
-                <p className="text-[11px] text-gray-400 mt-0.5">Likes + Saves per View</p>
-              </div>
-              <div className="p-4 rounded-xl bg-[var(--admin-blue-10)] border border-[var(--admin-blue-10)]">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="w-4 h-4 text-[var(--admin-blue)]" />
-                  <span className="text-xs font-medium text-gray-500">Unique Visitors</span>
-                </div>
-                <p className="text-xl font-bold text-gray-800">{Math.max(stats.views, 1)}</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">People who viewed your page</p>
-              </div>
-              <div className="p-4 rounded-xl bg-[#FFCC02]/5 border border-[#FFCC02]/10">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-4 h-4 text-[#FFCC02]" />
-                  <span className="text-xs font-medium text-gray-500">Trending Score</span>
-                </div>
-                <p className="text-xl font-bold text-gray-800">{restaurant.trendingScore}/100</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">Your visibility rank</p>
-              </div>
-            </div>
-          </div>
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-top-insights">
             <div className="flex items-center gap-2 mb-4">

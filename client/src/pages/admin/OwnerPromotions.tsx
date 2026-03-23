@@ -175,10 +175,25 @@ export default function OwnerPromotions() {
     }));
   };
 
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "draft" | "ended" | "scheduled">("all");
+
   const activePromos = promotions.filter((p) => p.status === "active");
   const totalImpressions = promotions.reduce((s, p) => s + (p.impressions || 0), 0);
   const totalRedemptions = promotions.reduce((s, p) => s + (p.redemptions || 0), 0);
   const totalClicks = promotions.reduce((s, p) => s + (p.clicks || 0), 0);
+
+  const sortedPromos = [...promotions].sort((a, b) => {
+    const order: Record<string, number> = { active: 0, scheduled: 1, draft: 2, ended: 3 };
+    return (order[a.status || "draft"] ?? 4) - (order[b.status || "draft"] ?? 4);
+  });
+  const filteredPromos = statusFilter === "all" ? sortedPromos : sortedPromos.filter(p => p.status === statusFilter);
+
+  const DISH_IMAGES: Record<string, string> = {
+    discount: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=80&h=80&fit=crop",
+    bundle: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=80&h=80&fit=crop",
+    freeItem: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=80&h=80&fit=crop",
+    happyHour: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=80&h=80&fit=crop",
+  };
 
   if (!session || session.sessionType !== "owner") {
     return (
@@ -426,6 +441,27 @@ export default function OwnerPromotions() {
         </div>
       </div>
 
+      <div className="flex items-center gap-2 flex-wrap" data-testid="section-status-filter">
+        {(["all", "active", "draft", "scheduled", "ended"] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => setStatusFilter(s)}
+            className={`text-xs font-medium rounded-full px-3.5 py-1.5 border transition-colors ${
+              statusFilter === s
+                ? (s === "active" ? "bg-[#00B14F]/10 text-[#00B14F] border-[#00B14F]/30"
+                  : s === "draft" ? "bg-gray-100 text-gray-700 border-gray-200"
+                  : s === "scheduled" ? "bg-[#FFCC02]/15 text-gray-700 border-[#FFCC02]/30"
+                  : s === "ended" ? "bg-gray-100 text-gray-400 border-gray-200"
+                  : "bg-[var(--admin-blue-10)] text-[var(--admin-blue)] border-[var(--admin-blue)]/20")
+                : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+            }`}
+            data-testid={`filter-status-${s}`}
+          >
+            {s === "all" ? `All (${promotions.length})` : `${s.charAt(0).toUpperCase() + s.slice(1)} (${promotions.filter(p => p.status === s).length})`}
+          </button>
+        ))}
+      </div>
+
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
@@ -440,10 +476,11 @@ export default function OwnerPromotions() {
         </div>
       ) : (
         <div className="space-y-4" data-testid="section-promotions-list">
-          {promotions.map((promo) => {
+          {filteredPromos.map((promo) => {
             const TypeIcon = typeIcons[promo.dealType] || Megaphone;
             const budgetPct = (promo.budget || 0) > 0 ? Math.round(((promo.spent || 0) / (promo.budget || 1)) * 100) : 0;
             const ctr = (promo.impressions || 0) > 0 ? (((promo.clicks || 0) / (promo.impressions || 1)) * 100).toFixed(1) : "0.0";
+            const dishImg = DISH_IMAGES[promo.dealType] || DISH_IMAGES.discount;
 
             return (
               <div
@@ -453,8 +490,11 @@ export default function OwnerPromotions() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${typeColors[promo.dealType] || "bg-gray-100 text-gray-500"}`}>
-                      <TypeIcon className="w-5 h-5" />
+                    <div className="relative shrink-0">
+                      <img src={dishImg} alt={promo.dealType} className="w-12 h-12 rounded-xl object-cover" data-testid={`img-dish-${promo.id}`} />
+                      <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-md flex items-center justify-center ${typeColors[promo.dealType] || "bg-gray-100 text-gray-500"}`}>
+                        <TypeIcon className="w-3 h-3" />
+                      </div>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">

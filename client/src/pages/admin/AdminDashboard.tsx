@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import {
@@ -337,6 +338,24 @@ export default function AdminDashboard() {
   });
   const maxBarCount = Math.max(...last7Days.map((d) => d.count), 1);
 
+  const [audienceDimension, setAudienceDimension] = useState<"behavior" | "age" | "type">("behavior");
+
+  const AUDIENCE_DIMS = {
+    behavior: userSegments.length > 0 ? userSegments : fallbackSegments,
+    age: [
+      { id: "18-24", name: "18–24", description: "Young adults", estimatedCount: 58 },
+      { id: "25-34", name: "25–34", description: "Prime audience", estimatedCount: 122 },
+      { id: "35-44", name: "35–44", description: "Mid-career", estimatedCount: 80 },
+      { id: "45+", name: "45+", description: "Mature diners", estimatedCount: 61 },
+    ],
+    type: [
+      { id: "solo", name: "Solo Diners", description: "Individual users", estimatedCount: 112 },
+      { id: "couples", name: "Couples", description: "Paired sessions", estimatedCount: 70 },
+      { id: "groups", name: "Groups", description: "3+ users", estimatedCount: 57 },
+      { id: "families", name: "Families", description: "Family-tagged", estimatedCount: 82 },
+    ],
+  };
+
   return (
     <div className="space-y-6 bg-[#F8F8F8] min-h-full p-1" data-testid="admin-dashboard-page">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3" data-testid="kpi-grid">
@@ -368,7 +387,7 @@ export default function AdminDashboard() {
                   <ArrowDownRight className="w-3 h-3 text-red-400" />
                 )}
                 <span className={`text-xs font-medium ${kpi.deltaUp ? "text-emerald-500" : "text-red-400"}`}>{kpi.delta}</span>
-                <span className="text-[10px] text-gray-400">vs last period</span>
+                <span className="text-[10px] text-gray-400">vs last week</span>
               </div>
             </div>
           </div>
@@ -469,19 +488,25 @@ export default function AdminDashboard() {
           <div className="flex flex-col items-center gap-1.5">
             {CONVERSION_FUNNEL.map((step, idx) => {
               const widthPct = Math.max(20, step.pct);
+              const dropPct = idx > 0 ? Math.round((1 - step.value / CONVERSION_FUNNEL[idx - 1].value) * 100) : 0;
               return (
                 <div key={step.label} className="w-full flex flex-col items-center" data-testid={`funnel-step-${idx}`}>
                   <div
-                    className="relative h-8 transition-all"
+                    className="relative h-8 flex items-center justify-center transition-all"
                     style={{
                       width: `${widthPct}%`,
                       backgroundColor: step.bg,
                       borderRadius: idx === 0 ? "8px 8px 2px 2px" : idx === CONVERSION_FUNNEL.length - 1 ? "2px 2px 8px 8px" : "2px",
                     }}
-                  />
-                  <span className="text-[11px] font-semibold text-gray-700 mt-0.5 whitespace-nowrap">
-                    {step.label} — {step.value.toLocaleString()}
-                  </span>
+                  >
+                    <span className={`text-[10px] font-bold ${step.textColor}`}>{step.pct}%</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[11px] font-semibold text-gray-700 whitespace-nowrap">
+                      {step.label} — {step.value.toLocaleString()}
+                    </span>
+                    {idx > 0 && <span className="text-[9px] text-red-400 font-medium">(-{dropPct}%)</span>}
+                  </div>
                 </div>
               );
             })}
@@ -522,6 +547,11 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      <div className="flex items-center gap-2 mt-2">
+        <div className="w-1 h-4 rounded-full" style={{ backgroundColor: "var(--admin-blue)" }} />
+        <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider">Market Overview</h2>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 p-6" data-testid="card-top-restaurants">
           <div className="border-l-[3px] pl-3 mb-4" style={{ borderColor: "var(--admin-blue)" }}>
@@ -529,34 +559,39 @@ export default function AdminDashboard() {
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">By swipe volume</p>
           </div>
           <div className="space-y-2.5">
-            {TOP_RESTAURANTS.map((r, idx) => (
-              <div key={r.name} data-testid={`top-restaurant-${idx}`}>
-                <div className="flex items-center justify-between gap-1 mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold flex-shrink-0 ${idx === 0 ? "text-white" : "bg-gray-100 text-gray-500"}`} style={idx === 0 ? { backgroundColor: "var(--admin-blue)" } : {}}>
-                      {idx + 1}
-                    </span>
-                    <span className="text-xs font-medium text-gray-800">{r.name}</span>
+            {TOP_RESTAURANTS.map((r, idx) => {
+              const totalSwipes = TOP_RESTAURANTS.reduce((s, x) => s + x.swipes, 0);
+              const contributionPct = Math.round((r.swipes / totalSwipes) * 100);
+              return (
+                <div key={r.name} data-testid={`top-restaurant-${idx}`}>
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold flex-shrink-0 ${idx === 0 ? "text-white" : "bg-gray-100 text-gray-500"}`} style={idx === 0 ? { backgroundColor: "var(--admin-blue)" } : {}}>
+                        {idx + 1}
+                      </span>
+                      <span className="text-xs font-medium text-gray-800">{r.name}</span>
+                      <span className="text-[9px] text-gray-400 font-medium">{contributionPct}%</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {r.trend === "up" ? <ArrowUpRight className="w-2.5 h-2.5 text-emerald-500" /> : <ArrowDownRight className="w-2.5 h-2.5 text-red-400" />}
+                      <span className="text-[10px] font-semibold text-gray-800">{r.conversion}%</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    {r.trend === "up" ? <ArrowUpRight className="w-2.5 h-2.5 text-emerald-500" /> : <ArrowDownRight className="w-2.5 h-2.5 text-red-400" />}
-                    <span className="text-[10px] font-semibold text-gray-800">{r.conversion}%</span>
+                  <div className="h-4 rounded-md bg-gray-50 overflow-hidden">
+                    <div
+                      className="h-full rounded-md flex items-center justify-end pr-2 transition-all"
+                      style={{
+                        width: `${(r.swipes / maxRestaurantSwipes) * 100}%`,
+                        backgroundColor: "var(--admin-blue)",
+                        opacity: 1 - (idx * 0.15),
+                      }}
+                    >
+                      <span className="text-[9px] font-bold text-white">{r.swipes.toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="h-4 rounded-md bg-gray-50 overflow-hidden">
-                  <div
-                    className="h-full rounded-md flex items-center justify-end pr-2 transition-all"
-                    style={{
-                      width: `${(r.swipes / maxRestaurantSwipes) * 100}%`,
-                      backgroundColor: "var(--admin-blue)",
-                      opacity: 1 - (idx * 0.15),
-                    }}
-                  >
-                    <span className="text-[9px] font-bold text-white">{r.swipes.toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <Link href="/admin/analytics">
             <button className="w-full mt-3 text-xs font-medium text-gray-500 hover:text-gray-800 flex items-center justify-center gap-1 py-1.5 transition-colors" data-testid="link-view-all-restaurants">
@@ -598,68 +633,105 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-2xl border border-gray-100 p-6" data-testid="card-trending-cuisines">
           <div className="border-l-[3px] pl-3 mb-4" style={{ borderColor: "var(--admin-cyan)" }}>
             <h2 className="text-[15px] font-semibold text-gray-800">Trending Cuisines</h2>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">30-day growth</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Top 5 · 30-day growth</p>
           </div>
-          <div className="grid grid-cols-3 gap-x-2 gap-y-4">
-            {TRENDING_CUISINES.slice(0, 3).map((cuisine) => (
-              <div key={cuisine.name} className="flex flex-col items-center gap-1" data-testid={`trending-cuisine-${cuisine.name.toLowerCase().replace(/\s/g, "-")}`}>
-                <RadialArc value={cuisine.growth} max={cuisine.max} color={cuisine.color} size={52} />
-                <span className="text-[10px] font-medium text-gray-800 text-center leading-tight">{cuisine.name}</span>
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-x-2 gap-y-3 mt-4 pt-3 border-t border-gray-100">
-            {TRENDING_CUISINES.slice(3).map((cuisine) => (
-              <div key={cuisine.name} className="flex items-center gap-2" data-testid={`trending-cuisine-${cuisine.name.toLowerCase().replace(/\s/g, "-")}`}>
-                <RadialArc value={cuisine.growth} max={cuisine.max} color={cuisine.color} size={36} />
-                <div>
-                  <p className="text-[10px] font-medium text-gray-800">{cuisine.name}</p>
-                  <p className="text-[9px] text-emerald-500 font-semibold">+{cuisine.growth}%</p>
+          {(() => {
+            const totalGrowth = TRENDING_CUISINES.reduce((s, c) => s + c.growth, 0);
+            const pieColors = ["hsl(192,84%,40%)", "hsl(192,74%,50%)", "hsl(192,65%,60%)", "hsl(192,55%,70%)", "hsl(192,45%,80%)"];
+            const r = 44;
+            const cx = 55;
+            const cy = 55;
+            const circumference = 2 * Math.PI * r;
+            let offset = 0;
+            return (
+              <div className="flex items-center gap-4">
+                <svg width="110" height="110" viewBox="0 0 110 110" className="shrink-0">
+                  {TRENDING_CUISINES.map((c, i) => {
+                    const segLen = (c.growth / totalGrowth) * circumference;
+                    const dash = `${segLen - 1.5} ${circumference - segLen + 1.5}`;
+                    const currentOffset = offset;
+                    offset += segLen;
+                    return (
+                      <circle key={c.name} cx={cx} cy={cy} r={r} fill="none" stroke={pieColors[i]} strokeWidth="14" strokeDasharray={dash} strokeDashoffset={-currentOffset} transform={`rotate(-90 ${cx} ${cy})`} />
+                    );
+                  })}
+                  <text x={cx} y={cy + 2} textAnchor="middle" className="fill-gray-800 text-[11px] font-bold">Top 5</text>
+                </svg>
+                <div className="flex-1 space-y-1.5">
+                  {TRENDING_CUISINES.map((c, i) => {
+                    const pct = Math.round((c.growth / totalGrowth) * 100);
+                    return (
+                      <div key={c.name} className="flex items-center gap-2" data-testid={`trending-cuisine-${c.name.toLowerCase().replace(/\s/g, "-")}`}>
+                        <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: pieColors[i] }} />
+                        <span className="text-[11px] text-gray-700 flex-1 truncate">{c.name}</span>
+                        <span className="text-[10px] font-semibold text-gray-800">{pct}%</span>
+                        <span className="text-[9px] text-emerald-500 font-medium">+{c.growth}%</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </div>
+      </div>
+
+      <div className="flex items-center gap-2 mt-2">
+        <div className="w-1 h-4 rounded-full" style={{ backgroundColor: "var(--admin-deep-purple)" }} />
+        <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider">Audience & Activity</h2>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100 p-6" data-testid="segments-card">
-          <div className="border-l-[3px] pl-3 mb-5" style={{ borderColor: "var(--admin-deep-purple)" }}>
-            <h2 className="text-[15px] font-semibold text-gray-800">User Segments</h2>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Audience breakdown</p>
+          <div className="flex items-center justify-between mb-5">
+            <div className="border-l-[3px] pl-3" style={{ borderColor: "var(--admin-deep-purple)" }}>
+              <h2 className="text-[15px] font-semibold text-gray-800">User Segments</h2>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Audience breakdown</p>
+            </div>
+            <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+              {(["behavior", "age", "type"] as const).map(dim => (
+                <button
+                  key={dim}
+                  onClick={() => setAudienceDimension(dim)}
+                  className={`text-[10px] font-medium px-2.5 py-1 rounded-md transition-all ${audienceDimension === dim ? "bg-white shadow-sm text-gray-800" : "text-gray-400 hover:text-gray-600"}`}
+                  data-testid={`button-audience-${dim}`}
+                >
+                  {dim.charAt(0).toUpperCase() + dim.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="h-8 rounded-full bg-gray-100 overflow-hidden flex" data-testid="segment-stacked-bar">
-            {userSegments.map((seg, idx) => {
-              const pct = (seg.estimatedCount / totalSegmentUsers) * 100;
-              return (
-                <div
-                  key={seg.id}
-                  className="h-full transition-all"
-                  style={{
-                    width: `${pct}%`,
-                    backgroundColor: SEGMENT_COLORS[idx % SEGMENT_COLORS.length],
-                    opacity: SEGMENT_OPACITIES[idx % SEGMENT_OPACITIES.length],
-                  }}
-                  title={`${seg.name}: ${seg.estimatedCount} users (${Math.round(pct)}%)`}
-                />
-              );
-            })}
-          </div>
-          <div className="grid grid-cols-2 gap-3 mt-4" data-testid="segments-legend">
-            {userSegments.map((seg, idx) => {
-              const pct = Math.round((seg.estimatedCount / totalSegmentUsers) * 100);
-              return (
-                <div key={seg.id} className="flex items-center gap-2.5 rounded-lg bg-gray-50 px-3 py-2" data-testid={`segment-${seg.id}`}>
-                  <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: SEGMENT_COLORS[idx % SEGMENT_COLORS.length], opacity: SEGMENT_OPACITIES[idx % SEGMENT_OPACITIES.length] }} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-gray-800 truncate">{seg.name}</p>
-                    <p className="text-[10px] text-gray-500">{seg.estimatedCount} users</p>
-                  </div>
-                  <span className="text-sm font-bold text-gray-800 flex-shrink-0">{pct}%</span>
+          {(() => {
+            const dimData = AUDIENCE_DIMS[audienceDimension];
+            const dimTotal = dimData.reduce((s, x) => s + x.estimatedCount, 0);
+            return (
+              <>
+                <div className="h-8 rounded-full bg-gray-100 overflow-hidden flex" data-testid="segment-stacked-bar">
+                  {dimData.map((seg, idx) => {
+                    const pct = (seg.estimatedCount / dimTotal) * 100;
+                    return (
+                      <div key={seg.id} className="h-full transition-all" style={{ width: `${pct}%`, backgroundColor: SEGMENT_COLORS[idx % SEGMENT_COLORS.length], opacity: SEGMENT_OPACITIES[idx % SEGMENT_OPACITIES.length] }} title={`${seg.name}: ${seg.estimatedCount} users (${Math.round(pct)}%)`} />
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
+                <div className="grid grid-cols-2 gap-3 mt-4" data-testid="segments-legend">
+                  {dimData.map((seg, idx) => {
+                    const pct = Math.round((seg.estimatedCount / dimTotal) * 100);
+                    return (
+                      <div key={seg.id} className="flex items-center gap-2.5 rounded-lg bg-gray-50 px-3 py-2" data-testid={`segment-${seg.id}`}>
+                        <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: SEGMENT_COLORS[idx % SEGMENT_COLORS.length], opacity: SEGMENT_OPACITIES[idx % SEGMENT_OPACITIES.length] }} />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-gray-800 truncate">{seg.name}</p>
+                          <p className="text-[10px] text-gray-500">{seg.estimatedCount} users</p>
+                        </div>
+                        <span className="text-sm font-bold text-gray-800 flex-shrink-0">{pct}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-6" data-testid="recent-activity-card">
