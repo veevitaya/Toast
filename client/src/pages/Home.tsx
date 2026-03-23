@@ -174,7 +174,7 @@ function getContextLine(tempC: number | null, emoji: string): string {
   const day = now.toLocaleDateString("en", { weekday: "short" });
   const time = now.toLocaleTimeString("en", { hour: "numeric", minute: "2-digit", hour12: true });
   const tempStr = tempC !== null ? ` · ${emoji} ${tempC}°C` : "";
-  return `${day} · ${time}${tempStr} · 14 open near you`;
+  return `${day} · ${time}${tempStr}`;
 }
 
 export default function Home() {
