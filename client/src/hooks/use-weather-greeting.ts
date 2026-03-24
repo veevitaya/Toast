@@ -1,7 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 type WeatherCondition = "clear" | "cloudy" | "rainy" | "stormy" | "hot" | "humid" | "unknown";
 type TimeSlot = "early_morning" | "morning" | "lunch" | "afternoon" | "evening" | "late_night";
+
+export interface TasteContext {
+  topLabel: string;
+  topKey: string;
+  score: number;
+  secondLabel?: string;
+  totalSwipes: number;
+}
 
 interface WeatherGreeting {
   headline: string;
@@ -82,12 +90,95 @@ const GREETINGS: Record<TimeSlot, Record<WeatherCondition, { headlines: string[]
   },
 };
 
-export function useWeatherGreeting(): WeatherGreeting {
+function buildPersonalizedSub(
+  taste: TasteContext | undefined,
+  weather: WeatherCondition,
+  slot: TimeSlot,
+  fallbackSub: string
+): string {
+  if (!taste || taste.score <= 0 || taste.totalSwipes < 2) return fallbackSub;
+
+  const top = taste.topLabel;
+  const second = taste.secondLabel;
+  const hasDeep = taste.totalSwipes >= 10;
+
+  const PERSONALIZED: Record<TimeSlot, Record<WeatherCondition, string[]>> = {
+    early_morning: {
+      clear:  [`We know you love ${top} — perfect morning for it`, `Your ${top} craving + sunshine = sorted`],
+      cloudy: [`Cloudy mornings call for your favourite ${top}`, `Cozy weather, and we saved your ${top} spots`],
+      rainy:  [`Rain + ${top}? We already know the answer`, `Your go-to ${top} hits different in the rain`],
+      stormy: [`Storm outside, but your ${top} spots are ready`, `Stay in — we'll find your ${top} fix`],
+      hot:    [`Hot morning, but we know you still want ${top}`, `Beat the heat with your favourite ${top}`],
+      humid:  [`Sticky morning — your ${top} cravings don't care`, `We know the humidity won't stop your ${top} love`],
+      unknown:[`Your ${top} spots are warming up for you`, `Ready to find your morning ${top}?`],
+    },
+    morning: {
+      clear:  [`Sunshine + your love for ${top} = perfect combo`, `We picked ${top} spots just for you today`],
+      cloudy: [`Cloudy but your ${top} radar is clear`, `Perfect weather to hit your favourite ${top} spots`],
+      rainy:  [`Rainy mornings were made for ${top}`, `We know you — ${top} when it rains, always`],
+      stormy: [`Your ${top} delivery game is strong today`, `Storm can't stop your ${top} craving`],
+      hot:    [`Already hot — your ${top} spots have AC though`, `${top} fan? We've got cool spots lined up`],
+      humid:  [`Muggy but your ${top} game stays strong`, `Your ${top} spots are calling — AC included`],
+      unknown:[`${top} spots curated just for you`, `Your morning ${top} fix awaits`],
+    },
+    lunch: {
+      clear:  [`Sunny lunch — we lined up your ${top} picks`, `Your ${top} craving + blue skies, let's go`],
+      cloudy: [`Skip the desk lunch — your ${top} spots miss you`, `We know it's ${top} o'clock for you`],
+      rainy:  [`Rainy lunch = ${top} delivery, we know you well`, `Hot ${top} in the rain — your kind of perfect`],
+      stormy: [`Order your favourite ${top} in — we've got options`, `Storm lunch + ${top} = the move`],
+      hot:    [`Too hot to cook — let your ${top} spots handle it`, `Your ${top} lunch, no sweating required`],
+      humid:  [`AC + your favourite ${top} = lunch sorted`, `We know you'd choose ${top} — spots are ready`],
+      unknown:[`Your ${top} lunch picks are ready`, `Curated ${top} for your lunch hour`],
+    },
+    afternoon: {
+      clear:  [`Afternoon ${top} break? We read your mind`, `Golden hour + ${top} — very you`],
+      cloudy: [`Cloudy afternoon, your ${top} mood is clear`, `We see that ${top} craving coming a mile away`],
+      rainy:  [`Rain + afternoon ${top} = self care`, `Your ${top} treat for a rainy afternoon`],
+      stormy: [`Stay cozy — we've got ${top} spots for you`, `Storm snacking with your favourite ${top}`],
+      hot:    [`Cooling down with ${top}? We know you`, `Your afternoon ${top} fix, AC guaranteed`],
+      humid:  [`Humid but you still want ${top}, right?`, `We know — ${top} no matter the weather`],
+      unknown:[`Your afternoon ${top} picks are ready`, `Time for your ${top} break`],
+    },
+    evening: {
+      clear:  [`Clear night, ${top} on your mind — we know`, `Your ${top} dinner spots are glowing tonight`],
+      cloudy: [`Cozy evening + ${top} = your kind of night`, `We matched tonight's mood to your ${top} love`],
+      rainy:  [`Rainy dinner night — ${top} is the answer`, `We know you + rain + ${top} = happiness`],
+      stormy: [`Stay in with ${top} tonight — sorted for you`, `Your ${top} comfort food for a stormy night`],
+      hot:    [`Warm night — your ${top} spots have you covered`, `Evening ${top} vibes, just like you like it`],
+      humid:  [`Muggy evening but ${top} always hits right`, `Your ${top} dinner mood, perfectly matched`],
+      unknown:[`Tonight's ${top} picks — chosen for you`, `Your evening ${top} lineup is ready`],
+    },
+    late_night: {
+      clear:  [`Late night ${top} run? We saw that coming`, `Clear skies, late cravings — your ${top} spots await`],
+      cloudy: [`Can't sleep? Your ${top} spots are still open`, `Midnight ${top} craving — we've got you`],
+      rainy:  [`Rain + midnight + ${top} = your signature move`, `Late night ${top} in the rain — so you`],
+      stormy: [`Storm night ${top} delivery — we know the drill`, `Your ${top} comfort for a wild night`],
+      hot:    [`Hot night, ${top} craving — we get you`, `Can't sleep in this heat? ${top} it is`],
+      humid:  [`Sticky night — your ${top} spots are still serving`, `Late night ${top} regardless — very you`],
+      unknown:[`Your late night ${top} fix is ready`, `Midnight ${top} — we know you too well`],
+    },
+  };
+
+  const pool = PERSONALIZED[slot]?.[weather] || PERSONALIZED[slot]?.unknown || [fallbackSub];
+
+  if (hasDeep && second && Math.random() > 0.6) {
+    const deepSubs = [
+      `${top} lover with a soft spot for ${second} — we see you`,
+      `Your tastes? ${top} first, ${second} close behind`,
+      `We know it's ${top} today, ${second} tomorrow`,
+      `${top} and ${second} — your flavour fingerprint`,
+    ];
+    return pickRandom(deepSubs);
+  }
+
+  return pickRandom(pool);
+}
+
+export function useWeatherGreeting(taste?: TasteContext): WeatherGreeting {
   const [weather, setWeather] = useState<{ condition: WeatherCondition; tempC: number | null }>({
     condition: "unknown",
     tempC: null,
   });
-  const [greeting, setGreeting] = useState<WeatherGreeting | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,29 +208,20 @@ export function useWeatherGreeting(): WeatherGreeting {
     return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => {
+  const greeting = useMemo(() => {
     const slot = getTimeSlot();
     const pool = GREETINGS[slot][weather.condition];
-    setGreeting({
+    const weatherSub = pickRandom(pool.subs);
+    const sub = buildPersonalizedSub(taste, weather.condition, slot, weatherSub);
+
+    return {
       headline: pickRandom(pool.headlines),
-      sub: pickRandom(pool.subs),
+      sub,
       emoji: pool.emoji,
       weatherCondition: weather.condition,
       tempC: weather.tempC,
-    });
-  }, [weather]);
-
-  if (!greeting) {
-    const slot = getTimeSlot();
-    const pool = GREETINGS[slot].unknown;
-    return {
-      headline: pool.headlines[0],
-      sub: pool.subs[0],
-      emoji: pool.emoji,
-      weatherCondition: "unknown",
-      tempC: null,
     };
-  }
+  }, [weather, taste?.topKey, taste?.score, taste?.totalSwipes]);
 
   return greeting;
 }

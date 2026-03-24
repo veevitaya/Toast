@@ -182,6 +182,31 @@ export default function Home() {
   const { profile: tasteProfile, getSuggestionTitle, topPreference, getMoodSignal } = useTasteProfile();
   const { recordVibe, freq } = useVibeFrequency();
 
+  const tasteContext = useMemo(() => {
+    const totalSwipes = Object.values(tasteProfile.likes).reduce((s, e) => s + e.count, 0)
+      + Object.values(tasteProfile.superLikes).reduce((s, e) => s + e.count, 0);
+
+    const allScores: { label: string; score: number }[] = [];
+    for (const [cat, entry] of Object.entries(tasteProfile.likes)) {
+      allScores.push({ label: cat, score: entry.count });
+    }
+    for (const [cat, entry] of Object.entries(tasteProfile.superLikes)) {
+      const existing = allScores.find(a => a.label === cat);
+      if (existing) existing.score += entry.count * 2;
+      else allScores.push({ label: cat, score: entry.count * 2 });
+    }
+    allScores.sort((a, b) => b.score - a.score);
+    const secondLabel = allScores.length > 1 ? allScores[1].label.toLowerCase() : undefined;
+
+    return {
+      topLabel: topPreference.label,
+      topKey: topPreference.key,
+      score: topPreference.score,
+      secondLabel,
+      totalSwipes,
+    };
+  }, [tasteProfile, topPreference]);
+
   const ALL_VIBE_TILES = useMemo(() => [...VIBE_TILES_MAIN, ...VIBE_TILES_EXTRA], []);
   const sortedVibes = useMemo(() => {
     return [...ALL_VIBE_TILES].sort((a, b) => {
@@ -197,7 +222,7 @@ export default function Home() {
   const { data: suggestions = [], isLoading: suggestionsLoading } = useSuggestions();
   const { data: nearbyRestaurants = [], isLoading: nearbyLoading } = useRestaurants("new");
   const { profile: userProfile } = useLineProfile();
-  const weatherGreeting = useWeatherGreeting();
+  const weatherGreeting = useWeatherGreeting(tasteContext);
 
 
   const [drawerOpen, setDrawerOpen] = useState(true);
