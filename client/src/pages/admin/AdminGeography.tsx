@@ -39,6 +39,17 @@ const BANGKOK_COORDS: Record<string, { x: number; y: number }> = {
   "Lat Phrao": { x: 55, y: 18 },
 };
 
+const BANGKOK_COORDS_MAP: Record<string, { x: number; y: number }> = {
+  "Sukhumvit": { x: 310, y: 180 },
+  "Silom / Sathorn": { x: 220, y: 230 },
+  "Siam / CentralWorld": { x: 250, y: 155 },
+  "Thonglor / Ekkamai": { x: 370, y: 165 },
+  "Ari / Phahonyothin": { x: 215, y: 100 },
+  "Ratchada": { x: 300, y: 110 },
+  "Bangna": { x: 400, y: 270 },
+  "Lat Phrao": { x: 270, y: 75 },
+};
+
 export default function AdminGeography() {
   const [mapView, setMapView] = useState<"list" | "map">("list");
   const maxClickouts = Math.max(...DISTRICT_DATA.map(d => d.clickouts));
@@ -106,33 +117,71 @@ export default function AdminGeography() {
               ))}
             </div>
           ) : (
-            <div className="relative w-full h-[360px] bg-gray-50 rounded-xl overflow-hidden" data-testid="district-map-view">
-              <svg viewBox="0 0 100 80" className="w-full h-full">
+            <div className="relative w-full h-[420px] rounded-xl overflow-hidden" data-testid="district-map-view" style={{ backgroundColor: "#EEF2F7" }}>
+              <svg viewBox="0 0 500 400" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="grid" width="25" height="25" patternUnits="userSpaceOnUse">
+                    <path d="M 25 0 L 0 0 0 25" fill="none" stroke="#D5DCE6" strokeWidth="0.5" opacity="0.5" />
+                  </pattern>
+                  <filter id="glow">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  </filter>
+                </defs>
+
+                <rect width="500" height="400" fill="url(#grid)" />
+
+                <path d="M 80 180 Q 90 120 160 90 Q 200 75 250 70 Q 320 65 380 100 Q 430 130 440 200 Q 445 260 410 310 Q 370 360 300 370 Q 240 375 170 350 Q 110 320 85 270 Q 70 230 80 180 Z" fill="#D8E2F0" stroke="#B8C6DA" strokeWidth="1.5" opacity="0.6" />
+
+                <line x1="80" y1="230" x2="440" y2="230" stroke="#C5D0DE" strokeWidth="0.7" strokeDasharray="4 3" opacity="0.4" />
+                <line x1="250" y1="70" x2="250" y2="370" stroke="#C5D0DE" strokeWidth="0.7" strokeDasharray="4 3" opacity="0.4" />
+                <line x1="160" y1="90" x2="410" y2="310" stroke="#C5D0DE" strokeWidth="0.5" strokeDasharray="3 4" opacity="0.25" />
+                <line x1="380" y1="100" x2="170" y2="350" stroke="#C5D0DE" strokeWidth="0.5" strokeDasharray="3 4" opacity="0.25" />
+
+                <path d="M 120 260 Q 180 280 260 290 Q 340 295 400 270" fill="none" stroke="#A8C4E0" strokeWidth="2.5" opacity="0.35" />
+                <text x="260" y="305" textAnchor="middle" fontSize="7" fill="#8EA4BE" opacity="0.5" fontStyle="italic">Chao Phraya</text>
+
+                <text x="250" y="28" textAnchor="middle" fontSize="10" fill="#A0AEC0" fontWeight="600" letterSpacing="3">BANGKOK</text>
+                <text x="250" y="40" textAnchor="middle" fontSize="7" fill="#B8C6DA">กรุงเทพมหานคร</text>
+
                 {DISTRICT_DATA.map(d => {
-                  const coords = BANGKOK_COORDS[d.name];
+                  const coords = BANGKOK_COORDS_MAP[d.name];
                   if (!coords) return null;
-                  const radius = 2 + (d.clickouts / maxClickouts) * 4;
+                  const radius = 12 + (d.clickouts / maxClickouts) * 22;
+                  const pulseRadius = radius + 6;
                   return (
-                    <g key={d.name}>
-                      <circle cx={coords.x} cy={coords.y} r={radius + 1.5} fill={intensityColor(d.demand)} opacity={0.2} />
-                      <circle cx={coords.x} cy={coords.y} r={radius} fill={intensityColor(d.demand)} opacity={0.85} />
-                      <text x={coords.x} y={coords.y + radius + 3.5} textAnchor="middle" className="text-[2.5px] font-medium fill-gray-700">
+                    <g key={d.name} filter="url(#glow)">
+                      <circle cx={coords.x} cy={coords.y} r={pulseRadius} fill={intensityColor(d.demand)} opacity={0.12}>
+                        <animate attributeName="r" values={`${pulseRadius};${pulseRadius + 4};${pulseRadius}`} dur="3s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0.12;0.06;0.12" dur="3s" repeatCount="indefinite" />
+                      </circle>
+                      <circle cx={coords.x} cy={coords.y} r={radius} fill={intensityColor(d.demand)} opacity={0.85} stroke="white" strokeWidth="1.5" />
+                      <text x={coords.x} y={coords.y + 1} textAnchor="middle" fontSize="10" fontWeight="bold" fill="white" dominantBaseline="middle">
+                        {d.demand}
+                      </text>
+                      <text x={coords.x} y={coords.y + radius + 12} textAnchor="middle" fontSize="9" fontWeight="600" fill="#4A5568">
                         {d.name.split(" / ")[0]}
                       </text>
-                      <text x={coords.x} y={coords.y + 0.8} textAnchor="middle" className="text-[2px] font-bold fill-white">
-                        {d.demand}
+                      <text x={coords.x} y={coords.y + radius + 22} textAnchor="middle" fontSize="7" fill="#8899A8">
+                        {d.clickouts.toLocaleString()} clicks
                       </text>
                     </g>
                   );
                 })}
+
+                <g transform="translate(15, 340)">
+                  <rect x="0" y="0" width="12" height="12" rx="2" fill="#8B5CF6" opacity="0.15" />
+                  <rect x="0" y="16" width="12" height="12" rx="2" fill="#8B5CF6" opacity="0.5" />
+                  <rect x="0" y="32" width="12" height="12" rx="2" fill="#8B5CF6" opacity="0.9" />
+                  <text x="17" y="10" fontSize="7" fill="#718096">Low demand</text>
+                  <text x="17" y="26" fontSize="7" fill="#718096">Medium</text>
+                  <text x="17" y="42" fontSize="7" fill="#718096">High demand</text>
+                </g>
+
+                <circle cx="15" cy="320" r="4" fill="#8B5CF6" opacity="0.5" />
+                <text x="23" y="323" fontSize="7" fill="#718096">= clickout volume</text>
+
               </svg>
-              <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-gray-100">
-                <span className="text-[9px] text-gray-400">Low</span>
-                {[0.15, 0.30, 0.50, 0.70, 0.90].map(o => (
-                  <div key={o} className="w-3 h-3 rounded-sm" style={{ backgroundColor: `rgba(139, 92, 246, ${o})` }} />
-                ))}
-                <span className="text-[9px] text-gray-400">High</span>
-              </div>
             </div>
           )}
         </div>
