@@ -30,11 +30,11 @@ const DAYPART_TRENDS = [
 ];
 
 const SEGMENT_TRENDS = [
-  { segment: "Budget Diners", topCuisine: "Thai Street Food", avgBudget: "฿150" },
-  { segment: "Foodies", topCuisine: "Japanese Omakase", avgBudget: "฿1,200" },
-  { segment: "Health-conscious", topCuisine: "Salad & Poke", avgBudget: "฿350" },
-  { segment: "Date Night", topCuisine: "Italian", avgBudget: "฿800" },
-  { segment: "Groups", topCuisine: "Korean BBQ", avgBudget: "฿450" },
+  { segment: "Budget Diners", topCuisine: "Thai Street Food", avgBudget: 150, users: 1840, pct: 32, swipeRate: 78 },
+  { segment: "Foodies", topCuisine: "Japanese Omakase", avgBudget: 1200, users: 620, pct: 11, swipeRate: 92 },
+  { segment: "Health-conscious", topCuisine: "Salad & Poke", avgBudget: 320, users: 980, pct: 17, swipeRate: 65 },
+  { segment: "Date Night", topCuisine: "Italian", avgBudget: 850, users: 1120, pct: 19, swipeRate: 88 },
+  { segment: "Groups", topCuisine: "Korean BBQ", avgBudget: 420, users: 1210, pct: 21, swipeRate: 71 },
 ];
 
 export default function AdminFoodTrends() {
@@ -130,19 +130,41 @@ export default function AdminFoodTrends() {
           <div className="bg-white rounded-2xl border border-gray-100 p-6" data-testid="card-segment-trends">
             <div className="border-l-[3px] pl-3 mb-5" style={{ borderColor: "var(--admin-deep-purple)" }}>
               <h3 className="text-[15px] font-semibold text-gray-800">Segment Preferences</h3>
-              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">User segment × cuisine</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">User segment × cuisine × budget</p>
             </div>
-            <div className="space-y-2.5">
-              {SEGMENT_TRENDS.map(s => (
-                <div key={s.segment} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                  <Users className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-xs font-medium text-gray-800">{s.segment}</span>
-                    <p className="text-[10px] text-gray-400">{s.topCuisine}</p>
-                  </div>
-                  <span className="text-xs font-medium text-gray-600">{s.avgBudget}</span>
-                </div>
-              ))}
+            <div className="space-y-3">
+              {(() => {
+                const maxBudget = Math.max(...SEGMENT_TRENDS.map(s => s.avgBudget));
+                const COLORS = ["var(--admin-deep-purple)", "var(--admin-pink)", "var(--admin-teal)", "var(--admin-blue)", "var(--admin-cyan)"];
+                return SEGMENT_TRENDS.map((s, i) => {
+                  const budgetPct = Math.max(10, (s.avgBudget / maxBudget) * 100);
+                  return (
+                    <div key={s.segment} className="py-2 border-b border-gray-50 last:border-0" data-testid={`segment-trend-${s.segment.toLowerCase().replace(/[\s-]+/g, "-")}`}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                          <span className="text-xs font-semibold text-gray-800">{s.segment}</span>
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-gray-100 text-gray-500">{s.pct}% of users</span>
+                        </div>
+                        <span className="text-[10px] text-gray-400">{s.users.toLocaleString()} users</span>
+                      </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-20 text-[10px] text-gray-400 shrink-0">Avg budget</span>
+                        <div className="flex-1 bg-gray-50 rounded-full h-5 overflow-hidden">
+                          <div className="h-full rounded-full flex items-center px-2" style={{ width: `${budgetPct}%`, backgroundColor: COLORS[i], opacity: 0.75 }}>
+                            <span className="text-[10px] font-bold text-white whitespace-nowrap">฿{s.avgBudget.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 ml-[88px]">
+                        <span className="text-[10px] text-gray-500">Top: <span className="font-medium text-gray-700">{s.topCuisine}</span></span>
+                        <span className="text-[10px] text-gray-400">•</span>
+                        <span className="text-[10px] text-gray-500">Swipe rate: <span className="font-medium text-gray-700">{s.swipeRate}%</span></span>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
         </div>
