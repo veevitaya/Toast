@@ -170,62 +170,50 @@ export default function AdminSwipeSessions() {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6" data-testid="card-segment-comparison">
           <div className="border-l-[3px] pl-3 mb-5" style={{ borderColor: "var(--admin-pink)" }}>
             <h3 className="text-[15px] font-semibold text-gray-800">Segment Comparison</h3>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Solo vs Group butterfly chart</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Solo vs Group · side-by-side</p>
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center mb-3">
-              <div className="w-[100px]" />
-              <div className="flex-1 flex items-center">
-                <div className="flex-1 flex justify-end pr-3">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#B8C4F0" }} />
-                    <span className="text-[11px] font-semibold text-gray-500">Solo (72%)</span>
-                  </div>
-                </div>
-                <div className="flex-1 flex justify-start pl-3">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#E8C8E8" }} />
-                    <span className="text-[11px] font-semibold text-gray-500">Group (28%)</span>
-                  </div>
-                </div>
-              </div>
+          <div className="flex items-center justify-end gap-4 mb-4">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "var(--admin-blue)" }} />
+              <span className="text-[11px] font-semibold text-gray-500">Solo (72%)</span>
             </div>
-            {[
-              { metric: "Avg. Swipe", solo: 15.3, group: 8.1, max: 20, unit: "", format: (v: number) => v.toFixed(1) },
-              { metric: "Match Rate", solo: 27, group: 62, max: 100, unit: "%", format: (v: number) => `${v}%` },
-              { metric: "Avg. Time", solo: 180, group: 220, max: 300, unit: "", format: (v: number) => v >= 60 ? `${Math.floor(v / 60)}m ${v % 60 > 0 ? `${(v % 60)}s` : ""}`.trim() : `${v}s` },
-              { metric: "Checkout Rate", solo: 21, group: 30, max: 50, unit: "%", format: (v: number) => `${v}%` },
-            ].map(row => {
-              const soloPct = Math.max(8, (row.solo / row.max) * 100);
-              const groupPct = Math.max(8, (row.group / row.max) * 100);
-              return (
-                <div key={row.metric} className="flex items-center h-11" data-testid={`segment-row-${row.metric.toLowerCase().replace(/[\s.]+/g, "-")}`}>
-                  <div className="w-[100px] shrink-0 pr-3">
-                    <span className="text-xs font-medium text-gray-500">{row.metric}</span>
-                  </div>
-                  <div className="flex-1 flex items-center relative">
-                    <div className="flex-1 flex justify-end">
-                      <div
-                        className="h-8 rounded-l-md flex items-center justify-end px-2.5 transition-all"
-                        style={{ width: `${soloPct}%`, backgroundColor: "#B8C4F0" }}
-                      >
-                        <span className="text-[11px] font-semibold text-[#4A5078] whitespace-nowrap">{row.format(row.solo)}</span>
-                      </div>
-                    </div>
-                    <div className="w-[2px] h-10 bg-gray-200 shrink-0 z-10" />
-                    <div className="flex-1 flex justify-start">
-                      <div
-                        className="h-8 rounded-r-md flex items-center px-2.5 transition-all"
-                        style={{ width: `${groupPct}%`, backgroundColor: "#E8C8E8" }}
-                      >
-                        <span className="text-[11px] font-semibold text-[#785078] whitespace-nowrap">{row.format(row.group)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "var(--admin-pink)" }} />
+              <span className="text-[11px] font-semibold text-gray-500">Group (28%)</span>
+            </div>
           </div>
+          {(() => {
+            const metrics = [
+              { metric: "Avg. Swipes", solo: 15.3, group: 8.1, max: 20, format: (v: number) => v.toFixed(1) },
+              { metric: "Match Rate", solo: 27, group: 62, max: 100, format: (v: number) => `${v}%` },
+              { metric: "Avg. Time", solo: 180, group: 220, max: 300, format: (v: number) => v >= 60 ? `${Math.floor(v / 60)}m ${v % 60 > 0 ? `${(v % 60)}s` : ""}`.trim() : `${v}s` },
+              { metric: "Checkout Rate", solo: 21, group: 30, max: 50, format: (v: number) => `${v}%` },
+            ];
+            const globalMax = Math.max(...metrics.map(m => Math.max(m.solo / m.max, m.group / m.max)));
+            return (
+              <div className="flex items-end gap-6" style={{ height: "180px" }}>
+                {metrics.map(row => {
+                  const soloH = Math.max(12, (row.solo / row.max / globalMax) * 140);
+                  const groupH = Math.max(12, (row.group / row.max / globalMax) * 140);
+                  return (
+                    <div key={row.metric} className="flex-1 flex flex-col items-center justify-end" style={{ height: "100%" }} data-testid={`segment-row-${row.metric.toLowerCase().replace(/[\s.]+/g, "-")}`}>
+                      <div className="flex items-end gap-1.5 w-full justify-center mb-1">
+                        <div className="flex flex-col items-center gap-1" style={{ width: "40%" }}>
+                          <span className="text-[10px] font-semibold text-gray-600 whitespace-nowrap">{row.format(row.solo)}</span>
+                          <div className="w-full rounded-t-md transition-all" style={{ height: `${soloH}px`, backgroundColor: "var(--admin-blue)", opacity: 0.85 }} />
+                        </div>
+                        <div className="flex flex-col items-center gap-1" style={{ width: "40%" }}>
+                          <span className="text-[10px] font-semibold text-gray-600 whitespace-nowrap">{row.format(row.group)}</span>
+                          <div className="w-full rounded-t-md transition-all" style={{ height: `${groupH}px`, backgroundColor: "var(--admin-pink)", opacity: 0.85 }} />
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-gray-500 font-medium mt-1 text-center">{row.metric}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       </div>
 

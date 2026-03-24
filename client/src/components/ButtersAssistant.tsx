@@ -513,8 +513,8 @@ export default function ButtersAssistant() {
 
   const totalPending = isOwner ? 0 : pendingClaims.length;
   const quickActions = isOwner ? OWNER_QUICK_ACTIONS : ADMIN_QUICK_ACTIONS;
-  const accentColor = isOwner ? "#00B14F" : "#FFCC02";
-  const accentBg = isOwner ? "rgba(0,177,79,0.08)" : "rgba(255,204,2,0.12)";
+  const accentColor = "#FFCC02";
+  const accentBg = isOwner ? "rgba(255,204,2,0.12)" : "rgba(255,204,2,0.12)";
 
   return (
     <>
@@ -523,7 +523,7 @@ export default function ButtersAssistant() {
         className="fixed bottom-5 right-5 z-50 w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95 hover:shadow-xl"
         style={{
           backgroundColor: accentColor,
-          boxShadow: `0 4px 20px ${isOwner ? "rgba(0,177,79,0.3)" : "rgba(255,204,2,0.35)"}`,
+          boxShadow: "0 4px 20px rgba(255,204,2,0.35)",
         }}
         data-testid="button-butters-toggle"
       >

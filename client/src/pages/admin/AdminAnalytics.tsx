@@ -85,22 +85,6 @@ interface TopRestaurant {
   count: number;
 }
 
-const CONVERSION_FUNNEL = [
-  { label: "Impressions", value: 12400, pct: 100, bg: "rgba(244, 63, 94, 0.15)", textColor: "text-gray-700" },
-  { label: "Swipe Views", value: 8200, pct: 66, bg: "rgba(244, 63, 94, 0.30)", textColor: "text-gray-800" },
-  { label: "Right Swipes", value: 3100, pct: 25, bg: "rgba(244, 63, 94, 0.55)", textColor: "text-white" },
-  { label: "Detail Views", value: 1800, pct: 15, bg: "rgba(244, 63, 94, 0.75)", textColor: "text-white" },
-  { label: "Orders / Bookings", value: 420, pct: 3.4, bg: "rgba(244, 63, 94, 1)", textColor: "text-white" },
-];
-
-const GEO_HOTSPOTS = [
-  { zone: "Sukhumvit", orders: 1240, growth: "+18%", rank: 1 },
-  { zone: "Silom / Sathorn", orders: 890, growth: "+12%", rank: 2 },
-  { zone: "Siam / CentralWorld", orders: 720, growth: "+8%", rank: 3 },
-  { zone: "Thonglor / Ekkamai", orders: 680, growth: "+22%", rank: 4 },
-  { zone: "Ari / Phahonyothin", orders: 410, growth: "+31%", rank: 5 },
-];
-
 const TRENDING_CUISINES = [
   { name: "Thai Street Food", growth: 42 },
   { name: "Korean BBQ", growth: 35 },
@@ -398,6 +382,32 @@ export default function AdminAnalytics() {
         ))}
       </div>
 
+      {/* AI-Generated Insights — surfaced above collapsible */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6" data-testid="section-user-ai-insights">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-deep-purple)" }}>
+            <Brain className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h3 className="text-[15px] font-semibold text-gray-800">AI-Generated Insights</h3>
+            <p className="text-xs text-muted-foreground/40">Key patterns detected from user behavior data</p>
+          </div>
+          <span className="inline-flex items-center text-[10px] font-medium rounded-full px-2 py-0.5 bg-[var(--admin-blue-10)] text-foreground ml-auto">
+            <Zap className="w-2.5 h-2.5 mr-0.5 text-[var(--admin-deep-purple)]" />Auto
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {USER_AI_INSIGHTS.map((insight, idx) => (
+            <div key={idx} className="flex items-start gap-2.5 rounded-lg p-3 bg-gray-50 border border-gray-100" data-testid={`text-user-ai-insight-${idx}`}>
+              <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: "var(--admin-deep-purple)" }}>
+                <span className="text-white text-[9px] font-bold">{idx + 1}</span>
+              </div>
+              <span className="text-xs text-muted-foreground leading-relaxed">{insight}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* User Intelligence Section */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" data-testid="section-user-intelligence">
         <button
@@ -416,26 +426,6 @@ export default function AdminAnalytics() {
         </button>
         {showUserIntel && (
           <div className="px-6 pb-6 pt-2 space-y-6">
-            <div className="rounded-xl bg-gray-50 border border-gray-100 p-5" data-testid="section-user-ai-insights">
-              <div className="flex items-center gap-2 mb-3">
-                <Brain className="w-3.5 h-3.5 text-[var(--admin-deep-purple)]" />
-                <h4 className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">AI-Generated Insights</h4>
-                <span className="inline-flex items-center text-[10px] font-medium rounded-full px-1.5 py-0.5 bg-[var(--admin-blue-10)] text-foreground">
-                  <Zap className="w-2.5 h-2.5 mr-0.5 text-[var(--admin-deep-purple)]" />Auto
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {USER_AI_INSIGHTS.map((insight, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5 rounded-lg p-2.5 bg-white border border-gray-100" data-testid={`text-user-ai-insight-${idx}`}>
-                    <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: "var(--admin-deep-purple)" }}>
-                      <span className="text-white text-[9px] font-bold">{idx + 1}</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">{insight}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="section-user-kpis">
               <UserKpiCard icon={<Users className="w-4 h-4" style={{ color: "var(--admin-deep-purple)" }} />} label="Total Users" value={(summary?.totalUsers || 0).toLocaleString()} accentColor="var(--admin-deep-purple)" />
               <UserKpiCard icon={<Activity className="w-4 h-4" style={{ color: "var(--admin-pink)" }} />} label="Active This Week" value="68%" sub="2,422 users" accentColor="var(--admin-pink)" />
@@ -914,40 +904,6 @@ export default function AdminAnalytics() {
           )}
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-conversion-funnel">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--admin-deep-purple)" }}>
-              <Target className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h3 className="text-[15px] font-semibold text-gray-800">Conversion Funnel</h3>
-              <p className="text-xs text-muted-foreground/40">Swipe to order journey</p>
-            </div>
-          </div>
-          <div className="space-y-2">
-            {CONVERSION_FUNNEL.map((step, idx) => (
-              <div key={step.label} className="flex items-center gap-3" data-testid={`funnel-step-${idx}`}>
-                <div className="w-16 text-right">
-                  <span className="text-xs font-medium text-muted-foreground">{step.pct}%</span>
-                </div>
-                <div className="flex-1 h-8 rounded-lg bg-gray-50 overflow-hidden relative">
-                  <div
-                    className="h-full rounded-lg flex items-center px-3 transition-all"
-                    style={{ width: `${Math.max(step.pct, 8)}%`, backgroundColor: step.bg }}
-                  >
-                    {step.pct > 20 && (
-                      <span className={`text-[10px] font-medium whitespace-nowrap ${step.textColor}`}>{step.value.toLocaleString()}</span>
-                    )}
-                  </div>
-                  {step.pct <= 20 && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-medium">{step.value.toLocaleString()}</span>
-                  )}
-                </div>
-                <span className="w-24 text-xs text-foreground font-medium">{step.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-trending-cuisines">
           <div className="flex items-center gap-2">
@@ -973,29 +929,6 @@ export default function AdminAnalytics() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-geo-hotspots">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: "var(--admin-cyan)" }}>
-              <MapPin className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h3 className="text-[15px] font-semibold text-gray-800">Geographic Hotspots</h3>
-              <p className="text-xs text-muted-foreground/40">Top order zones in Bangkok</p>
-            </div>
-          </div>
-          <div className="space-y-2">
-            {GEO_HOTSPOTS.map((spot) => (
-              <div key={spot.zone} className="flex items-center gap-3 py-1.5" data-testid={`geo-spot-${spot.rank}`}>
-                <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0 ${spot.rank === 1 ? "bg-[var(--admin-deep-purple)] text-white" : "bg-gray-100 text-muted-foreground"}`}>
-                  {spot.rank}
-                </span>
-                <span className="flex-1 text-sm font-medium text-foreground">{spot.zone}</span>
-                <span className="text-xs text-muted-foreground font-medium">{spot.orders.toLocaleString()}</span>
-                <span className="text-xs text-green-500 font-semibold">{spot.growth}</span>
-              </div>
-            ))}
-          </div>
-        </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4" data-testid="card-user-segments">
           <div className="flex items-center gap-2">
