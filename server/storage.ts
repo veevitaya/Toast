@@ -298,7 +298,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSuggestions(): Promise<Restaurant[]> {
-    return await db.select().from(restaurants).limit(5);
+    return await db.select().from(restaurants).limit(10);
   }
 
   async getUserEvents(userId: string, limit: number = 200): Promise<AnalyticsEvent[]> {
