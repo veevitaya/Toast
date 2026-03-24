@@ -167,37 +167,61 @@ export default function AdminSwipeSessions() {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-6" data-testid="card-segment-comparison">
           <div className="border-l-[3px] pl-3 mb-5" style={{ borderColor: "var(--admin-pink)" }}>
             <h3 className="text-[15px] font-semibold text-gray-800">Segment Comparison</h3>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Solo vs Group side-by-side</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Solo vs Group butterfly chart</p>
           </div>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "var(--admin-deep-purple)" }} /><span className="text-gray-600">Solo (72%)</span></div>
-              <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "var(--admin-pink)" }} /><span className="text-gray-600">Group (28%)</span></div>
+          <div className="space-y-1">
+            <div className="flex items-center mb-3">
+              <div className="w-[100px]" />
+              <div className="flex-1 flex items-center">
+                <div className="flex-1 flex justify-end pr-3">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#B8C4F0" }} />
+                    <span className="text-[11px] font-semibold text-gray-500">Solo (72%)</span>
+                  </div>
+                </div>
+                <div className="flex-1 flex justify-start pl-3">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#E8C8E8" }} />
+                    <span className="text-[11px] font-semibold text-gray-500">Group (28%)</span>
+                  </div>
+                </div>
+              </div>
             </div>
             {[
-              { metric: "Avg Swipes", solo: 7.8, group: 12.4, max: 15, unit: "" },
-              { metric: "Match Rate", solo: 69, group: 62, max: 100, unit: "%" },
-              { metric: "Avg Time (sec)", solo: 118, group: 225, max: 300, unit: "s" },
-              { metric: "Clickout Rate", solo: 36, group: 28, max: 50, unit: "%" },
-            ].map(row => (
-              <div key={row.metric} className="space-y-1">
-                <span className="text-xs text-gray-500 font-medium">{row.metric}</span>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 flex items-center gap-1.5">
-                    <div className="flex-1 bg-gray-50 rounded-md h-6 overflow-hidden">
-                      <div className="h-full rounded-md flex items-center px-2" style={{ width: `${(row.solo / row.max) * 100}%`, backgroundColor: "var(--admin-deep-purple)", opacity: 0.8 }}>
-                        <span className="text-[10px] font-semibold text-white whitespace-nowrap">{row.solo}{row.unit}</span>
+              { metric: "Avg. Swipe", solo: 15.3, group: 8.1, max: 20, unit: "", format: (v: number) => v.toFixed(1) },
+              { metric: "Match Rate", solo: 27, group: 62, max: 100, unit: "%", format: (v: number) => `${v}%` },
+              { metric: "Avg. Time", solo: 180, group: 220, max: 300, unit: "", format: (v: number) => v >= 60 ? `${Math.floor(v / 60)}m ${v % 60 > 0 ? `${(v % 60)}s` : ""}`.trim() : `${v}s` },
+              { metric: "Checkout Rate", solo: 21, group: 30, max: 50, unit: "%", format: (v: number) => `${v}%` },
+            ].map(row => {
+              const soloPct = Math.max(8, (row.solo / row.max) * 100);
+              const groupPct = Math.max(8, (row.group / row.max) * 100);
+              return (
+                <div key={row.metric} className="flex items-center h-11" data-testid={`segment-row-${row.metric.toLowerCase().replace(/[\s.]+/g, "-")}`}>
+                  <div className="w-[100px] shrink-0 pr-3">
+                    <span className="text-xs font-medium text-gray-500">{row.metric}</span>
+                  </div>
+                  <div className="flex-1 flex items-center relative">
+                    <div className="flex-1 flex justify-end">
+                      <div
+                        className="h-8 rounded-l-md flex items-center justify-end px-2.5 transition-all"
+                        style={{ width: `${soloPct}%`, backgroundColor: "#B8C4F0" }}
+                      >
+                        <span className="text-[11px] font-semibold text-[#4A5078] whitespace-nowrap">{row.format(row.solo)}</span>
                       </div>
                     </div>
-                    <div className="flex-1 bg-gray-50 rounded-md h-6 overflow-hidden">
-                      <div className="h-full rounded-md flex items-center px-2" style={{ width: `${(row.group / row.max) * 100}%`, backgroundColor: "var(--admin-pink)", opacity: 0.8 }}>
-                        <span className="text-[10px] font-semibold text-white whitespace-nowrap">{row.group}{row.unit}</span>
+                    <div className="w-[2px] h-10 bg-gray-200 shrink-0 z-10" />
+                    <div className="flex-1 flex justify-start">
+                      <div
+                        className="h-8 rounded-r-md flex items-center px-2.5 transition-all"
+                        style={{ width: `${groupPct}%`, backgroundColor: "#E8C8E8" }}
+                      >
+                        <span className="text-[11px] font-semibold text-[#785078] whitespace-nowrap">{row.format(row.group)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
