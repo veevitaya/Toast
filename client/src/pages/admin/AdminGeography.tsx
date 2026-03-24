@@ -48,14 +48,14 @@ const BANGKOK_COORDS: Record<string, { x: number; y: number }> = {
 };
 
 const BANGKOK_COORDS_MAP: Record<string, { x: number; y: number }> = {
-  "Sukhumvit": { x: 310, y: 180 },
-  "Silom / Sathorn": { x: 220, y: 230 },
-  "Siam / CentralWorld": { x: 250, y: 155 },
-  "Thonglor / Ekkamai": { x: 370, y: 165 },
-  "Ari / Phahonyothin": { x: 215, y: 100 },
-  "Ratchada": { x: 300, y: 110 },
-  "Bangna": { x: 400, y: 270 },
-  "Lat Phrao": { x: 270, y: 75 },
+  "Sukhumvit": { x: 370, y: 220 },
+  "Silom / Sathorn": { x: 230, y: 310 },
+  "Siam / CentralWorld": { x: 290, y: 200 },
+  "Thonglor / Ekkamai": { x: 460, y: 190 },
+  "Ari / Phahonyothin": { x: 250, y: 105 },
+  "Ratchada": { x: 370, y: 120 },
+  "Bangna": { x: 530, y: 340 },
+  "Lat Phrao": { x: 340, y: 65 },
 };
 
 export default function AdminGeography() {
@@ -125,70 +125,103 @@ export default function AdminGeography() {
               ))}
             </div>
           ) : (
-            <div className="relative w-full h-[420px] rounded-xl overflow-hidden" data-testid="district-map-view" style={{ backgroundColor: "#EEF2F7" }}>
-              <svg viewBox="0 0 500 400" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <div className="relative w-full h-[480px] rounded-xl overflow-hidden" data-testid="district-map-view" style={{ backgroundColor: "#F0F4F8" }}>
+              <svg viewBox="0 0 620 460" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
                 <defs>
-                  <pattern id="grid" width="25" height="25" patternUnits="userSpaceOnUse">
-                    <path d="M 25 0 L 0 0 0 25" fill="none" stroke="#D5DCE6" strokeWidth="0.5" opacity="0.5" />
+                  <pattern id="mapGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#DCE3ED" strokeWidth="0.4" />
                   </pattern>
-                  <filter id="glow">
-                    <feGaussianBlur stdDeviation="4" result="blur" />
-                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  <linearGradient id="riverGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#93C5FD" stopOpacity="0.2" />
+                    <stop offset="50%" stopColor="#60A5FA" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#93C5FD" stopOpacity="0.2" />
+                  </linearGradient>
+                  <filter id="shadow">
+                    <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#000" floodOpacity="0.15" />
                   </filter>
                 </defs>
 
-                <rect width="500" height="400" fill="url(#grid)" />
+                <rect width="620" height="460" fill="url(#mapGrid)" />
 
-                <path d="M 80 180 Q 90 120 160 90 Q 200 75 250 70 Q 320 65 380 100 Q 430 130 440 200 Q 445 260 410 310 Q 370 360 300 370 Q 240 375 170 350 Q 110 320 85 270 Q 70 230 80 180 Z" fill="#D0DAE8" stroke="#A8B8CE" strokeWidth="2" opacity="0.8" />
+                <path d="M 60 200 Q 80 100 180 55 Q 260 25 350 30 Q 450 35 520 85 Q 570 130 580 210 Q 585 300 550 370 Q 500 420 400 435 Q 300 445 200 420 Q 120 395 80 330 Q 55 280 60 200 Z" fill="#E2E8F0" stroke="#B0BEC5" strokeWidth="1.5" opacity="0.7" />
 
-                <line x1="80" y1="230" x2="440" y2="230" stroke="#B8C6DA" strokeWidth="0.8" strokeDasharray="4 3" opacity="0.5" />
-                <line x1="250" y1="70" x2="250" y2="370" stroke="#B8C6DA" strokeWidth="0.8" strokeDasharray="4 3" opacity="0.5" />
-                <line x1="160" y1="90" x2="410" y2="310" stroke="#C5D0DE" strokeWidth="0.6" strokeDasharray="3 4" opacity="0.35" />
-                <line x1="380" y1="100" x2="170" y2="350" stroke="#C5D0DE" strokeWidth="0.6" strokeDasharray="3 4" opacity="0.35" />
+                <path d="M 140 370 Q 155 340 165 310 Q 175 280 180 250 Q 185 220 195 195 Q 210 170 230 155 Q 245 145 255 130 Q 260 115 258 95" fill="none" stroke="#93C5FD" strokeWidth="12" opacity="0.2" strokeLinecap="round" />
+                <path d="M 140 370 Q 155 340 165 310 Q 175 280 180 250 Q 185 220 195 195 Q 210 170 230 155 Q 245 145 255 130 Q 260 115 258 95" fill="none" stroke="#60A5FA" strokeWidth="4" opacity="0.4" strokeLinecap="round" />
+                <path d="M 140 370 Q 155 340 165 310 Q 175 280 180 250 Q 185 220 195 195 Q 210 170 230 155 Q 245 145 255 130 Q 260 115 258 95" fill="none" stroke="#3B82F6" strokeWidth="1.5" opacity="0.5" strokeLinecap="round" />
+                <text x="148" y="285" fontSize="7" fill="#60A5FA" opacity="0.7" fontStyle="italic" transform="rotate(-75, 148, 285)">Chao Phraya River</text>
 
-                <path d="M 120 260 Q 180 280 260 290 Q 340 295 400 270" fill="none" stroke="#7EB3D8" strokeWidth="3" opacity="0.5" />
-                <text x="260" y="305" textAnchor="middle" fontSize="8" fill="#6A9BC0" opacity="0.7" fontStyle="italic">Chao Phraya River</text>
+                <path d="M 130 400 Q 140 380 150 355 Q 158 330 162 300" fill="none" stroke="#93C5FD" strokeWidth="6" opacity="0.15" strokeLinecap="round" />
+                <path d="M 130 400 Q 140 380 150 355 Q 158 330 162 300" fill="none" stroke="#60A5FA" strokeWidth="2" opacity="0.3" strokeLinecap="round" />
 
-                <text x="250" y="28" textAnchor="middle" fontSize="12" fill="#8295AB" fontWeight="700" letterSpacing="4">BANGKOK</text>
-                <text x="250" y="42" textAnchor="middle" fontSize="8" fill="#A0B0C4">กรุงเทพมหานคร</text>
+                <line x1="250" y1="105" x2="290" y2="200" stroke="#4CAF50" strokeWidth="2.5" opacity="0.35" strokeLinecap="round" />
+                <line x1="290" y1="200" x2="290" y2="240" stroke="#4CAF50" strokeWidth="2.5" opacity="0.35" strokeLinecap="round" />
+                <line x1="290" y1="240" x2="230" y2="310" stroke="#4CAF50" strokeWidth="2.5" opacity="0.35" strokeLinecap="round" />
+                <text x="282" y="172" fontSize="6" fill="#4CAF50" opacity="0.55" fontWeight="600">BTS</text>
+
+                <line x1="370" y1="65" x2="370" y2="120" stroke="#1565C0" strokeWidth="2" opacity="0.3" strokeLinecap="round" />
+                <line x1="370" y1="120" x2="340" y2="200" stroke="#1565C0" strokeWidth="2" opacity="0.3" strokeLinecap="round" />
+                <line x1="340" y1="200" x2="290" y2="200" stroke="#1565C0" strokeWidth="2" opacity="0.3" strokeLinecap="round" />
+                <text x="358" y="92" fontSize="6" fill="#1565C0" opacity="0.5" fontWeight="600">MRT</text>
+
+                <line x1="290" y1="200" x2="460" y2="190" stroke="#9E9E9E" strokeWidth="1.2" opacity="0.25" strokeDasharray="6 3" />
+                <line x1="460" y1="190" x2="530" y2="340" stroke="#9E9E9E" strokeWidth="1.2" opacity="0.25" strokeDasharray="6 3" />
+                <text x="490" y="265" fontSize="6" fill="#9E9E9E" opacity="0.5" fontWeight="500" transform="rotate(68, 490, 265)">Sukhumvit Rd</text>
+
+                <line x1="230" y1="310" x2="400" y2="340" stroke="#9E9E9E" strokeWidth="1" opacity="0.2" strokeDasharray="5 3" />
+                <line x1="250" y1="105" x2="370" y2="120" stroke="#9E9E9E" strokeWidth="1" opacity="0.2" strokeDasharray="5 3" />
+                <line x1="290" y1="200" x2="370" y2="220" stroke="#9E9E9E" strokeWidth="1" opacity="0.2" strokeDasharray="5 3" />
+
+                <text x="310" y="22" textAnchor="middle" fontSize="13" fill="#78909C" fontWeight="700" letterSpacing="5">BANGKOK</text>
+                <text x="310" y="36" textAnchor="middle" fontSize="8" fill="#90A4AE" letterSpacing="1">กรุงเทพมหานคร</text>
 
                 {DISTRICT_DATA.map(d => {
                   const coords = BANGKOK_COORDS_MAP[d.name];
                   if (!coords) return null;
-                  const radius = 14 + (d.clickouts / maxClickouts) * 24;
-                  const pulseRadius = radius + 8;
+                  const radius = 16 + (d.clickouts / maxClickouts) * 22;
+                  const pulseRadius = radius + 10;
                   return (
                     <g key={d.name}>
                       <circle cx={coords.x} cy={coords.y} r={pulseRadius} fill={intensityColorAlpha(d.demand)}>
-                        <animate attributeName="r" values={`${pulseRadius};${pulseRadius + 5};${pulseRadius}`} dur="3s" repeatCount="indefinite" />
-                        <animate attributeName="opacity" values="1;0.4;1" dur="3s" repeatCount="indefinite" />
+                        <animate attributeName="r" values={`${pulseRadius};${pulseRadius + 6};${pulseRadius}`} dur="3.5s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="1;0.3;1" dur="3.5s" repeatCount="indefinite" />
                       </circle>
-                      <circle cx={coords.x} cy={coords.y} r={radius} fill={intensityColor(d.demand)} stroke="white" strokeWidth="2" />
-                      <text x={coords.x} y={coords.y + 1} textAnchor="middle" fontSize="11" fontWeight="bold" fill="white" dominantBaseline="middle">
+                      <circle cx={coords.x} cy={coords.y} r={radius} fill={intensityColor(d.demand)} stroke="white" strokeWidth="2.5" filter="url(#shadow)" />
+                      <text x={coords.x} y={coords.y + 1} textAnchor="middle" fontSize="12" fontWeight="bold" fill="white" dominantBaseline="middle">
                         {d.demand}
                       </text>
-                      <text x={coords.x} y={coords.y + radius + 13} textAnchor="middle" fontSize="9" fontWeight="700" fill="#2D3748">
+                      <text x={coords.x} y={coords.y + radius + 14} textAnchor="middle" fontSize="9" fontWeight="700" fill="#2D3748">
                         {d.name.split(" / ")[0]}
                       </text>
-                      <text x={coords.x} y={coords.y + radius + 24} textAnchor="middle" fontSize="8" fontWeight="500" fill="#718096">
+                      <text x={coords.x} y={coords.y + radius + 25} textAnchor="middle" fontSize="7.5" fontWeight="500" fill="#718096">
                         {d.clickouts.toLocaleString()} clicks
                       </text>
                     </g>
                   );
                 })}
 
-                <g transform="translate(15, 330)">
-                  <rect x="0" y="0" width="14" height="14" rx="3" fill="#C4B5FD" />
-                  <rect x="0" y="18" width="14" height="14" rx="3" fill="#8B5CF6" />
-                  <rect x="0" y="36" width="14" height="14" rx="3" fill="#6D28D9" />
-                  <text x="19" y="11" fontSize="8" fill="#4A5568" fontWeight="500">Low demand</text>
-                  <text x="19" y="29" fontSize="8" fill="#4A5568" fontWeight="500">Medium</text>
-                  <text x="19" y="47" fontSize="8" fill="#4A5568" fontWeight="500">High demand</text>
+                <g transform="translate(15, 390)">
+                  <rect x="0" y="0" width="95" height="55" rx="6" fill="white" opacity="0.85" stroke="#E2E8F0" strokeWidth="1" />
+                  <rect x="8" y="8" width="10" height="10" rx="2" fill="#C4B5FD" />
+                  <rect x="8" y="22" width="10" height="10" rx="2" fill="#8B5CF6" />
+                  <rect x="8" y="36" width="10" height="10" rx="2" fill="#6D28D9" />
+                  <text x="22" y="16" fontSize="7" fill="#4A5568" fontWeight="500">Low demand</text>
+                  <text x="22" y="30" fontSize="7" fill="#4A5568" fontWeight="500">Medium</text>
+                  <text x="22" y="44" fontSize="7" fill="#4A5568" fontWeight="500">High demand</text>
                 </g>
 
-                <g transform="translate(120, 358)">
-                  <circle cx="0" cy="0" r="5" fill="#8B5CF6" />
-                  <text x="10" y="3" fontSize="8" fill="#4A5568" fontWeight="500">Bubble size = clickout volume</text>
+                <g transform="translate(120, 425)">
+                  <circle cx="5" cy="0" r="4" fill="#8B5CF6" opacity="0.7" />
+                  <circle cx="16" cy="0" r="6" fill="#8B5CF6" opacity="0.7" />
+                  <text x="28" y="3" fontSize="7.5" fill="#4A5568" fontWeight="500">Bubble size = clickout volume</text>
+                </g>
+
+                <g transform="translate(340, 425)">
+                  <line x1="0" y1="0" x2="15" y2="0" stroke="#4CAF50" strokeWidth="2" opacity="0.5" />
+                  <text x="20" y="3" fontSize="7.5" fill="#4A5568" fontWeight="500">BTS</text>
+                  <line x1="50" y1="0" x2="65" y2="0" stroke="#1565C0" strokeWidth="2" opacity="0.5" />
+                  <text x="70" y="3" fontSize="7.5" fill="#4A5568" fontWeight="500">MRT</text>
+                  <line x1="100" y1="0" x2="115" y2="0" stroke="#60A5FA" strokeWidth="2.5" opacity="0.5" />
+                  <text x="120" y="3" fontSize="7.5" fill="#4A5568" fontWeight="500">River</text>
                 </g>
 
               </svg>
