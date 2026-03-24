@@ -129,18 +129,21 @@ export default function AdminSwipeSessions() {
             <h3 className="text-[15px] font-semibold text-gray-800">Daily Volume</h3>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Sessions by day of week</p>
           </div>
-          <div className="flex items-end gap-2 h-40">
-            {DAILY_SESSIONS.map(d => (
-              <div key={d.day} className="flex-1 flex flex-col items-center gap-1">
-                <span className="text-[10px] font-semibold text-gray-600">{d.sessions.toLocaleString()}</span>
-                <div className="w-full rounded-t-md" style={{
-                  height: `${(d.sessions / maxSessions) * 100}%`,
-                  backgroundColor: "var(--admin-blue)",
-                  opacity: d.day === "Sat" || d.day === "Fri" ? 1 : 0.4,
-                }} />
-                <span className="text-[10px] text-muted-foreground font-medium">{d.day}</span>
-              </div>
-            ))}
+          <div className="flex items-end gap-2" style={{ height: "160px" }}>
+            {DAILY_SESSIONS.map(d => {
+              const barHeight = Math.max(8, (d.sessions / maxSessions) * 130);
+              return (
+                <div key={d.day} className="flex-1 flex flex-col items-center justify-end" style={{ height: "100%" }}>
+                  <span className="text-[10px] font-semibold text-gray-600 mb-1">{d.sessions.toLocaleString()}</span>
+                  <div className="w-full rounded-t-md" style={{
+                    height: `${barHeight}px`,
+                    backgroundColor: "var(--admin-blue)",
+                    opacity: d.day === "Sat" || d.day === "Fri" ? 1 : 0.4,
+                  }} />
+                  <span className="text-[10px] text-muted-foreground font-medium mt-1">{d.day}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
