@@ -1069,7 +1069,7 @@ export async function registerRoutes(
             resultConfidence: result?.confidence?.score || null,
           });
           sessionId = session.id;
-        } catch {}
+        } catch (err) { console.error("Failed to create decision session:", err); }
       }
 
       res.json({
@@ -1140,7 +1140,7 @@ export async function registerRoutes(
         eventWeight: (await import("./recommendation/eventWeighting")).getEventWeight(eventType),
         createdAt: now.toISOString(),
       });
-    } catch {}
+    } catch (err) { console.error("Failed to log behavior event:", err); }
 
     if (eventType === "recommendation_accepted" && sessionId && restaurantId) {
       try {
@@ -1150,7 +1150,7 @@ export async function registerRoutes(
           successFlag: true,
           endedAt: now.toISOString(),
         });
-      } catch {}
+      } catch (err) { console.error("Failed to update decision session:", err); }
     }
 
     if (userId && userId !== "anonymous") {
@@ -1203,7 +1203,7 @@ export async function registerRoutes(
                 chosenDishType: meta.dishType || null,
                 createdAt: now.toISOString(),
               });
-            } catch {}
+            } catch (err) { console.error("Failed to create mood choice link:", err); }
           }
         } catch (err) {
           console.error("Taste DNA update error:", err);
@@ -2496,7 +2496,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/analytics/events", async (req, res) => {
+  app.get("/api/analytics/events", adminAuth, async (req: any, res) => {
     try {
       const filters: any = {};
       if (req.query.eventType) filters.eventType = req.query.eventType as string;
@@ -2511,7 +2511,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/analytics/summary", async (_req, res) => {
+  app.get("/api/analytics/summary", adminAuth, async (_req: any, res) => {
     try {
       const [totalUsers, totalRestaurants, totalEvents, totalCampaigns] = await Promise.all([
         storage.getUserCount(),
@@ -2552,7 +2552,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/analytics/top-restaurants", async (req, res) => {
+  app.get("/api/analytics/top-restaurants", adminAuth, async (req: any, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 10;
       const top = await storage.getTopRestaurantsByEvent("swipe_right", limit);
@@ -2568,7 +2568,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/analytics/user-segments", async (_req, res) => {
+  app.get("/api/analytics/user-segments", adminAuth, async (_req: any, res) => {
     try {
       const totalUsers = await storage.getUserCount();
       const segments = [

@@ -41,7 +41,7 @@ The design adopts an Airbnb-inspired aesthetic, featuring a #FFCC02 golden yello
 - **Performance Optimizations:** Includes lazy loading, preloading, database indexing, optimized queries, server-side caching, and frontend route lazy-loading.
 - **Reliability & Hardening:** Features React ErrorBoundary, API request timeouts, auto-retry for network errors, double-submit prevention, image error fallbacks, server-side rate limiting, and comprehensive error logging.
 - **Scalability & Database Optimization:** Implements database indexes on frequently-queried columns, GIN index for array containment, connection pooling, and server-side in-memory caching with auto-invalidation. N+1 queries have been eliminated.
-- **Security Hardening:** Employs Helmet middleware for security headers, payload size limits, request ID generation, rate limiting on critical endpoints, login audit logging, and granular RBAC permission enforcement. Session event logging, server-generated session codes, and health endpoints are also implemented.
+- **Security Hardening:** Employs Helmet middleware for security headers, payload size limits, request ID generation, rate limiting on critical endpoints, login audit logging, and granular RBAC permission enforcement. Session event logging, server-generated session codes, and health endpoints are also implemented. All `/api/analytics/*` read endpoints require `adminAuth` (the event POST remains public for client-side tracking). Silent empty catch blocks in `processDecisionEvent` now log errors for debuggability.
 
 ## External Dependencies
 - **LINE LIFF:** For user authentication, profile retrieval, and social sharing.
