@@ -255,14 +255,6 @@ export const TRENDING_POSTS: TrendingPost[] = [
   },
 ];
 
-const BAR_POST_IDS = new Set([7, 9, 12]);
-
-function getTimeFilteredPosts(): TrendingPost[] {
-  const hour = new Date().getHours();
-  if (hour >= 18) return TRENDING_POSTS;
-  return TRENDING_POSTS.filter(p => !BAR_POST_IDS.has(p.id));
-}
-
 const SAVE_KEY = "toast_saved_posts";
 
 function getSavedPosts(): number[] {
@@ -577,7 +569,6 @@ export default function TrendingFeed() {
   const [headerBrightness, setHeaderBrightness] = useState<Record<number, boolean>>({});
   const [savePickerPostId, setSavePickerPostId] = useState<number | null>(null);
   const headerIsDark = headerBrightness[activeIndex] ?? true;
-  const visiblePosts = useMemo(() => getTimeFilteredPosts(), []);
 
   const deepLinkId = new URLSearchParams(window.location.search).get("id");
 
@@ -602,7 +593,7 @@ export default function TrendingFeed() {
   }, []);
 
   const activeDistrict = useMemo(() => {
-    const post = visiblePosts[activeIndex];
+    const post = TRENDING_POSTS[activeIndex];
     if (!post) return "Bangkok";
     const addr = post.address.toLowerCase();
     if (addr.includes("samran rat") || addr.includes("maha chai")) return "Phra Nakhon";
@@ -711,7 +702,7 @@ export default function TrendingFeed() {
         } catch {}
       }
 
-      const trendingRestaurants = visiblePosts.map(p => ({
+      const trendingRestaurants = TRENDING_POSTS.map(p => ({
         id: p.restaurantId,
         name: p.restaurantName,
         category: p.category,
@@ -798,7 +789,7 @@ export default function TrendingFeed() {
         className="w-full overflow-y-auto snap-y snap-mandatory hide-scrollbar"
         style={{ scrollBehavior: "smooth", height: "calc(100dvh - 52px)", overscrollBehavior: "contain" }}
       >
-        {visiblePosts.map((post, index) => (
+        {TRENDING_POSTS.map((post, index) => (
           <FullScreenSlide
             key={post.id}
             post={post}

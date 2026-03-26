@@ -90,6 +90,33 @@ const GREETINGS: Record<TimeSlot, Record<WeatherCondition, { headlines: string[]
   },
 };
 
+const DRINKS_KEYS = new Set([
+  "craft cocktails", "wine & tapas", "beer garden bites",
+  "drinks", "late night eats", "cocktails", "wine", "beer",
+]);
+
+const DAYTIME_SLOTS: Set<TimeSlot> = new Set(["early_morning", "morning", "lunch", "afternoon"]);
+
+function isDrinksPreference(label: string): boolean {
+  return DRINKS_KEYS.has(label.toLowerCase());
+}
+
+function getEffectiveLabel(taste: TasteContext, slot: TimeSlot): string {
+  if (!DAYTIME_SLOTS.has(slot)) return taste.topLabel;
+  if (!isDrinksPreference(taste.topLabel)) return taste.topLabel;
+  if (taste.totalSwipes >= 15 && taste.score >= 8) return taste.topLabel;
+  if (taste.secondLabel && !isDrinksPreference(taste.secondLabel)) return taste.secondLabel;
+  const mealFallback: Record<TimeSlot, string> = {
+    early_morning: "breakfast",
+    morning: "brunch",
+    lunch: "lunch",
+    afternoon: "a snack",
+    evening: taste.topLabel,
+    late_night: taste.topLabel,
+  };
+  return mealFallback[slot];
+}
+
 function buildPersonalizedSub(
   taste: TasteContext | undefined,
   weather: WeatherCondition,
@@ -98,7 +125,7 @@ function buildPersonalizedSub(
 ): string {
   if (!taste || taste.score <= 0 || taste.totalSwipes < 2) return fallbackSub;
 
-  const top = taste.topLabel;
+  const top = getEffectiveLabel(taste, slot);
   const second = taste.secondLabel;
   const hasDeep = taste.totalSwipes >= 10;
 
@@ -162,13 +189,16 @@ function buildPersonalizedSub(
   const pool = PERSONALIZED[slot]?.[weather] || PERSONALIZED[slot]?.unknown || [fallbackSub];
 
   if (hasDeep && second && Math.random() > 0.6) {
-    const deepSubs = [
-      `${top} lover with a soft spot for ${second} — we see you`,
-      `Your tastes? ${top} first, ${second} close behind`,
-      `We know it's ${top} today, ${second} tomorrow`,
-      `${top} and ${second} — your flavour fingerprint`,
-    ];
-    return pickRandom(deepSubs);
+    const effectiveSecond = (DAYTIME_SLOTS.has(slot) && isDrinksPreference(second)) ? undefined : second;
+    if (effectiveSecond && effectiveSecond.toLowerCase() !== top.toLowerCase()) {
+      const deepSubs = [
+        `${top} lover with a soft spot for ${effectiveSecond} — we see you`,
+        `Your tastes? ${top} first, ${effectiveSecond} close behind`,
+        `We know it's ${top} today, ${effectiveSecond} tomorrow`,
+        `${top} and ${effectiveSecond} — your flavour fingerprint`,
+      ];
+      return pickRandom(deepSubs);
+    }
   }
 
   return pickRandom(pool);
