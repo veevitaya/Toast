@@ -207,15 +207,20 @@ export default function Home() {
     };
   }, [tasteProfile, topPreference]);
 
+  const isAfterWork = new Date().getHours() >= 18;
   const ALL_VIBE_TILES = useMemo(() => [...VIBE_TILES_MAIN, ...VIBE_TILES_EXTRA], []);
   const sortedVibes = useMemo(() => {
-    return [...ALL_VIBE_TILES].sort((a, b) => {
+    const DRINKS_VIBES = ["drinks", "late", "rooftop"];
+    const filtered = isAfterWork
+      ? ALL_VIBE_TILES
+      : ALL_VIBE_TILES.filter(v => !DRINKS_VIBES.includes(v.mode));
+    return [...filtered].sort((a, b) => {
       const fa = freq[a.mode] || 0;
       const fb = freq[b.mode] || 0;
       if (fb !== fa) return fb - fa;
       return ALL_VIBE_TILES.indexOf(a) - ALL_VIBE_TILES.indexOf(b);
     });
-  }, [freq, ALL_VIBE_TILES]);
+  }, [freq, ALL_VIBE_TILES, isAfterWork]);
   const topVibes = sortedVibes.slice(0, 7);
   const moreVibes = sortedVibes.slice(7);
 
@@ -316,20 +321,25 @@ export default function Home() {
   }, [searchQuery]);
 
   const mapCenter = useMemo<[number, number]>(() => [userLocation.lat, userLocation.lng], [userLocation]);
+  const timeFilteredPins = useMemo(() => {
+    if (isAfterWork) return RESTAURANT_PINS;
+    return RESTAURANT_PINS.filter(p => p.category !== "Bars");
+  }, [isAfterWork]);
+
   const mapPins = useMemo(() =>
-    RESTAURANT_PINS.map(p => ({ id: p.id, name: p.name, emoji: p.emoji, category: p.category, price: p.price, lat: p.lat, lng: p.lng })),
-  []);
+    timeFilteredPins.map(p => ({ id: p.id, name: p.name, emoji: p.emoji, category: p.category, price: p.price, lat: p.lat, lng: p.lng })),
+  [timeFilteredPins]);
 
   const MAP_CATEGORIES = useMemo(() => {
-    const cats = Array.from(new Set(RESTAURANT_PINS.map(p => p.category)));
+    const cats = Array.from(new Set(timeFilteredPins.map(p => p.category)));
     const emojiMap: Record<string, string> = { Thai: "🇹🇭", Sushi: "🍣", Burgers: "🍔", Pizza: "🍕", Bars: "🍸", Cafe: "☕", Desserts: "🍰", Chinese: "🥟", Breakfast: "🍳", "Bubble Tea": "🧋", Bakery: "🥐" };
     return cats.map(c => ({ label: c, emoji: emojiMap[c] || "🍽️" }));
-  }, []);
+  }, [timeFilteredPins]);
 
   const filteredMapCards = useMemo(() => {
-    if (!selectedCategory) return RESTAURANT_PINS.slice(0, 6);
-    return RESTAURANT_PINS.filter(p => p.category === selectedCategory);
-  }, [selectedCategory]);
+    if (!selectedCategory) return timeFilteredPins.slice(0, 6);
+    return timeFilteredPins.filter(p => p.category === selectedCategory);
+  }, [selectedCategory, timeFilteredPins]);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -796,7 +806,7 @@ export default function Home() {
               className="text-[20px] font-bold text-foreground mb-4"
               data-testid="text-who-eating"
             >
-              Who's joining you tonight?
+              {isAfterWork ? "Who's joining you tonight?" : "Who's eating with you?"}
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <button
