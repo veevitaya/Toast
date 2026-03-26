@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { fetchWithTimeout } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation, useRoute } from "wouter";
@@ -185,6 +187,62 @@ function ToastSponsoredSection({ restaurantId }: { restaurantId: number }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function LocationMap({ lat, lng, name }: { lat: number; lng: number; name: string }) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<L.Map | null>(null);
+
+  useEffect(() => {
+    if (!mapRef.current || mapInstance.current) return;
+
+    const map = L.map(mapRef.current, {
+      center: [lat, lng],
+      zoom: 16,
+      zoomControl: false,
+      attributionControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+      boxZoom: false,
+      keyboard: false,
+    });
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png", {
+      maxZoom: 19,
+      subdomains: "abcd",
+    }).addTo(map);
+
+    const icon = L.divIcon({
+      html: `<div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:hsl(222,47%,11%);box-shadow:0 3px 10px rgba(0,0,0,0.25);">
+        <span style="font-size:16px;">📍</span>
+      </div>`,
+      className: "detail-map-pin",
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+    });
+
+    L.marker([lat, lng], { icon, interactive: false }).addTo(map);
+    mapInstance.current = map;
+
+    setTimeout(() => map.invalidateSize(), 100);
+
+    return () => {
+      map.remove();
+      mapInstance.current = null;
+    };
+  }, [lat, lng]);
+
+  return (
+    <>
+      <div ref={mapRef} className="w-full h-full" data-testid="detail-location-map" />
+      <style>{`
+        .detail-map-pin { background: none !important; border: none !important; }
+        .detail-map-pin .leaflet-marker-icon { background: none !important; border: none !important; }
+      `}</style>
+    </>
   );
 }
 
@@ -516,13 +574,11 @@ export default function RestaurantDetail() {
 
         <div className="border-t border-gray-100/80 pt-5 mb-6">
           <h2 className="font-bold text-lg mb-3">Location</h2>
-          <div className="w-full h-40 rounded-2xl overflow-hidden border border-gray-100">
-            <iframe
-              title="Restaurant location"
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(restaurant.lng) - 0.005}%2C${Number(restaurant.lat) - 0.003}%2C${Number(restaurant.lng) + 0.005}%2C${Number(restaurant.lat) + 0.003}&layer=mapnik&marker=${restaurant.lat}%2C${restaurant.lng}`}
-              loading="lazy"
-              className="w-full h-full border-0"
-              style={{ filter: "saturate(0.9) contrast(0.92) brightness(1.05)" }}
+          <div className="w-full h-40 rounded-2xl overflow-hidden border border-gray-100" style={{ isolation: "isolate" }}>
+            <LocationMap
+              lat={Number(restaurant.lat)}
+              lng={Number(restaurant.lng)}
+              name={restaurant.name}
             />
           </div>
         </div>
