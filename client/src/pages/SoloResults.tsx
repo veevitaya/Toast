@@ -55,6 +55,14 @@ const ALL_MENUS = [
 
 type MenuItem = typeof ALL_MENUS[0];
 
+const DRINKS_MENU_IDS = new Set([27, 28, 29]);
+
+function getTimeFilteredMenus(): MenuItem[] {
+  const hour = new Date().getHours();
+  if (hour >= 18) return ALL_MENUS;
+  return ALL_MENUS.filter(m => !DRINKS_MENU_IDS.has(m.id));
+}
+
 function parseQuizParams(): { cuisines: string[]; diet: string[]; locations: string[]; budget: string[]; interests: string[]; vibe: string | null } {
   const params = new URLSearchParams(window.location.search);
   return {
@@ -69,10 +77,11 @@ function parseQuizParams(): { cuisines: string[]; diet: string[]; locations: str
 
 function filterMenus(quizAnswers: ReturnType<typeof parseQuizParams>): MenuItem[] {
   const { cuisines, diet, locations, budget, interests } = quizAnswers;
+  const available = getTimeFilteredMenus();
   const hasFilters = cuisines.length || diet.length || locations.length || budget.length || interests.length;
-  if (!hasFilters) return ALL_MENUS;
+  if (!hasFilters) return available;
 
-  const scored = ALL_MENUS.map((item) => {
+  const scored = available.map((item) => {
     let score = 0;
 
     if (cuisines.length) {
@@ -121,7 +130,7 @@ function filterMenus(quizAnswers: ReturnType<typeof parseQuizParams>): MenuItem[
   scored.sort((a, b) => b.score - a.score);
 
   const filtered = scored.filter((s) => s.score > 0).map((s) => s.item);
-  return filtered.length >= 2 ? filtered : ALL_MENUS;
+  return filtered.length >= 2 ? filtered : available;
 }
 
 function ToastMascot({ pointDirection, drunk = false }: { pointDirection: "left" | "right" | "center"; drunk?: boolean }) {
@@ -422,8 +431,8 @@ export default function SoloResults() {
 
   const [currentChoice, setCurrentChoice] = useState<MenuItem | null>(null);
   const [usedIds, setUsedIds] = useState<Set<number>>(new Set([filteredMenus[0]?.id, filteredMenus[1]?.id].filter(Boolean)));
-  const [leftOption, setLeftOption] = useState(filteredMenus[0] || ALL_MENUS[0]);
-  const [rightOption, setRightOption] = useState(filteredMenus[1] || ALL_MENUS[1]);
+  const [leftOption, setLeftOption] = useState(filteredMenus[0] || getTimeFilteredMenus()[0]);
+  const [rightOption, setRightOption] = useState(filteredMenus[1] || getTimeFilteredMenus()[1]);
   const [round, setRound] = useState(1);
 
   useEffect(() => {
@@ -542,8 +551,9 @@ export default function SoloResults() {
     if (remaining.length === 0) {
       const allOther = filteredMenus.filter((m) => !currentIds.has(m.id));
       if (allOther.length === 0) {
-        const anyOther = ALL_MENUS.filter((m) => !currentIds.has(m.id));
-        return anyOther[Math.floor(Math.random() * anyOther.length)] || ALL_MENUS[0];
+        const available = getTimeFilteredMenus();
+        const anyOther = available.filter((m) => !currentIds.has(m.id));
+        return anyOther[Math.floor(Math.random() * anyOther.length)] || available[0];
       }
       return allOther[Math.floor(Math.random() * allOther.length)];
     }
@@ -687,7 +697,7 @@ export default function SoloResults() {
     });
 
     scored.sort((a, b) => b.score - a.score);
-    return scored[0]?.item || filteredMenus[0] || ALL_MENUS[0];
+    return scored[0]?.item || filteredMenus[0] || getTimeFilteredMenus()[0];
   };
 
   const tasteDnaSummary = useMemo(() => {
