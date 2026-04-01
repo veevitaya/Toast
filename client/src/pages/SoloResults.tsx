@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { fetchWithTimeout } from "@/lib/queryClient";
 import { BottomNav } from "@/components/BottomNav";
-import { Sparkles, Clock, Wallet, TrendingUp, MapPin, UtensilsCrossed, X, Check, Star, Users, Crown, Flame } from "lucide-react";
+import { Sparkles, Clock, Wallet, TrendingUp, MapPin, UtensilsCrossed, X, Check, Star, Users, Crown, Flame, RotateCcw } from "lucide-react";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { sendGroupInviteNoRedirect } from "@/lib/liff";
@@ -585,6 +585,21 @@ export default function SoloResults() {
     }, 800);
   };
 
+  const handleShuffle = () => {
+    if (animating) return;
+    const available = filteredMenus.length >= 2 ? filteredMenus : ALL_MENUS;
+    const shuffled = [...available].sort(() => Math.random() - 0.5);
+    const newLeft = shuffled[0];
+    const newRight = shuffled.find(m => m.id !== newLeft.id) || shuffled[1];
+    setLeftOption(newLeft);
+    setRightOption(newRight);
+    setUsedIds(new Set([newLeft.id, newRight.id]));
+    setCurrentChoice(null);
+    setSelectedSide(null);
+    setReplacingSide(null);
+    setRound(1);
+  };
+
   const handleReadyToEat = () => {
     const finalChoice = currentChoice || leftOption;
     navigate(`/restaurants?category=${encodeURIComponent(finalChoice.name)}`);
@@ -770,7 +785,7 @@ export default function SoloResults() {
       <div className="flex-1 min-w-0" key={`slot-${side}`}>
         <AnimatePresence mode="wait">
           <motion.div
-            key={`${opt.id}-${round}`}
+            key={opt.id}
             initial={isReplacing ? { y: 50, opacity: 0, scale: 0.85, rotateY: side === "left" ? -15 : 15 } : false}
             animate={{
               y: 0,
@@ -972,39 +987,39 @@ export default function SoloResults() {
         {isDrinksMode ? "Ready to drink!" : "Ready to eat!"}{currentChoice ? ` — ${currentChoice.name}` : ""}
       </motion.button>
 
-      <div className="flex items-end gap-2.5 w-full max-w-md">
-        <motion.button
-          onClick={handleSwipeInvite}
-          disabled={swipeLoading}
-          data-testid="button-swipe-invite"
-          whileTap={{ scale: 0.95 }}
-          className="flex-1 flex flex-col items-center gap-1.5 py-3.5 rounded-2xl bg-white border border-gray-200/80 text-xs font-medium text-muted-foreground"
-          style={{ boxShadow: "0 2px 8px -2px rgba(0,0,0,0.04)" }}
-        >
-          <Users className="w-4 h-4" />
-          {swipeLoading ? "..." : "Swipe"}
-        </motion.button>
+      <div className="flex items-center gap-2.5 w-full max-w-md">
         <motion.button
           onClick={handleDecideForMe}
           data-testid="button-decide-for-me"
-          whileTap={{ scale: 0.96 }}
-          className="flex-[1.4] flex flex-col items-center gap-1 py-[18px] rounded-2xl border border-gray-200/80 bg-gradient-to-b from-white to-gray-50 text-xs font-semibold text-foreground relative overflow-hidden"
-          style={{ boxShadow: "0 4px 16px -4px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)" }}
+          whileTap={{ scale: 0.94 }}
+          className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
         >
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-50 to-[#FFCC02]/20 flex items-center justify-center mb-0.5">
-            <Sparkles className="w-4 h-4 text-[#FFCC02]" />
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-50 to-[#FFCC02]/15 flex items-center justify-center">
+            <Sparkles className="w-3.5 h-3.5 text-[#FFCC02]" />
           </div>
-          <span className="text-foreground">Decide for me</span>
+          <span className="text-[10px] font-semibold text-gray-600">Decide for me</span>
+        </motion.button>
+        <motion.button
+          onClick={handleShuffle}
+          data-testid="button-shuffle"
+          whileTap={{ scale: 0.94 }}
+          className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
+        >
+          <div className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center">
+            <RotateCcw className="w-3.5 h-3.5 text-gray-400" />
+          </div>
+          <span className="text-[10px] font-semibold text-gray-600">Shuffle</span>
         </motion.button>
         <motion.button
           onClick={() => navigate("/trending")}
           data-testid="button-trending-mode"
-          whileTap={{ scale: 0.95 }}
-          className="flex-1 flex flex-col items-center gap-1.5 py-3.5 rounded-2xl bg-white border border-gray-200/80 text-xs font-medium text-muted-foreground"
-          style={{ boxShadow: "0 2px 8px -2px rgba(0,0,0,0.04)" }}
+          whileTap={{ scale: 0.94 }}
+          className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
         >
-          <TrendingUp className="w-4 h-4" />
-          Trending
+          <div className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center">
+            <Flame className="w-3.5 h-3.5 text-orange-400" />
+          </div>
+          <span className="text-[10px] font-semibold text-gray-600">Trending</span>
         </motion.button>
       </div>
 
