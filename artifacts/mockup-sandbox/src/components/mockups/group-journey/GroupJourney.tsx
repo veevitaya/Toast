@@ -4,14 +4,13 @@ import {
   Search, MapPin, SlidersHorizontal, Home, Map as MapIcon, Heart, User, Star,
   Sparkles, ArrowRight, ArrowLeft, Check, X, Users, UserPlus,
   Share2, Copy, Crown, Trophy, MessageCircle, Clock, ChevronRight, Flame, Zap,
-  Calendar, Wallet, ShieldCheck, Award, Medal, BarChart3, RotateCcw, Eye, ListOrdered, ArrowUp,
-  ChevronDown, Utensils, MapPinned, Leaf, Timer
+  Calendar, Wallet, ShieldCheck, Award, Medal, BarChart3, RotateCcw, Eye, ListOrdered,
+  ChevronDown, MapPinned, Leaf, Timer
 } from 'lucide-react';
 
 const spring = { type: "spring" as const, stiffness: 280, damping: 26 };
 const bouncy = { type: "spring" as const, stiffness: 350, damping: 20 };
 const gentle = { type: "spring" as const, stiffness: 200, damping: 28 };
-const snappy = { type: "spring" as const, stiffness: 500, damping: 32 };
 
 type Screen = 'home' | 'setup' | 'invite' | 'waiting' | 'swipe' | 'match' | 'topPicks' | 'summary';
 
@@ -31,10 +30,10 @@ const MEMBERS = [
 ];
 
 const GROUP_TYPES = [
-  { id: 'friends', emoji: '👯', label: 'Friends Night', desc: 'Casual hangout', accent: '#6C2BD9' },
-  { id: 'partner', emoji: '💕', label: 'Date Night', desc: 'Romantic dinner', accent: '#E11D48' },
-  { id: 'family', emoji: '👨‍👩‍👧', label: 'Family Feast', desc: 'Kid-friendly', accent: '#FFCC02' },
-  { id: 'work', emoji: '💼', label: 'Team Lunch', desc: 'Office outing', accent: '#0EA5E9' },
+  { id: 'friends', emoji: '👯', label: 'Friends Night' },
+  { id: 'partner', emoji: '💕', label: 'Date Night' },
+  { id: 'family', emoji: '👨‍👩‍👧', label: 'Family Feast' },
+  { id: 'work', emoji: '💼', label: 'Team Lunch' },
 ];
 
 const VIBES = [
@@ -50,10 +49,10 @@ const VIBES = [
 ];
 
 const BUDGETS = [
-  { id: 'cheap', label: '฿', sub: 'Under 150', emoji: '💰' },
+  { id: 'cheap', label: '฿', sub: '<150', emoji: '💰' },
   { id: 'moderate', label: '฿฿', sub: '150–500', emoji: '🍽️' },
-  { id: 'fancy', label: '฿฿฿', sub: '500–1,500', emoji: '✨' },
-  { id: 'splurge', label: '฿฿฿฿', sub: '1,500+', emoji: '👑' },
+  { id: 'fancy', label: '฿฿฿', sub: '500–1.5k', emoji: '✨' },
+  { id: 'splurge', label: '฿฿฿฿', sub: '1.5k+', emoji: '👑' },
 ];
 
 const BKK_AREAS = [
@@ -83,11 +82,11 @@ const DIETARY = [
 ];
 
 const TIME_SLOTS = [
-  { label: 'Now', sub: 'ASAP', icon: '⚡' },
-  { label: '12:00', sub: 'Noon', icon: '☀️' },
-  { label: '18:00', sub: 'Evening', icon: '🌅' },
-  { label: '19:30', sub: 'Dinner', icon: '🍽️' },
-  { label: '21:00', sub: 'Late', icon: '🌙' },
+  { label: 'Now', icon: '⚡' },
+  { label: '12:00', icon: '☀️' },
+  { label: '18:00', icon: '🌅' },
+  { label: '19:30', icon: '🍽️' },
+  { label: '21:00', icon: '🌙' },
 ];
 
 const MEMBER_STATS = [
@@ -101,16 +100,6 @@ const TOP_PICKS_DATA = [
   { ...RESTAURANTS[0], votes: 2, voters: ['host', 'm2'], fullMatch: false },
   { ...RESTAURANTS[5], votes: 2, voters: ['host', 'm1'], fullMatch: false },
   { ...RESTAURANTS[3], votes: 1, voters: ['m1'], fullMatch: false },
-];
-
-type SetupSection = 'type' | 'vibes' | 'budget' | 'area' | 'details';
-
-const SETUP_SECTIONS: { key: SetupSection; icon: typeof Users; label: string; sub: string }[] = [
-  { key: 'type', icon: Users, label: "Who's joining?", sub: 'Choose your group type' },
-  { key: 'vibes', icon: Sparkles, label: 'Set the vibe', sub: 'Pick up to 3' },
-  { key: 'budget', icon: Wallet, label: 'Budget', sub: 'How much per person?' },
-  { key: 'area', icon: MapPinned, label: 'Where in BKK?', sub: 'Up to 3 areas' },
-  { key: 'details', icon: Timer, label: 'Dietary & When', sub: 'Last details' },
 ];
 
 function SwipeCard({ restaurant, active, behind, onSwipe }: {
@@ -130,19 +119,9 @@ function SwipeCard({ restaurant, active, behind, onSwipe }: {
 
   const handleDragEnd = useCallback((_: any, info: PanInfo) => {
     if (swiped.current) return;
-    if (info.offset.y < -90) {
-      swiped.current = true;
-      setExiting({ x: 0, y: -600 });
-      setTimeout(() => onSwipe('up'), 280);
-    } else if (info.offset.x > 90) {
-      swiped.current = true;
-      setExiting({ x: 500, y: 0 });
-      setTimeout(() => onSwipe('right'), 280);
-    } else if (info.offset.x < -90) {
-      swiped.current = true;
-      setExiting({ x: -500, y: 0 });
-      setTimeout(() => onSwipe('left'), 280);
-    }
+    if (info.offset.y < -90) { swiped.current = true; setExiting({ x: 0, y: -600 }); setTimeout(() => onSwipe('up'), 280); }
+    else if (info.offset.x > 90) { swiped.current = true; setExiting({ x: 500, y: 0 }); setTimeout(() => onSwipe('right'), 280); }
+    else if (info.offset.x < -90) { swiped.current = true; setExiting({ x: -500, y: 0 }); setTimeout(() => onSwipe('left'), 280); }
   }, [onSwipe]);
 
   if (!active && !behind) return null;
@@ -150,92 +129,41 @@ function SwipeCard({ restaurant, active, behind, onSwipe }: {
   return (
     <motion.div
       style={{
-        x: active ? x : 0,
-        y: active ? y : 0,
-        rotate: active ? rotate : 0,
+        x: active ? x : 0, y: active ? y : 0, rotate: active ? rotate : 0,
         zIndex: active ? 10 : 5,
-        boxShadow: active
-          ? '0 24px 60px -12px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.03)'
-          : '0 10px 30px -8px rgba(0,0,0,0.1)',
+        boxShadow: active ? '0 24px 60px -12px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.03)' : '0 10px 30px -8px rgba(0,0,0,0.1)',
       }}
-      animate={
-        exiting
-          ? { x: exiting.x, y: exiting.y, opacity: 0, rotate: exiting.x > 0 ? 18 : exiting.x < 0 ? -18 : 0 }
-          : behind
-            ? { scale: 0.94, y: 12, opacity: 0.5 }
-            : { scale: 1, y: 0, opacity: 1 }
-      }
+      animate={exiting ? { x: exiting.x, y: exiting.y, opacity: 0, rotate: exiting.x > 0 ? 18 : exiting.x < 0 ? -18 : 0 } : behind ? { scale: 0.94, y: 12, opacity: 0.5 } : { scale: 1, y: 0, opacity: 1 }}
       transition={exiting ? { duration: 0.3, ease: [0.32, 0.72, 0, 1] } : spring}
-      drag={active && !exiting}
-      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-      dragElastic={0.85}
-      onDragEnd={handleDragEnd}
+      drag={active && !exiting} dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }} dragElastic={0.85} onDragEnd={handleDragEnd}
       className="absolute inset-0 bg-white rounded-[28px] overflow-hidden cursor-grab active:cursor-grabbing select-none"
     >
       <div className="relative w-full h-[58%]">
         <img src={restaurant.image} alt={restaurant.name} className="w-full h-full object-cover" draggable={false} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-
         {active && (
           <>
-            <motion.div style={{ opacity: bgRight }} className="absolute top-7 left-5 z-20">
-              <div className="bg-emerald-500 text-white text-lg font-black rounded-2xl px-5 py-2 -rotate-12 border-[3px] border-white/40 shadow-lg flex items-center gap-1.5">
-                YUM <span className="text-xl">😋</span>
-              </div>
-            </motion.div>
-            <motion.div style={{ opacity: bgLeft }} className="absolute top-7 right-5 z-20">
-              <div className="bg-red-500 text-white text-lg font-black rounded-2xl px-5 py-2 rotate-12 border-[3px] border-white/40 shadow-lg flex items-center gap-1.5">
-                NAH <span className="text-xl">👎</span>
-              </div>
-            </motion.div>
-            <motion.div style={{ opacity: bgUp }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-              <div className="bg-[#FFCC02] text-gray-900 text-lg font-black rounded-2xl px-5 py-2 border-[3px] border-white/40 shadow-lg flex items-center gap-1.5">
-                SUPERLIKE <span className="text-xl">⭐</span>
-              </div>
-            </motion.div>
+            <motion.div style={{ opacity: bgRight }} className="absolute top-7 left-5 z-20"><div className="bg-emerald-500 text-white text-lg font-black rounded-2xl px-5 py-2 -rotate-12 border-[3px] border-white/40 shadow-lg flex items-center gap-1.5">YUM <span className="text-xl">😋</span></div></motion.div>
+            <motion.div style={{ opacity: bgLeft }} className="absolute top-7 right-5 z-20"><div className="bg-red-500 text-white text-lg font-black rounded-2xl px-5 py-2 rotate-12 border-[3px] border-white/40 shadow-lg flex items-center gap-1.5">NAH <span className="text-xl">👎</span></div></motion.div>
+            <motion.div style={{ opacity: bgUp }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20"><div className="bg-[#FFCC02] text-gray-900 text-lg font-black rounded-2xl px-5 py-2 border-[3px] border-white/40 shadow-lg flex items-center gap-1.5">SUPERLIKE <span className="text-xl">⭐</span></div></motion.div>
           </>
         )}
-
         <div className="absolute bottom-0 left-0 right-0 p-5 pb-4">
           <div className="flex items-center gap-1.5 mb-1">
             <h2 className="text-white text-[22px] font-bold drop-shadow-lg">{restaurant.name}</h2>
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, ...bouncy }}
-              className="bg-white/20 backdrop-blur-sm rounded-lg px-1.5 py-0.5"
-            >
-              <span className="text-white text-[11px] font-bold flex items-center gap-0.5">
-                <Star className="w-3 h-3 fill-current" /> {restaurant.rating}
-              </span>
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, ...bouncy }} className="bg-white/20 backdrop-blur-sm rounded-lg px-1.5 py-0.5">
+              <span className="text-white text-[11px] font-bold flex items-center gap-0.5"><Star className="w-3 h-3 fill-current" /> {restaurant.rating}</span>
             </motion.div>
           </div>
-          <div className="flex items-center gap-2 text-white/80 text-[13px]">
-            <span>{restaurant.category}</span>
-            <span className="text-white/30">·</span>
-            <span>{'฿'.repeat(restaurant.price)}</span>
-          </div>
+          <div className="flex items-center gap-2 text-white/80 text-[13px]"><span>{restaurant.category}</span><span className="text-white/30">·</span><span>{'฿'.repeat(restaurant.price)}</span></div>
         </div>
       </div>
-
       <div className="p-5 pt-4 h-[42%] flex flex-col">
         <p className="text-gray-500 text-[13px] leading-relaxed mb-3 line-clamp-2">{restaurant.desc}</p>
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {restaurant.tags.map(tag => (
-            <span key={tag} className="text-[10px] bg-gray-100 rounded-full px-2.5 py-1 font-semibold text-gray-500">{tag}</span>
-          ))}
-        </div>
+        <div className="flex flex-wrap gap-1.5 mb-3">{restaurant.tags.map(tag => (<span key={tag} className="text-[10px] bg-gray-100 rounded-full px-2.5 py-1 font-semibold text-gray-500">{tag}</span>))}</div>
         <div className="mt-auto flex items-center justify-between">
-          <div className="flex -space-x-2">
-            {MEMBERS.map(m => (
-              <div key={m.id} className="w-7 h-7 rounded-full border-[2.5px] border-white bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center text-xs shadow-sm">
-                {m.avatar}
-              </div>
-            ))}
-          </div>
-          <span className="text-[10px] text-gray-400 font-semibold flex items-center gap-1">
-            <Users className="w-3 h-3" /> {MEMBERS.length} swiping
-          </span>
+          <div className="flex -space-x-2">{MEMBERS.map(m => (<div key={m.id} className="w-7 h-7 rounded-full border-[2.5px] border-white bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center text-xs shadow-sm">{m.avatar}</div>))}</div>
+          <span className="text-[10px] text-gray-400 font-semibold flex items-center gap-1"><Users className="w-3 h-3" /> {MEMBERS.length} swiping</span>
         </div>
       </div>
     </motion.div>
@@ -246,15 +174,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
   return (
     <div className="flex gap-1.5">
       {Array.from({ length: total }).map((_, i) => (
-        <motion.div
-          key={i}
-          className="h-[3px] rounded-full flex-1"
-          animate={{
-            backgroundColor: i <= step ? '#6C2BD9' : '#E5E7EB',
-            scaleX: i === step ? 1 : 0.92,
-          }}
-          transition={spring}
-        />
+        <motion.div key={i} className="h-[3px] rounded-full flex-1" animate={{ backgroundColor: i <= step ? '#6C2BD9' : '#E5E7EB', scaleX: i === step ? 1 : 0.92 }} transition={spring} />
       ))}
     </div>
   );
@@ -275,17 +195,14 @@ export function GroupJourney() {
   const [copied, setCopied] = useState(false);
   const [swipeCount, setSwipeCount] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const [activeSection, setActiveSection] = useState<SetupSection>('type');
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
 
   const toggleVibe = useCallback((label: string) => {
     setSelectedVibes(prev => prev.includes(label) ? prev.filter(v => v !== label) : prev.length < 3 ? [...prev, label] : prev);
   }, []);
-
   const toggleArea = useCallback((label: string) => {
     setSelectedAreas(prev => prev.includes(label) ? prev.filter(a => a !== label) : prev.length < 3 ? [...prev, label] : prev);
   }, []);
-
   const toggleDietary = useCallback((label: string) => {
     setSelectedDietary(prev => prev.includes(label) ? prev.filter(d => d !== label) : [...prev, label]);
   }, []);
@@ -294,94 +211,29 @@ export function GroupJourney() {
     setScreen('waiting');
     setMembersJoined(1);
     let count = 1;
-    intervalRef.current = setInterval(() => {
-      count++;
-      setMembersJoined(count);
-      if (count >= 3) {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-      }
-    }, 2000);
+    intervalRef.current = setInterval(() => { count++; setMembersJoined(count); if (count >= 3 && intervalRef.current) clearInterval(intervalRef.current); }, 2000);
   }, []);
 
-  useEffect(() => {
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, []);
+  useEffect(() => { return () => { if (intervalRef.current) clearInterval(intervalRef.current); }; }, []);
 
-  const startSwiping = useCallback(() => {
-    setScreen('swipe');
-    setCurrentCard(0);
-    setSwipeResults({});
-    setSwipeCount(0);
-  }, []);
+  const startSwiping = useCallback(() => { setScreen('swipe'); setCurrentCard(0); setSwipeResults({}); setSwipeCount(0); }, []);
 
   const handleSwipe = useCallback((dir: 'left' | 'right' | 'up') => {
     setSwipeResults(prev => ({ ...prev, [currentCard]: dir }));
     setSwipeCount(c => c + 1);
-
-    if (currentCard >= 2 && (dir === 'right' || dir === 'up')) {
-      setTimeout(() => setScreen('match'), 450);
-      return;
-    }
-
-    setTimeout(() => {
-      setCurrentCard(prev => Math.min(prev + 1, RESTAURANTS.length - 1));
-    }, 350);
+    if (currentCard >= 2 && (dir === 'right' || dir === 'up')) { setTimeout(() => setScreen('match'), 450); return; }
+    setTimeout(() => { setCurrentCard(prev => Math.min(prev + 1, RESTAURANTS.length - 1)); }, 350);
   }, [currentCard]);
 
-  const handleCopy = useCallback(() => {
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, []);
+  const handleCopy = useCallback(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }, []);
 
   const resetFlow = useCallback(() => {
-    setScreen('home');
-    setSelectedGroupType(null);
-    setSelectedVibes([]);
-    setSelectedBudget(null);
-    setSelectedAreas([]);
-    setSelectedDietary([]);
-    setSelectedTime('Now');
-    setSelectedDate('Today');
-    setCurrentCard(0);
-    setSwipeResults({});
-    setMembersJoined(1);
-    setSwipeCount(0);
-    setActiveSection('type');
+    setScreen('home'); setSelectedGroupType(null); setSelectedVibes([]); setSelectedBudget(null);
+    setSelectedAreas([]); setSelectedDietary([]); setSelectedTime('Now'); setSelectedDate('Today');
+    setCurrentCard(0); setSwipeResults({}); setMembersJoined(1); setSwipeCount(0); setShowMoreOptions(false);
   }, []);
 
-  const isSectionDone = (key: SetupSection): boolean => {
-    if (key === 'type') return !!selectedGroupType;
-    if (key === 'vibes') return selectedVibes.length > 0;
-    if (key === 'budget') return !!selectedBudget;
-    if (key === 'area') return selectedAreas.length > 0;
-    if (key === 'details') return true;
-    return false;
-  };
-
-  const getSectionSummary = (key: SetupSection): string => {
-    if (key === 'type') return GROUP_TYPES.find(g => g.id === selectedGroupType)?.label || '';
-    if (key === 'vibes') return selectedVibes.slice(0, 2).join(', ') + (selectedVibes.length > 2 ? ` +${selectedVibes.length - 2}` : '');
-    if (key === 'budget') return BUDGETS.find(b => b.id === selectedBudget)?.label || '';
-    if (key === 'area') return selectedAreas.slice(0, 2).join(', ') + (selectedAreas.length > 2 ? ` +${selectedAreas.length - 2}` : '');
-    if (key === 'details') {
-      const parts: string[] = [];
-      if (selectedDietary.length > 0) parts.push(`${selectedDietary.length} dietary`);
-      parts.push(selectedDate === 'Today' ? `${selectedTime}` : `${selectedDate}`);
-      return parts.join(' · ');
-    }
-    return '';
-  };
-
-  const advanceSection = (current: SetupSection) => {
-    const idx = SETUP_SECTIONS.findIndex(s => s.key === current);
-    if (idx < SETUP_SECTIONS.length - 1) {
-      setActiveSection(SETUP_SECTIONS[idx + 1].key);
-    }
-  };
-
   const canInvite = !!selectedGroupType;
-
-  const completedSections = SETUP_SECTIONS.filter(s => s.key !== activeSection && isSectionDone(s.key)).length;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-neutral-900 p-4 font-sans">
@@ -403,122 +255,43 @@ export function GroupJourney() {
         </div>
 
         <AnimatePresence mode="wait">
+
           {screen === 'home' && (
-            <motion.div
-              key="home"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.3 }}
-              className="flex-1 overflow-y-auto no-sb pb-24"
-            >
+            <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.3 }} className="flex-1 overflow-y-auto no-sb pb-24">
               <div className="relative pt-12 px-5 pb-3">
-                <motion.div
-                  className="flex items-center gap-3 w-full glass p-3 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/60"
-                  whileTap={{ scale: 0.98 }}
-                  initial={{ y: -20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.1, ...spring }}
-                >
-                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Search className="w-5 h-5 text-gray-900" />
-                  </div>
+                <motion.div className="flex items-center gap-3 w-full glass p-3 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/60" whileTap={{ scale: 0.98 }} initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, ...spring }}>
+                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0"><Search className="w-5 h-5 text-gray-900" /></div>
                   <div className="flex-1">
                     <div className="text-sm font-bold text-gray-900">What are you craving?</div>
-                    <div className="flex items-center gap-1 text-[11px] text-gray-500 font-medium">
-                      <span className="flex items-center gap-0.5 text-red-500"><MapPin className="w-3 h-3" /> Sukhumvit</span>
-                      <span className="text-gray-300">·</span><span>Any time</span>
-                    </div>
+                    <div className="flex items-center gap-1 text-[11px] text-gray-500 font-medium"><span className="flex items-center gap-0.5 text-red-500"><MapPin className="w-3 h-3" /> Sukhumvit</span><span className="text-gray-300">·</span><span>Any time</span></div>
                   </div>
-                  <div className="w-10 h-10 border border-gray-200 rounded-full flex items-center justify-center bg-white">
-                    <SlidersHorizontal className="w-4 h-4 text-gray-900" />
-                  </div>
+                  <div className="w-10 h-10 border border-gray-200 rounded-full flex items-center justify-center bg-white"><SlidersHorizontal className="w-4 h-4 text-gray-900" /></div>
                 </motion.div>
               </div>
 
-              <motion.div
-                className="px-6 mt-2"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, ...gentle }}
-              >
+              <motion.div className="px-6 mt-2" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, ...gentle }}>
                 <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Fri · 7:30 PM · ☀️ 32°C</div>
                 <h1 className="text-[30px] font-['Playfair_Display'] font-bold text-gray-900 leading-tight mb-2">Good evening,<br/>foodie.</h1>
-                <motion.div
-                  className="flex items-center gap-2 mb-5"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4, ...spring }}
-                >
+                <motion.div className="flex items-center gap-2 mb-5" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4, ...spring }}>
                   <span className="px-2.5 py-1 bg-white border border-gray-200 rounded-full text-xs font-semibold text-gray-700 shadow-sm">🍜 Thai food fan</span>
-                  <span className="px-2.5 py-1 bg-white border border-gray-200 rounded-full text-xs font-semibold text-gray-700 shadow-sm flex items-center gap-1">
-                    <span className="text-[#FFCC02]">✨</span> 12-wk streak
-                  </span>
+                  <span className="px-2.5 py-1 bg-white border border-gray-200 rounded-full text-xs font-semibold text-gray-700 shadow-sm flex items-center gap-1"><span className="text-[#FFCC02]">✨</span> 12-wk streak</span>
                 </motion.div>
               </motion.div>
 
               <div className="px-6 mb-6">
-                <motion.h2
-                  className="text-[13px] font-bold text-gray-500 uppercase tracking-widest mb-4"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  Who's eating with you?
-                </motion.h2>
-
+                <motion.h2 className="text-[13px] font-bold text-gray-500 uppercase tracking-widest mb-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>Who's eating with you?</motion.h2>
                 <div className="flex gap-4">
-                  <motion.div
-                    initial={{ opacity: 0, y: 30, rotate: -3 }}
-                    animate={{ opacity: 1, y: 0, rotate: 0 }}
-                    transition={{ delay: 0.35, ...bouncy }}
-                    className="flex-1 bg-white rounded-[22px] p-5 border-2 border-gray-100 shadow-[0_6px_24px_rgba(0,0,0,0.04)] flex flex-col items-center justify-center text-center gap-3 relative overflow-hidden cursor-pointer transition-colors hover:border-[#FFCC02]/50"
-                  >
-                    <div className="w-[80px] h-[80px] rounded-[20px] bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
-                      <img src="/__mockup/images/toast_char.png" alt="Solo" className="w-[65px] h-[65px] object-contain gfloat" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-gray-900 text-[15px]">Solo</div>
-                      <div className="text-[11px] text-gray-500 mt-0.5">AI picks for you</div>
-                    </div>
+                  <motion.div initial={{ opacity: 0, y: 30, rotate: -3 }} animate={{ opacity: 1, y: 0, rotate: 0 }} transition={{ delay: 0.35, ...bouncy }} className="flex-1 bg-white rounded-[22px] p-5 border-2 border-gray-100 shadow-[0_6px_24px_rgba(0,0,0,0.04)] flex flex-col items-center justify-center text-center gap-3 relative overflow-hidden cursor-pointer transition-colors hover:border-[#FFCC02]/50">
+                    <div className="w-[80px] h-[80px] rounded-[20px] bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center"><img src="/__mockup/images/toast_char.png" alt="Solo" className="w-[65px] h-[65px] object-contain gfloat" /></div>
+                    <div><div className="font-bold text-gray-900 text-[15px]">Solo</div><div className="text-[11px] text-gray-500 mt-0.5">AI picks for you</div></div>
                   </motion.div>
-
-                  <motion.button
-                    initial={{ opacity: 0, y: 30, rotate: 3 }}
-                    animate={{ opacity: 1, y: 0, rotate: 0 }}
-                    transition={{ delay: 0.45, ...bouncy }}
-                    whileTap={{ scale: 0.96 }}
-                    onClick={() => { setScreen('setup'); setActiveSection('type'); }}
-                    className="flex-1 bg-white rounded-[22px] p-5 border-2 border-gray-100 shadow-[0_6px_24px_rgba(0,0,0,0.04)] flex flex-col items-center justify-center text-center gap-3 relative overflow-hidden cursor-pointer transition-colors hover:border-violet-200"
-                  >
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-br from-violet-50/50 via-transparent to-purple-50/30 opacity-0 hover:opacity-100"
-                      transition={{ duration: 0.3 }}
-                    />
+                  <motion.button initial={{ opacity: 0, y: 30, rotate: 3 }} animate={{ opacity: 1, y: 0, rotate: 0 }} transition={{ delay: 0.45, ...bouncy }} whileTap={{ scale: 0.96 }} onClick={() => setScreen('setup')} className="flex-1 bg-white rounded-[22px] p-5 border-2 border-gray-100 shadow-[0_6px_24px_rgba(0,0,0,0.04)] flex flex-col items-center justify-center text-center gap-3 relative overflow-hidden cursor-pointer transition-colors hover:border-violet-200">
                     <div className="relative">
-                      <div className="w-[80px] h-[80px] rounded-[20px] bg-gradient-to-br from-violet-50 to-purple-50 flex items-center justify-center">
-                        <img src="/__mockup/images/toast_waffle.jpeg" alt="Group" className="w-[70px] h-[70px] object-contain" style={{ mixBlendMode: 'multiply' }} />
-                      </div>
-                      <motion.div
-                        className="absolute -top-1 -right-1 w-6 h-6 bg-violet-500 rounded-full flex items-center justify-center shadow-md"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.7, ...bouncy }}
-                      >
-                        <Users className="w-3 h-3 text-white" />
-                      </motion.div>
+                      <div className="w-[80px] h-[80px] rounded-[20px] bg-gradient-to-br from-violet-50 to-purple-50 flex items-center justify-center"><img src="/__mockup/images/toast_waffle.jpeg" alt="Group" className="w-[70px] h-[70px] object-contain" style={{ mixBlendMode: 'multiply' }} /></div>
+                      <motion.div className="absolute -top-1 -right-1 w-6 h-6 bg-violet-500 rounded-full flex items-center justify-center shadow-md" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.7, ...bouncy }}><Users className="w-3 h-3 text-white" /></motion.div>
                     </div>
-                    <div className="relative z-10">
-                      <div className="font-bold text-gray-900 text-[15px]">Group</div>
-                      <div className="text-[11px] text-gray-500 mt-0.5">Decide together</div>
-                    </div>
-                    <motion.div
-                      className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-400 to-purple-500"
-                      initial={{ scaleX: 0 }}
-                      animate={{ scaleX: [0, 1, 0] }}
-                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                      style={{ transformOrigin: 'left' }}
-                    />
+                    <div className="relative z-10"><div className="font-bold text-gray-900 text-[15px]">Group</div><div className="text-[11px] text-gray-500 mt-0.5">Decide together</div></div>
+                    <motion.div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-400 to-purple-500" initial={{ scaleX: 0 }} animate={{ scaleX: [0, 1, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} style={{ transformOrigin: 'left' }} />
                   </motion.button>
                 </div>
               </div>
@@ -530,28 +303,15 @@ export function GroupJourney() {
                 </div>
                 <div className="flex gap-3 overflow-x-auto no-sb pb-2">
                   {RESTAURANTS.slice(0, 3).map((r, i) => (
-                    <motion.div
-                      key={r.id}
-                      initial={{ opacity: 0, x: 30 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.5 + i * 0.08, ...spring }}
-                      className="flex-shrink-0 w-[160px] bg-white rounded-[18px] overflow-hidden border border-gray-100 shadow-[0_4px_16px_rgba(0,0,0,0.04)]"
-                    >
+                    <motion.div key={r.id} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 + i * 0.08, ...spring }} className="flex-shrink-0 w-[160px] bg-white rounded-[18px] overflow-hidden border border-gray-100 shadow-[0_4px_16px_rgba(0,0,0,0.04)]">
                       <div className="w-full h-[100px] overflow-hidden relative">
                         <img src={r.image} alt={r.name} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                        <div className="absolute bottom-1.5 left-2 text-[9px] font-bold text-white bg-black/25 backdrop-blur-sm rounded-full px-2 py-0.5">
-                          {r.category}
-                        </div>
+                        <div className="absolute bottom-1.5 left-2 text-[9px] font-bold text-white bg-black/25 backdrop-blur-sm rounded-full px-2 py-0.5">{r.category}</div>
                       </div>
                       <div className="p-2.5">
                         <h3 className="font-bold text-[12px] text-gray-900 mb-0.5 truncate">{r.name}</h3>
-                        <div className="flex items-center gap-1 text-[10px] text-gray-400">
-                          <Star className="w-3 h-3 text-[#FFCC02] fill-[#FFCC02]" />
-                          <span className="font-semibold text-gray-600">{r.rating}</span>
-                          <span>·</span>
-                          <span>{'฿'.repeat(r.price)}</span>
-                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-gray-400"><Star className="w-3 h-3 text-[#FFCC02] fill-[#FFCC02]" /><span className="font-semibold text-gray-600">{r.rating}</span><span>·</span><span>{'฿'.repeat(r.price)}</span></div>
                       </div>
                     </motion.div>
                   ))}
@@ -561,336 +321,156 @@ export function GroupJourney() {
           )}
 
           {screen === 'setup' && (
-            <motion.div
-              key="setup"
-              initial={{ opacity: 0, x: 60 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -60 }}
-              transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-              className="flex-1 flex flex-col overflow-hidden"
-            >
-              <div className="pt-14 px-6 pb-3">
-                <div className="flex items-center justify-between mb-4">
-                  <motion.button
-                    whileTap={{ scale: 0.85 }}
-                    onClick={() => setScreen('home')}
-                    className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"
-                  >
-                    <ArrowLeft className="w-4 h-4 text-gray-700" />
-                  </motion.button>
-                  <div className="flex items-center gap-1.5 bg-violet-50 px-3 py-1.5 rounded-full border border-violet-100">
-                    <Users className="w-3.5 h-3.5 text-violet-500" />
-                    <span className="text-[11px] font-bold text-violet-600">Group Mode</span>
+            <motion.div key="setup" initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -60 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }} className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto no-sb pb-32">
+                <div className="pt-14 px-6 pb-2">
+                  <div className="flex items-center justify-between mb-5">
+                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => setScreen('home')} className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"><ArrowLeft className="w-4 h-4 text-gray-700" /></motion.button>
+                    <div className="flex items-center gap-1.5 bg-violet-50 px-3 py-1.5 rounded-full border border-violet-100"><Users className="w-3.5 h-3.5 text-violet-500" /><span className="text-[11px] font-bold text-violet-600">Group Mode</span></div>
                   </div>
+                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, ...gentle }} className="mb-1">
+                    <h1 className="text-[26px] font-['Playfair_Display'] font-bold text-gray-900 leading-tight">Plan your<br/>group feast</h1>
+                  </motion.div>
                 </div>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1, ...gentle }}
-                >
-                  <h1 className="text-[24px] font-['Playfair_Display'] font-bold text-gray-900 leading-tight mb-0.5">Plan your<br/>group feast</h1>
-                  <p className="text-[12px] text-gray-400 font-medium">Tap each section to customize</p>
+                <motion.div className="px-6 mb-5" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, ...spring }}>
+                  <div className="flex gap-2 overflow-x-auto no-sb pb-1">
+                    {GROUP_TYPES.map((g, i) => {
+                      const on = selectedGroupType === g.id;
+                      return (
+                        <motion.button key={g.id} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.04, ...spring }} whileTap={{ scale: 0.93 }} onClick={() => setSelectedGroupType(on ? null : g.id)}
+                          className={`flex-shrink-0 rounded-full pl-2.5 pr-4 py-2 flex items-center gap-2 border-2 transition-all ${on ? 'border-violet-400 bg-violet-50 shadow-[0_4px_16px_rgba(108,43,217,0.12)]' : 'bg-white border-gray-100'}`}
+                        >
+                          <motion.span className="text-lg" animate={on ? { scale: [1, 1.2, 1.05] } : { scale: 1 }} transition={bouncy}>{g.emoji}</motion.span>
+                          <span className={`text-[12px] font-semibold whitespace-nowrap ${on ? 'text-violet-700' : 'text-gray-600'}`}>{g.label}</span>
+                          <AnimatePresence>
+                            {on && (
+                              <motion.div initial={{ scale: 0, width: 0 }} animate={{ scale: 1, width: 16 }} exit={{ scale: 0, width: 0 }} transition={bouncy} className="w-4 h-4 bg-violet-500 rounded-full flex items-center justify-center flex-shrink-0"><Check className="w-2.5 h-2.5 text-white" /></motion.div>
+                            )}
+                          </AnimatePresence>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+
+                <motion.div className="px-6 mb-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, ...spring }}>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5"><Sparkles className="w-3 h-3" /> Vibes <span className="text-gray-300 normal-case font-medium tracking-normal">(up to 3)</span></p>
+                  <div className="flex gap-1.5 overflow-x-auto no-sb pb-1">
+                    {VIBES.map((v, i) => {
+                      const on = selectedVibes.includes(v.label);
+                      const atMax = selectedVibes.length >= 3 && !on;
+                      return (
+                        <motion.button key={v.label} initial={{ opacity: 0, x: 12 }} animate={{ opacity: atMax ? 0.3 : 1, x: 0 }} transition={{ delay: 0.3 + i * 0.02, ...spring }} whileTap={{ scale: 0.9 }} onClick={() => toggleVibe(v.label)}
+                          className={`flex-shrink-0 rounded-full px-3 py-1.5 flex items-center gap-1 border-2 transition-all text-[11px] font-semibold ${on ? 'border-violet-400 bg-violet-50/50 text-violet-700' : 'bg-white border-gray-100 text-gray-500'}`}
+                        >
+                          <span className="text-xs">{v.emoji}</span>{v.label}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+
+                <motion.div className="px-6 mb-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, ...spring }}>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5"><Wallet className="w-3 h-3" /> Budget</p>
+                  <div className="flex gap-2">
+                    {BUDGETS.map((b, i) => {
+                      const on = selectedBudget === b.id;
+                      return (
+                        <motion.button key={b.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 + i * 0.03, ...spring }} whileTap={{ scale: 0.92 }} onClick={() => setSelectedBudget(on ? null : b.id)}
+                          className={`flex-1 rounded-2xl py-2.5 flex flex-col items-center gap-0.5 border-2 transition-all ${on ? 'border-violet-400 bg-violet-50/50 shadow-[0_4px_14px_rgba(108,43,217,0.08)]' : 'bg-white border-gray-100'}`}
+                        >
+                          <motion.span className="text-base" animate={on ? { scale: [1, 1.2, 1.05] } : { scale: 1 }} transition={bouncy}>{b.emoji}</motion.span>
+                          <span className={`text-[10px] font-bold ${on ? 'text-violet-700' : 'text-gray-600'}`}>{b.label}</span>
+                          <span className="text-[8px] text-gray-400 leading-tight">{b.sub}</span>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+
+                <motion.div className="px-6 mb-3" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42, ...spring }}>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5"><MapPinned className="w-3 h-3" /> Area <span className="text-gray-300 normal-case font-medium tracking-normal">(up to 3)</span></p>
+                  <div className="flex gap-1.5 overflow-x-auto no-sb pb-1">
+                    {BKK_AREAS.map((a, i) => {
+                      const on = selectedAreas.includes(a.label);
+                      const atMax = selectedAreas.length >= 3 && !on;
+                      return (
+                        <motion.button key={a.label} initial={{ opacity: 0, x: 10 }} animate={{ opacity: atMax ? 0.3 : 1, x: 0 }} transition={{ delay: 0.45 + i * 0.015, ...spring }} whileTap={{ scale: 0.9 }} onClick={() => toggleArea(a.label)}
+                          className={`flex-shrink-0 rounded-full px-3 py-1.5 flex items-center gap-1 border-2 transition-all text-[10px] font-semibold ${on ? 'border-violet-400 bg-violet-50/50 text-violet-700' : 'bg-white border-gray-100 text-gray-500'}`}
+                        >
+                          <span className="text-xs">{a.emoji}</span>{a.label}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+
+                <motion.div className="px-6" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, ...spring }}>
+                  <motion.button onClick={() => setShowMoreOptions(!showMoreOptions)} className="w-full flex items-center justify-between py-3" whileTap={{ scale: 0.99 }}>
+                    <span className="text-[11px] font-semibold text-gray-400 flex items-center gap-1.5">
+                      <SlidersHorizontal className="w-3 h-3" />
+                      {showMoreOptions ? 'Less options' : 'More options'}
+                      {selectedDietary.length > 0 && !showMoreOptions && (
+                        <span className="text-[9px] bg-violet-50 text-violet-500 rounded-full px-1.5 py-0.5 font-bold border border-violet-100">{selectedDietary.length}</span>
+                      )}
+                    </span>
+                    <motion.div animate={{ rotate: showMoreOptions ? 180 : 0 }} transition={spring}><ChevronDown className="w-3.5 h-3.5 text-gray-300" /></motion.div>
+                  </motion.button>
+
+                  <AnimatePresence>
+                    {showMoreOptions && (
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }} className="overflow-hidden">
+                        <div className="bg-white rounded-[20px] border border-gray-100 shadow-[0_4px_16px_rgba(0,0,0,0.03)] p-4 mb-3">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5"><Leaf className="w-3 h-3" /> Dietary</p>
+                          <div className="flex flex-wrap gap-1.5 mb-4">
+                            {DIETARY.map((d, i) => {
+                              const on = selectedDietary.includes(d.label);
+                              return (
+                                <motion.button key={d.label} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.02, ...spring }} whileTap={{ scale: 0.9 }} onClick={() => toggleDietary(d.label)}
+                                  className={`rounded-full px-2.5 py-1.5 flex items-center gap-1 border-2 transition-all text-[10px] font-semibold ${on ? 'border-violet-400 bg-violet-50/50 text-violet-700' : 'bg-[#FAFAF8] border-gray-100 text-gray-500'}`}
+                                >
+                                  <span className="text-xs">{d.emoji}</span>{d.label}
+                                </motion.button>
+                              );
+                            })}
+                          </div>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5"><Timer className="w-3 h-3" /> When</p>
+                          <div className="flex gap-1.5 mb-2.5">
+                            {['Today', 'Tomorrow', 'Weekend'].map(d => {
+                              const on = selectedDate === d;
+                              return (<motion.button key={d} whileTap={{ scale: 0.93 }} onClick={() => setSelectedDate(d)} className={`flex-1 rounded-xl py-2 text-center border-2 transition-all text-[10px] font-bold ${on ? 'border-violet-400 bg-violet-50/50 text-violet-700' : 'bg-[#FAFAF8] border-gray-100 text-gray-500'}`}>{d}</motion.button>);
+                            })}
+                          </div>
+                          <div className="flex gap-1.5 overflow-x-auto no-sb">
+                            {TIME_SLOTS.map(t => {
+                              const on = selectedTime === t.label;
+                              return (<motion.button key={t.label} whileTap={{ scale: 0.92 }} onClick={() => setSelectedTime(t.label)} className={`flex-shrink-0 rounded-xl px-2.5 py-1.5 flex flex-col items-center gap-0.5 border-2 min-w-[48px] transition-all ${on ? 'border-violet-400 bg-violet-50/50' : 'bg-[#FAFAF8] border-gray-100'}`}><span className="text-sm">{t.icon}</span><span className={`text-[9px] font-bold ${on ? 'text-violet-700' : 'text-gray-500'}`}>{t.label}</span></motion.button>);
+                            })}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </motion.div>
               </div>
 
-              <div className="flex-1 overflow-y-auto no-sb px-6 pb-28">
-                <div className="space-y-2.5 mt-2">
-                  {SETUP_SECTIONS.map((section, sIdx) => {
-                    const isActive = activeSection === section.key;
-                    const done = isSectionDone(section.key) && !isActive;
-                    const summary = getSectionSummary(section.key);
-                    const SIcon = section.icon;
-
-                    return (
-                      <motion.div
-                        key={section.key}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.15 + sIdx * 0.06, ...spring }}
-                        className={`rounded-[22px] overflow-hidden transition-all duration-300 ${
-                          isActive
-                            ? 'bg-white border-2 border-violet-200 shadow-[0_8px_32px_rgba(108,43,217,0.08)]'
-                            : done
-                              ? 'bg-white border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)]'
-                              : 'bg-gray-50/60 border border-gray-100/60'
-                        }`}
-                      >
-                        <motion.button
-                          onClick={() => setActiveSection(section.key)}
-                          className="w-full flex items-center gap-3 p-4 text-left"
-                          whileTap={{ scale: 0.99 }}
-                        >
-                          <div className={`w-9 h-9 rounded-[12px] flex items-center justify-center transition-all ${
-                            isActive ? 'bg-violet-500' : done ? 'bg-violet-50' : 'bg-gray-100'
-                          }`}>
-                            {done && !isActive ? (
-                              <Check className="w-4 h-4 text-violet-500" />
-                            ) : (
-                              <SIcon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className={`text-[13px] font-bold ${isActive ? 'text-gray-900' : done ? 'text-gray-700' : 'text-gray-400'}`}>
-                              {section.label}
-                            </div>
-                            {done && !isActive && summary ? (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                className="text-[11px] font-semibold text-violet-500 mt-0.5"
-                              >
-                                {summary}
-                              </motion.div>
-                            ) : !isActive ? (
-                              <div className="text-[10px] text-gray-400 mt-0.5">{section.sub}</div>
-                            ) : null}
-                          </div>
-                          <motion.div
-                            animate={{ rotate: isActive ? 180 : 0 }}
-                            transition={spring}
-                          >
-                            <ChevronDown className={`w-4 h-4 ${isActive ? 'text-violet-500' : 'text-gray-300'}`} />
-                          </motion.div>
-                        </motion.button>
-
-                        <AnimatePresence>
-                          {isActive && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-                              className="overflow-hidden"
-                            >
-                              <div className="px-4 pb-4">
-                                {section.key === 'type' && (
-                                  <div className="grid grid-cols-2 gap-2.5">
-                                    {GROUP_TYPES.map((g, i) => {
-                                      const on = selectedGroupType === g.id;
-                                      return (
-                                        <motion.button
-                                          key={g.id}
-                                          initial={{ opacity: 0, scale: 0.9 }}
-                                          animate={{ opacity: 1, scale: 1 }}
-                                          transition={{ delay: i * 0.04, ...spring }}
-                                          whileTap={{ scale: 0.95 }}
-                                          onClick={() => { setSelectedGroupType(on ? null : g.id); if (!on) advanceSection('type'); }}
-                                          className={`rounded-[16px] p-3 flex items-center gap-2.5 border-2 transition-all text-left ${
-                                            on ? 'border-violet-400 bg-violet-50/50 shadow-[0_4px_16px_rgba(108,43,217,0.1)]' : 'bg-[#FAFAF8] border-gray-100'
-                                          }`}
-                                        >
-                                          <motion.span
-                                            className="text-xl"
-                                            animate={on ? { scale: [1, 1.15, 1.05] } : { scale: 1 }}
-                                            transition={spring}
-                                          >
-                                            {g.emoji}
-                                          </motion.span>
-                                          <div className="flex-1 min-w-0">
-                                            <div className={`text-[11px] font-semibold ${on ? 'text-violet-700' : 'text-gray-600'}`}>{g.label}</div>
-                                            <div className="text-[9px] text-gray-400">{g.desc}</div>
-                                          </div>
-                                          {on && (
-                                            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={bouncy} className="w-4.5 h-4.5 bg-violet-500 rounded-full flex items-center justify-center">
-                                              <Check className="w-3 h-3 text-white" />
-                                            </motion.div>
-                                          )}
-                                        </motion.button>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-
-                                {section.key === 'vibes' && (
-                                  <div className="flex flex-wrap gap-2">
-                                    {VIBES.map((v, i) => {
-                                      const on = selectedVibes.includes(v.label);
-                                      const atMax = selectedVibes.length >= 3 && !on;
-                                      return (
-                                        <motion.button
-                                          key={v.label}
-                                          initial={{ opacity: 0, scale: 0.9 }}
-                                          animate={{ opacity: atMax ? 0.35 : 1, scale: 1 }}
-                                          transition={{ delay: i * 0.025, ...spring }}
-                                          whileTap={{ scale: 0.92 }}
-                                          onClick={() => toggleVibe(v.label)}
-                                          className={`rounded-full px-3.5 py-2 flex items-center gap-1.5 border-2 transition-all text-[11px] font-semibold ${
-                                            on ? 'border-violet-400 bg-violet-50/40 text-violet-700' : 'bg-[#FAFAF8] border-gray-100 text-gray-500'
-                                          }`}
-                                        >
-                                          <span className="text-sm">{v.emoji}</span>
-                                          {v.label}
-                                        </motion.button>
-                                      );
-                                    })}
-                                    {selectedVibes.length > 0 && (
-                                      <motion.button
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={bouncy}
-                                        onClick={() => advanceSection('vibes')}
-                                        className="rounded-full px-3.5 py-2 bg-violet-500 text-white text-[11px] font-bold flex items-center gap-1"
-                                      >
-                                        Next <ArrowRight className="w-3 h-3" />
-                                      </motion.button>
-                                    )}
-                                  </div>
-                                )}
-
-                                {section.key === 'budget' && (
-                                  <div className="grid grid-cols-4 gap-2">
-                                    {BUDGETS.map((b, i) => {
-                                      const on = selectedBudget === b.id;
-                                      return (
-                                        <motion.button
-                                          key={b.id}
-                                          initial={{ opacity: 0, scale: 0.9 }}
-                                          animate={{ opacity: 1, scale: 1 }}
-                                          transition={{ delay: i * 0.04, ...spring }}
-                                          whileTap={{ scale: 0.92 }}
-                                          onClick={() => { setSelectedBudget(on ? null : b.id); if (!on) advanceSection('budget'); }}
-                                          className={`rounded-2xl p-2.5 flex flex-col items-center gap-1 border-2 transition-all ${
-                                            on ? 'border-violet-400 bg-violet-50/40 shadow-[0_4px_16px_rgba(108,43,217,0.1)]' : 'bg-[#FAFAF8] border-gray-100'
-                                          }`}
-                                        >
-                                          <span className="text-base">{b.emoji}</span>
-                                          <span className={`text-[11px] font-bold ${on ? 'text-violet-700' : 'text-gray-600'}`}>{b.label}</span>
-                                          <span className="text-[8px] text-gray-400 leading-tight">{b.sub}</span>
-                                        </motion.button>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-
-                                {section.key === 'area' && (
-                                  <div className="flex flex-wrap gap-2">
-                                    {BKK_AREAS.map((a, i) => {
-                                      const on = selectedAreas.includes(a.label);
-                                      const atMax = selectedAreas.length >= 3 && !on;
-                                      return (
-                                        <motion.button
-                                          key={a.label}
-                                          initial={{ opacity: 0, scale: 0.85 }}
-                                          animate={{ opacity: atMax ? 0.35 : 1, scale: 1 }}
-                                          transition={{ delay: i * 0.02, ...spring }}
-                                          whileTap={{ scale: 0.9 }}
-                                          onClick={() => toggleArea(a.label)}
-                                          className={`rounded-full px-3 py-1.5 flex items-center gap-1 border-2 transition-all text-[10px] font-semibold ${
-                                            on ? 'border-violet-400 bg-violet-50/40 text-violet-700' : 'bg-[#FAFAF8] border-gray-100 text-gray-500'
-                                          }`}
-                                        >
-                                          <span className="text-xs">{a.emoji}</span>
-                                          {a.label}
-                                        </motion.button>
-                                      );
-                                    })}
-                                    {selectedAreas.length > 0 && (
-                                      <motion.button
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={bouncy}
-                                        onClick={() => advanceSection('area')}
-                                        className="rounded-full px-3 py-1.5 bg-violet-500 text-white text-[10px] font-bold flex items-center gap-1"
-                                      >
-                                        Next <ArrowRight className="w-3 h-3" />
-                                      </motion.button>
-                                    )}
-                                  </div>
-                                )}
-
-                                {section.key === 'details' && (
-                                  <div className="space-y-4">
-                                    <div>
-                                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Dietary needs</p>
-                                      <div className="flex flex-wrap gap-1.5">
-                                        {DIETARY.map((d, i) => {
-                                          const on = selectedDietary.includes(d.label);
-                                          return (
-                                            <motion.button
-                                              key={d.label}
-                                              initial={{ opacity: 0, scale: 0.85 }}
-                                              animate={{ opacity: 1, scale: 1 }}
-                                              transition={{ delay: i * 0.02, ...spring }}
-                                              whileTap={{ scale: 0.9 }}
-                                              onClick={() => toggleDietary(d.label)}
-                                              className={`rounded-full px-3 py-1.5 flex items-center gap-1 border-2 transition-all text-[10px] font-semibold ${
-                                                on ? 'border-violet-400 bg-violet-50/40 text-violet-700' : 'bg-[#FAFAF8] border-gray-100 text-gray-500'
-                                              }`}
-                                            >
-                                              <span className="text-xs">{d.emoji}</span>
-                                              {d.label}
-                                            </motion.button>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">When?</p>
-                                      <div className="flex gap-1.5 mb-2">
-                                        {['Today', 'Tomorrow', 'Weekend'].map(d => {
-                                          const on = selectedDate === d;
-                                          return (
-                                            <motion.button
-                                              key={d}
-                                              whileTap={{ scale: 0.93 }}
-                                              onClick={() => setSelectedDate(d)}
-                                              className={`flex-1 rounded-xl py-2 text-center border-2 transition-all text-[10px] font-bold ${
-                                                on ? 'border-violet-400 bg-violet-50/40 text-violet-700' : 'bg-[#FAFAF8] border-gray-100 text-gray-500'
-                                              }`}
-                                            >
-                                              {d}
-                                            </motion.button>
-                                          );
-                                        })}
-                                      </div>
-                                      <div className="flex gap-1.5 overflow-x-auto no-sb">
-                                        {TIME_SLOTS.map(t => {
-                                          const on = selectedTime === t.label;
-                                          return (
-                                            <motion.button
-                                              key={t.label}
-                                              whileTap={{ scale: 0.92 }}
-                                              onClick={() => setSelectedTime(t.label)}
-                                              className={`flex-shrink-0 rounded-xl px-3 py-2 flex flex-col items-center gap-0.5 border-2 min-w-[52px] transition-all ${
-                                                on ? 'border-violet-400 bg-violet-50/40' : 'bg-[#FAFAF8] border-gray-100'
-                                              }`}
-                                            >
-                                              <span className="text-sm">{t.icon}</span>
-                                              <span className={`text-[10px] font-bold ${on ? 'text-violet-700' : 'text-gray-500'}`}>{t.label}</span>
-                                            </motion.button>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="absolute bottom-[84px] left-0 right-0 px-6 pb-4 pt-2 bg-gradient-to-t from-[#FAFAF8] via-[#FAFAF8] to-transparent z-50">
+              <div className="absolute bottom-[84px] left-0 right-0 px-6 pb-4 pt-3 bg-gradient-to-t from-[#FAFAF8] via-[#FAFAF8]/95 to-transparent z-50">
                 <AnimatePresence>
                   {canInvite && (
-                    <motion.button
-                      initial={{ opacity: 0, y: 12, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 12, scale: 0.95 }}
-                      transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => setScreen('invite')}
-                      className="w-full h-[52px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2.5 font-bold text-[15px] text-white shadow-[0_8px_28px_rgba(108,43,217,0.35)]"
-                    >
-                      <UserPlus className="w-5 h-5" />
-                      Invite Friends
-                      <ArrowRight className="w-4 h-4 ml-1" />
-                    </motion.button>
+                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }} transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}>
+                      {(selectedVibes.length > 0 || selectedBudget || selectedAreas.length > 0) && (
+                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="flex gap-1.5 mb-2 overflow-x-auto no-sb">
+                          {selectedGroupType && <span className="flex-shrink-0 text-[9px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">{GROUP_TYPES.find(g => g.id === selectedGroupType)?.emoji} {GROUP_TYPES.find(g => g.id === selectedGroupType)?.label}</span>}
+                          {selectedVibes.slice(0, 2).map(v => <span key={v} className="flex-shrink-0 text-[9px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">{v}</span>)}
+                          {selectedBudget && <span className="flex-shrink-0 text-[9px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">{BUDGETS.find(b => b.id === selectedBudget)?.label}</span>}
+                          {selectedAreas.slice(0, 1).map(a => <span key={a} className="flex-shrink-0 text-[9px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">{a}</span>)}
+                        </motion.div>
+                      )}
+                      <motion.button whileTap={{ scale: 0.97 }} onClick={() => setScreen('invite')} className="w-full h-[52px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2.5 font-bold text-[15px] text-white shadow-[0_8px_28px_rgba(108,43,217,0.35)]">
+                        <UserPlus className="w-5 h-5" />Invite Friends<ArrowRight className="w-4 h-4 ml-1" />
+                      </motion.button>
+                    </motion.div>
                   )}
                 </AnimatePresence>
               </div>
@@ -898,102 +478,32 @@ export function GroupJourney() {
           )}
 
           {screen === 'invite' && (
-            <motion.div
-              key="invite"
-              initial={{ opacity: 0, x: 60 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -60 }}
-              transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-              className="flex-1 flex flex-col pt-14 px-6 pb-24"
-            >
+            <motion.div key="invite" initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -60 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }} className="flex-1 flex flex-col pt-14 px-6 pb-24">
               <div className="flex items-center justify-between mb-5">
-                <motion.button
-                  whileTap={{ scale: 0.85 }}
-                  onClick={() => setScreen('setup')}
-                  className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"
-                >
-                  <ArrowLeft className="w-4 h-4 text-gray-700" />
-                </motion.button>
-                <div className="flex items-center gap-1.5 bg-violet-50 px-3 py-1.5 rounded-full border border-violet-100">
-                  <Share2 className="w-3.5 h-3.5 text-violet-500" />
-                  <span className="text-[11px] font-bold text-violet-600">Invite</span>
-                </div>
+                <motion.button whileTap={{ scale: 0.85 }} onClick={() => setScreen('setup')} className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"><ArrowLeft className="w-4 h-4 text-gray-700" /></motion.button>
+                <div className="flex items-center gap-1.5 bg-violet-50 px-3 py-1.5 rounded-full border border-violet-100"><Share2 className="w-3.5 h-3.5 text-violet-500" /><span className="text-[11px] font-bold text-violet-600">Invite</span></div>
               </div>
-
               <ProgressBar step={1} total={5} />
-
               <div className="flex-1 flex flex-col items-center justify-center">
-                <motion.div
-                  className="w-full"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.1, ...spring }}
-                >
+                <motion.div className="w-full" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, ...spring }}>
                   <div className="bg-white rounded-[28px] border border-gray-100 shadow-[0_16px_48px_rgba(0,0,0,0.06)] overflow-hidden">
                     <div className="bg-gradient-to-br from-violet-500 via-purple-500 to-violet-600 p-6 text-center relative overflow-hidden">
-                      <div className="absolute inset-0 opacity-10">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                          <div key={i} className="absolute rounded-full bg-white" style={{
-                            width: 4 + Math.random() * 8,
-                            height: 4 + Math.random() * 8,
-                            top: `${Math.random() * 100}%`,
-                            left: `${Math.random() * 100}%`,
-                          }} />
-                        ))}
-                      </div>
-                      <motion.div
-                        initial={{ scale: 0, rotate: -20 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ delay: 0.25, ...bouncy }}
-                        className="w-16 h-16 mx-auto mb-3 bg-white/15 rounded-[20px] flex items-center justify-center backdrop-blur-sm border border-white/20"
-                      >
-                        <Share2 className="w-7 h-7 text-white" />
-                      </motion.div>
+                      <div className="absolute inset-0 opacity-10">{Array.from({ length: 6 }).map((_, i) => (<div key={i} className="absolute rounded-full bg-white" style={{ width: 4 + Math.random() * 8, height: 4 + Math.random() * 8, top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%` }} />))}</div>
+                      <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.25, ...bouncy }} className="w-16 h-16 mx-auto mb-3 bg-white/15 rounded-[20px] flex items-center justify-center backdrop-blur-sm border border-white/20"><Share2 className="w-7 h-7 text-white" /></motion.div>
                       <h2 className="text-white text-[18px] font-bold">Share the invite</h2>
                       <p className="text-white/60 text-[12px] mt-1 font-medium">Friends join with this code</p>
                     </div>
-
                     <div className="p-5">
                       <div className="bg-[#FAFAF8] rounded-2xl p-4 flex items-center gap-3 mb-4 border border-gray-100">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Session code</div>
-                          <div className="text-[20px] font-mono font-black text-gray-900 tracking-[0.2em]">A3F7B2D9</div>
-                        </div>
-                        <motion.button
-                          whileTap={{ scale: 0.88 }}
-                          onClick={handleCopy}
-                          className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 ${copied ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-gray-200'} border`}
-                        >
+                        <div className="flex-1 min-w-0"><div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Session code</div><div className="text-[20px] font-mono font-black text-gray-900 tracking-[0.2em]">A3F7B2D9</div></div>
+                        <motion.button whileTap={{ scale: 0.88 }} onClick={handleCopy} className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 ${copied ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-gray-200'} border`}>
                           <AnimatePresence mode="wait">
-                            {copied ? (
-                              <motion.div key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={spring}>
-                                <Check className="w-4 h-4 text-emerald-600" />
-                              </motion.div>
-                            ) : (
-                              <motion.div key="copy" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={spring}>
-                                <Copy className="w-4 h-4 text-gray-400" />
-                              </motion.div>
-                            )}
+                            {copied ? <motion.div key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={spring}><Check className="w-4 h-4 text-emerald-600" /></motion.div> : <motion.div key="copy" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={spring}><Copy className="w-4 h-4 text-gray-400" /></motion.div>}
                           </AnimatePresence>
                         </motion.button>
                       </div>
-
-                      <motion.button
-                        whileTap={{ scale: 0.97 }}
-                        className="w-full h-[48px] rounded-2xl bg-[#00B900] flex items-center justify-center gap-2 font-bold text-white text-[14px] shadow-[0_6px_20px_rgba(0,185,0,0.25)] mb-3"
-                      >
-                        <MessageCircle className="w-4.5 h-4.5" />
-                        Share via LINE
-                      </motion.button>
-
-                      <motion.button
-                        whileTap={{ scale: 0.97 }}
-                        onClick={startWaiting}
-                        className="w-full h-[48px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2 font-bold text-white text-[14px] shadow-[0_6px_20px_rgba(108,43,217,0.25)]"
-                      >
-                        Go to Waiting Room
-                        <ArrowRight className="w-4 h-4" />
-                      </motion.button>
+                      <motion.button whileTap={{ scale: 0.97 }} className="w-full h-[48px] rounded-2xl bg-[#00B900] flex items-center justify-center gap-2 font-bold text-white text-[14px] shadow-[0_6px_20px_rgba(0,185,0,0.25)] mb-3"><MessageCircle className="w-4.5 h-4.5" />Share via LINE</motion.button>
+                      <motion.button whileTap={{ scale: 0.97 }} onClick={startWaiting} className="w-full h-[48px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2 font-bold text-white text-[14px] shadow-[0_6px_20px_rgba(108,43,217,0.25)]">Go to Waiting Room<ArrowRight className="w-4 h-4" /></motion.button>
                     </div>
                   </div>
                 </motion.div>
@@ -1002,134 +512,41 @@ export function GroupJourney() {
           )}
 
           {screen === 'waiting' && (
-            <motion.div
-              key="waiting"
-              initial={{ opacity: 0, x: 60 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -60 }}
-              transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-              className="flex-1 flex flex-col items-center pt-14 px-6 pb-24"
-            >
+            <motion.div key="waiting" initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -60 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }} className="flex-1 flex flex-col items-center pt-14 px-6 pb-24">
               <div className="w-full flex items-center justify-between mb-5">
-                <motion.button
-                  whileTap={{ scale: 0.85 }}
-                  onClick={() => setScreen('invite')}
-                  className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"
-                >
-                  <ArrowLeft className="w-4 h-4 text-gray-700" />
-                </motion.button>
+                <motion.button whileTap={{ scale: 0.85 }} onClick={() => setScreen('invite')} className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"><ArrowLeft className="w-4 h-4 text-gray-700" /></motion.button>
                 <span className="text-[11px] font-mono font-bold text-gray-400 bg-gray-100 rounded-full px-3 py-1.5">A3F7B2D9</span>
               </div>
-
               <ProgressBar step={2} total={5} />
-
               <div className="flex-1 flex flex-col items-center justify-center w-full">
-                <motion.div
-                  className="relative mb-6"
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.1, ...spring }}
-                >
+                <motion.div className="relative mb-6" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.1, ...spring }}>
                   <div className="relative">
                     <div className="absolute inset-0 rounded-[24px] bg-violet-400/20 pulse-ring" />
-                    <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-[0_10px_36px_rgba(108,43,217,0.3)] relative z-10">
-                      <Users className="w-10 h-10 text-white" />
-                    </div>
+                    <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-[0_10px_36px_rgba(108,43,217,0.3)] relative z-10"><Users className="w-10 h-10 text-white" /></div>
                   </div>
-                  <motion.div
-                    className="absolute -top-2 -right-2 w-8 h-8 bg-[#FFCC02] rounded-full flex items-center justify-center shadow-lg text-sm font-black z-20 border-2 border-white"
-                    key={membersJoined}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: [0, 1.3, 1] }}
-                    transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-                  >
-                    {membersJoined}
-                  </motion.div>
+                  <motion.div className="absolute -top-2 -right-2 w-8 h-8 bg-[#FFCC02] rounded-full flex items-center justify-center shadow-lg text-sm font-black z-20 border-2 border-white" key={membersJoined} initial={{ scale: 0 }} animate={{ scale: [0, 1.3, 1] }} transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}>{membersJoined}</motion.div>
                 </motion.div>
-
-                <motion.h2
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, ...gentle }}
-                  className="text-[22px] font-['Playfair_Display'] font-bold text-gray-900 mb-1"
-                >
-                  {membersJoined >= 3 ? "Everyone's here!" : 'Waiting for friends'}
-                </motion.h2>
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-[13px] text-gray-400 mb-8"
-                >
-                  {membersJoined >= 3 ? 'Ready to start swiping' : `${membersJoined}/3 joined`}
-                </motion.p>
-
+                <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, ...gentle }} className="text-[22px] font-['Playfair_Display'] font-bold text-gray-900 mb-1">{membersJoined >= 3 ? "Everyone's here!" : 'Waiting for friends'}</motion.h2>
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-[13px] text-gray-400 mb-8">{membersJoined >= 3 ? 'Ready to start swiping' : `${membersJoined}/3 joined`}</motion.p>
                 <div className="w-full max-w-xs space-y-3 mb-8">
                   {MEMBERS.slice(0, membersJoined).map((m, i) => (
-                    <motion.div
-                      key={m.id}
-                      initial={{ opacity: 0, x: -20, scale: 0.95 }}
-                      animate={{ opacity: 1, x: 0, scale: 1 }}
-                      transition={{ delay: i === 0 ? 0 : 0.15 * i + 0.3, ...spring }}
-                      className="flex items-center gap-3 bg-white rounded-[20px] p-3.5 border border-gray-100 shadow-[0_4px_16px_rgba(0,0,0,0.04)]"
-                    >
-                      <motion.div
-                        className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center text-xl border-2 border-white shadow-sm"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: i === 0 ? 0.1 : 0.15 * i + 0.4, ...bouncy }}
-                      >
-                        {m.avatar}
-                      </motion.div>
-                      <div className="flex-1">
-                        <div className="text-[13px] font-bold text-gray-900">{m.name}</div>
-                        <div className="text-[10px] text-gray-400 font-medium">{m.isHost ? 'Host · Created session' : 'Just joined'}</div>
-                      </div>
-                      {m.isHost && (
-                        <div className="w-6 h-6 rounded-full bg-[#FFCC02] flex items-center justify-center shadow-sm">
-                          <Crown className="w-3 h-3 text-gray-900" />
-                        </div>
-                      )}
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: i === 0 ? 0.2 : 0.15 * i + 0.5, ...bouncy }}
-                        className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center"
-                      >
-                        <Check className="w-3 h-3 text-emerald-600" />
-                      </motion.div>
+                    <motion.div key={m.id} initial={{ opacity: 0, x: -20, scale: 0.95 }} animate={{ opacity: 1, x: 0, scale: 1 }} transition={{ delay: i === 0 ? 0 : 0.15 * i + 0.3, ...spring }} className="flex items-center gap-3 bg-white rounded-[20px] p-3.5 border border-gray-100 shadow-[0_4px_16px_rgba(0,0,0,0.04)]">
+                      <motion.div className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center text-xl border-2 border-white shadow-sm" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: i === 0 ? 0.1 : 0.15 * i + 0.4, ...bouncy }}>{m.avatar}</motion.div>
+                      <div className="flex-1"><div className="text-[13px] font-bold text-gray-900">{m.name}</div><div className="text-[10px] text-gray-400 font-medium">{m.isHost ? 'Host · Created session' : 'Just joined'}</div></div>
+                      {m.isHost && <div className="w-6 h-6 rounded-full bg-[#FFCC02] flex items-center justify-center shadow-sm"><Crown className="w-3 h-3 text-gray-900" /></div>}
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: i === 0 ? 0.2 : 0.15 * i + 0.5, ...bouncy }} className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center"><Check className="w-3 h-3 text-emerald-600" /></motion.div>
                     </motion.div>
                   ))}
-
                   {membersJoined < 3 && (
-                    <motion.div
-                      animate={{ opacity: [0.4, 0.7, 0.4] }}
-                      transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
-                      className="flex items-center gap-3 bg-gray-50/80 rounded-[20px] p-3.5 border border-dashed border-gray-200"
-                    >
-                      <div className="w-11 h-11 rounded-full bg-gray-100 flex items-center justify-center">
-                        <Clock className="w-4 h-4 text-gray-300" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-[13px] font-medium text-gray-300">Waiting for someone...</div>
-                      </div>
+                    <motion.div animate={{ opacity: [0.4, 0.7, 0.4] }} transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }} className="flex items-center gap-3 bg-gray-50/80 rounded-[20px] p-3.5 border border-dashed border-gray-200">
+                      <div className="w-11 h-11 rounded-full bg-gray-100 flex items-center justify-center"><Clock className="w-4 h-4 text-gray-300" /></div>
+                      <div className="flex-1"><div className="text-[13px] font-medium text-gray-300">Waiting for someone...</div></div>
                     </motion.div>
                   )}
                 </div>
-
                 <AnimatePresence>
                   {membersJoined >= 3 && (
-                    <motion.button
-                      initial={{ opacity: 0, y: 16, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={startSwiping}
-                      className="w-full max-w-xs h-[52px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2 font-bold text-[15px] text-white shadow-[0_8px_28px_rgba(108,43,217,0.35)]"
-                    >
-                      <Flame className="w-5 h-5" />
-                      Start Swiping!
-                    </motion.button>
+                    <motion.button initial={{ opacity: 0, y: 16, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.3 }} whileTap={{ scale: 0.97 }} onClick={startSwiping} className="w-full max-w-xs h-[52px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2 font-bold text-[15px] text-white shadow-[0_8px_28px_rgba(108,43,217,0.35)]"><Flame className="w-5 h-5" />Start Swiping!</motion.button>
                   )}
                 </AnimatePresence>
               </div>
@@ -1137,362 +554,96 @@ export function GroupJourney() {
           )}
 
           {screen === 'swipe' && (
-            <motion.div
-              key="swipe"
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="flex-1 flex flex-col pt-12 pb-24"
-            >
+            <motion.div key="swipe" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="flex-1 flex flex-col pt-12 pb-24">
               <div className="px-5 mb-3">
                 <ProgressBar step={3} total={5} />
                 <div className="flex items-center justify-between mt-3">
-                  <motion.button
-                    whileTap={{ scale: 0.85 }}
-                    onClick={() => setScreen('waiting')}
-                    className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5 text-gray-700" />
-                  </motion.button>
-
+                  <motion.button whileTap={{ scale: 0.85 }} onClick={() => setScreen('waiting')} className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"><ArrowLeft className="w-3.5 h-3.5 text-gray-700" /></motion.button>
                   <div className="flex items-center gap-2.5">
-                    <div className="flex -space-x-2">
-                      {MEMBERS.map(m => (
-                        <div key={m.id} className="w-7 h-7 rounded-full border-[2.5px] border-[#FAFAF8] bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center text-xs shadow-sm">
-                          {m.avatar}
-                        </div>
-                      ))}
-                    </div>
+                    <div className="flex -space-x-2">{MEMBERS.map(m => (<div key={m.id} className="w-7 h-7 rounded-full border-[2.5px] border-[#FAFAF8] bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center text-xs shadow-sm">{m.avatar}</div>))}</div>
                     <span className="text-[10px] font-bold text-gray-400">{MEMBERS.length} swiping</span>
                   </div>
-
-                  <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 bg-gray-100 rounded-full px-2.5 py-1">
-                    <Flame className="w-3 h-3 text-orange-400" />
-                    {currentCard + 1}/{RESTAURANTS.length}
-                  </div>
+                  <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400 bg-gray-100 rounded-full px-2.5 py-1"><Flame className="w-3 h-3 text-orange-400" />{currentCard + 1}/{RESTAURANTS.length}</div>
                 </div>
               </div>
-
               <div className="flex-1 px-5 relative">
                 <AnimatePresence>
                   {RESTAURANTS.slice(currentCard, currentCard + 2).reverse().map((r, idx) => {
                     const isActive = idx === (Math.min(1, RESTAURANTS.length - currentCard - 1));
-                    return (
-                      <SwipeCard
-                        key={r.id}
-                        restaurant={r}
-                        active={isActive}
-                        behind={!isActive}
-                        onSwipe={handleSwipe}
-                      />
-                    );
+                    return <SwipeCard key={r.id} restaurant={r} active={isActive} behind={!isActive} onSwipe={handleSwipe} />;
                   })}
                 </AnimatePresence>
               </div>
-
               <div className="px-5 pt-3 flex items-center justify-center gap-5">
-                <motion.button
-                  whileTap={{ scale: 0.8 }}
-                  whileHover={{ scale: 1.08 }}
-                  onClick={() => handleSwipe('left')}
-                  className="w-[52px] h-[52px] rounded-full bg-white border-2 border-red-200/60 flex items-center justify-center shadow-[0_6px_20px_rgba(239,68,68,0.1)]"
-                >
-                  <X className="w-5 h-5 text-red-400" />
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.8 }}
-                  whileHover={{ scale: 1.08 }}
-                  onClick={() => handleSwipe('up')}
-                  className="w-[44px] h-[44px] rounded-full bg-white border-2 border-[#FFCC02]/60 flex items-center justify-center shadow-[0_6px_20px_rgba(255,204,2,0.15)]"
-                >
-                  <Star className="w-5 h-5 text-[#FFCC02] fill-[#FFCC02]" />
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.8 }}
-                  whileHover={{ scale: 1.08 }}
-                  onClick={() => handleSwipe('right')}
-                  className="w-[52px] h-[52px] rounded-full bg-white border-2 border-emerald-200/60 flex items-center justify-center shadow-[0_6px_20px_rgba(16,185,129,0.1)]"
-                >
-                  <Heart className="w-5 h-5 text-emerald-500" />
-                </motion.button>
+                <motion.button whileTap={{ scale: 0.8 }} onClick={() => handleSwipe('left')} className="w-[52px] h-[52px] rounded-full bg-white border-2 border-red-200/60 flex items-center justify-center shadow-[0_6px_20px_rgba(239,68,68,0.1)]"><X className="w-5 h-5 text-red-400" /></motion.button>
+                <motion.button whileTap={{ scale: 0.8 }} onClick={() => handleSwipe('up')} className="w-[44px] h-[44px] rounded-full bg-white border-2 border-[#FFCC02]/60 flex items-center justify-center shadow-[0_6px_20px_rgba(255,204,2,0.15)]"><Star className="w-5 h-5 text-[#FFCC02] fill-[#FFCC02]" /></motion.button>
+                <motion.button whileTap={{ scale: 0.8 }} onClick={() => handleSwipe('right')} className="w-[52px] h-[52px] rounded-full bg-white border-2 border-emerald-200/60 flex items-center justify-center shadow-[0_6px_20px_rgba(16,185,129,0.1)]"><Heart className="w-5 h-5 text-emerald-500" /></motion.button>
               </div>
             </motion.div>
           )}
 
           {screen === 'match' && (
-            <motion.div
-              key="match"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex-1 flex flex-col items-center pt-16 px-6 pb-24 relative overflow-hidden overflow-y-auto no-sb"
-            >
-              <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                {Array.from({ length: 40 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="confetti absolute"
-                    style={{
-                      left: `${Math.random() * 100}%`,
-                      top: -12,
-                      width: Math.random() > 0.5 ? 8 : 5,
-                      height: Math.random() > 0.5 ? 8 : 14,
-                      backgroundColor: ['#6C2BD9', '#FFD700', '#FF385C', '#00A699', '#FF6B6B', '#4ECDC4', '#7B61FF'][i % 7],
-                      borderRadius: Math.random() > 0.5 ? '50%' : '2px',
-                      animationDelay: `${Math.random() * 2}s`,
-                      animationDuration: `${2.5 + Math.random() * 1.5}s`,
-                    }}
-                  />
-                ))}
-              </div>
-
-              <motion.div
-                initial={{ scale: 0, rotate: -25 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.15, ...bouncy }}
-                className="mb-4"
-              >
+            <motion.div key="match" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col items-center pt-16 px-6 pb-24 relative overflow-hidden overflow-y-auto no-sb">
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">{Array.from({ length: 40 }).map((_, i) => (<div key={i} className="confetti absolute" style={{ left: `${Math.random() * 100}%`, top: -12, width: Math.random() > 0.5 ? 8 : 5, height: Math.random() > 0.5 ? 8 : 14, backgroundColor: ['#6C2BD9', '#FFD700', '#FF385C', '#00A699', '#FF6B6B', '#4ECDC4', '#7B61FF'][i % 7], borderRadius: Math.random() > 0.5 ? '50%' : '2px', animationDelay: `${Math.random() * 2}s`, animationDuration: `${2.5 + Math.random() * 1.5}s` }} />))}</div>
+              <motion.div initial={{ scale: 0, rotate: -25 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.15, ...bouncy }} className="mb-4">
                 <div className="w-[90px] h-[90px] rounded-[26px] bg-gradient-to-br from-[#FFCC02] to-amber-400 flex items-center justify-center shadow-[0_16px_48px_rgba(255,204,2,0.4)] relative">
-                  <motion.div
-                    animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.08, 1] }}
-                    transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
-                  >
-                    <Trophy className="w-11 h-11 text-gray-900" />
-                  </motion.div>
-                  <motion.div
-                    className="absolute -top-2 -right-2"
-                    animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.3, 1] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                  >
-                    <Sparkles className="w-5 h-5 text-[#FFCC02]" />
-                  </motion.div>
+                  <motion.div animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.08, 1] }} transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}><Trophy className="w-11 h-11 text-gray-900" /></motion.div>
+                  <motion.div className="absolute -top-2 -right-2" animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.3, 1] }} transition={{ repeat: Infinity, duration: 2 }}><Sparkles className="w-5 h-5 text-[#FFCC02]" /></motion.div>
                 </div>
               </motion.div>
-
-              <motion.h1
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35, ...gentle }}
-                className="text-[26px] font-['Playfair_Display'] font-bold text-gray-900 mb-1 text-center"
-              >
-                It's a Match!
-              </motion.h1>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.45 }}
-                className="text-[13px] text-gray-400 mb-5 font-medium"
-              >
-                Everyone voted for this one 🎉
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 30, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ delay: 0.5, ...spring }}
-                className="w-full bg-white rounded-[24px] border border-gray-100 shadow-[0_16px_48px_rgba(0,0,0,0.08)] overflow-hidden mb-5"
-              >
+              <motion.h1 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, ...gentle }} className="text-[26px] font-['Playfair_Display'] font-bold text-gray-900 mb-1 text-center">It's a Match!</motion.h1>
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }} className="text-[13px] text-gray-400 mb-5 font-medium">Everyone voted for this one 🎉</motion.p>
+              <motion.div initial={{ opacity: 0, y: 30, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 0.5, ...spring }} className="w-full bg-white rounded-[24px] border border-gray-100 shadow-[0_16px_48px_rgba(0,0,0,0.08)] overflow-hidden mb-5">
                 <div className="relative h-[150px]">
                   <img src={RESTAURANTS[2].image} alt={RESTAURANTS[2].name} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                  <div className="absolute bottom-3 left-4 right-4">
-                    <h3 className="text-white text-[18px] font-bold drop-shadow-lg">{RESTAURANTS[2].name}</h3>
-                    <p className="text-white/80 text-[12px] flex items-center gap-1.5 mt-0.5">
-                      {RESTAURANTS[2].category}
-                      <span className="text-white/40">·</span>
-                      <span className="flex items-center gap-0.5"><Star className="w-3 h-3 fill-current" /> {RESTAURANTS[2].rating}</span>
-                    </p>
-                  </div>
-                  <motion.div
-                    initial={{ scale: 0, rotate: -15 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ delay: 0.7, ...bouncy }}
-                    className="absolute top-3 right-3 bg-[#FFCC02] text-gray-900 text-[10px] font-black rounded-full px-3 py-1.5 shadow-[0_4px_12px_rgba(255,204,2,0.4)] flex items-center gap-1"
-                  >
-                    <Heart className="w-3 h-3 fill-current" /> Full Match
-                  </motion.div>
+                  <div className="absolute bottom-3 left-4 right-4"><h3 className="text-white text-[18px] font-bold drop-shadow-lg">{RESTAURANTS[2].name}</h3><p className="text-white/80 text-[12px] flex items-center gap-1.5 mt-0.5">{RESTAURANTS[2].category}<span className="text-white/40">·</span><span className="flex items-center gap-0.5"><Star className="w-3 h-3 fill-current" /> {RESTAURANTS[2].rating}</span></p></div>
+                  <motion.div initial={{ scale: 0, rotate: -15 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.7, ...bouncy }} className="absolute top-3 right-3 bg-[#FFCC02] text-gray-900 text-[10px] font-black rounded-full px-3 py-1.5 shadow-[0_4px_12px_rgba(255,204,2,0.4)] flex items-center gap-1"><Heart className="w-3 h-3 fill-current" /> Full Match</motion.div>
                 </div>
-
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Voted by</p>
-                    <div className="flex -space-x-2">
-                      {MEMBERS.map((m, i) => (
-                        <motion.div
-                          key={m.id}
-                          initial={{ scale: 0, x: -8 }}
-                          animate={{ scale: 1, x: 0 }}
-                          transition={{ delay: 0.8 + i * 0.08, ...bouncy }}
-                          className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-50 to-orange-100 border-[2.5px] border-white flex items-center justify-center text-sm shadow-sm"
-                        >
-                          {m.avatar}
-                        </motion.div>
-                      ))}
-                    </div>
+                    <div className="flex -space-x-2">{MEMBERS.map((m, i) => (<motion.div key={m.id} initial={{ scale: 0, x: -8 }} animate={{ scale: 1, x: 0 }} transition={{ delay: 0.8 + i * 0.08, ...bouncy }} className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-50 to-orange-100 border-[2.5px] border-white flex items-center justify-center text-sm shadow-sm">{m.avatar}</motion.div>))}</div>
                   </div>
                 </div>
               </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.85 }}
-                className="w-full flex gap-2.5"
-              >
-                <motion.button
-                  whileTap={{ scale: 0.94 }}
-                  className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
-                >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-50 to-purple-50 flex items-center justify-center">
-                    <Eye className="w-4 h-4 text-violet-500" />
-                  </div>
-                  <span className="text-[10px] font-semibold text-gray-600">View Restaurant</span>
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.94 }}
-                  onClick={() => setScreen('topPicks')}
-                  className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
-                >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-50 to-[#FFCC02]/15 flex items-center justify-center">
-                    <ListOrdered className="w-4 h-4 text-[#FFCC02]" />
-                  </div>
-                  <span className="text-[10px] font-semibold text-gray-600">Top Picks</span>
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.94 }}
-                  onClick={startSwiping}
-                  className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
-                >
-                  <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
-                    <Flame className="w-4 h-4 text-orange-400" />
-                  </div>
-                  <span className="text-[10px] font-semibold text-gray-600">Keep Swiping</span>
-                </motion.button>
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85 }} className="w-full flex gap-2.5">
+                <motion.button whileTap={{ scale: 0.94 }} className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"><div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-50 to-purple-50 flex items-center justify-center"><Eye className="w-4 h-4 text-violet-500" /></div><span className="text-[10px] font-semibold text-gray-600">View Restaurant</span></motion.button>
+                <motion.button whileTap={{ scale: 0.94 }} onClick={() => setScreen('topPicks')} className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"><div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-50 to-[#FFCC02]/15 flex items-center justify-center"><ListOrdered className="w-4 h-4 text-[#FFCC02]" /></div><span className="text-[10px] font-semibold text-gray-600">Top Picks</span></motion.button>
+                <motion.button whileTap={{ scale: 0.94 }} onClick={startSwiping} className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"><div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"><Flame className="w-4 h-4 text-orange-400" /></div><span className="text-[10px] font-semibold text-gray-600">Keep Swiping</span></motion.button>
               </motion.div>
-
-              <motion.button
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setScreen('summary')}
-                className="w-full mt-4 h-[48px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2 font-bold text-[14px] text-white shadow-[0_6px_20px_rgba(108,43,217,0.25)]"
-              >
-                <BarChart3 className="w-4 h-4" />
-                Wrap It Up
-              </motion.button>
+              <motion.button initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} whileTap={{ scale: 0.97 }} onClick={() => setScreen('summary')} className="w-full mt-4 h-[48px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2 font-bold text-[14px] text-white shadow-[0_6px_20px_rgba(108,43,217,0.25)]"><BarChart3 className="w-4 h-4" />Wrap It Up</motion.button>
             </motion.div>
           )}
 
           {screen === 'topPicks' && (
-            <motion.div
-              key="topPicks"
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 40 }}
-              transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-              className="flex-1 overflow-y-auto no-sb pt-14 px-6 pb-28"
-            >
+            <motion.div key="topPicks" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }} className="flex-1 overflow-y-auto no-sb pt-14 px-6 pb-28">
               <div className="flex items-center justify-between mb-5">
-                <motion.button
-                  whileTap={{ scale: 0.85 }}
-                  onClick={() => setScreen('match')}
-                  className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"
-                >
-                  <ArrowLeft className="w-4 h-4 text-gray-700" />
-                </motion.button>
-                <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100">
-                  <Crown className="w-3.5 h-3.5 text-[#FFCC02]" />
-                  <span className="text-[11px] font-bold text-amber-700">Top Picks</span>
-                </div>
+                <motion.button whileTap={{ scale: 0.85 }} onClick={() => setScreen('match')} className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"><ArrowLeft className="w-4 h-4 text-gray-700" /></motion.button>
+                <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100"><Crown className="w-3.5 h-3.5 text-[#FFCC02]" /><span className="text-[11px] font-bold text-amber-700">Top Picks</span></div>
               </div>
-
               <ProgressBar step={4} total={5} />
-
-              <motion.div
-                className="mt-5 mb-6"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, ...gentle }}
-              >
-                <h1 className="text-[24px] font-['Playfair_Display'] font-bold text-gray-900 leading-tight mb-1">Group's top picks</h1>
-                <p className="text-[13px] text-gray-400 font-medium">Ranked by group votes</p>
-              </motion.div>
-
+              <motion.div className="mt-5 mb-6" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, ...gentle }}><h1 className="text-[24px] font-['Playfair_Display'] font-bold text-gray-900 leading-tight mb-1">Group's top picks</h1><p className="text-[13px] text-gray-400 font-medium">Ranked by group votes</p></motion.div>
               <div className="space-y-3">
                 {TOP_PICKS_DATA.map((pick, i) => {
                   const rankIcons = [Crown, Medal, Award];
                   const rankColors = ['text-[#FFCC02]', 'text-gray-400', 'text-amber-600'];
                   const rankBgs = ['bg-[#FFCC02]/10 border-[#FFCC02]/30', 'bg-gray-100 border-gray-200', 'bg-amber-50 border-amber-200'];
                   const RankIcon = rankIcons[i] || Star;
-
                   return (
-                    <motion.div
-                      key={pick.id}
-                      initial={{ opacity: 0, x: -20, scale: 0.96 }}
-                      animate={{ opacity: 1, x: 0, scale: 1 }}
-                      transition={{ delay: 0.15 + i * 0.08, ...spring }}
-                      className={`bg-white rounded-[22px] overflow-hidden border shadow-[0_4px_20px_rgba(0,0,0,0.04)] ${
-                        i === 0 ? 'border-[#FFCC02]/30 ring-1 ring-[#FFCC02]/20' : 'border-gray-100'
-                      }`}
-                    >
+                    <motion.div key={pick.id} initial={{ opacity: 0, x: -20, scale: 0.96 }} animate={{ opacity: 1, x: 0, scale: 1 }} transition={{ delay: 0.15 + i * 0.08, ...spring }} className={`bg-white rounded-[22px] overflow-hidden border shadow-[0_4px_20px_rgba(0,0,0,0.04)] ${i === 0 ? 'border-[#FFCC02]/30 ring-1 ring-[#FFCC02]/20' : 'border-gray-100'}`}>
                       <div className="flex gap-3 p-3.5">
                         <div className="relative flex-shrink-0">
-                          <div className="w-[80px] h-[80px] rounded-[16px] overflow-hidden">
-                            <img src={pick.image} alt={pick.name} className="w-full h-full object-cover" />
-                          </div>
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: 0.3 + i * 0.08, ...bouncy }}
-                            className={`absolute -top-1.5 -left-1.5 w-7 h-7 rounded-full border-2 border-white flex items-center justify-center shadow-md ${i < 3 ? rankBgs[i] : 'bg-gray-50 border-gray-200'}`}
-                          >
-                            {i < 3 ? (
-                              <RankIcon className={`w-3.5 h-3.5 ${rankColors[i]}`} />
-                            ) : (
-                              <span className="text-[10px] font-bold text-gray-400">#{i + 1}</span>
-                            )}
-                          </motion.div>
-                          {pick.fullMatch && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              transition={{ delay: 0.4 + i * 0.08, ...bouncy }}
-                              className="absolute -bottom-1 -right-1 bg-[#FFCC02] rounded-full px-1.5 py-0.5 text-[7px] font-black text-gray-900 shadow-sm border border-white"
-                            >
-                              MATCH
-                            </motion.div>
-                          )}
+                          <div className="w-[80px] h-[80px] rounded-[16px] overflow-hidden"><img src={pick.image} alt={pick.name} className="w-full h-full object-cover" /></div>
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3 + i * 0.08, ...bouncy }} className={`absolute -top-1.5 -left-1.5 w-7 h-7 rounded-full border-2 border-white flex items-center justify-center shadow-md ${i < 3 ? rankBgs[i] : 'bg-gray-50 border-gray-200'}`}>{i < 3 ? <RankIcon className={`w-3.5 h-3.5 ${rankColors[i]}`} /> : <span className="text-[10px] font-bold text-gray-400">#{i + 1}</span>}</motion.div>
+                          {pick.fullMatch && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.4 + i * 0.08, ...bouncy }} className="absolute -bottom-1 -right-1 bg-[#FFCC02] rounded-full px-1.5 py-0.5 text-[7px] font-black text-gray-900 shadow-sm border border-white">MATCH</motion.div>}
                         </div>
-
                         <div className="flex-1 min-w-0 py-0.5">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <h3 className="text-[14px] font-bold text-gray-900 truncate">{pick.name}</h3>
-                          </div>
-                          <p className="text-[11px] text-gray-400 mb-2 flex items-center gap-1">
-                            {pick.category}
-                            <span className="text-gray-300">·</span>
-                            <Star className="w-3 h-3 text-[#FFCC02] fill-[#FFCC02]" />
-                            <span className="font-semibold text-gray-600">{pick.rating}</span>
-                            <span className="text-gray-300">·</span>
-                            {'฿'.repeat(pick.price)}
-                          </p>
+                          <h3 className="text-[14px] font-bold text-gray-900 truncate mb-0.5">{pick.name}</h3>
+                          <p className="text-[11px] text-gray-400 mb-2 flex items-center gap-1">{pick.category}<span className="text-gray-300">·</span><Star className="w-3 h-3 text-[#FFCC02] fill-[#FFCC02]" /><span className="font-semibold text-gray-600">{pick.rating}</span><span className="text-gray-300">·</span>{'฿'.repeat(pick.price)}</p>
                           <div className="flex items-center justify-between">
-                            <div className="flex -space-x-1.5">
-                              {pick.voters.map(vId => {
-                                const m = MEMBERS.find(mm => mm.id === vId);
-                                return m ? (
-                                  <div key={m.id} className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-50 to-orange-100 border-[2px] border-white flex items-center justify-center text-[10px] shadow-sm">
-                                    {m.avatar}
-                                  </div>
-                                ) : null;
-                              })}
-                            </div>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              pick.votes === 3 ? 'text-emerald-700 bg-emerald-50 border border-emerald-100' : 'text-gray-500 bg-gray-50 border border-gray-100'
-                            }`}>
-                              {pick.votes}/{MEMBERS.length} votes
-                            </span>
+                            <div className="flex -space-x-1.5">{pick.voters.map(vId => { const m = MEMBERS.find(mm => mm.id === vId); return m ? <div key={m.id} className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-50 to-orange-100 border-[2px] border-white flex items-center justify-center text-[10px] shadow-sm">{m.avatar}</div> : null; })}</div>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${pick.votes === 3 ? 'text-emerald-700 bg-emerald-50 border border-emerald-100' : 'text-gray-500 bg-gray-50 border border-gray-100'}`}>{pick.votes}/{MEMBERS.length} votes</span>
                           </div>
                         </div>
                       </div>
@@ -1500,293 +651,90 @@ export function GroupJourney() {
                   );
                 })}
               </div>
-
-              <motion.button
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => setScreen('summary')}
-                className="w-full mt-5 h-[52px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2 font-bold text-[15px] text-white shadow-[0_8px_28px_rgba(108,43,217,0.35)]"
-              >
-                <BarChart3 className="w-5 h-5" />
-                Wrap It Up
-              </motion.button>
+              <motion.button initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} whileTap={{ scale: 0.97 }} onClick={() => setScreen('summary')} className="w-full mt-5 h-[52px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2 font-bold text-[15px] text-white shadow-[0_8px_28px_rgba(108,43,217,0.35)]"><BarChart3 className="w-5 h-5" />Wrap It Up</motion.button>
             </motion.div>
           )}
 
           {screen === 'summary' && (
-            <motion.div
-              key="summary"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.4 }}
-              className="flex-1 overflow-y-auto no-sb pb-28"
-            >
+            <motion.div key="summary" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="flex-1 overflow-y-auto no-sb pb-28">
               <div className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-violet-500 via-purple-600 to-violet-700" />
-                <div className="absolute inset-0 opacity-[0.07]">
-                  {Array.from({ length: 20 }).map((_, i) => (
-                    <div key={i} className="absolute rounded-full bg-white" style={{
-                      width: 3 + Math.random() * 10,
-                      height: 3 + Math.random() * 10,
-                      top: `${Math.random() * 100}%`,
-                      left: `${Math.random() * 100}%`,
-                    }} />
-                  ))}
-                </div>
-
+                <div className="absolute inset-0 opacity-[0.07]">{Array.from({ length: 20 }).map((_, i) => (<div key={i} className="absolute rounded-full bg-white" style={{ width: 3 + Math.random() * 10, height: 3 + Math.random() * 10, top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%` }} />))}</div>
                 <div className="relative pt-16 pb-8 px-6 text-center">
                   <div className="flex items-center justify-between mb-6">
-                    <motion.button
-                      whileTap={{ scale: 0.85 }}
-                      onClick={() => setScreen('topPicks')}
-                      className="w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center"
-                    >
-                      <ArrowLeft className="w-4 h-4 text-white" />
-                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => setScreen('topPicks')} className="w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center"><ArrowLeft className="w-4 h-4 text-white" /></motion.button>
                     <span className="text-[11px] font-bold text-white/60 bg-white/10 rounded-full px-3 py-1.5 backdrop-blur-sm border border-white/10">Session #3</span>
                   </div>
-
-                  <motion.div
-                    initial={{ scale: 0, rotate: -20 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    transition={{ delay: 0.15, ...bouncy }}
-                    className="w-[72px] h-[72px] mx-auto mb-4 rounded-[22px] bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20 shadow-[0_16px_48px_rgba(0,0,0,0.15)]"
-                  >
-                    <motion.div
-                      animate={{ rotate: [0, 8, -8, 0] }}
-                      transition={{ repeat: Infinity, duration: 2.5 }}
-                    >
-                      <Trophy className="w-9 h-9 text-white" />
-                    </motion.div>
-                  </motion.div>
-
-                  <motion.h1
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, ...gentle }}
-                    className="text-[26px] font-['Playfair_Display'] font-bold text-white mb-1"
-                  >
-                    Feast wrapped!
-                  </motion.h1>
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                    className="text-[13px] text-white/60 font-medium mb-5"
-                  >
-                    Here's your group's taste story
-                  </motion.p>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5, ...spring }}
-                    className="bg-white/10 backdrop-blur-md rounded-[20px] border border-white/15 p-4 text-left"
-                  >
+                  <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.15, ...bouncy }} className="w-[72px] h-[72px] mx-auto mb-4 rounded-[22px] bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20 shadow-[0_16px_48px_rgba(0,0,0,0.15)]"><motion.div animate={{ rotate: [0, 8, -8, 0] }} transition={{ repeat: Infinity, duration: 2.5 }}><Trophy className="w-9 h-9 text-white" /></motion.div></motion.div>
+                  <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, ...gentle }} className="text-[26px] font-['Playfair_Display'] font-bold text-white mb-1">Feast wrapped!</motion.h1>
+                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="text-[13px] text-white/60 font-medium mb-5">Here's your group's taste story</motion.p>
+                  <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, ...spring }} className="bg-white/10 backdrop-blur-md rounded-[20px] border border-white/15 p-4 text-left">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 rounded-[14px] overflow-hidden border-2 border-white/30 shadow-lg">
-                        <img src={RESTAURANTS[2].image} alt="" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-0.5">Winner</div>
-                        <h3 className="text-[16px] font-bold text-white truncate">{RESTAURANTS[2].name}</h3>
-                        <p className="text-[11px] text-white/60 flex items-center gap-1">
-                          {RESTAURANTS[2].category} · <Star className="w-3 h-3 fill-current text-[#FFCC02]" /> {RESTAURANTS[2].rating}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <div className="w-10 h-10 rounded-full bg-[#FFCC02] flex items-center justify-center shadow-[0_4px_16px_rgba(255,204,2,0.4)]">
-                          <Heart className="w-5 h-5 text-gray-900 fill-current" />
-                        </div>
-                        <span className="text-[8px] text-white/50 font-bold mt-1">3/3</span>
-                      </div>
+                      <div className="w-12 h-12 rounded-[14px] overflow-hidden border-2 border-white/30 shadow-lg"><img src={RESTAURANTS[2].image} alt="" className="w-full h-full object-cover" /></div>
+                      <div className="flex-1 min-w-0"><div className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-0.5">Winner</div><h3 className="text-[16px] font-bold text-white truncate">{RESTAURANTS[2].name}</h3><p className="text-[11px] text-white/60 flex items-center gap-1">{RESTAURANTS[2].category} · <Star className="w-3 h-3 fill-current text-[#FFCC02]" /> {RESTAURANTS[2].rating}</p></div>
+                      <div className="flex flex-col items-center"><div className="w-10 h-10 rounded-full bg-[#FFCC02] flex items-center justify-center shadow-[0_4px_16px_rgba(255,204,2,0.4)]"><Heart className="w-5 h-5 text-gray-900 fill-current" /></div><span className="text-[8px] text-white/50 font-bold mt-1">3/3</span></div>
                     </div>
-                    <div className="flex -space-x-2">
-                      {MEMBERS.map((m, i) => (
-                        <motion.div
-                          key={m.id}
-                          initial={{ scale: 0, x: -6 }}
-                          animate={{ scale: 1, x: 0 }}
-                          transition={{ delay: 0.6 + i * 0.06, ...bouncy }}
-                          className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-100 to-orange-200 border-[2px] border-violet-500/50 flex items-center justify-center text-xs shadow-sm"
-                        >
-                          {m.avatar}
-                        </motion.div>
-                      ))}
-                      <span className="text-[10px] font-semibold text-white/50 ml-2 self-center">All voted!</span>
-                    </div>
+                    <div className="flex -space-x-2">{MEMBERS.map((m, i) => (<motion.div key={m.id} initial={{ scale: 0, x: -6 }} animate={{ scale: 1, x: 0 }} transition={{ delay: 0.6 + i * 0.06, ...bouncy }} className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-100 to-orange-200 border-[2px] border-violet-500/50 flex items-center justify-center text-xs shadow-sm">{m.avatar}</motion.div>))}<span className="text-[10px] font-semibold text-white/50 ml-2 self-center">All voted!</span></div>
                   </motion.div>
                 </div>
               </div>
 
               <div className="px-6 -mt-1">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6, ...spring }}
-                  className="bg-white rounded-[22px] border border-gray-100 shadow-[0_8px_32px_rgba(0,0,0,0.06)] p-5 mb-4 relative overflow-hidden"
-                >
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, ...spring }} className="bg-white rounded-[22px] border border-gray-100 shadow-[0_8px_32px_rgba(0,0,0,0.06)] p-5 mb-4 relative overflow-hidden">
                   <div className="absolute inset-0 shimmer pointer-events-none" />
                   <div className="relative">
                     <div className="flex items-center gap-2 mb-4">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center">
-                        <Zap className="w-4 h-4 text-violet-500" />
-                      </div>
-                      <div>
-                        <span className="text-[12px] font-bold text-gray-900">Group Chemistry</span>
-                        <div className="text-[9px] text-gray-400 font-medium">How aligned your tastes are</div>
-                      </div>
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.8, ...bouncy }}
-                        className="ml-auto"
-                      >
-                        <div className="w-14 h-14 rounded-full border-[3px] border-violet-400 flex items-center justify-center bg-violet-50/50 relative">
-                          <span className="text-[18px] font-black text-violet-600">85</span>
-                          <span className="text-[8px] font-bold text-violet-400 absolute -bottom-0.5">%</span>
-                        </div>
-                      </motion.div>
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center"><Zap className="w-4 h-4 text-violet-500" /></div>
+                      <div><span className="text-[12px] font-bold text-gray-900">Group Chemistry</span><div className="text-[9px] text-gray-400 font-medium">How aligned your tastes are</div></div>
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.8, ...bouncy }} className="ml-auto"><div className="w-14 h-14 rounded-full border-[3px] border-violet-400 flex items-center justify-center bg-violet-50/50 relative"><span className="text-[18px] font-black text-violet-600">85</span><span className="text-[8px] font-bold text-violet-400 absolute -bottom-0.5">%</span></div></motion.div>
                     </div>
-
                     <div className="grid grid-cols-3 gap-2.5">
-                      {[
-                        { label: 'Swipes', value: '18', icon: '👆', color: 'from-violet-50 to-purple-50' },
-                        { label: 'Likes', value: '12', icon: '❤️', color: 'from-emerald-50 to-green-50' },
-                        { label: 'Matches', value: '1', icon: '🎯', color: 'from-amber-50 to-yellow-50' },
-                      ].map((stat, i) => (
-                        <motion.div
-                          key={stat.label}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.7 + i * 0.05, ...spring }}
-                          className={`bg-gradient-to-br ${stat.color} rounded-2xl p-2.5 text-center`}
-                        >
-                          <span className="text-base block">{stat.icon}</span>
-                          <div className="text-[16px] font-bold text-gray-900">{stat.value}</div>
-                          <div className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</div>
-                        </motion.div>
+                      {[{ label: 'Swipes', value: '18', icon: '👆', color: 'from-violet-50 to-purple-50' }, { label: 'Likes', value: '12', icon: '❤️', color: 'from-emerald-50 to-green-50' }, { label: 'Matches', value: '1', icon: '🎯', color: 'from-amber-50 to-yellow-50' }].map((stat, i) => (
+                        <motion.div key={stat.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 + i * 0.05, ...spring }} className={`bg-gradient-to-br ${stat.color} rounded-2xl p-2.5 text-center`}><span className="text-base block">{stat.icon}</span><div className="text-[16px] font-bold text-gray-900">{stat.value}</div><div className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</div></motion.div>
                       ))}
                     </div>
                   </div>
                 </motion.div>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.75, ...gentle }}
-                  className="mb-4"
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <Users className="w-4 h-4 text-violet-500" />
-                    <span className="text-[12px] font-bold text-gray-900">Member Vibes</span>
-                  </div>
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75, ...gentle }} className="mb-4">
+                  <div className="flex items-center gap-2 mb-3"><Users className="w-4 h-4 text-violet-500" /><span className="text-[12px] font-bold text-gray-900">Member Vibes</span></div>
                   <div className="flex gap-2.5 overflow-x-auto no-sb pb-1">
                     {MEMBER_STATS.map((ms, i) => (
-                      <motion.div
-                        key={ms.member.id}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.8 + i * 0.06, ...spring }}
-                        className="flex-shrink-0 w-[130px] bg-white rounded-[20px] border border-gray-100 shadow-[0_4px_16px_rgba(0,0,0,0.04)] p-3.5 text-center"
-                      >
-                        <div className="w-11 h-11 mx-auto rounded-full bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center text-lg border-2 border-white shadow-sm mb-2">
-                          {ms.member.avatar}
-                        </div>
-                        <div className="text-[12px] font-bold text-gray-900 mb-0.5 flex items-center justify-center gap-1">
-                          {ms.member.name}
-                          {ms.member.isHost && <Crown className="w-3 h-3 text-[#FFCC02]" />}
-                        </div>
+                      <motion.div key={ms.member.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.8 + i * 0.06, ...spring }} className="flex-shrink-0 w-[130px] bg-white rounded-[20px] border border-gray-100 shadow-[0_4px_16px_rgba(0,0,0,0.04)] p-3.5 text-center">
+                        <div className="w-11 h-11 mx-auto rounded-full bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center text-lg border-2 border-white shadow-sm mb-2">{ms.member.avatar}</div>
+                        <div className="text-[12px] font-bold text-gray-900 mb-0.5 flex items-center justify-center gap-1">{ms.member.name}{ms.member.isHost && <Crown className="w-3 h-3 text-[#FFCC02]" />}</div>
                         <div className="text-[9px] text-gray-400 mb-2.5">Loves {ms.emoji} {ms.favCuisine}</div>
-
-                        <div className="relative w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1.5">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${ms.agreePct}%` }}
-                            transition={{ delay: 1 + i * 0.08, duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
-                            className="h-full bg-gradient-to-r from-violet-400 to-purple-500 rounded-full"
-                          />
-                        </div>
+                        <div className="relative w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1.5"><motion.div initial={{ width: 0 }} animate={{ width: `${ms.agreePct}%` }} transition={{ delay: 1 + i * 0.08, duration: 0.8, ease: [0.32, 0.72, 0, 1] }} className="h-full bg-gradient-to-r from-violet-400 to-purple-500 rounded-full" /></div>
                         <div className="text-[9px] font-bold text-violet-500">{ms.agreePct}% aligned</div>
-
                         <div className="flex justify-center gap-2 mt-2.5">
-                          <div className="text-center">
-                            <div className="text-[13px] font-bold text-emerald-500">{ms.likes}</div>
-                            <div className="text-[7px] font-bold text-gray-400 uppercase">YUM</div>
-                          </div>
+                          <div className="text-center"><div className="text-[13px] font-bold text-emerald-500">{ms.likes}</div><div className="text-[7px] font-bold text-gray-400 uppercase">YUM</div></div>
                           <div className="w-px bg-gray-100" />
-                          <div className="text-center">
-                            <div className="text-[13px] font-bold text-red-400">{ms.dislikes}</div>
-                            <div className="text-[7px] font-bold text-gray-400 uppercase">NAH</div>
-                          </div>
+                          <div className="text-center"><div className="text-[13px] font-bold text-red-400">{ms.dislikes}</div><div className="text-[7px] font-bold text-gray-400 uppercase">NAH</div></div>
                           <div className="w-px bg-gray-100" />
-                          <div className="text-center">
-                            <div className="text-[13px] font-bold text-amber-500">{ms.superLikes}</div>
-                            <div className="text-[7px] font-bold text-gray-400 uppercase">⭐</div>
-                          </div>
+                          <div className="text-center"><div className="text-[13px] font-bold text-amber-500">{ms.superLikes}</div><div className="text-[7px] font-bold text-gray-400 uppercase">⭐</div></div>
                         </div>
                       </motion.div>
                     ))}
                   </div>
                 </motion.div>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.9, ...gentle }}
-                  className="bg-white rounded-[22px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.04)] p-4 mb-5"
-                >
-                  <div className="flex items-center gap-2 mb-2.5">
-                    <BarChart3 className="w-3.5 h-3.5 text-violet-500" />
-                    <span className="text-[11px] font-bold text-gray-900">All-Time Together</span>
-                    <span className="ml-auto text-[9px] font-semibold text-violet-500 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">3 sessions</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-4">
-                      {[
-                        { label: 'Matches', value: '7', emoji: '🎯' },
-                        { label: 'Swipes', value: '54', emoji: '👆' },
-                        { label: 'Go-to', value: 'Thai 🍜', emoji: '' },
-                      ].map((stat, i) => (
-                        <div key={stat.label} className="text-center">
-                          {stat.emoji && <span className="text-sm">{stat.emoji}</span>}
-                          <div className="text-[14px] font-bold text-gray-900">{stat.value}</div>
-                          <div className="text-[7px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</div>
-                        </div>
-                      ))}
-                    </div>
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, ...gentle }} className="bg-white rounded-[22px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.04)] p-4 mb-5">
+                  <div className="flex items-center gap-2 mb-2.5"><BarChart3 className="w-3.5 h-3.5 text-violet-500" /><span className="text-[11px] font-bold text-gray-900">All-Time Together</span><span className="ml-auto text-[9px] font-semibold text-violet-500 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">3 sessions</span></div>
+                  <div className="flex gap-4">
+                    {[{ label: 'Matches', value: '7', emoji: '🎯' }, { label: 'Swipes', value: '54', emoji: '👆' }, { label: 'Go-to', value: 'Thai 🍜', emoji: '' }].map(stat => (
+                      <div key={stat.label} className="text-center">{stat.emoji && <span className="text-sm">{stat.emoji}</span>}<div className="text-[14px] font-bold text-gray-900">{stat.value}</div><div className="text-[7px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</div></div>
+                    ))}
                   </div>
                 </motion.div>
 
                 <div className="space-y-2.5 pb-2">
-                  <motion.button
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="w-full h-[50px] rounded-2xl bg-gradient-to-r from-[#FFCC02] to-amber-400 flex items-center justify-center gap-2 font-bold text-[15px] text-gray-900 shadow-[0_8px_24px_rgba(255,204,2,0.3)]"
-                  >
-                    <Share2 className="w-4.5 h-4.5" />
-                    Share Results
-                  </motion.button>
-                  <motion.button
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.05 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={resetFlow}
-                    className="w-full h-[48px] rounded-2xl bg-white border border-gray-200 flex items-center justify-center gap-2 font-bold text-[14px] text-gray-600 shadow-sm"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    New Session
-                  </motion.button>
+                  <motion.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} whileTap={{ scale: 0.97 }} className="w-full h-[50px] rounded-2xl bg-gradient-to-r from-[#FFCC02] to-amber-400 flex items-center justify-center gap-2 font-bold text-[15px] text-gray-900 shadow-[0_8px_24px_rgba(255,204,2,0.3)]"><Share2 className="w-4.5 h-4.5" />Share Results</motion.button>
+                  <motion.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.05 }} whileTap={{ scale: 0.97 }} onClick={resetFlow} className="w-full h-[48px] rounded-2xl bg-white border border-gray-200 flex items-center justify-center gap-2 font-bold text-[14px] text-gray-600 shadow-sm"><RotateCcw className="w-4 h-4" />New Session</motion.button>
                 </div>
               </div>
             </motion.div>
           )}
+
         </AnimatePresence>
 
         <div className="absolute bottom-0 inset-x-0 h-[84px] glass border-t border-gray-100/40 flex justify-around items-start pt-3 px-6 z-[90] pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
@@ -1796,24 +744,10 @@ export function GroupJourney() {
             { icon: Heart, label: 'Saved', active: false },
             { icon: User, label: 'Profile', active: false },
           ].map((n, i) => (
-            <motion.div
-              key={n.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.05, ...spring }}
-              className={`flex flex-col items-center gap-0.5 ${n.active ? 'text-gray-900' : 'text-gray-400'}`}
-              onClick={n.label === 'Home' ? resetFlow : undefined}
-              style={{ cursor: n.label === 'Home' ? 'pointer' : 'default' }}
-            >
+            <motion.div key={n.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05, ...spring }} className={`flex flex-col items-center gap-0.5 ${n.active ? 'text-gray-900' : 'text-gray-400'}`} onClick={n.label === 'Home' ? resetFlow : undefined} style={{ cursor: n.label === 'Home' ? 'pointer' : 'default' }}>
               <n.icon className={`w-5 h-5 ${n.active ? 'text-gray-900' : ''}`} />
               <span className={`text-[10px] font-semibold ${n.active ? 'font-bold' : ''}`}>{n.label}</span>
-              {n.active && (
-                <motion.div
-                  layoutId="nav-dot"
-                  className="w-1 h-1 rounded-full bg-gray-900 mt-0.5"
-                  transition={spring}
-                />
-              )}
+              {n.active && <motion.div layoutId="nav-dot" className="w-1 h-1 rounded-full bg-gray-900 mt-0.5" transition={spring} />}
             </motion.div>
           ))}
         </div>
