@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MapPin, SlidersHorizontal, Home, Map as MapIcon, Heart, User, Star, Sparkles, ArrowRight, ChevronRight } from 'lucide-react';
+import { Search, MapPin, SlidersHorizontal, Home, Map as MapIcon, Heart, User, Star, Sparkles, ArrowRight, ChevronRight, RotateCcw, Zap, Brain, Clock, TrendingUp } from 'lucide-react';
 
 const CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -221,28 +221,158 @@ export function AirbnbStyle() {
               </div>
             </div>
 
-            {/* Toast Decides Widget */}
+            {/* Toast Decides — AI Recommendation Engine */}
             <div className="px-6 mb-10">
-              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col relative overflow-hidden">
-                <div className="flex justify-between items-start mb-4 relative z-10">
-                  <div className="pr-12">
-                    <div className="flex items-center gap-1.5 text-sm font-bold text-gray-900 mb-1">
-                      <Sparkles className="w-4 h-4 text-[#FFCC02]" /> Toast's picks for today
-                    </div>
-                    <div className="text-gray-500 text-sm">I think you'll love this!</div>
-                  </div>
-                  <img src="/__mockup/images/toast_mascot.png" alt="Toast Mascot" className="w-[60px] h-[60px] object-contain absolute right-0 top-0 translate-x-2 -translate-y-2" />
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#FFCC02]" />
+                  <h2 className="text-[11px] font-bold text-gray-500 uppercase tracking-[0.12em]">Toast Decides</h2>
                 </div>
-                
-                <motion.button 
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full bg-[#FFCC02] text-gray-900 font-bold py-3.5 rounded-xl shadow-sm flex items-center justify-center gap-2"
-                >
-                  Let Toast Decide <ArrowRight className="w-4 h-4" />
-                </motion.button>
-                <div className="text-center mt-3">
-                  <span className="text-xs font-semibold text-gray-400 underline decoration-gray-300 underline-offset-2 cursor-pointer hover:text-gray-600">Refine preferences</span>
+                <span className="text-[11px] font-medium text-gray-400 cursor-pointer">Why this? ›</span>
+              </div>
+
+              <div className="bg-white rounded-[20px] border border-gray-100 shadow-[0_6px_24px_-6px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] relative overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg, #FFCC02, hsl(45, 90%, 65%))' }} />
+
+                <div className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 rounded-full px-2.5 py-1 flex items-center gap-1.5 border border-amber-100">
+                      🔥 5-day streak
+                    </span>
+                    <motion.button
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="text-[10px] font-semibold text-gray-500 bg-gray-50 border border-gray-100 rounded-full px-2.5 py-1.5 flex items-center gap-1"
+                    >
+                      <Zap className="w-3 h-3" /> Help me decide
+                    </motion.button>
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-0.5 relative">
+                    <span className="text-[18px]">🍞</span>
+                    <p className="text-[17px] font-bold text-gray-900 leading-snug pr-14">Perfect for dinner tonight</p>
+                    <img src="/__mockup/images/toast_mascot.png" alt="Toast" className="w-[56px] h-[56px] object-contain absolute right-0 -top-2 translate-x-1" />
+                  </div>
+                  <p className="text-[12px] text-gray-500 mb-4">I think you'll love this!</p>
+
+                  <motion.div
+                    whileTap={{ scale: 0.98 }}
+                    className="relative w-full rounded-2xl overflow-hidden mb-3 cursor-pointer group"
+                  >
+                    <div className="relative w-full h-[170px]">
+                      <img
+                        src="https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=600&auto=format&fit=crop&q=60"
+                        alt="Jay Fai"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                      <div className="absolute top-3 left-3 bg-[#FFCC02] text-gray-900 text-[10px] font-bold rounded-full px-2.5 py-1 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> Top Pick
+                      </div>
+                      <div className="absolute top-3 right-3 bg-emerald-500/90 backdrop-blur-sm text-white text-[11px] font-bold rounded-full px-2.5 py-1 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> 88% match
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 p-4">
+                        <p className="text-white text-[18px] font-bold leading-tight font-['Playfair_Display']">Jay Fai</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-white/80 text-[11px] flex items-center gap-0.5">
+                            <MapPin className="w-3 h-3" /> Old Town
+                          </span>
+                          <span className="text-white/60 text-[11px]">|</span>
+                          <span className="text-white/80 text-[11px] flex items-center gap-0.5">
+                            <Star className="w-3 h-3 text-[#FFCC02]" /> 4.9
+                          </span>
+                          <span className="text-white/60 text-[11px]">|</span>
+                          <span className="text-white/80 text-[11px]">฿฿฿</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  <div className="flex items-start gap-2 mb-3 bg-amber-50/60 rounded-xl px-3 py-2 border border-amber-100/50">
+                    <Brain className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-[11px] text-amber-800 leading-relaxed">You loved Thai street food last 3 visits — this Michelin-starred gem matches your taste profile</p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1 border border-emerald-100">Highly rated</span>
+                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1 border border-emerald-100">Perfect for dinner</span>
+                    <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1 border border-emerald-100">Thai street food</span>
+                  </div>
+
+                  <div className="mb-3 space-y-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Why this pick</p>
+                    <ScoreBar label="Taste match" value={85} color="#22c55e" />
+                    <ScoreBar label="Right timing" value={78} color="#FFCC02" />
+                    <ScoreBar label="Popularity" value={92} color="#3b82f6" />
+                    <ScoreBar label="Value" value={70} color="#8b5cf6" />
+                  </div>
+
+                  <div className="flex gap-2 mb-3">
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
+                      className="flex-1 h-11 rounded-xl bg-[#FFCC02] flex items-center justify-center gap-2 font-semibold text-sm text-gray-900"
+                    >
+                      Looks great <ArrowRight className="w-4 h-4" />
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
+                      className="h-11 px-4 rounded-xl border border-gray-200 bg-white flex items-center justify-center gap-1.5 text-sm font-medium text-gray-500"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Try another
+                    </motion.button>
+                  </div>
+
+                  <div className="flex gap-2.5 mb-3">
+                    <div className="flex-1 cursor-pointer group">
+                      <div className="relative w-full h-[72px] rounded-xl overflow-hidden mb-1.5 border border-gray-100">
+                        <img src="https://images.unsplash.com/photo-1559314809-0d155014e29e?w=300&auto=format&fit=crop&q=40" alt="Thipsamai" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                        <div className="absolute top-1.5 right-1.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[9px] font-bold rounded-full px-1.5 py-0.5">82%</div>
+                        <div className="absolute bottom-1.5 left-1.5">
+                          <p className="text-white text-[11px] font-semibold leading-tight drop-shadow">Thipsamai</p>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-gray-400 truncate">Pad Thai · ฿</p>
+                    </div>
+                    <div className="flex-1 cursor-pointer group">
+                      <div className="relative w-full h-[72px] rounded-xl overflow-hidden mb-1.5 border border-gray-100">
+                        <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=300&auto=format&fit=crop&q=40" alt="Peppina" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                        <div className="absolute top-1.5 right-1.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[9px] font-bold rounded-full px-1.5 py-0.5">79%</div>
+                        <div className="absolute bottom-1.5 left-1.5">
+                          <p className="text-white text-[11px] font-semibold leading-tight drop-shadow">Peppina</p>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-gray-400 truncate">Pizza · ฿฿</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Match Confidence</span>
+                      <span className="text-sm font-bold text-gray-900">88%</span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: '88%' }}
+                        transition={{ delay: 0.3, duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                        className="h-full rounded-full"
+                        style={{ background: 'linear-gradient(90deg, #22c55e, #16a34a)' }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-1.5">Based on your taste DNA, mood & timing</p>
+                  </div>
+
+                  <TasteDNAMini />
+
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    className="mt-3 w-full h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-2 text-xs font-medium text-gray-500"
+                  >
+                    Refine my picks <ChevronRight className="w-3.5 h-3.5" />
+                  </motion.button>
                 </div>
               </div>
             </div>
@@ -288,6 +418,57 @@ export function AirbnbStyle() {
           <NavItem icon={<Heart className="w-6 h-6" />} label="Saved" />
           <NavItem icon={<User className="w-6 h-6" />} label="Profile" />
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ScoreBar({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-[11px] text-gray-500 w-[72px] flex-shrink-0">{label}</span>
+      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${value}%` }}
+          transition={{ delay: 0.3, duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+          className="h-full rounded-full"
+          style={{ backgroundColor: color }}
+        />
+      </div>
+      <span className="text-[11px] font-semibold text-gray-900 w-[28px] text-right">{value}%</span>
+    </div>
+  );
+}
+
+function TasteDNAMini() {
+  const dna = [
+    { key: 'taste', label: 'Taste', icon: Heart, color: '#22c55e', value: 85 },
+    { key: 'timing', label: 'Timing', icon: Clock, color: '#FFCC02', value: 78 },
+    { key: 'trending', label: 'Trending', icon: TrendingUp, color: '#3b82f6', value: 92 },
+    { key: 'value', label: 'Value', icon: Star, color: '#8b5cf6', value: 70 },
+  ];
+  return (
+    <div className="mt-3 rounded-xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 p-3">
+      <div className="flex items-center gap-2 mb-2.5">
+        <div className="w-6 h-6 rounded-lg bg-violet-100 flex items-center justify-center">
+          <Brain className="w-3.5 h-3.5 text-violet-600" />
+        </div>
+        <div>
+          <p className="text-[11px] font-bold text-gray-900">Your Taste DNA</p>
+          <p className="text-[9px] text-gray-400">How we picked these for you</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-4 gap-2">
+        {dna.map(({ key, label, icon: Icon, color, value }) => (
+          <div key={key} className="text-center">
+            <div className="w-9 h-9 rounded-xl mx-auto mb-1 flex items-center justify-center" style={{ backgroundColor: `${color}15` }}>
+              <Icon className="w-3.5 h-3.5" style={{ color }} />
+            </div>
+            <p className="text-[12px] font-bold text-gray-900">{value}%</p>
+            <p className="text-[9px] text-gray-400">{label}</p>
+          </div>
+        ))}
       </div>
     </div>
   );
