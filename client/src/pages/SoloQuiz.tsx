@@ -7,9 +7,9 @@ import { trackEvent } from "@/lib/analytics";
 import { isOnboardingComplete } from "@/hooks/use-onboarding";
 import { InlineOnboarding } from "@/pages/Onboarding";
 
-const bouncy = { type: "spring" as const, stiffness: 400, damping: 18 };
-const spring = { type: "spring" as const, stiffness: 300, damping: 22 };
-const gentle = { type: "spring" as const, stiffness: 220, damping: 26 };
+const bouncy = { type: "spring" as const, stiffness: 300, damping: 24 };
+const spring = { type: "spring" as const, stiffness: 260, damping: 26 };
+const gentle = { type: "spring" as const, stiffness: 200, damping: 28 };
 
 const CUISINES = [
   { emoji: "🍜", label: "Thai" },
@@ -138,10 +138,10 @@ export default function SoloQuiz() {
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
           >
             <h1 className="text-[26px] font-bold text-gray-900 leading-tight mb-1" data-testid="text-page-title">
               {step === 0 ? "What are you\ncraving?" : step === 1 ? "Set the\nscene" : "What's your\nbudget?"}
@@ -158,9 +158,10 @@ export default function SoloQuiz() {
           {step === 0 && (
             <motion.div
               key="cuisines"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, x: -40 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
               className="grid grid-cols-3 gap-3"
             >
               {CUISINES.map((c, i) => {
@@ -169,23 +170,23 @@ export default function SoloQuiz() {
                 return (
                   <motion.button
                     key={c.label}
-                    initial={{ opacity: 0, scale: 0.7, y: 20 }}
-                    animate={{ opacity: atMax ? 0.4 : 1, scale: 1, y: 0 }}
-                    transition={{ delay: i * 0.04, ...bouncy }}
-                    whileTap={{ scale: 0.88 }}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: atMax ? 0.4 : 1, y: 0 }}
+                    transition={{ delay: i * 0.03, ...gentle }}
+                    whileTap={{ scale: 0.92 }}
                     onClick={() => toggleCuisine(c.label)}
                     data-testid={`chip-cuisine-${c.label.toLowerCase()}`}
-                    className={`relative rounded-[20px] p-4 flex flex-col items-center gap-2 border-2 transition-all duration-200 ${
+                    className={`relative rounded-[20px] p-4 flex flex-col items-center gap-2 border-2 transition-all duration-200 will-change-transform ${
                       on ? "bg-[#FFCC02]/5 border-[#FFCC02] shadow-[0_4px_20px_rgba(255,204,2,0.15)]" : "bg-white border-gray-100"
                     }`}
                   >
                     <AnimatePresence>
                       {on && (
                         <motion.div
-                          initial={{ scale: 0, rotate: -90 }}
-                          animate={{ scale: 1, rotate: 0 }}
-                          exit={{ scale: 0, rotate: 90 }}
-                          transition={bouncy}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 0 }}
+                          transition={spring}
                           className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#FFCC02] rounded-full flex items-center justify-center shadow-sm"
                         >
                           <Check className="w-3 h-3 text-gray-900" />
@@ -193,9 +194,9 @@ export default function SoloQuiz() {
                       )}
                     </AnimatePresence>
                     <motion.span
-                      className="text-3xl"
-                      animate={on ? { scale: [1, 1.3, 1.1], rotate: [0, 10, 0] } : { scale: 1 }}
-                      transition={bouncy}
+                      className="text-3xl will-change-transform"
+                      animate={on ? { scale: [1, 1.15, 1.05] } : { scale: 1 }}
+                      transition={spring}
                     >
                       {c.emoji}
                     </motion.span>
@@ -209,9 +210,10 @@ export default function SoloQuiz() {
           {step === 1 && (
             <motion.div
               key="locations"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, x: -40 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
               className="grid grid-cols-2 gap-3"
             >
               {LOCATIONS.map((s, i) => {
@@ -220,20 +222,20 @@ export default function SoloQuiz() {
                 return (
                   <motion.button
                     key={s.label}
-                    initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20, y: 10 }}
-                    animate={{ opacity: atMax ? 0.4 : 1, x: 0, y: 0 }}
-                    transition={{ delay: i * 0.07, ...bouncy }}
-                    whileTap={{ scale: 0.93 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: atMax ? 0.4 : 1, y: 0 }}
+                    transition={{ delay: i * 0.04, ...gentle }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => toggleLocation(s.label)}
                     data-testid={`chip-location-${s.label.toLowerCase().replace(/\s+/g, "-")}`}
-                    className={`rounded-[20px] p-4 flex items-center gap-3 border-2 transition-all duration-200 text-left ${
+                    className={`rounded-[20px] p-4 flex items-center gap-3 border-2 transition-all duration-200 text-left will-change-transform ${
                       on ? "bg-[#FFCC02]/5 border-[#FFCC02] shadow-[0_4px_20px_rgba(255,204,2,0.15)]" : "bg-white border-gray-100"
                     }`}
                   >
                     <motion.span
-                      className="text-2xl flex-shrink-0"
-                      animate={on ? { scale: [1, 1.25, 1.1] } : { scale: 1 }}
-                      transition={bouncy}
+                      className="text-2xl flex-shrink-0 will-change-transform"
+                      animate={on ? { scale: [1, 1.12, 1.05] } : { scale: 1 }}
+                      transition={spring}
                     >
                       {s.emoji}
                     </motion.span>
@@ -247,7 +249,7 @@ export default function SoloQuiz() {
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           exit={{ scale: 0 }}
-                          transition={bouncy}
+                          transition={spring}
                           className="w-5 h-5 bg-[#FFCC02] rounded-full flex items-center justify-center flex-shrink-0"
                         >
                           <Check className="w-3 h-3 text-gray-900" />
@@ -263,9 +265,10 @@ export default function SoloQuiz() {
           {step === 2 && (
             <motion.div
               key="budget"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, x: -40 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
               className="space-y-3"
             >
               {BUDGETS.map((b, i) => {
@@ -273,20 +276,20 @@ export default function SoloQuiz() {
                 return (
                   <motion.button
                     key={b.id}
-                    initial={{ opacity: 0, x: -30 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.09, ...bouncy }}
-                    whileTap={{ scale: 0.96 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.06, ...gentle }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => setSelectedBudget(on ? null : b.id)}
                     data-testid={`chip-budget-${b.id}`}
-                    className={`w-full rounded-[20px] p-4 flex items-center gap-4 border-2 transition-all duration-200 ${
+                    className={`w-full rounded-[20px] p-4 flex items-center gap-4 border-2 transition-all duration-200 will-change-transform ${
                       on ? "bg-[#FFCC02]/5 border-[#FFCC02] shadow-[0_4px_20px_rgba(255,204,2,0.15)]" : "bg-white border-gray-100"
                     }`}
                   >
                     <motion.div
-                      className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl ${on ? "bg-[#FFCC02]/15" : "bg-gray-50"}`}
-                      animate={on ? { scale: [1, 1.15, 1.05], rotate: [0, 5, 0] } : { scale: 1 }}
-                      transition={bouncy}
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl will-change-transform ${on ? "bg-[#FFCC02]/15" : "bg-gray-50"}`}
+                      animate={on ? { scale: [1, 1.08, 1.02] } : { scale: 1 }}
+                      transition={spring}
                     >
                       {b.emoji}
                     </motion.div>
@@ -296,11 +299,11 @@ export default function SoloQuiz() {
                     </div>
                     <motion.div
                       className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${on ? "border-[#FFCC02] bg-[#FFCC02]" : "border-gray-200"}`}
-                      animate={on ? { scale: [0.8, 1.2, 1] } : { scale: 1 }}
-                      transition={bouncy}
+                      animate={on ? { scale: [0.9, 1.1, 1] } : { scale: 1 }}
+                      transition={spring}
                     >
                       {on && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={bouncy}>
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={spring}>
                           <Check className="w-3.5 h-3.5 text-gray-900" />
                         </motion.div>
                       )}
@@ -317,11 +320,11 @@ export default function SoloQuiz() {
         <AnimatePresence>
           {canProceed && (
             <motion.button
-              initial={{ opacity: 0, y: 24, scale: 0.9 }}
+              initial={{ opacity: 0, y: 12, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 24, scale: 0.9 }}
-              transition={bouncy}
-              whileTap={{ scale: 0.96 }}
+              exit={{ opacity: 0, y: 12, scale: 0.95 }}
+              transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+              whileTap={{ scale: 0.97 }}
               onClick={step < 2 ? () => setStep(s => s + 1) : handleFinish}
               data-testid="button-quiz-next"
               className="w-full py-4 rounded-2xl bg-[#FFCC02] flex items-center justify-center gap-2.5 font-bold text-[15px] text-[#2d2000]"
@@ -347,13 +350,13 @@ export default function SoloQuiz() {
         </AnimatePresence>
 
         {selectedCuisines.length > 0 && step === 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap gap-1.5 mt-3 justify-center">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="flex flex-wrap gap-1.5 mt-3 justify-center">
             {selectedCuisines.map(c => (
               <motion.span
                 key={c}
-                initial={{ scale: 0, rotate: -10 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={bouncy}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={spring}
                 className="text-[10px] font-semibold text-gray-700 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2.5 py-1"
               >
                 {CUISINES.find(cu => cu.label === c)?.emoji} {c}

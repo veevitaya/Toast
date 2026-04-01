@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { fetchWithTimeout } from "@/lib/queryClient";
 import { BottomNav } from "@/components/BottomNav";
-import { Sparkles, Clock, Wallet, TrendingUp, MapPin, UtensilsCrossed, X, Check, Star, Users } from "lucide-react";
+import { Sparkles, Clock, Wallet, TrendingUp, MapPin, UtensilsCrossed, X, Check, Star, Users, Crown, Flame } from "lucide-react";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { sendGroupInviteNoRedirect } from "@/lib/liff";
@@ -767,75 +767,122 @@ export default function SoloResults() {
     const isCurrentChoice = currentChoice?.id === opt.id;
 
     return (
-      <div className="flex-1" key={`slot-${side}`}>
+      <div className="flex-1 min-w-0" key={`slot-${side}`}>
         <AnimatePresence mode="wait">
           <motion.div
-            key={opt.id}
-            initial={isReplacing ? { y: 30, opacity: 0, scale: 0.9 } : false}
+            key={`${opt.id}-${round}`}
+            initial={isReplacing ? { y: 50, opacity: 0, scale: 0.85, rotateY: side === "left" ? -15 : 15 } : false}
             animate={{
               y: 0,
-              opacity: isDismissed && !isReplacing ? 0.4 : 1,
-              scale: isSelected ? 1.02 : isDismissed && !isReplacing ? 0.95 : 1,
+              opacity: isDismissed && !isReplacing ? 0.35 : 1,
+              scale: isSelected ? 1.03 : isDismissed && !isReplacing ? 0.94 : 1,
+              rotateY: 0,
             }}
-            exit={{ y: -20, opacity: 0, scale: 0.9 }}
-            transition={{ type: "spring", damping: 22, stiffness: 250 }}
-            className={`bg-white rounded-2xl overflow-hidden cursor-pointer transition-shadow duration-300 relative ${
-              isSelected || isCurrentChoice ? "ring-2 ring-[#FFCC02]" : ""
-            } ${isDrinksMode ? (side === "left" ? "animate-drunk-sway" : "animate-drunk-sway-alt") : ""}`}
-            style={{
-              boxShadow: isSelected || isCurrentChoice
-                ? "0 12px 35px -8px rgba(255,204,2,0.25)"
-                : "0 4px 20px -4px rgba(0,0,0,0.08)",
-            }}
+            exit={{ y: -30, opacity: 0, scale: 0.85, rotateY: side === "left" ? 15 : -15 }}
+            transition={{ type: "spring", damping: 18, stiffness: 400 }}
+            className={`cursor-pointer relative group ${isDrinksMode ? (side === "left" ? "animate-drunk-sway" : "animate-drunk-sway-alt") : ""}`}
+            style={{ perspective: 600 }}
             onClick={() => handleSelect(side)}
             data-testid={`card-option-${side === "left" ? 1 : 2}`}
           >
-            <div className="w-full aspect-[4/3] overflow-hidden relative">
-              <img src={opt.imageUrl} alt={opt.name} className="w-full h-full object-cover" />
-              {isSelected && (
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="absolute inset-0 bg-[#FFCC02]/20 flex items-center justify-center"
-                >
+            <div
+              className={`bg-white rounded-[22px] overflow-hidden transition-all duration-300 relative ${
+                isSelected || isCurrentChoice ? "ring-[2.5px] ring-[#FFCC02]" : "ring-1 ring-gray-100"
+              }`}
+              style={{
+                boxShadow: isSelected || isCurrentChoice
+                  ? "0 16px 40px -8px rgba(255,204,2,0.3), 0 4px 12px rgba(0,0,0,0.04)"
+                  : "0 6px 24px -4px rgba(0,0,0,0.06)",
+              }}
+            >
+              <div className="w-full aspect-[4/3] overflow-hidden relative">
+                <img src={opt.imageUrl} alt={opt.name} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+
+                <AnimatePresence>
+                  {isSelected && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 bg-[#FFCC02]/25 flex items-center justify-center backdrop-blur-[1px]"
+                    >
+                      <motion.div
+                        initial={{ scale: 0, rotate: -45 }}
+                        animate={{ scale: [0, 1.4, 1], rotate: [0, 15, 0] }}
+                        transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+                        className="w-14 h-14 rounded-full bg-[#FFCC02] flex items-center justify-center shadow-[0_8px_24px_rgba(255,204,2,0.5)]"
+                      >
+                        <Check className="w-6 h-6 text-gray-900" strokeWidth={3} />
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <AnimatePresence>
+                  {isDismissed && !isReplacing && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="absolute inset-0 bg-gray-900/40 flex items-center justify-center backdrop-blur-[2px]"
+                    >
+                      <motion.div
+                        initial={{ scale: 0, rotate: 90 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: "spring", damping: 18, stiffness: 400 }}
+                      >
+                        <X className="w-8 h-8 text-white drop-shadow-md" strokeWidth={2.5} />
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {isCurrentChoice && !isSelected && (
                   <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: [0, 1.3, 1] }}
-                    transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
-                    className="w-12 h-12 rounded-full bg-[#FFCC02] flex items-center justify-center"
-                    style={{ boxShadow: "0 4px 15px rgba(255,204,2,0.5)" }}
+                    initial={{ scale: 0, rotate: -30 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: "spring", damping: 18, stiffness: 400 }}
+                    className="absolute top-2.5 right-2.5 z-10"
                   >
-                    <Check className="w-5 h-5 text-[#2d2000]" strokeWidth={3} />
+                    <div className="w-7 h-7 rounded-full bg-[#FFCC02] flex items-center justify-center shadow-[0_4px_12px_rgba(255,204,2,0.4)]">
+                      <Crown className="w-3.5 h-3.5 text-gray-900" />
+                    </div>
                   </motion.div>
-                </motion.div>
-              )}
-              {isDismissed && !isReplacing && (
+                )}
+
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="absolute inset-0 bg-gray-900/30 flex items-center justify-center"
+                  className="absolute bottom-2 left-2"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15, type: "spring", damping: 22, stiffness: 300 }}
                 >
-                  <X className="w-8 h-8 text-white" strokeWidth={2.5} />
+                  <span className="text-[9px] font-bold text-white bg-black/30 backdrop-blur-md rounded-full px-2 py-0.5">
+                    {opt.type}
+                  </span>
                 </motion.div>
-              )}
+              </div>
+
+              <div className="p-3.5">
+                <h3 className="font-bold text-[14px] text-gray-900 mb-0.5 truncate leading-tight">{opt.name}</h3>
+                <div className="flex flex-wrap gap-1 mb-2 overflow-hidden max-h-[1.4rem]">
+                  {opt.tags.map((tag) => (
+                    <span key={tag} className="text-[9px] bg-gray-100 rounded-full px-2 py-0.5 font-medium text-gray-500">{tag}</span>
+                  ))}
+                </div>
+                <p className="text-[10px] font-semibold text-gray-400 flex items-center gap-1">
+                  <MapPin className="w-3 h-3" /> {opt.restaurantCount} places
+                </p>
+              </div>
             </div>
 
-            {(isCurrentChoice && !isSelected) && (
-              <div className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-[#FFCC02] flex items-center justify-center z-10" style={{ boxShadow: "0 2px 8px rgba(255,204,2,0.4)" }}>
-                <Check className="w-3 h-3 text-[#2d2000]" strokeWidth={3} />
-              </div>
-            )}
-
-            <div className="p-3.5">
-              <h3 className="font-bold text-[15px] mb-0.5 truncate">{opt.name}</h3>
-              <p className="text-xs text-muted-foreground mb-2 truncate">{opt.type}</p>
-              <div className="flex flex-wrap gap-1 mb-2 overflow-hidden max-h-[1.5rem]">
-                {opt.tags.map((tag) => (
-                  <span key={tag} className="text-[10px] bg-gray-100 rounded-full px-2 py-0.5 font-medium">{tag}</span>
-                ))}
-              </div>
-              <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" /> {opt.restaurantCount} places</p>
-            </div>
+            <motion.div
+              className="absolute -bottom-1 left-2 right-2 h-[3px] rounded-full"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: isSelected || isCurrentChoice ? 1 : 0, backgroundColor: isSelected || isCurrentChoice ? "#FFCC02" : "#E5E7EB" }}
+              transition={{ type: "spring", damping: 22, stiffness: 300 }}
+              style={{ transformOrigin: side === "left" ? "left" : "right" }}
+            />
           </motion.div>
         </AnimatePresence>
       </div>
@@ -893,8 +940,25 @@ export default function SoloResults() {
         </motion.div>
       )}
 
-      <div className="flex gap-3.5 w-full max-w-md mb-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="flex items-center gap-1.5 mb-3"
+      >
+        <Flame className="w-3.5 h-3.5 text-orange-400" />
+        <span className="text-[11px] font-bold text-gray-500">Round {round}</span>
+      </motion.div>
+
+      <div className="flex gap-3 w-full max-w-md mb-6 items-center">
         {renderCard(leftOption, "left")}
+        <motion.div
+          className="flex-shrink-0 w-9 h-9 rounded-full bg-white border-2 border-gray-100 flex items-center justify-center z-10 -mx-1.5"
+          style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}
+          animate={selectedSide ? { rotate: [0, 180, 360], scale: [1, 1.15, 1] } : { rotate: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <span className="text-[11px] font-black text-gray-400">VS</span>
+        </motion.div>
         {renderCard(rightOption, "right")}
       </div>
 
