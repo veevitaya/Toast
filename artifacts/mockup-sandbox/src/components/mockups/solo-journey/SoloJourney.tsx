@@ -3,15 +3,16 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import {
   Search, MapPin, SlidersHorizontal, Home, Map as MapIcon, Heart, User, Star,
   Sparkles, ArrowRight, ArrowLeft, ChevronDown, RotateCcw, Zap,
-  Check, X, Flame, UtensilsCrossed, Trophy, Crown
+  Check, X, Flame, UtensilsCrossed, Trophy, Crown, Eye, ListOrdered,
+  BarChart3, Share2, Medal, Award, Calendar, Clock
 } from 'lucide-react';
 
-const spring = { type: "spring" as const, stiffness: 300, damping: 22 };
-const bouncy = { type: "spring" as const, stiffness: 400, damping: 18 };
-const gentle = { type: "spring" as const, stiffness: 220, damping: 26 };
+const spring = { type: "spring" as const, stiffness: 280, damping: 26 };
+const bouncy = { type: "spring" as const, stiffness: 350, damping: 20 };
+const gentle = { type: "spring" as const, stiffness: 200, damping: 28 };
 const snappy = { type: "spring" as const, stiffness: 500, damping: 32 };
 
-type Screen = 'choose' | 'quiz' | 'battle';
+type Screen = 'choose' | 'quiz' | 'battle' | 'topPicks' | 'summary';
 type BattleSide = 'left' | 'right' | null;
 
 interface MenuItem {
@@ -64,6 +65,47 @@ const BUDGETS = [
   { id: 'moderate', label: '฿฿', sub: '150–500', emoji: '🍽️' },
   { id: 'fancy', label: '฿฿฿', sub: '500–1,500', emoji: '✨' },
   { id: 'splurge', label: '฿฿฿฿', sub: '1,500+', emoji: '👑' },
+];
+
+const BKK_AREAS = [
+  { emoji: '🚇', label: 'Sukhumvit' },
+  { emoji: '🏙️', label: 'Siam' },
+  { emoji: '🎶', label: 'Thonglor' },
+  { emoji: '🌳', label: 'Ari' },
+  { emoji: '🏢', label: 'Silom' },
+  { emoji: '🌆', label: 'Sathorn' },
+  { emoji: '🎭', label: 'Asoke' },
+  { emoji: '🏛️', label: 'Old Town' },
+  { emoji: '🌊', label: 'Riverside' },
+  { emoji: '🏮', label: 'Chinatown' },
+  { emoji: '🎪', label: 'Ekkamai' },
+  { emoji: '🛍️', label: 'Chidlom' },
+];
+
+const DIETARY = [
+  { emoji: '☪️', label: 'Halal' },
+  { emoji: '🌱', label: 'Vegan' },
+  { emoji: '🥬', label: 'Vegetarian' },
+  { emoji: '🌾', label: 'Gluten-Free' },
+  { emoji: '🚫🐷', label: 'No Pork' },
+  { emoji: '🥑', label: 'Keto' },
+  { emoji: '🥛', label: 'Dairy-Free' },
+  { emoji: '🥜', label: 'Nut-Free' },
+];
+
+const TIME_SLOTS = [
+  { label: 'Now', sub: 'ASAP', icon: '⚡' },
+  { label: '12:00', sub: 'Noon', icon: '☀️' },
+  { label: '18:00', sub: 'Evening', icon: '🌅' },
+  { label: '19:30', sub: 'Dinner', icon: '🍽️' },
+  { label: '21:00', sub: 'Late', icon: '🌙' },
+];
+
+const TOP_PICKS = [
+  { ...ALL_MENUS[0], score: 97, rounds: 5, wins: 5 },
+  { ...ALL_MENUS[4], score: 84, rounds: 4, wins: 3 },
+  { ...ALL_MENUS[10], score: 72, rounds: 3, wins: 2 },
+  { ...ALL_MENUS[2], score: 60, rounds: 4, wins: 2 },
 ];
 
 function ToastMascot({ pointDirection }: { pointDirection: 'left' | 'right' | 'center' }) {
@@ -247,6 +289,10 @@ export function SoloJourney() {
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [selectedSettings, setSelectedSettings] = useState<string[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<string | null>(null);
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [selectedDietary, setSelectedDietary] = useState<string[]>([]);
+  const [selectedTime, setSelectedTime] = useState<string>('Now');
+  const [selectedDate, setSelectedDate] = useState<string>('Today');
   const [soloHover, setSoloHover] = useState(false);
   const [groupHover, setGroupHover] = useState(false);
 
@@ -260,12 +306,22 @@ export function SoloJourney() {
   const [round, setRound] = useState(0);
   const [battleRound, setBattleRound] = useState(0);
 
+  const TOTAL_QUIZ_STEPS = 5;
+
   const toggleCuisine = useCallback((l: string) => {
     setSelectedCuisines(p => p.includes(l) ? p.filter(c => c !== l) : [...p, l]);
   }, []);
 
   const toggleSetting = useCallback((l: string) => {
     setSelectedSettings(p => p.includes(l) ? p.filter(s => s !== l) : [...p, l]);
+  }, []);
+
+  const toggleArea = useCallback((l: string) => {
+    setSelectedAreas(p => p.includes(l) ? p.filter(a => a !== l) : p.length < 3 ? [...p, l] : p);
+  }, []);
+
+  const toggleDietary = useCallback((l: string) => {
+    setSelectedDietary(p => p.includes(l) ? p.filter(d => d !== l) : [...p, l]);
   }, []);
 
   const startBattle = useCallback(() => {
@@ -288,6 +344,10 @@ export function SoloJourney() {
     setSelectedCuisines([]);
     setSelectedSettings([]);
     setSelectedBudget(null);
+    setSelectedAreas([]);
+    setSelectedDietary([]);
+    setSelectedTime('Now');
+    setSelectedDate('Today');
   }, []);
 
   const reset = useCallback(() => {
@@ -343,7 +403,20 @@ export function SoloJourney() {
     return selectedSide;
   };
 
-  const canProceed = quizStep === 0 ? selectedCuisines.length > 0 : quizStep === 1 ? selectedSettings.length > 0 : selectedBudget !== null;
+  const quizHeadings = [
+    { title: "What are you\ncraving?", sub: 'Pick as many as you like' },
+    { title: "Set the\nscene", sub: "Where sounds good tonight?" },
+    { title: "What's your\nbudget?", sub: "We'll find the sweet spot" },
+    { title: "Where in\nBangkok?", sub: "Pick up to 3 areas" },
+    { title: "Almost ready!", sub: "Any dietary needs & when?" },
+  ];
+
+  const canProceed =
+    quizStep === 0 ? selectedCuisines.length > 0 :
+    quizStep === 1 ? selectedSettings.length > 0 :
+    quizStep === 2 ? selectedBudget !== null :
+    quizStep === 3 ? true :
+    true;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-neutral-900 p-4 font-sans">
@@ -621,7 +694,7 @@ export function SoloJourney() {
                   </motion.button>
 
                   <div className="flex items-center gap-1.5">
-                    {[0, 1, 2].map(i => (
+                    {Array.from({ length: TOTAL_QUIZ_STEPS }).map((_, i) => (
                       <motion.div
                         key={i}
                         animate={{
@@ -641,7 +714,7 @@ export function SoloJourney() {
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    {quizStep + 1}/3
+                    {quizStep + 1}/{TOTAL_QUIZ_STEPS}
                   </motion.div>
                 </div>
 
@@ -654,10 +727,10 @@ export function SoloJourney() {
                     transition={{ duration: 0.3 }}
                   >
                     <h1 className="text-[26px] font-['Playfair_Display'] font-bold text-gray-900 leading-tight mb-1">
-                      {quizStep === 0 ? 'What are you\ncraving?' : quizStep === 1 ? 'Set the\nscene' : 'What\'s your\nbudget?'}
+                      {quizHeadings[quizStep].title}
                     </h1>
                     <p className="text-[13px] text-gray-400 font-medium">
-                      {quizStep === 0 ? 'Pick as many as you like' : quizStep === 1 ? 'Where sounds good tonight?' : 'We\'ll find the sweet spot'}
+                      {quizHeadings[quizStep].sub}
                     </p>
                   </motion.div>
                 </AnimatePresence>
@@ -815,6 +888,153 @@ export function SoloJourney() {
                       })}
                     </motion.div>
                   )}
+
+                  {quizStep === 3 && (
+                    <motion.div
+                      key="l"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0, x: -40 }}
+                    >
+                      <div className="flex flex-wrap gap-2.5">
+                        {BKK_AREAS.map((a, i) => {
+                          const on = selectedAreas.includes(a.label);
+                          const atMax = selectedAreas.length >= 3 && !on;
+                          return (
+                            <motion.button
+                              key={a.label}
+                              initial={{ opacity: 0, scale: 0.85 }}
+                              animate={{ opacity: atMax ? 0.4 : 1, scale: 1 }}
+                              transition={{ delay: i * 0.03, ...spring }}
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => toggleArea(a.label)}
+                              className={`rounded-full px-4 py-2.5 flex items-center gap-2 border-2 transition-all text-[12px] font-semibold ${
+                                on ? 'border-[#FFCC02] bg-[#FFCC02]/8 text-gray-900 shadow-[0_4px_16px_rgba(255,204,2,0.15)]' : 'bg-white border-gray-100 text-gray-500'
+                              }`}
+                            >
+                              <span className="text-base">{a.emoji}</span>
+                              {a.label}
+                              <AnimatePresence>
+                                {on && (
+                                  <motion.div initial={{ scale: 0, width: 0 }} animate={{ scale: 1, width: 16 }} exit={{ scale: 0, width: 0 }} transition={spring}>
+                                    <Check className="w-4 h-4 text-[#FFCC02]" />
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+
+                      {selectedAreas.length > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mt-4 flex flex-wrap gap-1.5 justify-center"
+                        >
+                          {selectedAreas.map(a => (
+                            <span key={a} className="text-[10px] font-semibold text-gray-700 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2.5 py-1">
+                              {BKK_AREAS.find(ar => ar.label === a)?.emoji} {a}
+                            </span>
+                          ))}
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {quizStep === 4 && (
+                    <motion.div
+                      key="dt"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0, x: -40 }}
+                      className="space-y-6"
+                    >
+                      <div>
+                        <motion.p
+                          className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                        >
+                          Dietary needs
+                        </motion.p>
+                        <div className="flex flex-wrap gap-2">
+                          {DIETARY.map((d, i) => {
+                            const on = selectedDietary.includes(d.label);
+                            return (
+                              <motion.button
+                                key={d.label}
+                                initial={{ opacity: 0, scale: 0.85 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: i * 0.03, ...spring }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => toggleDietary(d.label)}
+                                className={`rounded-full px-3.5 py-2 flex items-center gap-1.5 border-2 transition-all text-[11px] font-semibold ${
+                                  on ? 'border-[#FFCC02] bg-[#FFCC02]/8 text-gray-900' : 'bg-white border-gray-100 text-gray-500'
+                                }`}
+                              >
+                                <span className="text-sm">{d.emoji}</span>
+                                {d.label}
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div>
+                        <motion.p
+                          className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.2 }}
+                        >
+                          When?
+                        </motion.p>
+                        <div className="flex gap-2 mb-3">
+                          {['Today', 'Tomorrow', 'This weekend'].map((d, i) => {
+                            const on = selectedDate === d;
+                            return (
+                              <motion.button
+                                key={d}
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.25 + i * 0.04, ...spring }}
+                                whileTap={{ scale: 0.93 }}
+                                onClick={() => setSelectedDate(d)}
+                                className={`flex-1 rounded-2xl py-2.5 px-2 text-center border-2 transition-all ${
+                                  on ? 'border-[#FFCC02] bg-[#FFCC02]/8' : 'bg-white border-gray-100'
+                                }`}
+                              >
+                                <div className={`text-[11px] font-bold ${on ? 'text-gray-900' : 'text-gray-600'}`}>{d}</div>
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                        <div className="flex gap-2 overflow-x-auto no-sb pb-1">
+                          {TIME_SLOTS.map((t, i) => {
+                            const on = selectedTime === t.label;
+                            return (
+                              <motion.button
+                                key={t.label}
+                                initial={{ opacity: 0, x: 16 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.3 + i * 0.04, ...spring }}
+                                whileTap={{ scale: 0.92 }}
+                                onClick={() => setSelectedTime(t.label)}
+                                className={`flex-shrink-0 rounded-2xl p-3 flex flex-col items-center gap-1 border-2 min-w-[64px] transition-all ${
+                                  on ? 'border-[#FFCC02] bg-[#FFCC02]/8' : 'bg-white border-gray-100'
+                                }`}
+                              >
+                                <span className="text-lg">{t.icon}</span>
+                                <span className={`text-[11px] font-bold ${on ? 'text-gray-900' : 'text-gray-600'}`}>{t.label}</span>
+                                <span className="text-[9px] text-gray-400">{t.sub}</span>
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </AnimatePresence>
               </div>
 
@@ -828,10 +1048,10 @@ export function SoloJourney() {
                       transition={bouncy}
                       whileTap={{ scale: 0.95 }}
                       whileHover={{ y: -2, boxShadow: '0 8px 28px rgba(255,204,2,0.4)' }}
-                      onClick={quizStep < 2 ? () => setQuizStep(s => s + 1) : startBattle}
+                      onClick={quizStep < TOTAL_QUIZ_STEPS - 1 ? () => setQuizStep(s => s + 1) : startBattle}
                       className="w-full h-[52px] rounded-2xl bg-[#FFCC02] flex items-center justify-center gap-2.5 font-bold text-[15px] text-gray-900 shadow-[0_6px_24px_rgba(255,204,2,0.35)]"
                     >
-                      {quizStep < 2 ? (
+                      {quizStep < TOTAL_QUIZ_STEPS - 1 ? (
                         <>Continue <motion.div animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.2 }}><ArrowRight className="w-5 h-5" /></motion.div></>
                       ) : (
                         <>Let's pick! <motion.div animate={{ rotate: [0, 15, -15, 0] }} transition={{ repeat: Infinity, duration: 2 }}><Flame className="w-5 h-5" /></motion.div></>
@@ -953,7 +1173,7 @@ export function SoloJourney() {
               </AnimatePresence>
 
               <motion.div
-                className="flex gap-3.5 w-full mb-5"
+                className="flex gap-3.5 w-full mb-4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, ...gentle }}
@@ -1005,10 +1225,11 @@ export function SoloJourney() {
                 transition={{ delay: 0.5, ...gentle }}
                 whileTap={{ scale: 0.96 }}
                 whileHover={{ y: -2, boxShadow: '0 10px 32px rgba(255,204,2,0.4)' }}
+                onClick={() => setScreen('summary')}
                 className="w-full py-3.5 rounded-2xl bg-[#FFCC02] text-gray-900 font-bold text-[14px] shadow-[0_6px_24px_rgba(255,204,2,0.3)] flex items-center justify-center gap-2"
               >
                 <UtensilsCrossed className="w-4 h-4" />
-                Ready to eat!{currentChoice ? ` — ${currentChoice.name}` : ''}
+                Lock it in!{currentChoice ? ` — ${currentChoice.name}` : ''}
               </motion.button>
 
               <div className="flex items-center gap-2.5 w-full mt-3">
@@ -1020,15 +1241,29 @@ export function SoloJourney() {
                   className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
                 >
                   <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-50 to-[#FFCC02]/15 flex items-center justify-center">
-                    <Sparkles className="w-3.5 h-3.5 text-[#FFCC02]" />
+                    <Eye className="w-3.5 h-3.5 text-[#FFCC02]" />
                   </div>
-                  <span className="text-[10px] font-semibold text-gray-600">Decide for me</span>
+                  <span className="text-[10px] font-semibold text-gray-600">View Restaurant</span>
                 </motion.button>
 
                 <motion.button
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.65, ...gentle }}
+                  whileTap={{ scale: 0.94 }}
+                  onClick={() => setScreen('topPicks')}
+                  className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
+                >
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-50 to-[#FFCC02]/15 flex items-center justify-center">
+                    <ListOrdered className="w-3.5 h-3.5 text-[#FFCC02]" />
+                  </div>
+                  <span className="text-[10px] font-semibold text-gray-600">Top Picks</span>
+                </motion.button>
+
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7, ...gentle }}
                   whileTap={{ scale: 0.94 }}
                   onClick={startBattle}
                   className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
@@ -1038,18 +1273,328 @@ export function SoloJourney() {
                   </div>
                   <span className="text-[10px] font-semibold text-gray-600">Shuffle</span>
                 </motion.button>
+              </div>
+            </motion.div>
+          )}
 
+          {screen === 'topPicks' && (
+            <motion.div
+              key="topPicks"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+              className="flex-1 overflow-y-auto no-sb pt-14 px-6 pb-28"
+            >
+              <div className="flex items-center justify-between mb-5">
                 <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7, ...gentle }}
-                  whileTap={{ scale: 0.94 }}
-                  className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
+                  whileTap={{ scale: 0.85 }}
+                  onClick={() => setScreen('battle')}
+                  className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"
                 >
-                  <div className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center">
-                    <Flame className="w-3.5 h-3.5 text-orange-400" />
+                  <ArrowLeft className="w-4 h-4 text-gray-700" />
+                </motion.button>
+                <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100">
+                  <Crown className="w-3.5 h-3.5 text-[#FFCC02]" />
+                  <span className="text-[11px] font-bold text-amber-700">Top Picks</span>
+                </div>
+              </div>
+
+              <motion.div
+                className="mb-6"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, ...gentle }}
+              >
+                <h1 className="text-[24px] font-['Playfair_Display'] font-bold text-gray-900 leading-tight mb-1">Your top picks</h1>
+                <p className="text-[13px] text-gray-400 font-medium">Ranked by your battle results</p>
+              </motion.div>
+
+              <div className="space-y-3">
+                {TOP_PICKS.map((pick, i) => {
+                  const rankIcons = [Crown, Medal, Award];
+                  const rankColors = ['text-[#FFCC02]', 'text-gray-400', 'text-amber-600'];
+                  const rankBgs = ['bg-[#FFCC02]/10 border-[#FFCC02]/30', 'bg-gray-100 border-gray-200', 'bg-amber-50 border-amber-200'];
+                  const RankIcon = rankIcons[i] || Star;
+
+                  return (
+                    <motion.div
+                      key={pick.id}
+                      initial={{ opacity: 0, x: -20, scale: 0.96 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      transition={{ delay: 0.15 + i * 0.08, ...spring }}
+                      className={`bg-white rounded-[22px] overflow-hidden border shadow-[0_4px_20px_rgba(0,0,0,0.04)] ${
+                        i === 0 ? 'border-[#FFCC02]/30 ring-1 ring-[#FFCC02]/20' : 'border-gray-100'
+                      }`}
+                    >
+                      <div className="flex gap-3 p-3.5">
+                        <div className="relative flex-shrink-0">
+                          <div className="w-[80px] h-[80px] rounded-[16px] overflow-hidden">
+                            <img src={pick.imageUrl} alt={pick.name} className="w-full h-full object-cover" />
+                          </div>
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: 0.3 + i * 0.08, ...bouncy }}
+                            className={`absolute -top-1.5 -left-1.5 w-7 h-7 rounded-full border-2 border-white flex items-center justify-center shadow-md ${i < 3 ? rankBgs[i] : 'bg-gray-50 border-gray-200'}`}
+                          >
+                            {i < 3 ? (
+                              <RankIcon className={`w-3.5 h-3.5 ${rankColors[i]}`} />
+                            ) : (
+                              <span className="text-[10px] font-bold text-gray-400">#{i + 1}</span>
+                            )}
+                          </motion.div>
+                        </div>
+
+                        <div className="flex-1 min-w-0 py-0.5">
+                          <h3 className="text-[14px] font-bold text-gray-900 truncate mb-0.5">{pick.name}</h3>
+                          <p className="text-[11px] text-gray-400 mb-2 flex items-center gap-1">
+                            {pick.type}
+                            <span className="text-gray-300">·</span>
+                            <MapPin className="w-3 h-3" />
+                            {pick.restaurantCount} places
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <motion.span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                i === 0 ? 'text-amber-700 bg-amber-50 border border-amber-100' : 'text-gray-500 bg-gray-50 border border-gray-100'
+                              }`}
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ delay: 0.4 + i * 0.08, ...bouncy }}
+                            >
+                              {pick.score}% match
+                            </motion.span>
+                            <span className="text-[10px] text-gray-400 font-medium">
+                              Won {pick.wins}/{pick.rounds} rounds
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              <motion.button
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setScreen('summary')}
+                className="w-full mt-5 h-[52px] rounded-2xl bg-[#FFCC02] flex items-center justify-center gap-2 font-bold text-[15px] text-gray-900 shadow-[0_8px_28px_rgba(255,204,2,0.35)]"
+              >
+                <BarChart3 className="w-5 h-5" />
+                Wrap It Up
+              </motion.button>
+
+              <motion.button
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.65 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setScreen('battle')}
+                className="w-full mt-2.5 h-[44px] rounded-2xl bg-white border border-gray-200 flex items-center justify-center gap-2 font-bold text-[13px] text-gray-600 shadow-sm"
+              >
+                <Flame className="w-4 h-4 text-orange-400" />
+                Keep Battling
+              </motion.button>
+            </motion.div>
+          )}
+
+          {screen === 'summary' && (
+            <motion.div
+              key="summary"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35 }}
+              className="flex-1 overflow-y-auto no-sb pt-14 px-6 pb-28"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <motion.button
+                  whileTap={{ scale: 0.85 }}
+                  onClick={() => setScreen('battle')}
+                  className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"
+                >
+                  <ArrowLeft className="w-4 h-4 text-gray-700" />
+                </motion.button>
+                <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100">
+                  <BarChart3 className="w-3.5 h-3.5 text-[#FFCC02]" />
+                  <span className="text-[11px] font-bold text-amber-700">Summary</span>
+                </div>
+              </div>
+
+              <motion.div
+                className="text-center mb-6"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, ...gentle }}
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.15, ...bouncy }}
+                  className="w-16 h-16 mx-auto mb-3 rounded-[20px] bg-gradient-to-br from-[#FFCC02] to-amber-400 flex items-center justify-center shadow-[0_10px_32px_rgba(255,204,2,0.3)]"
+                >
+                  <Trophy className="w-8 h-8 text-gray-900" />
+                </motion.div>
+                <h1 className="text-[24px] font-['Playfair_Display'] font-bold text-gray-900 mb-0.5">Decision Made!</h1>
+                <p className="text-[12px] text-gray-400 font-medium">Here's your session recap</p>
+              </motion.div>
+
+              {currentChoice && (
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.25, ...spring }}
+                  className="bg-white rounded-[22px] border-2 border-[#FFCC02]/30 shadow-[0_8px_32px_rgba(255,204,2,0.12)] overflow-hidden mb-5"
+                >
+                  <div className="relative h-[120px]">
+                    <img src={currentChoice.imageUrl} alt={currentChoice.name} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                    <div className="absolute bottom-3 left-4 right-4">
+                      <h3 className="text-white text-[18px] font-bold drop-shadow-lg">{currentChoice.name}</h3>
+                      <p className="text-white/80 text-[12px] flex items-center gap-1.5 mt-0.5">
+                        {currentChoice.type}
+                        <span className="text-white/40">·</span>
+                        <MapPin className="w-3 h-3" /> {currentChoice.restaurantCount} places
+                      </p>
+                    </div>
+                    <motion.div
+                      initial={{ scale: 0, rotate: -15 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ delay: 0.4, ...bouncy }}
+                      className="absolute top-3 right-3 bg-[#FFCC02] text-gray-900 text-[10px] font-black rounded-full px-3 py-1.5 shadow-[0_4px_12px_rgba(255,204,2,0.4)] flex items-center gap-1"
+                    >
+                      <Crown className="w-3 h-3" /> Winner
+                    </motion.div>
                   </div>
-                  <span className="text-[10px] font-semibold text-gray-600">Trending</span>
+                  <div className="p-4 flex flex-wrap gap-1.5">
+                    {currentChoice.tags.map(tag => (
+                      <span key={tag} className="text-[10px] bg-gray-100 rounded-full px-2.5 py-1 font-semibold text-gray-500">{tag}</span>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, ...gentle }}
+                className="bg-white rounded-[22px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.04)] p-5 mb-5"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Zap className="w-4 h-4 text-[#FFCC02]" />
+                  <span className="text-[12px] font-bold text-gray-900">Session Stats</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Rounds', value: String(battleRound + 1), icon: '⚔️', color: 'from-amber-50 to-yellow-50' },
+                    { label: 'Options Seen', value: String(usedIds.size + 2), icon: '👀', color: 'from-blue-50 to-indigo-50' },
+                    { label: 'Win Rate', value: `${Math.round((battleRound > 0 ? 1 : 0) / Math.max(1, battleRound) * 100)}%`, icon: '🏆', color: 'from-emerald-50 to-green-50' },
+                  ].map((stat, i) => (
+                    <motion.div
+                      key={stat.label}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 + i * 0.06, ...spring }}
+                      className={`bg-gradient-to-br ${stat.color} rounded-2xl p-3 text-center`}
+                    >
+                      <span className="text-xl mb-1 block">{stat.icon}</span>
+                      <div className="text-[18px] font-bold text-gray-900">{stat.value}</div>
+                      <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">{stat.label}</div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, ...gentle }}
+                className="bg-white rounded-[22px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.04)] p-5 mb-5"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Star className="w-4 h-4 text-[#FFCC02] fill-[#FFCC02]" />
+                  <span className="text-[12px] font-bold text-gray-900">Your Taste Profile</span>
+                </div>
+                <div className="space-y-2.5">
+                  {[
+                    { label: 'Favourite Cuisine', value: selectedCuisines[0] || 'Thai', emoji: CUISINES.find(c => c.label === (selectedCuisines[0] || 'Thai'))?.emoji || '🍜' },
+                    { label: 'Preferred Vibe', value: selectedSettings[0] || 'Restaurant', emoji: SETTINGS.find(s => s.label === (selectedSettings[0] || 'Restaurant'))?.emoji || '🍽️' },
+                    { label: 'Budget Range', value: BUDGETS.find(b => b.id === selectedBudget)?.label || '฿฿', emoji: BUDGETS.find(b => b.id === selectedBudget)?.emoji || '🍽️' },
+                  ].map((item, i) => (
+                    <motion.div
+                      key={item.label}
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.55 + i * 0.06, ...spring }}
+                      className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3"
+                    >
+                      <span className="text-xl">{item.emoji}</span>
+                      <div className="flex-1">
+                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{item.label}</div>
+                        <div className="text-[13px] font-bold text-gray-900">{item.value}</div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.65, ...gentle }}
+                className="bg-white rounded-[22px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.04)] p-5 mb-5"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <BarChart3 className="w-4 h-4 text-[#FFCC02]" />
+                  <span className="text-[12px] font-bold text-gray-900">All-Time Stats</span>
+                  <span className="ml-auto text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-100 rounded-full px-2 py-0.5">14 sessions</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Decisions', value: '14', emoji: '🍽️' },
+                    { label: 'Rounds Played', value: '87', emoji: '⚔️' },
+                    { label: 'Go-to Pick', value: 'Pad Thai', emoji: '🍜' },
+                  ].map((stat, i) => (
+                    <motion.div
+                      key={stat.label}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.7 + i * 0.06, ...spring }}
+                      className="text-center"
+                    >
+                      <span className="text-lg block mb-0.5">{stat.emoji}</span>
+                      <div className="text-[15px] font-bold text-gray-900">{stat.value}</div>
+                      <div className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <div className="space-y-2.5">
+                <motion.button
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full h-[50px] rounded-2xl bg-[#FFCC02] flex items-center justify-center gap-2 font-bold text-[15px] text-gray-900 shadow-[0_8px_24px_rgba(255,204,2,0.3)]"
+                >
+                  <Share2 className="w-4.5 h-4.5" />
+                  Share Results
+                </motion.button>
+                <motion.button
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.85 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={reset}
+                  className="w-full h-[48px] rounded-2xl bg-white border border-gray-200 flex items-center justify-center gap-2 font-bold text-[14px] text-gray-600 shadow-sm"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Start New Session
                 </motion.button>
               </div>
             </motion.div>
@@ -1058,7 +1603,7 @@ export function SoloJourney() {
 
         <div className="absolute bottom-0 inset-x-0 h-[84px] glass border-t border-gray-100/40 flex justify-around items-start pt-3 px-6 z-[90] pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
           {[
-            { icon: Home, label: 'Home', active: true },
+            { icon: Home, label: 'Home', active: screen === 'choose' },
             { icon: MapIcon, label: 'Map' },
             { icon: Heart, label: 'Saved' },
             { icon: User, label: 'Profile' },
@@ -1069,6 +1614,8 @@ export function SoloJourney() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 + i * 0.05, ...spring }}
               className={`flex flex-col items-center gap-0.5 ${n.active ? 'text-[#FFCC02]' : 'text-gray-400'}`}
+              onClick={n.label === 'Home' ? reset : undefined}
+              style={{ cursor: n.label === 'Home' ? 'pointer' : 'default' }}
             >
               <n.icon className="w-5 h-5" />
               <span className="text-[10px] font-semibold">{n.label}</span>

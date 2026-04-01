@@ -3,7 +3,8 @@ import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from '
 import {
   Search, MapPin, SlidersHorizontal, Home, Map as MapIcon, Heart, User, Star,
   Sparkles, ArrowRight, ArrowLeft, Check, X, Users, UserPlus,
-  Share2, Copy, Crown, Trophy, MessageCircle, Clock, ChevronRight, Flame, Zap
+  Share2, Copy, Crown, Trophy, MessageCircle, Clock, ChevronRight, Flame, Zap,
+  Calendar, Wallet, ShieldCheck, Award, Medal, BarChart3, RotateCcw, Eye, ListOrdered, ArrowUp
 } from 'lucide-react';
 
 const spring = { type: "spring" as const, stiffness: 280, damping: 26 };
@@ -11,15 +12,15 @@ const bouncy = { type: "spring" as const, stiffness: 350, damping: 20 };
 const gentle = { type: "spring" as const, stiffness: 200, damping: 28 };
 const snappy = { type: "spring" as const, stiffness: 500, damping: 32 };
 
-type Screen = 'home' | 'setup' | 'invite' | 'waiting' | 'swipe' | 'match';
+type Screen = 'home' | 'setup' | 'invite' | 'waiting' | 'swipe' | 'match' | 'topPicks' | 'summary';
 
 const RESTAURANTS = [
   { id: 1, name: 'Jay Fai', category: 'Thai Street Food', tags: ['Michelin Star', 'Crab Omelet'], price: 3, rating: '4.9', image: 'https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=600&auto=format&fit=crop&q=60', desc: 'Legendary street-side wok master with a Michelin star.' },
   { id: 2, name: 'Gaggan Anand', category: 'Progressive Indian', tags: ['Fine Dining', 'Tasting Menu'], price: 4, rating: '4.8', image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&auto=format&fit=crop&q=60', desc: 'Progressive Indian cuisine pushing boundaries of flavor.' },
-  { id: 3, name: 'Nusara', category: 'Modern Thai', tags: ['World\'s Best', 'Tasting Menu'], price: 4, rating: '4.9', image: 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=600&auto=format&fit=crop&q=60', desc: 'Modern Thai fine dining — #1 on Asia\'s 50 Best.' },
+  { id: 3, name: 'Nusara', category: 'Modern Thai', tags: ["World's Best", 'Tasting Menu'], price: 4, rating: '4.9', image: 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=600&auto=format&fit=crop&q=60', desc: "Modern Thai fine dining — #1 on Asia's 50 Best." },
   { id: 4, name: 'Sushi Masato', category: 'Japanese Omakase', tags: ['Premium', 'Intimate'], price: 4, rating: '4.9', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&auto=format&fit=crop&q=60', desc: 'Intimate omakase counter with seasonal fish from Tsukiji.' },
   { id: 5, name: 'Smash Lab', category: 'Western', tags: ['Burgers', 'Craft Beer'], price: 2, rating: '4.5', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=60', desc: 'Double-smashed patties with secret sauce and fresh brioche.' },
-  { id: 6, name: 'Thipsamai', category: 'Thai', tags: ['Pad Thai', 'Legendary'], price: 1, rating: '4.9', image: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600&auto=format&fit=crop&q=60', desc: 'Bangkok\'s original pad thai since 1966.' },
+  { id: 6, name: 'Thipsamai', category: 'Thai', tags: ['Pad Thai', 'Legendary'], price: 1, rating: '4.9', image: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600&auto=format&fit=crop&q=60', desc: "Bangkok's original pad thai since 1966." },
 ];
 
 const MEMBERS = [
@@ -47,28 +48,88 @@ const VIBES = [
   { emoji: '✨', label: 'Fine dining' },
 ];
 
+const BUDGETS = [
+  { id: 'cheap', label: '฿', sub: 'Under 150', emoji: '💰' },
+  { id: 'moderate', label: '฿฿', sub: '150–500', emoji: '🍽️' },
+  { id: 'fancy', label: '฿฿฿', sub: '500–1,500', emoji: '✨' },
+  { id: 'splurge', label: '฿฿฿฿', sub: '1,500+', emoji: '👑' },
+];
+
+const BKK_AREAS = [
+  { emoji: '🚇', label: 'Sukhumvit' },
+  { emoji: '🏙️', label: 'Siam' },
+  { emoji: '🎶', label: 'Thonglor' },
+  { emoji: '🌳', label: 'Ari' },
+  { emoji: '🏢', label: 'Silom' },
+  { emoji: '🌆', label: 'Sathorn' },
+  { emoji: '🎭', label: 'Asoke' },
+  { emoji: '🏛️', label: 'Old Town' },
+  { emoji: '🌊', label: 'Riverside' },
+  { emoji: '🏮', label: 'Chinatown' },
+  { emoji: '🎪', label: 'Ekkamai' },
+  { emoji: '🛍️', label: 'Chidlom' },
+];
+
+const DIETARY = [
+  { emoji: '☪️', label: 'Halal' },
+  { emoji: '🌱', label: 'Vegan' },
+  { emoji: '🥬', label: 'Vegetarian' },
+  { emoji: '🌾', label: 'Gluten-Free' },
+  { emoji: '🚫🐷', label: 'No Pork' },
+  { emoji: '🥑', label: 'Keto' },
+  { emoji: '🥛', label: 'Dairy-Free' },
+  { emoji: '🥜', label: 'Nut-Free' },
+];
+
+const TIME_SLOTS = [
+  { label: 'Now', sub: 'ASAP', icon: '⚡' },
+  { label: '12:00', sub: 'Noon', icon: '☀️' },
+  { label: '18:00', sub: 'Evening', icon: '🌅' },
+  { label: '19:30', sub: 'Dinner', icon: '🍽️' },
+  { label: '21:00', sub: 'Late', icon: '🌙' },
+];
+
+const MEMBER_STATS = [
+  { member: MEMBERS[0], likes: 4, dislikes: 1, superLikes: 1, favCuisine: 'Thai', emoji: '🍜' },
+  { member: MEMBERS[1], likes: 3, dislikes: 2, superLikes: 1, favCuisine: 'Japanese', emoji: '🍣' },
+  { member: MEMBERS[2], likes: 5, dislikes: 1, superLikes: 0, favCuisine: 'Thai', emoji: '🍜' },
+];
+
+const TOP_PICKS_DATA = [
+  { ...RESTAURANTS[2], votes: 3, voters: ['host', 'm1', 'm2'], fullMatch: true },
+  { ...RESTAURANTS[0], votes: 2, voters: ['host', 'm2'], fullMatch: false },
+  { ...RESTAURANTS[5], votes: 2, voters: ['host', 'm1'], fullMatch: false },
+  { ...RESTAURANTS[3], votes: 1, voters: ['m1'], fullMatch: false },
+];
+
 function SwipeCard({ restaurant, active, behind, onSwipe }: {
   restaurant: typeof RESTAURANTS[0];
   active: boolean;
   behind: boolean;
-  onSwipe: (dir: 'left' | 'right') => void;
+  onSwipe: (dir: 'left' | 'right' | 'up') => void;
 }) {
   const x = useMotionValue(0);
+  const y = useMotionValue(0);
   const rotate = useTransform(x, [-200, 0, 200], [-12, 0, 12]);
   const bgLeft = useTransform(x, [-200, -60, 0], [1, 0.6, 0]);
   const bgRight = useTransform(x, [0, 60, 200], [0, 0.6, 1]);
+  const bgUp = useTransform(y, [-200, -60, 0], [1, 0.6, 0]);
   const swiped = useRef(false);
-  const [exiting, setExiting] = useState<{ x: number } | null>(null);
+  const [exiting, setExiting] = useState<{ x: number; y: number } | null>(null);
 
   const handleDragEnd = useCallback((_: any, info: PanInfo) => {
     if (swiped.current) return;
-    if (info.offset.x > 90) {
+    if (info.offset.y < -90) {
       swiped.current = true;
-      setExiting({ x: 500 });
+      setExiting({ x: 0, y: -600 });
+      setTimeout(() => onSwipe('up'), 280);
+    } else if (info.offset.x > 90) {
+      swiped.current = true;
+      setExiting({ x: 500, y: 0 });
       setTimeout(() => onSwipe('right'), 280);
     } else if (info.offset.x < -90) {
       swiped.current = true;
-      setExiting({ x: -500 });
+      setExiting({ x: -500, y: 0 });
       setTimeout(() => onSwipe('left'), 280);
     }
   }, [onSwipe]);
@@ -79,12 +140,13 @@ function SwipeCard({ restaurant, active, behind, onSwipe }: {
     <motion.div
       style={{
         x: active ? x : 0,
+        y: active ? y : 0,
         rotate: active ? rotate : 0,
         zIndex: active ? 10 : 5,
       }}
       animate={
         exiting
-          ? { x: exiting.x, opacity: 0, rotate: exiting.x > 0 ? 18 : -18 }
+          ? { x: exiting.x, y: exiting.y, opacity: 0, rotate: exiting.x > 0 ? 18 : exiting.x < 0 ? -18 : 0 }
           : behind
             ? { scale: 0.94, y: 12, opacity: 0.5 }
             : { scale: 1, y: 0, opacity: 1 }
@@ -97,6 +159,7 @@ function SwipeCard({ restaurant, active, behind, onSwipe }: {
       className="absolute inset-0 bg-white rounded-[28px] overflow-hidden cursor-grab active:cursor-grabbing select-none"
       style={{
         x: active ? x : 0,
+        y: active ? y : 0,
         rotate: active ? rotate : 0,
         zIndex: active ? 10 : 5,
         boxShadow: active
@@ -118,6 +181,11 @@ function SwipeCard({ restaurant, active, behind, onSwipe }: {
             <motion.div style={{ opacity: bgLeft }} className="absolute top-7 right-5 z-20">
               <div className="bg-red-500 text-white text-lg font-black rounded-2xl px-5 py-2 rotate-12 border-[3px] border-white/40 shadow-lg flex items-center gap-1.5">
                 NAH <span className="text-xl">👎</span>
+              </div>
+            </motion.div>
+            <motion.div style={{ opacity: bgUp }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+              <div className="bg-[#FFCC02] text-gray-900 text-lg font-black rounded-2xl px-5 py-2 border-[3px] border-white/40 shadow-lg flex items-center gap-1.5">
+                SUPERLIKE <span className="text-xl">⭐</span>
               </div>
             </motion.div>
           </>
@@ -187,12 +255,30 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
   );
 }
 
+function SectionLabel({ children, delay = 0 }: { children: string; delay?: number }) {
+  return (
+    <motion.p
+      className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay }}
+    >
+      {children}
+    </motion.p>
+  );
+}
+
 export function GroupJourney() {
   const [screen, setScreen] = useState<Screen>('home');
   const [selectedGroupType, setSelectedGroupType] = useState<string | null>(null);
   const [selectedVibes, setSelectedVibes] = useState<string[]>([]);
+  const [selectedBudget, setSelectedBudget] = useState<string | null>(null);
+  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
+  const [selectedDietary, setSelectedDietary] = useState<string[]>([]);
+  const [selectedTime, setSelectedTime] = useState<string>('Now');
+  const [selectedDate, setSelectedDate] = useState<string>('Today');
   const [currentCard, setCurrentCard] = useState(0);
-  const [swipeResults, setSwipeResults] = useState<Record<number, 'left' | 'right'>>({});
+  const [swipeResults, setSwipeResults] = useState<Record<number, 'left' | 'right' | 'up'>>({});
   const [membersJoined, setMembersJoined] = useState(1);
   const [copied, setCopied] = useState(false);
   const [swipeCount, setSwipeCount] = useState(0);
@@ -200,6 +286,14 @@ export function GroupJourney() {
 
   const toggleVibe = useCallback((label: string) => {
     setSelectedVibes(prev => prev.includes(label) ? prev.filter(v => v !== label) : prev.length < 3 ? [...prev, label] : prev);
+  }, []);
+
+  const toggleArea = useCallback((label: string) => {
+    setSelectedAreas(prev => prev.includes(label) ? prev.filter(a => a !== label) : prev.length < 3 ? [...prev, label] : prev);
+  }, []);
+
+  const toggleDietary = useCallback((label: string) => {
+    setSelectedDietary(prev => prev.includes(label) ? prev.filter(d => d !== label) : [...prev, label]);
   }, []);
 
   const startWaiting = useCallback(() => {
@@ -226,11 +320,11 @@ export function GroupJourney() {
     setSwipeCount(0);
   }, []);
 
-  const handleSwipe = useCallback((dir: 'left' | 'right') => {
+  const handleSwipe = useCallback((dir: 'left' | 'right' | 'up') => {
     setSwipeResults(prev => ({ ...prev, [currentCard]: dir }));
     setSwipeCount(c => c + 1);
 
-    if (currentCard >= 2 && dir === 'right') {
+    if (currentCard >= 2 && (dir === 'right' || dir === 'up')) {
       setTimeout(() => setScreen('match'), 450);
       return;
     }
@@ -249,13 +343,25 @@ export function GroupJourney() {
     setScreen('home');
     setSelectedGroupType(null);
     setSelectedVibes([]);
+    setSelectedBudget(null);
+    setSelectedAreas([]);
+    setSelectedDietary([]);
+    setSelectedTime('Now');
+    setSelectedDate('Today');
     setCurrentCard(0);
     setSwipeResults({});
     setMembersJoined(1);
     setSwipeCount(0);
   }, []);
 
-  const screenIndex = { home: 0, setup: 1, invite: 2, waiting: 3, swipe: 4, match: 5 }[screen];
+  const canProceedSetup = !!selectedGroupType;
+
+  const settingsSummaryChips = [
+    ...(selectedGroupType ? [GROUP_TYPES.find(g => g.id === selectedGroupType)?.label || ''] : []),
+    ...(selectedBudget ? [BUDGETS.find(b => b.id === selectedBudget)?.label || ''] : []),
+    ...selectedAreas.slice(0, 2),
+    ...(selectedDietary.length > 0 ? [`${selectedDietary.length} dietary`] : []),
+  ];
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-neutral-900 p-4 font-sans">
@@ -456,7 +562,7 @@ export function GroupJourney() {
                   </div>
                 </div>
 
-                <ProgressBar step={0} total={4} />
+                <ProgressBar step={0} total={5} />
 
                 <motion.div
                   className="mt-5"
@@ -470,14 +576,7 @@ export function GroupJourney() {
               </div>
 
               <div className="px-6 mt-5 mb-5">
-                <motion.p
-                  className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.15 }}
-                >
-                  Who's joining?
-                </motion.p>
+                <SectionLabel delay={0.15}>Who's joining?</SectionLabel>
                 <div className="grid grid-cols-2 gap-3">
                   {GROUP_TYPES.map((g, i) => {
                     const on = selectedGroupType === g.id;
@@ -524,14 +623,7 @@ export function GroupJourney() {
               </div>
 
               <div className="px-6 mb-5">
-                <motion.p
-                  className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.35 }}
-                >
-                  Set the vibe <span className="text-gray-300 normal-case font-medium">(pick up to 3)</span>
-                </motion.p>
+                <SectionLabel delay={0.35}>Set the vibe <span className="text-gray-300 normal-case font-medium">(pick up to 3)</span></SectionLabel>
                 <div className="grid grid-cols-3 gap-2.5">
                   {VIBES.map((v, i) => {
                     const on = selectedVibes.includes(v.label);
@@ -562,9 +654,145 @@ export function GroupJourney() {
                 </div>
               </div>
 
+              <div className="px-6 mb-5">
+                <SectionLabel delay={0.45}>Budget</SectionLabel>
+                <div className="flex gap-2">
+                  {BUDGETS.map((b, i) => {
+                    const on = selectedBudget === b.id;
+                    return (
+                      <motion.button
+                        key={b.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 + i * 0.04, ...gentle }}
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => setSelectedBudget(on ? null : b.id)}
+                        className={`flex-1 rounded-2xl p-3 flex flex-col items-center gap-1 border-2 transition-all ${
+                          on ? 'border-violet-400 bg-violet-50/40 shadow-[0_4px_16px_rgba(108,43,217,0.1)]' : 'bg-white border-gray-100'
+                        }`}
+                      >
+                        <motion.span
+                          className="text-lg"
+                          animate={on ? { scale: [1, 1.2, 1.05] } : { scale: 1 }}
+                          transition={spring}
+                        >
+                          {b.emoji}
+                        </motion.span>
+                        <span className={`text-[11px] font-bold ${on ? 'text-violet-700' : 'text-gray-600'}`}>{b.label}</span>
+                        <span className="text-[9px] text-gray-400">{b.sub}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="px-6 mb-5">
+                <SectionLabel delay={0.55}>Where in BKK? <span className="text-gray-300 normal-case font-medium">(up to 3)</span></SectionLabel>
+                <div className="flex flex-wrap gap-2">
+                  {BKK_AREAS.map((a, i) => {
+                    const on = selectedAreas.includes(a.label);
+                    const atMax = selectedAreas.length >= 3 && !on;
+                    return (
+                      <motion.button
+                        key={a.label}
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: atMax ? 0.4 : 1, scale: 1 }}
+                        transition={{ delay: 0.6 + i * 0.025, ...spring }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => toggleArea(a.label)}
+                        className={`rounded-full px-3.5 py-2 flex items-center gap-1.5 border-2 transition-all text-[11px] font-semibold ${
+                          on ? 'border-violet-400 bg-violet-50/40 text-violet-700' : 'bg-white border-gray-100 text-gray-500'
+                        }`}
+                      >
+                        <span className="text-sm">{a.emoji}</span>
+                        {a.label}
+                        <AnimatePresence>
+                          {on && (
+                            <motion.div initial={{ scale: 0, width: 0 }} animate={{ scale: 1, width: 14 }} exit={{ scale: 0, width: 0 }} transition={spring}>
+                              <Check className="w-3.5 h-3.5 text-violet-500" />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="px-6 mb-5">
+                <SectionLabel delay={0.65}>Dietary needs</SectionLabel>
+                <div className="flex flex-wrap gap-2">
+                  {DIETARY.map((d, i) => {
+                    const on = selectedDietary.includes(d.label);
+                    return (
+                      <motion.button
+                        key={d.label}
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.7 + i * 0.025, ...spring }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => toggleDietary(d.label)}
+                        className={`rounded-full px-3.5 py-2 flex items-center gap-1.5 border-2 transition-all text-[11px] font-semibold ${
+                          on ? 'border-violet-400 bg-violet-50/40 text-violet-700' : 'bg-white border-gray-100 text-gray-500'
+                        }`}
+                      >
+                        <span className="text-sm">{d.emoji}</span>
+                        {d.label}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="px-6 mb-5">
+                <SectionLabel delay={0.75}>When?</SectionLabel>
+                <div className="flex gap-2 mb-3">
+                  {['Today', 'Tomorrow', 'This weekend'].map((d, i) => {
+                    const on = selectedDate === d;
+                    return (
+                      <motion.button
+                        key={d}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.8 + i * 0.04, ...spring }}
+                        whileTap={{ scale: 0.93 }}
+                        onClick={() => setSelectedDate(d)}
+                        className={`flex-1 rounded-2xl py-2.5 px-2 text-center border-2 transition-all ${
+                          on ? 'border-violet-400 bg-violet-50/40' : 'bg-white border-gray-100'
+                        }`}
+                      >
+                        <div className={`text-[11px] font-bold ${on ? 'text-violet-700' : 'text-gray-600'}`}>{d}</div>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-2 overflow-x-auto no-sb pb-1">
+                  {TIME_SLOTS.map((t, i) => {
+                    const on = selectedTime === t.label;
+                    return (
+                      <motion.button
+                        key={t.label}
+                        initial={{ opacity: 0, x: 16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.85 + i * 0.04, ...spring }}
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => setSelectedTime(t.label)}
+                        className={`flex-shrink-0 rounded-2xl p-3 flex flex-col items-center gap-1 border-2 min-w-[64px] transition-all ${
+                          on ? 'border-violet-400 bg-violet-50/40' : 'bg-white border-gray-100'
+                        }`}
+                      >
+                        <span className="text-lg">{t.icon}</span>
+                        <span className={`text-[11px] font-bold ${on ? 'text-violet-700' : 'text-gray-600'}`}>{t.label}</span>
+                        <span className="text-[9px] text-gray-400">{t.sub}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="px-6 pb-4">
                 <AnimatePresence>
-                  {selectedGroupType && (
+                  {canProceedSetup && (
                     <motion.button
                       initial={{ opacity: 0, y: 12, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -580,6 +808,20 @@ export function GroupJourney() {
                     </motion.button>
                   )}
                 </AnimatePresence>
+
+                {settingsSummaryChips.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex flex-wrap gap-1.5 mt-3 justify-center"
+                  >
+                    {settingsSummaryChips.map(c => (
+                      <span key={c} className="text-[10px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded-full px-2.5 py-1">
+                        {c}
+                      </span>
+                    ))}
+                  </motion.div>
+                )}
               </div>
             </motion.div>
           )}
@@ -607,7 +849,7 @@ export function GroupJourney() {
                 </div>
               </div>
 
-              <ProgressBar step={1} total={4} />
+              <ProgressBar step={1} total={5} />
 
               <div className="flex-1 flex flex-col items-center justify-center">
                 <motion.div
@@ -665,6 +907,14 @@ export function GroupJourney() {
                         </motion.button>
                       </div>
 
+                      {settingsSummaryChips.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-4 justify-center">
+                          {settingsSummaryChips.map(c => (
+                            <span key={c} className="text-[9px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">{c}</span>
+                          ))}
+                        </div>
+                      )}
+
                       <motion.button
                         whileTap={{ scale: 0.97 }}
                         className="w-full h-[48px] rounded-2xl bg-[#00B900] flex items-center justify-center gap-2 font-bold text-white text-[14px] shadow-[0_6px_20px_rgba(0,185,0,0.25)] mb-3"
@@ -708,7 +958,7 @@ export function GroupJourney() {
                 <span className="text-[11px] font-mono font-bold text-gray-400 bg-gray-100 rounded-full px-3 py-1.5">A3F7B2D9</span>
               </div>
 
-              <ProgressBar step={2} total={4} />
+              <ProgressBar step={2} total={5} />
 
               <div className="flex-1 flex flex-col items-center justify-center w-full">
                 <motion.div
@@ -740,7 +990,7 @@ export function GroupJourney() {
                   transition={{ delay: 0.2, ...gentle }}
                   className="text-[22px] font-['Playfair_Display'] font-bold text-gray-900 mb-1"
                 >
-                  {membersJoined >= 3 ? 'Everyone\'s here!' : 'Waiting for friends'}
+                  {membersJoined >= 3 ? "Everyone's here!" : 'Waiting for friends'}
                 </motion.h2>
                 <motion.p
                   initial={{ opacity: 0 }}
@@ -833,7 +1083,7 @@ export function GroupJourney() {
               className="flex-1 flex flex-col pt-12 pb-24"
             >
               <div className="px-5 mb-3">
-                <ProgressBar step={3} total={4} />
+                <ProgressBar step={3} total={5} />
                 <div className="flex items-center justify-between mt-3">
                   <motion.button
                     whileTap={{ scale: 0.85 }}
@@ -878,22 +1128,30 @@ export function GroupJourney() {
                 </AnimatePresence>
               </div>
 
-              <div className="px-5 pt-3 flex items-center justify-center gap-8">
+              <div className="px-5 pt-3 flex items-center justify-center gap-5">
                 <motion.button
                   whileTap={{ scale: 0.8 }}
                   whileHover={{ scale: 1.08 }}
                   onClick={() => handleSwipe('left')}
-                  className="w-[56px] h-[56px] rounded-full bg-white border-2 border-red-200/60 flex items-center justify-center shadow-[0_6px_20px_rgba(239,68,68,0.1)]"
+                  className="w-[52px] h-[52px] rounded-full bg-white border-2 border-red-200/60 flex items-center justify-center shadow-[0_6px_20px_rgba(239,68,68,0.1)]"
                 >
-                  <X className="w-6 h-6 text-red-400" />
+                  <X className="w-5 h-5 text-red-400" />
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.8 }}
+                  whileHover={{ scale: 1.08 }}
+                  onClick={() => handleSwipe('up')}
+                  className="w-[44px] h-[44px] rounded-full bg-white border-2 border-[#FFCC02]/60 flex items-center justify-center shadow-[0_6px_20px_rgba(255,204,2,0.15)]"
+                >
+                  <Star className="w-5 h-5 text-[#FFCC02] fill-[#FFCC02]" />
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.8 }}
                   whileHover={{ scale: 1.08 }}
                   onClick={() => handleSwipe('right')}
-                  className="w-[56px] h-[56px] rounded-full bg-white border-2 border-emerald-200/60 flex items-center justify-center shadow-[0_6px_20px_rgba(16,185,129,0.1)]"
+                  className="w-[52px] h-[52px] rounded-full bg-white border-2 border-emerald-200/60 flex items-center justify-center shadow-[0_6px_20px_rgba(16,185,129,0.1)]"
                 >
-                  <Heart className="w-6 h-6 text-emerald-500" />
+                  <Heart className="w-5 h-5 text-emerald-500" />
                 </motion.button>
               </div>
             </motion.div>
@@ -904,7 +1162,7 @@ export function GroupJourney() {
               key="match"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex-1 flex flex-col items-center justify-center px-6 pb-24 relative overflow-hidden"
+              className="flex-1 flex flex-col items-center pt-16 px-6 pb-24 relative overflow-hidden overflow-y-auto no-sb"
             >
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 {Array.from({ length: 40 }).map((_, i) => (
@@ -929,14 +1187,14 @@ export function GroupJourney() {
                 initial={{ scale: 0, rotate: -25 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ delay: 0.15, ...bouncy }}
-                className="mb-5"
+                className="mb-4"
               >
-                <div className="w-[100px] h-[100px] rounded-[30px] bg-gradient-to-br from-[#FFCC02] to-amber-400 flex items-center justify-center shadow-[0_16px_48px_rgba(255,204,2,0.4)] relative">
+                <div className="w-[90px] h-[90px] rounded-[26px] bg-gradient-to-br from-[#FFCC02] to-amber-400 flex items-center justify-center shadow-[0_16px_48px_rgba(255,204,2,0.4)] relative">
                   <motion.div
                     animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.08, 1] }}
                     transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
                   >
-                    <Trophy className="w-12 h-12 text-gray-900" />
+                    <Trophy className="w-11 h-11 text-gray-900" />
                   </motion.div>
                   <motion.div
                     className="absolute -top-2 -right-2"
@@ -952,7 +1210,7 @@ export function GroupJourney() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35, ...gentle }}
-                className="text-[28px] font-['Playfair_Display'] font-bold text-gray-900 mb-1 text-center"
+                className="text-[26px] font-['Playfair_Display'] font-bold text-gray-900 mb-1 text-center"
               >
                 It's a Match!
               </motion.h1>
@@ -960,7 +1218,7 @@ export function GroupJourney() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.45 }}
-                className="text-[13px] text-gray-400 mb-6 font-medium"
+                className="text-[13px] text-gray-400 mb-5 font-medium"
               >
                 Everyone voted for this one 🎉
               </motion.p>
@@ -969,13 +1227,13 @@ export function GroupJourney() {
                 initial={{ opacity: 0, y: 30, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ delay: 0.5, ...spring }}
-                className="w-full bg-white rounded-[28px] border border-gray-100 shadow-[0_16px_48px_rgba(0,0,0,0.08)] overflow-hidden"
+                className="w-full bg-white rounded-[24px] border border-gray-100 shadow-[0_16px_48px_rgba(0,0,0,0.08)] overflow-hidden mb-5"
               >
-                <div className="relative h-[170px]">
+                <div className="relative h-[150px]">
                   <img src={RESTAURANTS[2].image} alt={RESTAURANTS[2].name} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                  <div className="absolute bottom-3.5 left-4 right-4">
-                    <h3 className="text-white text-[20px] font-bold drop-shadow-lg">{RESTAURANTS[2].name}</h3>
+                  <div className="absolute bottom-3 left-4 right-4">
+                    <h3 className="text-white text-[18px] font-bold drop-shadow-lg">{RESTAURANTS[2].name}</h3>
                     <p className="text-white/80 text-[12px] flex items-center gap-1.5 mt-0.5">
                       {RESTAURANTS[2].category}
                       <span className="text-white/40">·</span>
@@ -986,14 +1244,14 @@ export function GroupJourney() {
                     initial={{ scale: 0, rotate: -15 }}
                     animate={{ scale: 1, rotate: 0 }}
                     transition={{ delay: 0.7, ...bouncy }}
-                    className="absolute top-3.5 right-3.5 bg-[#FFCC02] text-gray-900 text-[10px] font-black rounded-full px-3 py-1.5 shadow-[0_4px_12px_rgba(255,204,2,0.4)] flex items-center gap-1"
+                    className="absolute top-3 right-3 bg-[#FFCC02] text-gray-900 text-[10px] font-black rounded-full px-3 py-1.5 shadow-[0_4px_12px_rgba(255,204,2,0.4)] flex items-center gap-1"
                   >
                     <Heart className="w-3 h-3 fill-current" /> Full Match
                   </motion.div>
                 </div>
 
-                <div className="p-5">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3">
                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Voted by</p>
                     <div className="flex -space-x-2">
                       {MEMBERS.map((m, i) => (
@@ -1002,26 +1260,394 @@ export function GroupJourney() {
                           initial={{ scale: 0, x: -8 }}
                           animate={{ scale: 1, x: 0 }}
                           transition={{ delay: 0.8 + i * 0.08, ...bouncy }}
-                          className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-50 to-orange-100 border-[2.5px] border-white flex items-center justify-center text-sm shadow-sm"
+                          className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-50 to-orange-100 border-[2.5px] border-white flex items-center justify-center text-sm shadow-sm"
                         >
                           {m.avatar}
                         </motion.div>
                       ))}
                     </div>
                   </div>
-
-                  <motion.button
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.95 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={resetFlow}
-                    className="w-full h-[50px] rounded-2xl bg-gradient-to-r from-[#FFCC02] to-amber-400 flex items-center justify-center gap-2 font-bold text-[15px] text-gray-900 shadow-[0_8px_24px_rgba(255,204,2,0.3)]"
-                  >
-                    Let's go eat! <ArrowRight className="w-4.5 h-4.5" />
-                  </motion.button>
                 </div>
               </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.85 }}
+                className="w-full flex gap-2.5"
+              >
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
+                  className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-50 to-purple-50 flex items-center justify-center">
+                    <Eye className="w-4 h-4 text-violet-500" />
+                  </div>
+                  <span className="text-[10px] font-semibold text-gray-600">View Restaurant</span>
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
+                  onClick={() => setScreen('topPicks')}
+                  className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-50 to-[#FFCC02]/15 flex items-center justify-center">
+                    <ListOrdered className="w-4 h-4 text-[#FFCC02]" />
+                  </div>
+                  <span className="text-[10px] font-semibold text-gray-600">Top Picks</span>
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
+                  onClick={startSwiping}
+                  className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center">
+                    <Flame className="w-4 h-4 text-orange-400" />
+                  </div>
+                  <span className="text-[10px] font-semibold text-gray-600">Keep Swiping</span>
+                </motion.button>
+              </motion.div>
+
+              <motion.button
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setScreen('summary')}
+                className="w-full mt-4 h-[48px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2 font-bold text-[14px] text-white shadow-[0_6px_20px_rgba(108,43,217,0.25)]"
+              >
+                <BarChart3 className="w-4 h-4" />
+                Wrap It Up
+              </motion.button>
+            </motion.div>
+          )}
+
+          {screen === 'topPicks' && (
+            <motion.div
+              key="topPicks"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
+              className="flex-1 overflow-y-auto no-sb pt-14 px-6 pb-28"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <motion.button
+                  whileTap={{ scale: 0.85 }}
+                  onClick={() => setScreen('match')}
+                  className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"
+                >
+                  <ArrowLeft className="w-4 h-4 text-gray-700" />
+                </motion.button>
+                <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100">
+                  <Crown className="w-3.5 h-3.5 text-[#FFCC02]" />
+                  <span className="text-[11px] font-bold text-amber-700">Top Picks</span>
+                </div>
+              </div>
+
+              <ProgressBar step={4} total={5} />
+
+              <motion.div
+                className="mt-5 mb-6"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, ...gentle }}
+              >
+                <h1 className="text-[24px] font-['Playfair_Display'] font-bold text-gray-900 leading-tight mb-1">Group's top picks</h1>
+                <p className="text-[13px] text-gray-400 font-medium">Ranked by group votes</p>
+              </motion.div>
+
+              <div className="space-y-3">
+                {TOP_PICKS_DATA.map((pick, i) => {
+                  const rankIcons = [Crown, Medal, Award];
+                  const rankColors = ['text-[#FFCC02]', 'text-gray-400', 'text-amber-600'];
+                  const rankBgs = ['bg-[#FFCC02]/10 border-[#FFCC02]/30', 'bg-gray-100 border-gray-200', 'bg-amber-50 border-amber-200'];
+                  const RankIcon = rankIcons[i] || Star;
+
+                  return (
+                    <motion.div
+                      key={pick.id}
+                      initial={{ opacity: 0, x: -20, scale: 0.96 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      transition={{ delay: 0.15 + i * 0.08, ...spring }}
+                      className={`bg-white rounded-[22px] overflow-hidden border shadow-[0_4px_20px_rgba(0,0,0,0.04)] ${
+                        i === 0 ? 'border-[#FFCC02]/30 ring-1 ring-[#FFCC02]/20' : 'border-gray-100'
+                      }`}
+                    >
+                      <div className="flex gap-3 p-3.5">
+                        <div className="relative flex-shrink-0">
+                          <div className="w-[80px] h-[80px] rounded-[16px] overflow-hidden">
+                            <img src={pick.image} alt={pick.name} className="w-full h-full object-cover" />
+                          </div>
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: 0.3 + i * 0.08, ...bouncy }}
+                            className={`absolute -top-1.5 -left-1.5 w-7 h-7 rounded-full border-2 border-white flex items-center justify-center shadow-md ${i < 3 ? rankBgs[i] : 'bg-gray-50 border-gray-200'}`}
+                          >
+                            {i < 3 ? (
+                              <RankIcon className={`w-3.5 h-3.5 ${rankColors[i]}`} />
+                            ) : (
+                              <span className="text-[10px] font-bold text-gray-400">#{i + 1}</span>
+                            )}
+                          </motion.div>
+                          {pick.fullMatch && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ delay: 0.4 + i * 0.08, ...bouncy }}
+                              className="absolute -bottom-1 -right-1 bg-[#FFCC02] rounded-full px-1.5 py-0.5 text-[7px] font-black text-gray-900 shadow-sm border border-white"
+                            >
+                              MATCH
+                            </motion.div>
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0 py-0.5">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <h3 className="text-[14px] font-bold text-gray-900 truncate">{pick.name}</h3>
+                          </div>
+                          <p className="text-[11px] text-gray-400 mb-2 flex items-center gap-1">
+                            {pick.category}
+                            <span className="text-gray-300">·</span>
+                            <Star className="w-3 h-3 text-[#FFCC02] fill-[#FFCC02]" />
+                            <span className="font-semibold text-gray-600">{pick.rating}</span>
+                            <span className="text-gray-300">·</span>
+                            {'฿'.repeat(pick.price)}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex -space-x-1.5">
+                              {pick.voters.map(vId => {
+                                const m = MEMBERS.find(mm => mm.id === vId);
+                                return m ? (
+                                  <div key={m.id} className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-50 to-orange-100 border-[2px] border-white flex items-center justify-center text-[10px] shadow-sm">
+                                    {m.avatar}
+                                  </div>
+                                ) : null;
+                              })}
+                            </div>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              pick.votes === 3 ? 'text-emerald-700 bg-emerald-50 border border-emerald-100' : 'text-gray-500 bg-gray-50 border border-gray-100'
+                            }`}>
+                              {pick.votes}/{MEMBERS.length} votes
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              <motion.button
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setScreen('summary')}
+                className="w-full mt-5 h-[52px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2 font-bold text-[15px] text-white shadow-[0_8px_28px_rgba(108,43,217,0.35)]"
+              >
+                <BarChart3 className="w-5 h-5" />
+                Wrap It Up
+              </motion.button>
+            </motion.div>
+          )}
+
+          {screen === 'summary' && (
+            <motion.div
+              key="summary"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35 }}
+              className="flex-1 overflow-y-auto no-sb pt-14 px-6 pb-28"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <motion.button
+                  whileTap={{ scale: 0.85 }}
+                  onClick={() => setScreen('topPicks')}
+                  className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"
+                >
+                  <ArrowLeft className="w-4 h-4 text-gray-700" />
+                </motion.button>
+                <div className="flex items-center gap-1.5 bg-violet-50 px-3 py-1.5 rounded-full border border-violet-100">
+                  <BarChart3 className="w-3.5 h-3.5 text-violet-500" />
+                  <span className="text-[11px] font-bold text-violet-600">Summary</span>
+                </div>
+              </div>
+
+              <motion.div
+                className="text-center mb-6"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, ...gentle }}
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.15, ...bouncy }}
+                  className="w-16 h-16 mx-auto mb-3 rounded-[20px] bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-[0_10px_32px_rgba(108,43,217,0.25)]"
+                >
+                  <Trophy className="w-8 h-8 text-white" />
+                </motion.div>
+                <h1 className="text-[24px] font-['Playfair_Display'] font-bold text-gray-900 mb-0.5">Session Complete!</h1>
+                <p className="text-[12px] text-gray-400 font-medium">Here's how your group did</p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25, ...gentle }}
+                className="bg-white rounded-[22px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.04)] p-5 mb-5"
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <Zap className="w-4 h-4 text-violet-500" />
+                  <span className="text-[12px] font-bold text-gray-900">Group Stats</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Total Swipes', value: '18', icon: '👆', color: 'from-violet-50 to-purple-50' },
+                    { label: 'Group Likes', value: '12', icon: '❤️', color: 'from-emerald-50 to-green-50' },
+                    { label: 'Matches', value: '1', icon: '🎯', color: 'from-amber-50 to-yellow-50' },
+                  ].map((stat, i) => (
+                    <motion.div
+                      key={stat.label}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 + i * 0.06, ...spring }}
+                      className={`bg-gradient-to-br ${stat.color} rounded-2xl p-3 text-center`}
+                    >
+                      <span className="text-xl mb-1 block">{stat.icon}</span>
+                      <div className="text-[18px] font-bold text-gray-900">{stat.value}</div>
+                      <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">{stat.label}</div>
+                    </motion.div>
+                  ))}
+                </div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="mt-4 pt-3.5 border-t border-gray-100 flex items-center justify-between"
+                >
+                  <div>
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Group Favourite</div>
+                    <div className="text-[14px] font-bold text-gray-900">🍜 Thai Cuisine</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Session</div>
+                    <div className="text-[14px] font-bold text-violet-600">#3 together</div>
+                  </div>
+                </motion.div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, ...gentle }}
+                className="mb-5"
+              >
+                <div className="flex items-center gap-2 mb-3.5">
+                  <Users className="w-4 h-4 text-violet-500" />
+                  <span className="text-[12px] font-bold text-gray-900">Member Breakdown</span>
+                </div>
+                <div className="space-y-2.5">
+                  {MEMBER_STATS.map((ms, i) => (
+                    <motion.div
+                      key={ms.member.id}
+                      initial={{ opacity: 0, x: -16 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.45 + i * 0.08, ...spring }}
+                      className="bg-white rounded-[20px] border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] p-4"
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center text-lg border-2 border-white shadow-sm">
+                          {ms.member.avatar}
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[13px] font-bold text-gray-900 flex items-center gap-1.5">
+                            {ms.member.name}
+                            {ms.member.isHost && (
+                              <span className="text-[8px] font-bold text-[#FFCC02] bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-1.5 py-0.5">HOST</span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-gray-400 flex items-center gap-1">
+                            Loves {ms.emoji} {ms.favCuisine}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="flex-1 bg-emerald-50 rounded-xl p-2 text-center">
+                          <div className="text-[15px] font-bold text-emerald-600">{ms.likes}</div>
+                          <div className="text-[8px] font-bold text-emerald-500 uppercase tracking-wider">Likes</div>
+                        </div>
+                        <div className="flex-1 bg-red-50 rounded-xl p-2 text-center">
+                          <div className="text-[15px] font-bold text-red-500">{ms.dislikes}</div>
+                          <div className="text-[8px] font-bold text-red-400 uppercase tracking-wider">Nah</div>
+                        </div>
+                        <div className="flex-1 bg-amber-50 rounded-xl p-2 text-center">
+                          <div className="text-[15px] font-bold text-amber-600">{ms.superLikes}</div>
+                          <div className="text-[8px] font-bold text-amber-500 uppercase tracking-wider">Super</div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7, ...gentle }}
+                className="bg-white rounded-[22px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.04)] p-5 mb-5"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <BarChart3 className="w-4 h-4 text-violet-500" />
+                  <span className="text-[12px] font-bold text-gray-900">All-Time Stats</span>
+                  <span className="ml-auto text-[10px] font-semibold text-violet-500 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">3 sessions</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Total Matches', value: '7', emoji: '🎯' },
+                    { label: 'Total Swipes', value: '54', emoji: '👆' },
+                    { label: 'Go-to Cuisine', value: 'Thai', emoji: '🍜' },
+                  ].map((stat, i) => (
+                    <motion.div
+                      key={stat.label}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.75 + i * 0.06, ...spring }}
+                      className="text-center"
+                    >
+                      <span className="text-lg block mb-0.5">{stat.emoji}</span>
+                      <div className="text-[15px] font-bold text-gray-900">{stat.value}</div>
+                      <div className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</div>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+
+              <div className="space-y-2.5">
+                <motion.button
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.85 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full h-[50px] rounded-2xl bg-gradient-to-r from-[#FFCC02] to-amber-400 flex items-center justify-center gap-2 font-bold text-[15px] text-gray-900 shadow-[0_8px_24px_rgba(255,204,2,0.3)]"
+                >
+                  <Share2 className="w-4.5 h-4.5" />
+                  Share Results
+                </motion.button>
+                <motion.button
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.9 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={resetFlow}
+                  className="w-full h-[48px] rounded-2xl bg-white border border-gray-200 flex items-center justify-center gap-2 font-bold text-[14px] text-gray-600 shadow-sm"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Start New Session
+                </motion.button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
