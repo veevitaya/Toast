@@ -3,7 +3,7 @@ import { fetchWithTimeout } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
-  Sparkles, ArrowRight, X, ChevronRight, ChevronDown, RotateCcw, Zap,
+  Sparkles, ArrowRight, X, ChevronDown, RotateCcw, Zap,
   MapPin, Star, Check, TrendingUp, Clock, Heart, Brain,
   Footprints, Car, Globe, Layers,
 } from "lucide-react";
@@ -927,27 +927,15 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
                           </motion.div>
                         )}
 
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mb-2">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}>
                           <button
                             onClick={openInlineDecide}
                             className="w-full h-9 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-1.5 text-[11px] font-medium text-muted-foreground"
                             data-testid="button-help-decide"
                           >
-                            <Zap className="w-3.5 h-3.5" /> Help me decide
+                            <Zap className="w-3.5 h-3.5" /> Not feeling these? Let's find your craving
                           </button>
                         </motion.div>
-
-                        <motion.button
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.4 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => { setUIState("refine_open"); onRefineToggle?.(true); trackDecisionEvent("refine_opened", { userId: userProfile?.userId }); }}
-                          className="w-full h-9 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-2 text-[11px] font-medium text-muted-foreground"
-                          data-testid="button-refine"
-                        >
-                          Refine my picks <ChevronRight className="w-3.5 h-3.5" />
-                        </motion.button>
                       </div>
                     </div>
                   </motion.div>
