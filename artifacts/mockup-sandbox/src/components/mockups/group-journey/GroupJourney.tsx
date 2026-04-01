@@ -4,8 +4,8 @@ import {
   Search, MapPin, SlidersHorizontal, Home, Map as MapIcon, Heart, User, Star,
   Sparkles, ArrowRight, ArrowLeft, Check, X, Users, UserPlus,
   Share2, Copy, Crown, Trophy, MessageCircle, Clock, ChevronRight, Flame, Zap,
-  Calendar, Wallet, ShieldCheck, Award, Medal, BarChart3, RotateCcw, Eye, ListOrdered,
-  ChevronDown, MapPinned, Leaf, Timer
+  Wallet, Award, Medal, BarChart3, RotateCcw, Eye, ListOrdered,
+  ChevronDown, MapPinned, Leaf, Timer, TrendingUp
 } from 'lucide-react';
 
 const spring = { type: "spring" as const, stiffness: 280, damping: 26 };
@@ -30,10 +30,10 @@ const MEMBERS = [
 ];
 
 const GROUP_TYPES = [
-  { id: 'friends', emoji: '👯', label: 'Friends Night' },
-  { id: 'partner', emoji: '💕', label: 'Date Night' },
-  { id: 'family', emoji: '👨‍👩‍👧', label: 'Family Feast' },
-  { id: 'work', emoji: '💼', label: 'Team Lunch' },
+  { id: 'friends', emoji: '👯', label: 'Friends', sub: 'Casual hangout', gradient: 'from-amber-300 to-[#FFCC02]', shadow: 'rgba(255,204,2,0.20)' },
+  { id: 'partner', emoji: '💕', label: 'Date', sub: 'Romantic dinner', gradient: 'from-rose-300 to-pink-400', shadow: 'rgba(225,29,72,0.20)' },
+  { id: 'family', emoji: '👨‍👩‍👧', label: 'Family', sub: 'Kid-friendly', gradient: 'from-orange-300 to-amber-400', shadow: 'rgba(245,158,11,0.20)' },
+  { id: 'work', emoji: '💼', label: 'Team', sub: 'Office outing', gradient: 'from-sky-300 to-blue-400', shadow: 'rgba(14,165,233,0.20)' },
 ];
 
 const VIBES = [
@@ -49,10 +49,10 @@ const VIBES = [
 ];
 
 const BUDGETS = [
-  { id: 'cheap', label: '฿', sub: '<150', emoji: '💰' },
-  { id: 'moderate', label: '฿฿', sub: '150–500', emoji: '🍽️' },
-  { id: 'fancy', label: '฿฿฿', sub: '500–1.5k', emoji: '✨' },
-  { id: 'splurge', label: '฿฿฿฿', sub: '1.5k+', emoji: '👑' },
+  { id: 'cheap', label: '฿', sub: '<150' },
+  { id: 'moderate', label: '฿฿', sub: '150–500' },
+  { id: 'fancy', label: '฿฿฿', sub: '500–1.5k' },
+  { id: 'splurge', label: '฿฿฿฿', sub: '1.5k+' },
 ];
 
 const BKK_AREAS = [
@@ -174,7 +174,7 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
   return (
     <div className="flex gap-1.5">
       {Array.from({ length: total }).map((_, i) => (
-        <motion.div key={i} className="h-[3px] rounded-full flex-1" animate={{ backgroundColor: i <= step ? '#6C2BD9' : '#E5E7EB', scaleX: i === step ? 1 : 0.92 }} transition={spring} />
+        <motion.div key={i} className="h-[3px] rounded-full flex-1" animate={{ backgroundColor: i <= step ? '#FFCC02' : '#E5E7EB', scaleX: i === step ? 1 : 0.92 }} transition={spring} />
       ))}
     </div>
   );
@@ -234,6 +234,7 @@ export function GroupJourney() {
   }, []);
 
   const canInvite = !!selectedGroupType;
+  const selCount = (selectedVibes.length > 0 ? 1 : 0) + (selectedBudget ? 1 : 0) + (selectedAreas.length > 0 ? 1 : 0);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-neutral-900 p-4 font-sans">
@@ -246,7 +247,8 @@ export function GroupJourney() {
         @keyframes gentle-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}} .gfloat{animation:gentle-float 3s ease-in-out infinite}
         @keyframes pulse-ring{0%{transform:scale(1);opacity:0.5}100%{transform:scale(1.8);opacity:0}} .pulse-ring{animation:pulse-ring 2s ease-out infinite}
         @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-        .shimmer{background:linear-gradient(90deg,transparent 0%,rgba(108,43,217,0.06) 50%,transparent 100%);background-size:200% 100%;animation:shimmer 3s ease-in-out infinite}
+        .shimmer-gold{background:linear-gradient(90deg,transparent 0%,rgba(255,204,2,0.08) 50%,transparent 100%);background-size:200% 100%;animation:shimmer 3s ease-in-out infinite}
+        @keyframes grain{0%,100%{transform:translate(0,0)}10%{transform:translate(-1%,-1%)}20%{transform:translate(1%,0)}30%{transform:translate(-1%,1%)}40%{transform:translate(1%,-1%)}50%{transform:translate(-1%,0)}60%{transform:translate(1%,1%)}70%{transform:translate(0,-1%)}80%{transform:translate(-1%,1%)}90%{transform:translate(1%,0%)}}
       `}} />
 
       <div className="relative w-[390px] h-[844px] bg-[#FAFAF8] rounded-[44px] border-[8px] border-gray-900 overflow-hidden shadow-2xl flex flex-col">
@@ -285,13 +287,13 @@ export function GroupJourney() {
                     <div className="w-[80px] h-[80px] rounded-[20px] bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center"><img src="/__mockup/images/toast_char.png" alt="Solo" className="w-[65px] h-[65px] object-contain gfloat" /></div>
                     <div><div className="font-bold text-gray-900 text-[15px]">Solo</div><div className="text-[11px] text-gray-500 mt-0.5">AI picks for you</div></div>
                   </motion.div>
-                  <motion.button initial={{ opacity: 0, y: 30, rotate: 3 }} animate={{ opacity: 1, y: 0, rotate: 0 }} transition={{ delay: 0.45, ...bouncy }} whileTap={{ scale: 0.96 }} onClick={() => setScreen('setup')} className="flex-1 bg-white rounded-[22px] p-5 border-2 border-gray-100 shadow-[0_6px_24px_rgba(0,0,0,0.04)] flex flex-col items-center justify-center text-center gap-3 relative overflow-hidden cursor-pointer transition-colors hover:border-violet-200">
+                  <motion.button initial={{ opacity: 0, y: 30, rotate: 3 }} animate={{ opacity: 1, y: 0, rotate: 0 }} transition={{ delay: 0.45, ...bouncy }} whileTap={{ scale: 0.96 }} onClick={() => setScreen('setup')} className="flex-1 bg-white rounded-[22px] p-5 border-2 border-gray-100 shadow-[0_6px_24px_rgba(0,0,0,0.04)] flex flex-col items-center justify-center text-center gap-3 relative overflow-hidden cursor-pointer transition-colors hover:border-[#FFCC02]/50">
                     <div className="relative">
-                      <div className="w-[80px] h-[80px] rounded-[20px] bg-gradient-to-br from-violet-50 to-purple-50 flex items-center justify-center"><img src="/__mockup/images/toast_waffle.jpeg" alt="Group" className="w-[70px] h-[70px] object-contain" style={{ mixBlendMode: 'multiply' }} /></div>
-                      <motion.div className="absolute -top-1 -right-1 w-6 h-6 bg-violet-500 rounded-full flex items-center justify-center shadow-md" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.7, ...bouncy }}><Users className="w-3 h-3 text-white" /></motion.div>
+                      <div className="w-[80px] h-[80px] rounded-[20px] bg-gradient-to-br from-amber-50 to-[#FFCC02]/15 flex items-center justify-center"><img src="/__mockup/images/toast_waffle.jpeg" alt="Group" className="w-[70px] h-[70px] object-contain" style={{ mixBlendMode: 'multiply' }} /></div>
+                      <motion.div className="absolute -top-1 -right-1 w-6 h-6 bg-[#FFCC02] rounded-full flex items-center justify-center shadow-md" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.7, ...bouncy }}><Users className="w-3 h-3 text-gray-900" /></motion.div>
                     </div>
                     <div className="relative z-10"><div className="font-bold text-gray-900 text-[15px]">Group</div><div className="text-[11px] text-gray-500 mt-0.5">Decide together</div></div>
-                    <motion.div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-400 to-purple-500" initial={{ scaleX: 0 }} animate={{ scaleX: [0, 1, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} style={{ transformOrigin: 'left' }} />
+                    <motion.div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FFCC02] to-amber-400" initial={{ scaleX: 0 }} animate={{ scaleX: [0, 1, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} style={{ transformOrigin: 'left' }} />
                   </motion.button>
                 </div>
               </div>
@@ -299,7 +301,7 @@ export function GroupJourney() {
               <div className="px-6 mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-[13px] font-bold text-gray-500 uppercase tracking-widest">Trending nearby</h2>
-                  <span className="text-[11px] font-semibold text-violet-500 flex items-center gap-0.5">See all <ChevronRight className="w-3 h-3" /></span>
+                  <span className="text-[11px] font-semibold text-[#FFCC02] flex items-center gap-0.5">See all <ChevronRight className="w-3 h-3" /></span>
                 </div>
                 <div className="flex gap-3 overflow-x-auto no-sb pb-2">
                   {RESTAURANTS.slice(0, 3).map((r, i) => (
@@ -322,82 +324,94 @@ export function GroupJourney() {
 
           {screen === 'setup' && (
             <motion.div key="setup" initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -60 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }} className="flex-1 flex flex-col overflow-hidden">
-              <div className="flex-1 overflow-y-auto no-sb pb-32">
-                <div className="pt-14 px-6 pb-2">
-                  <div className="flex items-center justify-between mb-5">
-                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => setScreen('home')} className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"><ArrowLeft className="w-4 h-4 text-gray-700" /></motion.button>
-                    <div className="flex items-center gap-1.5 bg-violet-50 px-3 py-1.5 rounded-full border border-violet-100"><Users className="w-3.5 h-3.5 text-violet-500" /><span className="text-[11px] font-bold text-violet-600">Group Mode</span></div>
+              <div className="flex-1 overflow-y-auto no-sb pb-36">
+
+                <div className="relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#FFCC02]/8 via-amber-50/30 to-[#FAFAF8]" />
+                  <div className="relative pt-14 px-6 pb-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <motion.button whileTap={{ scale: 0.85 }} onClick={() => setScreen('home')} className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200/60 flex items-center justify-center shadow-sm"><ArrowLeft className="w-4 h-4 text-gray-700" /></motion.button>
+                      <div className="flex items-center gap-1.5 bg-[#FFCC02]/10 px-3 py-1.5 rounded-full border border-[#FFCC02]/20"><Users className="w-3.5 h-3.5 text-amber-600" /><span className="text-[11px] font-bold text-amber-700">Group Mode</span></div>
+                    </div>
+                    <motion.h1 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, ...gentle }} className="text-[28px] font-['Playfair_Display'] font-bold text-gray-900 leading-[1.15]">Set the table</motion.h1>
+                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-[12px] text-gray-400 mt-1 font-medium">Pick your vibe, we'll find the spots</motion.p>
                   </div>
-                  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, ...gentle }} className="mb-1">
-                    <h1 className="text-[26px] font-['Playfair_Display'] font-bold text-gray-900 leading-tight">Plan your<br/>group feast</h1>
-                  </motion.div>
                 </div>
 
-                <motion.div className="px-6 mb-5" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, ...spring }}>
-                  <div className="flex gap-2 overflow-x-auto no-sb pb-1">
+                <div className="px-5 mb-5">
+                  <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, ...spring }} className="grid grid-cols-2 gap-2.5">
                     {GROUP_TYPES.map((g, i) => {
                       const on = selectedGroupType === g.id;
                       return (
-                        <motion.button key={g.id} initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.04, ...spring }} whileTap={{ scale: 0.93 }} onClick={() => setSelectedGroupType(on ? null : g.id)}
-                          className={`flex-shrink-0 rounded-full pl-2.5 pr-4 py-2 flex items-center gap-2 border-2 transition-all ${on ? 'border-violet-400 bg-violet-50 shadow-[0_4px_16px_rgba(108,43,217,0.12)]' : 'bg-white border-gray-100'}`}
+                        <motion.button key={g.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 + i * 0.05, ...bouncy }} whileTap={{ scale: 0.94 }} onClick={() => setSelectedGroupType(on ? null : g.id)}
+                          className={`relative rounded-[20px] p-3.5 flex flex-col items-start gap-2 border-2 transition-all overflow-hidden text-left ${on ? 'border-[#FFCC02] bg-white shadow-[0_8px_24px_rgba(255,204,2,0.15)]' : 'border-gray-100 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.03)]'}`}
                         >
-                          <motion.span className="text-lg" animate={on ? { scale: [1, 1.2, 1.05] } : { scale: 1 }} transition={bouncy}>{g.emoji}</motion.span>
-                          <span className={`text-[12px] font-semibold whitespace-nowrap ${on ? 'text-violet-700' : 'text-gray-600'}`}>{g.label}</span>
-                          <AnimatePresence>
-                            {on && (
-                              <motion.div initial={{ scale: 0, width: 0 }} animate={{ scale: 1, width: 16 }} exit={{ scale: 0, width: 0 }} transition={bouncy} className="w-4 h-4 bg-violet-500 rounded-full flex items-center justify-center flex-shrink-0"><Check className="w-2.5 h-2.5 text-white" /></motion.div>
-                            )}
-                          </AnimatePresence>
+                          <div className={`absolute top-0 right-0 w-20 h-20 rounded-full bg-gradient-to-br ${g.gradient} opacity-[0.07] -translate-y-4 translate-x-4`} />
+                          <div className="flex items-center justify-between w-full relative z-10">
+                            <motion.span className="text-2xl" animate={on ? { scale: [1, 1.3, 1.1], rotate: [0, 8, 0] } : { scale: 1 }} transition={bouncy}>{g.emoji}</motion.span>
+                            <AnimatePresence>
+                              {on && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={bouncy} className="w-5 h-5 bg-[#FFCC02] rounded-full flex items-center justify-center"><Check className="w-3 h-3 text-gray-900" /></motion.div>}
+                            </AnimatePresence>
+                          </div>
+                          <div className="relative z-10">
+                            <div className={`text-[13px] font-bold ${on ? 'text-gray-900' : 'text-gray-700'}`}>{g.label}</div>
+                            <div className="text-[10px] text-gray-400 mt-0.5">{g.sub}</div>
+                          </div>
                         </motion.button>
                       );
                     })}
-                  </div>
-                </motion.div>
+                  </motion.div>
+                </div>
 
-                <motion.div className="px-6 mb-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, ...spring }}>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5"><Sparkles className="w-3 h-3" /> Vibes <span className="text-gray-300 normal-case font-medium tracking-normal">(up to 3)</span></p>
-                  <div className="flex gap-1.5 overflow-x-auto no-sb pb-1">
+                <motion.div className="px-5 mb-4" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, ...spring }}>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-[#FFCC02]" /> Vibes</p>
+                    <span className="text-[9px] text-gray-300 font-medium">{selectedVibes.length}/3</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
                     {VIBES.map((v, i) => {
                       const on = selectedVibes.includes(v.label);
                       const atMax = selectedVibes.length >= 3 && !on;
                       return (
-                        <motion.button key={v.label} initial={{ opacity: 0, x: 12 }} animate={{ opacity: atMax ? 0.3 : 1, x: 0 }} transition={{ delay: 0.3 + i * 0.02, ...spring }} whileTap={{ scale: 0.9 }} onClick={() => toggleVibe(v.label)}
-                          className={`flex-shrink-0 rounded-full px-3 py-1.5 flex items-center gap-1 border-2 transition-all text-[11px] font-semibold ${on ? 'border-violet-400 bg-violet-50/50 text-violet-700' : 'bg-white border-gray-100 text-gray-500'}`}
+                        <motion.button key={v.label} initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: atMax ? 0.35 : 1, scale: 1 }} transition={{ delay: 0.38 + i * 0.02, ...spring }} whileTap={{ scale: 0.9 }} onClick={() => toggleVibe(v.label)}
+                          className={`rounded-full px-3 py-1.5 flex items-center gap-1.5 border-2 transition-all text-[11px] font-semibold ${on ? 'border-[#FFCC02] bg-[#FFCC02]/8 text-gray-800 shadow-[0_2px_8px_rgba(255,204,2,0.12)]' : 'bg-white border-gray-100 text-gray-500'}`}
                         >
-                          <span className="text-xs">{v.emoji}</span>{v.label}
+                          <span className="text-sm leading-none">{v.emoji}</span>{v.label}
                         </motion.button>
                       );
                     })}
                   </div>
                 </motion.div>
 
-                <motion.div className="px-6 mb-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, ...spring }}>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5"><Wallet className="w-3 h-3" /> Budget</p>
-                  <div className="flex gap-2">
+                <motion.div className="px-5 mb-4" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42, ...spring }}>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5"><Wallet className="w-3 h-3 text-[#FFCC02]" /> Budget</p>
+                  <div className="bg-white rounded-[18px] border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] p-1.5 flex gap-1">
                     {BUDGETS.map((b, i) => {
                       const on = selectedBudget === b.id;
                       return (
-                        <motion.button key={b.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 + i * 0.03, ...spring }} whileTap={{ scale: 0.92 }} onClick={() => setSelectedBudget(on ? null : b.id)}
-                          className={`flex-1 rounded-2xl py-2.5 flex flex-col items-center gap-0.5 border-2 transition-all ${on ? 'border-violet-400 bg-violet-50/50 shadow-[0_4px_14px_rgba(108,43,217,0.08)]' : 'bg-white border-gray-100'}`}
+                        <motion.button key={b.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 + i * 0.03, ...spring }} whileTap={{ scale: 0.95 }} onClick={() => setSelectedBudget(on ? null : b.id)}
+                          className={`flex-1 rounded-[14px] py-2.5 flex flex-col items-center gap-0.5 transition-all relative ${on ? 'bg-[#FFCC02] shadow-[0_4px_14px_rgba(255,204,2,0.25)]' : 'hover:bg-gray-50'}`}
                         >
-                          <motion.span className="text-base" animate={on ? { scale: [1, 1.2, 1.05] } : { scale: 1 }} transition={bouncy}>{b.emoji}</motion.span>
-                          <span className={`text-[10px] font-bold ${on ? 'text-violet-700' : 'text-gray-600'}`}>{b.label}</span>
-                          <span className="text-[8px] text-gray-400 leading-tight">{b.sub}</span>
+                          <span className={`text-[12px] font-black tracking-wide ${on ? 'text-gray-900' : 'text-gray-600'}`}>{b.label}</span>
+                          <span className={`text-[8px] font-medium leading-none ${on ? 'text-gray-900/60' : 'text-gray-400'}`}>{b.sub}</span>
                         </motion.button>
                       );
                     })}
                   </div>
                 </motion.div>
 
-                <motion.div className="px-6 mb-3" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42, ...spring }}>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5"><MapPinned className="w-3 h-3" /> Area <span className="text-gray-300 normal-case font-medium tracking-normal">(up to 3)</span></p>
-                  <div className="flex gap-1.5 overflow-x-auto no-sb pb-1">
+                <motion.div className="px-5 mb-3" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.48, ...spring }}>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5"><MapPinned className="w-3 h-3 text-[#FFCC02]" /> Area</p>
+                    <span className="text-[9px] text-gray-300 font-medium">{selectedAreas.length}/3</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
                     {BKK_AREAS.map((a, i) => {
                       const on = selectedAreas.includes(a.label);
                       const atMax = selectedAreas.length >= 3 && !on;
                       return (
-                        <motion.button key={a.label} initial={{ opacity: 0, x: 10 }} animate={{ opacity: atMax ? 0.3 : 1, x: 0 }} transition={{ delay: 0.45 + i * 0.015, ...spring }} whileTap={{ scale: 0.9 }} onClick={() => toggleArea(a.label)}
-                          className={`flex-shrink-0 rounded-full px-3 py-1.5 flex items-center gap-1 border-2 transition-all text-[10px] font-semibold ${on ? 'border-violet-400 bg-violet-50/50 text-violet-700' : 'bg-white border-gray-100 text-gray-500'}`}
+                        <motion.button key={a.label} initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: atMax ? 0.35 : 1, scale: 1 }} transition={{ delay: 0.5 + i * 0.015, ...spring }} whileTap={{ scale: 0.9 }} onClick={() => toggleArea(a.label)}
+                          className={`rounded-full px-2.5 py-1.5 flex items-center gap-1 border-2 transition-all text-[10px] font-semibold ${on ? 'border-[#FFCC02] bg-[#FFCC02]/8 text-gray-800 shadow-[0_2px_8px_rgba(255,204,2,0.12)]' : 'bg-white border-gray-100 text-gray-500'}`}
                         >
                           <span className="text-xs">{a.emoji}</span>{a.label}
                         </motion.button>
@@ -406,13 +420,13 @@ export function GroupJourney() {
                   </div>
                 </motion.div>
 
-                <motion.div className="px-6" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, ...spring }}>
+                <motion.div className="px-5" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55, ...spring }}>
                   <motion.button onClick={() => setShowMoreOptions(!showMoreOptions)} className="w-full flex items-center justify-between py-3" whileTap={{ scale: 0.99 }}>
                     <span className="text-[11px] font-semibold text-gray-400 flex items-center gap-1.5">
                       <SlidersHorizontal className="w-3 h-3" />
                       {showMoreOptions ? 'Less options' : 'More options'}
                       {selectedDietary.length > 0 && !showMoreOptions && (
-                        <span className="text-[9px] bg-violet-50 text-violet-500 rounded-full px-1.5 py-0.5 font-bold border border-violet-100">{selectedDietary.length}</span>
+                        <span className="text-[9px] bg-[#FFCC02]/10 text-amber-700 rounded-full px-1.5 py-0.5 font-bold border border-[#FFCC02]/20">{selectedDietary.length}</span>
                       )}
                     </span>
                     <motion.div animate={{ rotate: showMoreOptions ? 180 : 0 }} transition={spring}><ChevronDown className="w-3.5 h-3.5 text-gray-300" /></motion.div>
@@ -428,7 +442,7 @@ export function GroupJourney() {
                               const on = selectedDietary.includes(d.label);
                               return (
                                 <motion.button key={d.label} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.02, ...spring }} whileTap={{ scale: 0.9 }} onClick={() => toggleDietary(d.label)}
-                                  className={`rounded-full px-2.5 py-1.5 flex items-center gap-1 border-2 transition-all text-[10px] font-semibold ${on ? 'border-violet-400 bg-violet-50/50 text-violet-700' : 'bg-[#FAFAF8] border-gray-100 text-gray-500'}`}
+                                  className={`rounded-full px-2.5 py-1.5 flex items-center gap-1 border-2 transition-all text-[10px] font-semibold ${on ? 'border-[#FFCC02] bg-[#FFCC02]/8 text-gray-800' : 'bg-[#FAFAF8] border-gray-100 text-gray-500'}`}
                                 >
                                   <span className="text-xs">{d.emoji}</span>{d.label}
                                 </motion.button>
@@ -439,13 +453,13 @@ export function GroupJourney() {
                           <div className="flex gap-1.5 mb-2.5">
                             {['Today', 'Tomorrow', 'Weekend'].map(d => {
                               const on = selectedDate === d;
-                              return (<motion.button key={d} whileTap={{ scale: 0.93 }} onClick={() => setSelectedDate(d)} className={`flex-1 rounded-xl py-2 text-center border-2 transition-all text-[10px] font-bold ${on ? 'border-violet-400 bg-violet-50/50 text-violet-700' : 'bg-[#FAFAF8] border-gray-100 text-gray-500'}`}>{d}</motion.button>);
+                              return (<motion.button key={d} whileTap={{ scale: 0.93 }} onClick={() => setSelectedDate(d)} className={`flex-1 rounded-xl py-2 text-center border-2 transition-all text-[10px] font-bold ${on ? 'border-[#FFCC02] bg-[#FFCC02]/8 text-gray-800' : 'bg-[#FAFAF8] border-gray-100 text-gray-500'}`}>{d}</motion.button>);
                             })}
                           </div>
                           <div className="flex gap-1.5 overflow-x-auto no-sb">
                             {TIME_SLOTS.map(t => {
                               const on = selectedTime === t.label;
-                              return (<motion.button key={t.label} whileTap={{ scale: 0.92 }} onClick={() => setSelectedTime(t.label)} className={`flex-shrink-0 rounded-xl px-2.5 py-1.5 flex flex-col items-center gap-0.5 border-2 min-w-[48px] transition-all ${on ? 'border-violet-400 bg-violet-50/50' : 'bg-[#FAFAF8] border-gray-100'}`}><span className="text-sm">{t.icon}</span><span className={`text-[9px] font-bold ${on ? 'text-violet-700' : 'text-gray-500'}`}>{t.label}</span></motion.button>);
+                              return (<motion.button key={t.label} whileTap={{ scale: 0.92 }} onClick={() => setSelectedTime(t.label)} className={`flex-shrink-0 rounded-xl px-2.5 py-1.5 flex flex-col items-center gap-0.5 border-2 min-w-[48px] transition-all ${on ? 'border-[#FFCC02] bg-[#FFCC02]/8' : 'bg-[#FAFAF8] border-gray-100'}`}><span className="text-sm">{t.icon}</span><span className={`text-[9px] font-bold ${on ? 'text-gray-800' : 'text-gray-500'}`}>{t.label}</span></motion.button>);
                             })}
                           </div>
                         </div>
@@ -455,19 +469,20 @@ export function GroupJourney() {
                 </motion.div>
               </div>
 
-              <div className="absolute bottom-[84px] left-0 right-0 px-6 pb-4 pt-3 bg-gradient-to-t from-[#FAFAF8] via-[#FAFAF8]/95 to-transparent z-50">
+              <div className="absolute bottom-[84px] left-0 right-0 px-5 pb-4 pt-3 bg-gradient-to-t from-[#FAFAF8] via-[#FAFAF8]/95 to-transparent z-50">
                 <AnimatePresence>
                   {canInvite && (
-                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }} transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}>
-                      {(selectedVibes.length > 0 || selectedBudget || selectedAreas.length > 0) && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}>
+                      {selCount > 0 && (
                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="flex gap-1.5 mb-2 overflow-x-auto no-sb">
-                          {selectedGroupType && <span className="flex-shrink-0 text-[9px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">{GROUP_TYPES.find(g => g.id === selectedGroupType)?.emoji} {GROUP_TYPES.find(g => g.id === selectedGroupType)?.label}</span>}
-                          {selectedVibes.slice(0, 2).map(v => <span key={v} className="flex-shrink-0 text-[9px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">{v}</span>)}
-                          {selectedBudget && <span className="flex-shrink-0 text-[9px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">{BUDGETS.find(b => b.id === selectedBudget)?.label}</span>}
-                          {selectedAreas.slice(0, 1).map(a => <span key={a} className="flex-shrink-0 text-[9px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">{a}</span>)}
+                          {selectedGroupType && <span className="flex-shrink-0 text-[9px] font-semibold text-amber-800 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2 py-0.5">{GROUP_TYPES.find(g => g.id === selectedGroupType)?.emoji} {GROUP_TYPES.find(g => g.id === selectedGroupType)?.label}</span>}
+                          {selectedVibes.slice(0, 2).map(v => <span key={v} className="flex-shrink-0 text-[9px] font-semibold text-amber-800 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2 py-0.5">{v}</span>)}
+                          {selectedBudget && <span className="flex-shrink-0 text-[9px] font-semibold text-amber-800 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2 py-0.5">{BUDGETS.find(b => b.id === selectedBudget)?.label}</span>}
+                          {selectedAreas.slice(0, 1).map(a => <span key={a} className="flex-shrink-0 text-[9px] font-semibold text-amber-800 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2 py-0.5">{a}</span>)}
                         </motion.div>
                       )}
-                      <motion.button whileTap={{ scale: 0.97 }} onClick={() => setScreen('invite')} className="w-full h-[52px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2.5 font-bold text-[15px] text-white shadow-[0_8px_28px_rgba(108,43,217,0.35)]">
+                      <motion.button whileTap={{ scale: 0.97 }} onClick={() => setScreen('invite')} className="w-full h-[54px] rounded-2xl bg-[#FFCC02] flex items-center justify-center gap-2.5 font-bold text-[15px] text-gray-900 shadow-[0_8px_28px_rgba(255,204,2,0.35)] relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 hover:opacity-100 transition-opacity" />
                         <UserPlus className="w-5 h-5" />Invite Friends<ArrowRight className="w-4 h-4 ml-1" />
                       </motion.button>
                     </motion.div>
@@ -481,17 +496,17 @@ export function GroupJourney() {
             <motion.div key="invite" initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -60 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }} className="flex-1 flex flex-col pt-14 px-6 pb-24">
               <div className="flex items-center justify-between mb-5">
                 <motion.button whileTap={{ scale: 0.85 }} onClick={() => setScreen('setup')} className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"><ArrowLeft className="w-4 h-4 text-gray-700" /></motion.button>
-                <div className="flex items-center gap-1.5 bg-violet-50 px-3 py-1.5 rounded-full border border-violet-100"><Share2 className="w-3.5 h-3.5 text-violet-500" /><span className="text-[11px] font-bold text-violet-600">Invite</span></div>
+                <div className="flex items-center gap-1.5 bg-[#FFCC02]/10 px-3 py-1.5 rounded-full border border-[#FFCC02]/20"><Share2 className="w-3.5 h-3.5 text-amber-600" /><span className="text-[11px] font-bold text-amber-700">Invite</span></div>
               </div>
               <ProgressBar step={1} total={5} />
               <div className="flex-1 flex flex-col items-center justify-center">
                 <motion.div className="w-full" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, ...spring }}>
                   <div className="bg-white rounded-[28px] border border-gray-100 shadow-[0_16px_48px_rgba(0,0,0,0.06)] overflow-hidden">
-                    <div className="bg-gradient-to-br from-violet-500 via-purple-500 to-violet-600 p-6 text-center relative overflow-hidden">
-                      <div className="absolute inset-0 opacity-10">{Array.from({ length: 6 }).map((_, i) => (<div key={i} className="absolute rounded-full bg-white" style={{ width: 4 + Math.random() * 8, height: 4 + Math.random() * 8, top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%` }} />))}</div>
-                      <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.25, ...bouncy }} className="w-16 h-16 mx-auto mb-3 bg-white/15 rounded-[20px] flex items-center justify-center backdrop-blur-sm border border-white/20"><Share2 className="w-7 h-7 text-white" /></motion.div>
-                      <h2 className="text-white text-[18px] font-bold">Share the invite</h2>
-                      <p className="text-white/60 text-[12px] mt-1 font-medium">Friends join with this code</p>
+                    <div className="bg-gradient-to-br from-[#FFCC02] via-amber-400 to-[#E6B800] p-6 text-center relative overflow-hidden">
+                      <div className="absolute inset-0 opacity-[0.08]">{Array.from({ length: 6 }).map((_, i) => (<div key={i} className="absolute rounded-full bg-white" style={{ width: 4 + Math.random() * 8, height: 4 + Math.random() * 8, top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%` }} />))}</div>
+                      <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.25, ...bouncy }} className="w-16 h-16 mx-auto mb-3 bg-gray-900/10 rounded-[20px] flex items-center justify-center backdrop-blur-sm border border-gray-900/10"><Share2 className="w-7 h-7 text-gray-900" /></motion.div>
+                      <h2 className="text-gray-900 text-[18px] font-bold">Share the invite</h2>
+                      <p className="text-gray-900/50 text-[12px] mt-1 font-medium">Friends join with this code</p>
                     </div>
                     <div className="p-5">
                       <div className="bg-[#FAFAF8] rounded-2xl p-4 flex items-center gap-3 mb-4 border border-gray-100">
@@ -503,7 +518,7 @@ export function GroupJourney() {
                         </motion.button>
                       </div>
                       <motion.button whileTap={{ scale: 0.97 }} className="w-full h-[48px] rounded-2xl bg-[#00B900] flex items-center justify-center gap-2 font-bold text-white text-[14px] shadow-[0_6px_20px_rgba(0,185,0,0.25)] mb-3"><MessageCircle className="w-4.5 h-4.5" />Share via LINE</motion.button>
-                      <motion.button whileTap={{ scale: 0.97 }} onClick={startWaiting} className="w-full h-[48px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2 font-bold text-white text-[14px] shadow-[0_6px_20px_rgba(108,43,217,0.25)]">Go to Waiting Room<ArrowRight className="w-4 h-4" /></motion.button>
+                      <motion.button whileTap={{ scale: 0.97 }} onClick={startWaiting} className="w-full h-[48px] rounded-2xl bg-[#FFCC02] flex items-center justify-center gap-2 font-bold text-gray-900 text-[14px] shadow-[0_6px_20px_rgba(255,204,2,0.25)]">Go to Waiting Room<ArrowRight className="w-4 h-4" /></motion.button>
                     </div>
                   </div>
                 </motion.div>
@@ -521,10 +536,10 @@ export function GroupJourney() {
               <div className="flex-1 flex flex-col items-center justify-center w-full">
                 <motion.div className="relative mb-6" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.1, ...spring }}>
                   <div className="relative">
-                    <div className="absolute inset-0 rounded-[24px] bg-violet-400/20 pulse-ring" />
-                    <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-[0_10px_36px_rgba(108,43,217,0.3)] relative z-10"><Users className="w-10 h-10 text-white" /></div>
+                    <div className="absolute inset-0 rounded-[24px] bg-[#FFCC02]/20 pulse-ring" />
+                    <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-[#FFCC02] to-amber-500 flex items-center justify-center shadow-[0_10px_36px_rgba(255,204,2,0.3)] relative z-10"><Users className="w-10 h-10 text-gray-900" /></div>
                   </div>
-                  <motion.div className="absolute -top-2 -right-2 w-8 h-8 bg-[#FFCC02] rounded-full flex items-center justify-center shadow-lg text-sm font-black z-20 border-2 border-white" key={membersJoined} initial={{ scale: 0 }} animate={{ scale: [0, 1.3, 1] }} transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}>{membersJoined}</motion.div>
+                  <motion.div className="absolute -top-2 -right-2 w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center shadow-lg text-sm font-black text-white z-20 border-2 border-white" key={membersJoined} initial={{ scale: 0 }} animate={{ scale: [0, 1.3, 1] }} transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}>{membersJoined}</motion.div>
                 </motion.div>
                 <motion.h2 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, ...gentle }} className="text-[22px] font-['Playfair_Display'] font-bold text-gray-900 mb-1">{membersJoined >= 3 ? "Everyone's here!" : 'Waiting for friends'}</motion.h2>
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-[13px] text-gray-400 mb-8">{membersJoined >= 3 ? 'Ready to start swiping' : `${membersJoined}/3 joined`}</motion.p>
@@ -546,7 +561,7 @@ export function GroupJourney() {
                 </div>
                 <AnimatePresence>
                   {membersJoined >= 3 && (
-                    <motion.button initial={{ opacity: 0, y: 16, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.3 }} whileTap={{ scale: 0.97 }} onClick={startSwiping} className="w-full max-w-xs h-[52px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2 font-bold text-[15px] text-white shadow-[0_8px_28px_rgba(108,43,217,0.35)]"><Flame className="w-5 h-5" />Start Swiping!</motion.button>
+                    <motion.button initial={{ opacity: 0, y: 16, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.3 }} whileTap={{ scale: 0.97 }} onClick={startSwiping} className="w-full max-w-xs h-[52px] rounded-2xl bg-[#FFCC02] flex items-center justify-center gap-2 font-bold text-[15px] text-gray-900 shadow-[0_8px_28px_rgba(255,204,2,0.35)]"><Flame className="w-5 h-5" />Start Swiping!</motion.button>
                   )}
                 </AnimatePresence>
               </div>
@@ -584,7 +599,7 @@ export function GroupJourney() {
 
           {screen === 'match' && (
             <motion.div key="match" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col items-center pt-16 px-6 pb-24 relative overflow-hidden overflow-y-auto no-sb">
-              <div className="absolute inset-0 pointer-events-none overflow-hidden">{Array.from({ length: 40 }).map((_, i) => (<div key={i} className="confetti absolute" style={{ left: `${Math.random() * 100}%`, top: -12, width: Math.random() > 0.5 ? 8 : 5, height: Math.random() > 0.5 ? 8 : 14, backgroundColor: ['#6C2BD9', '#FFD700', '#FF385C', '#00A699', '#FF6B6B', '#4ECDC4', '#7B61FF'][i % 7], borderRadius: Math.random() > 0.5 ? '50%' : '2px', animationDelay: `${Math.random() * 2}s`, animationDuration: `${2.5 + Math.random() * 1.5}s` }} />))}</div>
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">{Array.from({ length: 40 }).map((_, i) => (<div key={i} className="confetti absolute" style={{ left: `${Math.random() * 100}%`, top: -12, width: Math.random() > 0.5 ? 8 : 5, height: Math.random() > 0.5 ? 8 : 14, backgroundColor: ['#FFCC02', '#FFD700', '#FF385C', '#00A699', '#FF6B6B', '#4ECDC4', '#E6B800'][i % 7], borderRadius: Math.random() > 0.5 ? '50%' : '2px', animationDelay: `${Math.random() * 2}s`, animationDuration: `${2.5 + Math.random() * 1.5}s` }} />))}</div>
               <motion.div initial={{ scale: 0, rotate: -25 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.15, ...bouncy }} className="mb-4">
                 <div className="w-[90px] h-[90px] rounded-[26px] bg-gradient-to-br from-[#FFCC02] to-amber-400 flex items-center justify-center shadow-[0_16px_48px_rgba(255,204,2,0.4)] relative">
                   <motion.div animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.08, 1] }} transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}><Trophy className="w-11 h-11 text-gray-900" /></motion.div>
@@ -608,11 +623,11 @@ export function GroupJourney() {
                 </div>
               </motion.div>
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85 }} className="w-full flex gap-2.5">
-                <motion.button whileTap={{ scale: 0.94 }} className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"><div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-50 to-purple-50 flex items-center justify-center"><Eye className="w-4 h-4 text-violet-500" /></div><span className="text-[10px] font-semibold text-gray-600">View Restaurant</span></motion.button>
-                <motion.button whileTap={{ scale: 0.94 }} onClick={() => setScreen('topPicks')} className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"><div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-50 to-[#FFCC02]/15 flex items-center justify-center"><ListOrdered className="w-4 h-4 text-[#FFCC02]" /></div><span className="text-[10px] font-semibold text-gray-600">Top Picks</span></motion.button>
+                <motion.button whileTap={{ scale: 0.94 }} className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"><div className="w-8 h-8 rounded-full bg-[#FFCC02]/10 flex items-center justify-center"><Eye className="w-4 h-4 text-amber-600" /></div><span className="text-[10px] font-semibold text-gray-600">View Restaurant</span></motion.button>
+                <motion.button whileTap={{ scale: 0.94 }} onClick={() => setScreen('topPicks')} className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"><div className="w-8 h-8 rounded-full bg-[#FFCC02]/10 flex items-center justify-center"><ListOrdered className="w-4 h-4 text-[#FFCC02]" /></div><span className="text-[10px] font-semibold text-gray-600">Top Picks</span></motion.button>
                 <motion.button whileTap={{ scale: 0.94 }} onClick={startSwiping} className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"><div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center"><Flame className="w-4 h-4 text-orange-400" /></div><span className="text-[10px] font-semibold text-gray-600">Keep Swiping</span></motion.button>
               </motion.div>
-              <motion.button initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} whileTap={{ scale: 0.97 }} onClick={() => setScreen('summary')} className="w-full mt-4 h-[48px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2 font-bold text-[14px] text-white shadow-[0_6px_20px_rgba(108,43,217,0.25)]"><BarChart3 className="w-4 h-4" />Wrap It Up</motion.button>
+              <motion.button initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} whileTap={{ scale: 0.97 }} onClick={() => setScreen('summary')} className="w-full mt-4 h-[48px] rounded-2xl bg-[#FFCC02] flex items-center justify-center gap-2 font-bold text-[14px] text-gray-900 shadow-[0_6px_20px_rgba(255,204,2,0.25)]"><BarChart3 className="w-4 h-4" />Wrap It Up</motion.button>
             </motion.div>
           )}
 
@@ -620,7 +635,7 @@ export function GroupJourney() {
             <motion.div key="topPicks" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }} transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }} className="flex-1 overflow-y-auto no-sb pt-14 px-6 pb-28">
               <div className="flex items-center justify-between mb-5">
                 <motion.button whileTap={{ scale: 0.85 }} onClick={() => setScreen('match')} className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"><ArrowLeft className="w-4 h-4 text-gray-700" /></motion.button>
-                <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100"><Crown className="w-3.5 h-3.5 text-[#FFCC02]" /><span className="text-[11px] font-bold text-amber-700">Top Picks</span></div>
+                <div className="flex items-center gap-1.5 bg-[#FFCC02]/10 px-3 py-1.5 rounded-full border border-[#FFCC02]/20"><Crown className="w-3.5 h-3.5 text-[#FFCC02]" /><span className="text-[11px] font-bold text-amber-700">Top Picks</span></div>
               </div>
               <ProgressBar step={4} total={5} />
               <motion.div className="mt-5 mb-6" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, ...gentle }}><h1 className="text-[24px] font-['Playfair_Display'] font-bold text-gray-900 leading-tight mb-1">Group's top picks</h1><p className="text-[13px] text-gray-400 font-medium">Ranked by group votes</p></motion.div>
@@ -651,61 +666,86 @@ export function GroupJourney() {
                   );
                 })}
               </div>
-              <motion.button initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} whileTap={{ scale: 0.97 }} onClick={() => setScreen('summary')} className="w-full mt-5 h-[52px] rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 flex items-center justify-center gap-2 font-bold text-[15px] text-white shadow-[0_8px_28px_rgba(108,43,217,0.35)]"><BarChart3 className="w-5 h-5" />Wrap It Up</motion.button>
+              <motion.button initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} whileTap={{ scale: 0.97 }} onClick={() => setScreen('summary')} className="w-full mt-5 h-[52px] rounded-2xl bg-[#FFCC02] flex items-center justify-center gap-2 font-bold text-[15px] text-gray-900 shadow-[0_8px_28px_rgba(255,204,2,0.35)]"><BarChart3 className="w-5 h-5" />Wrap It Up</motion.button>
             </motion.div>
           )}
 
           {screen === 'summary' && (
             <motion.div key="summary" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="flex-1 overflow-y-auto no-sb pb-28">
+
               <div className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-500 via-purple-600 to-violet-700" />
-                <div className="absolute inset-0 opacity-[0.07]">{Array.from({ length: 20 }).map((_, i) => (<div key={i} className="absolute rounded-full bg-white" style={{ width: 3 + Math.random() * 10, height: 3 + Math.random() * 10, top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%` }} />))}</div>
-                <div className="relative pt-16 pb-8 px-6 text-center">
-                  <div className="flex items-center justify-between mb-6">
-                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => setScreen('topPicks')} className="w-10 h-10 rounded-full bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center"><ArrowLeft className="w-4 h-4 text-white" /></motion.button>
-                    <span className="text-[11px] font-bold text-white/60 bg-white/10 rounded-full px-3 py-1.5 backdrop-blur-sm border border-white/10">Session #3</span>
+                <div className="absolute inset-0 bg-gradient-to-b from-[#FFCC02] via-[#E6B800] to-[#FFCC02]" />
+                <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 30% 20%, rgba(255,255,255,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(0,0,0,0.06) 0%, transparent 40%)' }} />
+                <div className="absolute inset-0 opacity-[0.04]">{Array.from({ length: 30 }).map((_, i) => (<div key={i} className="absolute rounded-full bg-gray-900" style={{ width: 2 + Math.random() * 6, height: 2 + Math.random() * 6, top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%` }} />))}</div>
+
+                <div className="relative pt-16 pb-6 px-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <motion.button whileTap={{ scale: 0.85 }} onClick={() => setScreen('topPicks')} className="w-10 h-10 rounded-full bg-gray-900/10 backdrop-blur-sm border border-gray-900/10 flex items-center justify-center"><ArrowLeft className="w-4 h-4 text-gray-900" /></motion.button>
+                    <span className="text-[11px] font-bold text-gray-900/50 bg-gray-900/8 rounded-full px-3 py-1.5 backdrop-blur-sm border border-gray-900/8">Session #3</span>
                   </div>
-                  <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.15, ...bouncy }} className="w-[72px] h-[72px] mx-auto mb-4 rounded-[22px] bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20 shadow-[0_16px_48px_rgba(0,0,0,0.15)]"><motion.div animate={{ rotate: [0, 8, -8, 0] }} transition={{ repeat: Infinity, duration: 2.5 }}><Trophy className="w-9 h-9 text-white" /></motion.div></motion.div>
-                  <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, ...gentle }} className="text-[26px] font-['Playfair_Display'] font-bold text-white mb-1">Feast wrapped!</motion.h1>
-                  <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="text-[13px] text-white/60 font-medium mb-5">Here's your group's taste story</motion.p>
-                  <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, ...spring }} className="bg-white/10 backdrop-blur-md rounded-[20px] border border-white/15 p-4 text-left">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 rounded-[14px] overflow-hidden border-2 border-white/30 shadow-lg"><img src={RESTAURANTS[2].image} alt="" className="w-full h-full object-cover" /></div>
-                      <div className="flex-1 min-w-0"><div className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-0.5">Winner</div><h3 className="text-[16px] font-bold text-white truncate">{RESTAURANTS[2].name}</h3><p className="text-[11px] text-white/60 flex items-center gap-1">{RESTAURANTS[2].category} · <Star className="w-3 h-3 fill-current text-[#FFCC02]" /> {RESTAURANTS[2].rating}</p></div>
-                      <div className="flex flex-col items-center"><div className="w-10 h-10 rounded-full bg-[#FFCC02] flex items-center justify-center shadow-[0_4px_16px_rgba(255,204,2,0.4)]"><Heart className="w-5 h-5 text-gray-900 fill-current" /></div><span className="text-[8px] text-white/50 font-bold mt-1">3/3</span></div>
+
+                  <div className="text-center mb-5">
+                    <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.15, ...bouncy }} className="w-[68px] h-[68px] mx-auto mb-3 rounded-[20px] bg-gray-900/10 backdrop-blur-sm flex items-center justify-center border border-gray-900/10">
+                      <motion.div animate={{ rotate: [0, 8, -8, 0] }} transition={{ repeat: Infinity, duration: 2.5 }}><Trophy className="w-8 h-8 text-gray-900" /></motion.div>
+                    </motion.div>
+                    <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, ...gentle }} className="text-[28px] font-['Playfair_Display'] font-bold text-gray-900 mb-0.5">Feast wrapped!</motion.h1>
+                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="text-[12px] text-gray-900/50 font-medium">Your group's taste story</motion.p>
+                  </div>
+
+                  <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45, ...spring }} className="bg-gray-900/8 backdrop-blur-md rounded-[20px] border border-gray-900/8 p-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-[16px] overflow-hidden border-2 border-gray-900/15 shadow-lg flex-shrink-0"><img src={RESTAURANTS[2].image} alt="" className="w-full h-full object-cover" /></div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[8px] font-bold text-gray-900/40 uppercase tracking-widest mb-0.5">Winner</div>
+                        <h3 className="text-[16px] font-bold text-gray-900 truncate">{RESTAURANTS[2].name}</h3>
+                        <p className="text-[11px] text-gray-900/50 flex items-center gap-1">{RESTAURANTS[2].category} · <Star className="w-3 h-3 fill-current text-gray-900" /> {RESTAURANTS[2].rating}</p>
+                      </div>
+                      <div className="flex flex-col items-center flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center shadow-[0_4px_16px_rgba(0,0,0,0.2)]"><Heart className="w-5 h-5 text-[#FFCC02] fill-current" /></div>
+                        <span className="text-[8px] text-gray-900/40 font-bold mt-1">3/3</span>
+                      </div>
                     </div>
-                    <div className="flex -space-x-2">{MEMBERS.map((m, i) => (<motion.div key={m.id} initial={{ scale: 0, x: -6 }} animate={{ scale: 1, x: 0 }} transition={{ delay: 0.6 + i * 0.06, ...bouncy }} className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-100 to-orange-200 border-[2px] border-violet-500/50 flex items-center justify-center text-xs shadow-sm">{m.avatar}</motion.div>))}<span className="text-[10px] font-semibold text-white/50 ml-2 self-center">All voted!</span></div>
                   </motion.div>
                 </div>
               </div>
 
-              <div className="px-6 -mt-1">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, ...spring }} className="bg-white rounded-[22px] border border-gray-100 shadow-[0_8px_32px_rgba(0,0,0,0.06)] p-5 mb-4 relative overflow-hidden">
-                  <div className="absolute inset-0 shimmer pointer-events-none" />
+              <div className="px-5 -mt-1 relative z-10">
+
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55, ...spring }} className="bg-white rounded-[22px] border border-gray-100 shadow-[0_8px_32px_rgba(0,0,0,0.06)] p-5 mb-4 relative overflow-hidden">
+                  <div className="absolute inset-0 shimmer-gold pointer-events-none" />
                   <div className="relative">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center"><Zap className="w-4 h-4 text-violet-500" /></div>
-                      <div><span className="text-[12px] font-bold text-gray-900">Group Chemistry</span><div className="text-[9px] text-gray-400 font-medium">How aligned your tastes are</div></div>
-                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.8, ...bouncy }} className="ml-auto"><div className="w-14 h-14 rounded-full border-[3px] border-violet-400 flex items-center justify-center bg-violet-50/50 relative"><span className="text-[18px] font-black text-violet-600">85</span><span className="text-[8px] font-bold text-violet-400 absolute -bottom-0.5">%</span></div></motion.div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-9 h-9 rounded-xl bg-[#FFCC02]/12 flex items-center justify-center"><Zap className="w-4.5 h-4.5 text-[#FFCC02]" /></div>
+                      <div className="flex-1"><span className="text-[13px] font-bold text-gray-900">Group Chemistry</span><div className="text-[9px] text-gray-400 font-medium">How aligned your tastes are</div></div>
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.75, ...bouncy }}>
+                        <div className="w-[52px] h-[52px] rounded-full border-[3px] border-[#FFCC02] flex items-center justify-center bg-[#FFCC02]/8 relative">
+                          <span className="text-[17px] font-black text-gray-900">85</span>
+                          <span className="text-[7px] font-bold text-[#FFCC02] absolute -bottom-0.5">%</span>
+                        </div>
+                      </motion.div>
                     </div>
-                    <div className="grid grid-cols-3 gap-2.5">
-                      {[{ label: 'Swipes', value: '18', icon: '👆', color: 'from-violet-50 to-purple-50' }, { label: 'Likes', value: '12', icon: '❤️', color: 'from-emerald-50 to-green-50' }, { label: 'Matches', value: '1', icon: '🎯', color: 'from-amber-50 to-yellow-50' }].map((stat, i) => (
-                        <motion.div key={stat.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 + i * 0.05, ...spring }} className={`bg-gradient-to-br ${stat.color} rounded-2xl p-2.5 text-center`}><span className="text-base block">{stat.icon}</span><div className="text-[16px] font-bold text-gray-900">{stat.value}</div><div className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</div></motion.div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[{ label: 'Swipes', value: '18', icon: '👆' }, { label: 'Likes', value: '12', icon: '❤️' }, { label: 'Matches', value: '1', icon: '🎯' }].map((stat, i) => (
+                        <motion.div key={stat.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 + i * 0.05, ...spring }} className="bg-[#FAFAF8] rounded-2xl p-2.5 text-center border border-gray-100/80">
+                          <span className="text-sm block mb-0.5">{stat.icon}</span>
+                          <div className="text-[16px] font-bold text-gray-900">{stat.value}</div>
+                          <div className="text-[7px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</div>
+                        </motion.div>
                       ))}
                     </div>
                   </div>
                 </motion.div>
 
-                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75, ...gentle }} className="mb-4">
-                  <div className="flex items-center gap-2 mb-3"><Users className="w-4 h-4 text-violet-500" /><span className="text-[12px] font-bold text-gray-900">Member Vibes</span></div>
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, ...gentle }} className="mb-4">
+                  <div className="flex items-center gap-2 mb-3"><Users className="w-4 h-4 text-[#FFCC02]" /><span className="text-[12px] font-bold text-gray-900">Member Vibes</span></div>
                   <div className="flex gap-2.5 overflow-x-auto no-sb pb-1">
                     {MEMBER_STATS.map((ms, i) => (
-                      <motion.div key={ms.member.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.8 + i * 0.06, ...spring }} className="flex-shrink-0 w-[130px] bg-white rounded-[20px] border border-gray-100 shadow-[0_4px_16px_rgba(0,0,0,0.04)] p-3.5 text-center">
+                      <motion.div key={ms.member.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.75 + i * 0.06, ...spring }} className="flex-shrink-0 w-[130px] bg-white rounded-[20px] border border-gray-100 shadow-[0_4px_16px_rgba(0,0,0,0.04)] p-3.5 text-center">
                         <div className="w-11 h-11 mx-auto rounded-full bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center text-lg border-2 border-white shadow-sm mb-2">{ms.member.avatar}</div>
                         <div className="text-[12px] font-bold text-gray-900 mb-0.5 flex items-center justify-center gap-1">{ms.member.name}{ms.member.isHost && <Crown className="w-3 h-3 text-[#FFCC02]" />}</div>
                         <div className="text-[9px] text-gray-400 mb-2.5">Loves {ms.emoji} {ms.favCuisine}</div>
-                        <div className="relative w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1.5"><motion.div initial={{ width: 0 }} animate={{ width: `${ms.agreePct}%` }} transition={{ delay: 1 + i * 0.08, duration: 0.8, ease: [0.32, 0.72, 0, 1] }} className="h-full bg-gradient-to-r from-violet-400 to-purple-500 rounded-full" /></div>
-                        <div className="text-[9px] font-bold text-violet-500">{ms.agreePct}% aligned</div>
+                        <div className="relative w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1.5"><motion.div initial={{ width: 0 }} animate={{ width: `${ms.agreePct}%` }} transition={{ delay: 0.9 + i * 0.08, duration: 0.8, ease: [0.32, 0.72, 0, 1] }} className="h-full bg-gradient-to-r from-[#FFCC02] to-amber-400 rounded-full" /></div>
+                        <div className="text-[9px] font-bold text-amber-600">{ms.agreePct}% aligned</div>
                         <div className="flex justify-center gap-2 mt-2.5">
                           <div className="text-center"><div className="text-[13px] font-bold text-emerald-500">{ms.likes}</div><div className="text-[7px] font-bold text-gray-400 uppercase">YUM</div></div>
                           <div className="w-px bg-gray-100" />
@@ -718,8 +758,8 @@ export function GroupJourney() {
                   </div>
                 </motion.div>
 
-                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, ...gentle }} className="bg-white rounded-[22px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.04)] p-4 mb-5">
-                  <div className="flex items-center gap-2 mb-2.5"><BarChart3 className="w-3.5 h-3.5 text-violet-500" /><span className="text-[11px] font-bold text-gray-900">All-Time Together</span><span className="ml-auto text-[9px] font-semibold text-violet-500 bg-violet-50 border border-violet-100 rounded-full px-2 py-0.5">3 sessions</span></div>
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.85, ...gentle }} className="bg-white rounded-[22px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.04)] p-4 mb-5">
+                  <div className="flex items-center gap-2 mb-2.5"><TrendingUp className="w-3.5 h-3.5 text-[#FFCC02]" /><span className="text-[11px] font-bold text-gray-900">All-Time Together</span><span className="ml-auto text-[9px] font-semibold text-amber-700 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2 py-0.5">3 sessions</span></div>
                   <div className="flex gap-4">
                     {[{ label: 'Matches', value: '7', emoji: '🎯' }, { label: 'Swipes', value: '54', emoji: '👆' }, { label: 'Go-to', value: 'Thai 🍜', emoji: '' }].map(stat => (
                       <div key={stat.label} className="text-center">{stat.emoji && <span className="text-sm">{stat.emoji}</span>}<div className="text-[14px] font-bold text-gray-900">{stat.value}</div><div className="text-[7px] font-bold text-gray-400 uppercase tracking-wider">{stat.label}</div></div>
@@ -728,8 +768,8 @@ export function GroupJourney() {
                 </motion.div>
 
                 <div className="space-y-2.5 pb-2">
-                  <motion.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} whileTap={{ scale: 0.97 }} className="w-full h-[50px] rounded-2xl bg-gradient-to-r from-[#FFCC02] to-amber-400 flex items-center justify-center gap-2 font-bold text-[15px] text-gray-900 shadow-[0_8px_24px_rgba(255,204,2,0.3)]"><Share2 className="w-4.5 h-4.5" />Share Results</motion.button>
-                  <motion.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.05 }} whileTap={{ scale: 0.97 }} onClick={resetFlow} className="w-full h-[48px] rounded-2xl bg-white border border-gray-200 flex items-center justify-center gap-2 font-bold text-[14px] text-gray-600 shadow-sm"><RotateCcw className="w-4 h-4" />New Session</motion.button>
+                  <motion.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.95 }} whileTap={{ scale: 0.97 }} className="w-full h-[50px] rounded-2xl bg-[#FFCC02] flex items-center justify-center gap-2 font-bold text-[15px] text-gray-900 shadow-[0_8px_24px_rgba(255,204,2,0.3)]"><Share2 className="w-4.5 h-4.5" />Share Results</motion.button>
+                  <motion.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }} whileTap={{ scale: 0.97 }} onClick={resetFlow} className="w-full h-[48px] rounded-2xl bg-white border border-gray-200 flex items-center justify-center gap-2 font-bold text-[14px] text-gray-600 shadow-sm"><RotateCcw className="w-4 h-4" />New Session</motion.button>
                 </div>
               </div>
             </motion.div>
