@@ -36,16 +36,22 @@ const GROUP_TYPES = [
   { id: 'work', emoji: '💼', label: 'Team', sub: 'Office outing', gradient: 'from-sky-300 to-blue-400', shadow: 'rgba(14,165,233,0.20)' },
 ];
 
-const VIBES = [
-  { emoji: '🍢', label: 'Street food' },
-  { emoji: '🍽️', label: 'Restaurant' },
-  { emoji: '🚇', label: 'Near BTS' },
-  { emoji: '🌃', label: 'Late night' },
-  { emoji: '🌊', label: 'Riverside' },
-  { emoji: '🏙️', label: 'Rooftop' },
-  { emoji: '🔥', label: 'Trending' },
-  { emoji: '💰', label: 'Budget' },
-  { emoji: '✨', label: 'Fine dining' },
+const FOOD_CATEGORIES = [
+  { title: 'Style', items: [
+    { emoji: '🍢', label: 'Street food' },
+    { emoji: '🍽️', label: 'Restaurant' },
+    { emoji: '✨', label: 'Fine dining' },
+  ]},
+  { title: 'Setting', items: [
+    { emoji: '🚇', label: 'Near BTS' },
+    { emoji: '🌊', label: 'Riverside' },
+    { emoji: '🏙️', label: 'Rooftop' },
+  ]},
+  { title: 'Mood', items: [
+    { emoji: '🌃', label: 'Late night' },
+    { emoji: '🔥', label: 'Trending' },
+    { emoji: '💰', label: 'Budget' },
+  ]},
 ];
 
 const BUDGETS = [
@@ -81,27 +87,24 @@ const DIETARY = [
   { emoji: '🥜', label: 'Nut-Free' },
 ];
 
-const MEAL_PERIODS = [
-  { id: 'anytime', label: 'Anytime', icon: '✨', sub: 'Flexible' },
-  { id: 'lunch', label: 'Lunch', icon: '☀️', sub: '11am–2pm' },
-  { id: 'dinner', label: 'Dinner', icon: '🌅', sub: '5–9pm' },
-  { id: 'late', label: 'Late', icon: '🌙', sub: '9pm+' },
-];
+const TIME_HOURS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const TIME_MINUTES = ['00', '15', '30', '45'];
 
-function getUpcomingDays(): { key: string; label: string; sub: string; dayNum: number }[] {
-  const days: { key: string; label: string; sub: string; dayNum: number }[] = [];
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+function getCalendarData() {
   const now = new Date();
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() + i);
-    const label = i === 0 ? 'Today' : i === 1 ? 'Tmrw' : dayNames[d.getDay()];
-    const sub = `${d.getDate()}`;
-    days.push({ key: `day-${i}`, label, sub, dayNum: i });
-  }
-  return days;
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const todayDate = now.getDate();
+  const monthName = now.toLocaleString('en', { month: 'long' });
+  const firstDayOfWeek = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDayOfWeek; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  return { year, monthName, todayDate, cells, daysInMonth };
 }
-const UPCOMING_DAYS = getUpcomingDays();
+const CAL = getCalendarData();
+const DAY_HEADERS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 const MEMBER_STATS = [
   { member: MEMBERS[0], likes: 4, dislikes: 1, superLikes: 1, favCuisine: 'Thai', emoji: '🍜', agreePct: 89 },
@@ -201,8 +204,10 @@ export function GroupJourney() {
   const [selectedBudget, setSelectedBudget] = useState<string | null>(null);
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [selectedDietary, setSelectedDietary] = useState<string[]>([]);
-  const [selectedDay, setSelectedDay] = useState<number>(0);
-  const [selectedMealPeriod, setSelectedMealPeriod] = useState<string>('anytime');
+  const [selectedCalDate, setSelectedCalDate] = useState<number | null>(null);
+  const [selectedHour, setSelectedHour] = useState<number>(7);
+  const [selectedMinute, setSelectedMinute] = useState<string>('00');
+  const [selectedAmPm, setSelectedAmPm] = useState<string>('PM');
   const [currentCard, setCurrentCard] = useState(0);
   const [swipeResults, setSwipeResults] = useState<Record<number, 'left' | 'right' | 'up'>>({});
   const [membersJoined, setMembersJoined] = useState(1);
@@ -243,14 +248,15 @@ export function GroupJourney() {
 
   const resetFlow = useCallback(() => {
     setScreen('home'); setSelectedGroupType(null); setSelectedVibes([]); setSelectedBudget(null);
-    setSelectedAreas([]); setSelectedDietary([]); setSelectedDay(0); setSelectedMealPeriod('anytime');
+    setSelectedAreas([]); setSelectedDietary([]); setSelectedCalDate(null); setSelectedHour(7);
+    setSelectedMinute('00'); setSelectedAmPm('PM');
     setCurrentCard(0); setSwipeResults({}); setMembersJoined(1); setSwipeCount(0); setShowMoreOptions(false);
   }, []);
 
   const canInvite = !!selectedGroupType;
-  const whenLabel = selectedDay === 0 ? 'Today' : UPCOMING_DAYS[selectedDay]?.label || '';
-  const mealLabel = MEAL_PERIODS.find(m => m.id === selectedMealPeriod)?.label || '';
-  const selCount = (selectedVibes.length > 0 ? 1 : 0) + (selectedBudget ? 1 : 0) + (selectedAreas.length > 0 ? 1 : 0) + (selectedDay > 0 || selectedMealPeriod !== 'anytime' ? 1 : 0);
+  const dateLabel = selectedCalDate ? `${CAL.monthName.slice(0, 3)} ${selectedCalDate}` : '';
+  const timeLabel = `${selectedHour}:${selectedMinute} ${selectedAmPm}`;
+  const selCount = (selectedVibes.length > 0 ? 1 : 0) + (selectedBudget ? 1 : 0) + (selectedAreas.length > 0 ? 1 : 0) + (selectedCalDate ? 1 : 0);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-neutral-900 p-4 font-sans">
@@ -382,35 +388,82 @@ export function GroupJourney() {
                   <div className="flex items-center gap-2 mb-2.5">
                     <div className={`w-5 h-5 rounded-full flex items-center justify-center ${selectedGroupType ? 'bg-[#FFCC02]' : 'bg-gray-200'}`}><span className={`text-[10px] font-black ${selectedGroupType ? 'text-gray-900' : 'text-gray-400'}`}>2</span></div>
                     <p className={`text-[11px] font-bold ${selectedGroupType ? 'text-gray-700' : 'text-gray-400'}`}>When are you free?</p>
+                    {selectedCalDate && <span className="ml-auto text-[9px] font-semibold text-amber-700 bg-[#FFCC02]/10 rounded-full px-2 py-0.5 border border-[#FFCC02]/20">{dateLabel} · {timeLabel}</span>}
                   </div>
-                  <div className="bg-white rounded-[20px] border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] p-3">
-                    <div className="flex gap-1.5 overflow-x-auto no-sb mb-2.5 pb-0.5">
-                      {UPCOMING_DAYS.map((d, i) => {
-                        const on = selectedDay === d.dayNum;
-                        return (
-                          <motion.button key={d.key} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 + i * 0.02, ...spring }} whileTap={{ scale: 0.9 }}
-                            onClick={() => setSelectedDay(d.dayNum)}
-                            className={`flex-shrink-0 w-[48px] rounded-2xl py-2 flex flex-col items-center gap-0.5 transition-all ${on ? 'bg-[#FFCC02] shadow-[0_4px_14px_rgba(255,204,2,0.25)]' : 'bg-[#FAFAF8] hover:bg-gray-100'}`}
-                          >
-                            <span className={`text-[9px] font-bold leading-tight ${on ? 'text-gray-900' : 'text-gray-400'}`}>{d.label}</span>
-                            <span className={`text-[13px] font-black leading-tight ${on ? 'text-gray-900' : 'text-gray-700'}`}>{d.sub}</span>
-                          </motion.button>
-                        );
-                      })}
+                  <div className="bg-white rounded-[20px] border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] overflow-hidden">
+                    <div className="p-3 pb-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] font-bold text-gray-700">{CAL.monthName} {CAL.year}</span>
+                      </div>
+                      <div className="grid grid-cols-7 gap-px">
+                        {DAY_HEADERS.map(d => (
+                          <div key={d} className="text-center text-[8px] font-bold text-gray-400 py-1">{d}</div>
+                        ))}
+                        {CAL.cells.map((day, i) => {
+                          if (!day) return <div key={`e-${i}`} />;
+                          const isPast = day < CAL.todayDate;
+                          const isToday = day === CAL.todayDate;
+                          const isSelected = day === selectedCalDate;
+                          return (
+                            <motion.button key={day} disabled={isPast} whileTap={!isPast ? { scale: 0.85 } : undefined}
+                              onClick={() => !isPast && setSelectedCalDate(isSelected ? null : day)}
+                              className={`aspect-square rounded-full flex items-center justify-center text-[10px] font-bold transition-all
+                                ${isSelected ? 'bg-[#FFCC02] text-gray-900 shadow-[0_2px_8px_rgba(255,204,2,0.3)]' : ''}
+                                ${isToday && !isSelected ? 'bg-[#FFCC02]/12 text-gray-900 ring-1 ring-[#FFCC02]/30' : ''}
+                                ${isPast ? 'text-gray-200' : !isSelected && !isToday ? 'text-gray-600 hover:bg-gray-50' : ''}
+                              `}
+                            >
+                              {day}
+                            </motion.button>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="flex gap-1.5">
-                      {MEAL_PERIODS.map((m, i) => {
-                        const on = selectedMealPeriod === m.id;
-                        return (
-                          <motion.button key={m.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.32 + i * 0.03, ...spring }} whileTap={{ scale: 0.92 }}
-                            onClick={() => setSelectedMealPeriod(m.id)}
-                            className={`flex-1 rounded-xl py-1.5 flex flex-col items-center gap-0.5 border-2 transition-all ${on ? 'border-[#FFCC02] bg-[#FFCC02]/8' : 'border-gray-100 bg-[#FAFAF8]'}`}
-                          >
-                            <span className="text-sm leading-none">{m.icon}</span>
-                            <span className={`text-[9px] font-bold leading-tight ${on ? 'text-gray-800' : 'text-gray-500'}`}>{m.label}</span>
-                          </motion.button>
-                        );
-                      })}
+
+                    <div className="border-t border-gray-100 px-3 py-2.5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Clock className="w-3 h-3 text-[#FFCC02]" />
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Time</span>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <div className="flex-1 relative h-[88px] bg-[#FAFAF8] rounded-2xl overflow-hidden border border-gray-100">
+                          <div className="absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-[#FAFAF8] to-transparent z-10 pointer-events-none" />
+                          <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-[#FAFAF8] to-transparent z-10 pointer-events-none" />
+                          <div className="absolute inset-x-1 top-[28px] h-[32px] bg-white rounded-xl border border-[#FFCC02]/20 shadow-[0_2px_6px_rgba(255,204,2,0.08)] z-0" />
+                          <div className="h-full flex items-center justify-center gap-0">
+                            <div className="flex flex-col items-center" style={{ transform: `translateY(${(6 - TIME_HOURS.indexOf(selectedHour)) * 32}px)`, transition: 'transform 0.25s cubic-bezier(0.32,0.72,0,1)' }}>
+                              {TIME_HOURS.map(h => {
+                                const dist = Math.abs(TIME_HOURS.indexOf(h) - TIME_HOURS.indexOf(selectedHour));
+                                return (
+                                  <button key={h} onClick={() => setSelectedHour(h)}
+                                    className={`h-[32px] w-10 flex items-center justify-center text-[15px] font-black transition-all duration-200
+                                      ${h === selectedHour ? 'text-gray-900' : dist === 1 ? 'text-gray-400 scale-[0.88]' : 'text-gray-200 scale-[0.78]'}`}
+                                  >{h}</button>
+                                );
+                              })}
+                            </div>
+                            <span className="text-gray-300 text-[14px] font-bold mx-0.5">:</span>
+                            <div className="flex flex-col items-center" style={{ transform: `translateY(${(1 - TIME_MINUTES.indexOf(selectedMinute)) * 32}px)`, transition: 'transform 0.25s cubic-bezier(0.32,0.72,0,1)' }}>
+                              {TIME_MINUTES.map(m => {
+                                const dist = Math.abs(TIME_MINUTES.indexOf(m) - TIME_MINUTES.indexOf(selectedMinute));
+                                return (
+                                  <button key={m} onClick={() => setSelectedMinute(m)}
+                                    className={`h-[32px] w-10 flex items-center justify-center text-[15px] font-black transition-all duration-200
+                                      ${m === selectedMinute ? 'text-gray-900' : dist === 1 ? 'text-gray-400 scale-[0.88]' : 'text-gray-200 scale-[0.78]'}`}
+                                  >{m}</button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          {['AM', 'PM'].map(p => (
+                            <motion.button key={p} whileTap={{ scale: 0.9 }} onClick={() => setSelectedAmPm(p)}
+                              className={`w-11 py-2.5 rounded-xl text-[11px] font-black transition-all ${selectedAmPm === p ? 'bg-[#FFCC02] text-gray-900 shadow-[0_3px_10px_rgba(255,204,2,0.2)]' : 'bg-[#FAFAF8] text-gray-400 border border-gray-100'}`}
+                            >{p}</motion.button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -439,32 +492,44 @@ export function GroupJourney() {
 
                 {/* ── REFINE: WHAT ── */}
                 <motion.div className="px-5" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42, ...spring }}>
-                  <div className="flex items-center gap-2 mb-2.5">
+                  <div className="flex items-center gap-2 mb-3">
                     <div className="w-1 h-5 rounded-full bg-[#FFCC02]/30" />
                     <p className="text-[11px] font-bold text-gray-400">Refine your taste</p>
+                    <span className="text-[9px] text-gray-300 font-medium ml-auto">{selectedVibes.length}/3</span>
                   </div>
 
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {VIBES.map((v, i) => {
-                      const on = selectedVibes.includes(v.label);
-                      const atMax = selectedVibes.length >= 3 && !on;
-                      return (
-                        <motion.button key={v.label} initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: atMax ? 0.35 : 1, scale: 1 }} transition={{ delay: 0.44 + i * 0.02, ...spring }} whileTap={{ scale: 0.9 }} onClick={() => toggleVibe(v.label)}
-                          className={`rounded-full px-2.5 py-1.5 flex items-center gap-1 border-2 transition-all text-[10px] font-semibold ${on ? 'border-[#FFCC02] bg-[#FFCC02]/8 text-gray-800 shadow-[0_2px_8px_rgba(255,204,2,0.12)]' : 'bg-white border-gray-100 text-gray-500'}`}
-                        >
-                          <span className="text-xs">{v.emoji}</span>{v.label}
-                        </motion.button>
-                      );
-                    })}
+                  <div className="space-y-2 mb-3">
+                    {FOOD_CATEGORIES.map((cat, ci) => (
+                      <div key={cat.title} className="bg-white rounded-2xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] p-2.5">
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">{cat.title}</p>
+                        <div className="flex gap-1.5">
+                          {cat.items.map((v, i) => {
+                            const on = selectedVibes.includes(v.label);
+                            const atMax = selectedVibes.length >= 3 && !on;
+                            return (
+                              <motion.button key={v.label} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: atMax ? 0.35 : 1, scale: 1 }} transition={{ delay: 0.44 + ci * 0.04 + i * 0.02, ...spring }} whileTap={{ scale: 0.9 }}
+                                onClick={() => toggleVibe(v.label)}
+                                className={`flex-1 rounded-xl py-2 flex flex-col items-center gap-0.5 border-2 transition-all
+                                  ${on ? 'border-[#FFCC02] bg-[#FFCC02]/8 shadow-[0_2px_8px_rgba(255,204,2,0.12)]' : 'border-gray-100 bg-[#FAFAF8]'}`}
+                              >
+                                <span className="text-sm">{v.emoji}</span>
+                                <span className={`text-[9px] font-bold ${on ? 'text-gray-800' : 'text-gray-500'}`}>{v.label}</span>
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
-                  <div className="flex gap-1.5 mb-3">
-                    <div className="flex-1 bg-white rounded-[16px] border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] p-1 flex gap-0.5">
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] p-2.5 mb-3">
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Budget</p>
+                    <div className="flex gap-1">
                       {BUDGETS.map((b) => {
                         const on = selectedBudget === b.id;
                         return (
                           <motion.button key={b.id} whileTap={{ scale: 0.95 }} onClick={() => setSelectedBudget(on ? null : b.id)}
-                            className={`flex-1 rounded-[12px] py-2 flex flex-col items-center gap-0.5 transition-all ${on ? 'bg-[#FFCC02] shadow-[0_3px_10px_rgba(255,204,2,0.2)]' : 'hover:bg-gray-50'}`}
+                            className={`flex-1 rounded-xl py-2 flex flex-col items-center gap-0.5 transition-all ${on ? 'bg-[#FFCC02] shadow-[0_3px_10px_rgba(255,204,2,0.2)]' : 'bg-[#FAFAF8] border border-gray-100 hover:bg-gray-50'}`}
                           >
                             <span className={`text-[11px] font-black ${on ? 'text-gray-900' : 'text-gray-600'}`}>{b.label}</span>
                             <span className={`text-[7px] font-medium leading-none ${on ? 'text-gray-900/60' : 'text-gray-400'}`}>{b.sub}</span>
@@ -512,7 +577,7 @@ export function GroupJourney() {
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}>
                       {selCount > 0 && (
                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="flex gap-1.5 mb-2 overflow-x-auto no-sb">
-                          {(selectedDay > 0 || selectedMealPeriod !== 'anytime') && <span className="flex-shrink-0 text-[9px] font-semibold text-amber-800 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2 py-0.5">🕐 {whenLabel}{selectedMealPeriod !== 'anytime' ? ` · ${mealLabel}` : ''}</span>}
+                          {selectedCalDate && <span className="flex-shrink-0 text-[9px] font-semibold text-amber-800 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2 py-0.5">📅 {dateLabel} · {timeLabel}</span>}
                           {selectedAreas.slice(0, 2).map(a => <span key={a} className="flex-shrink-0 text-[9px] font-semibold text-amber-800 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2 py-0.5">📍 {a}</span>)}
                           {selectedVibes.slice(0, 2).map(v => <span key={v} className="flex-shrink-0 text-[9px] font-semibold text-amber-800 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2 py-0.5">{v}</span>)}
                           {selectedBudget && <span className="flex-shrink-0 text-[9px] font-semibold text-amber-800 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2 py-0.5">{BUDGETS.find(b => b.id === selectedBudget)?.label}</span>}
