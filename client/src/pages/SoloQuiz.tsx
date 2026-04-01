@@ -1,352 +1,366 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
-import { ArrowLeft, Utensils, MapPin, Sparkles, ChevronDown } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Check, Flame } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { trackEvent } from "@/lib/analytics";
 import { isOnboardingComplete } from "@/hooks/use-onboarding";
 import { InlineOnboarding } from "@/pages/Onboarding";
 
-const CUISINES = [
-  { emoji: "\u{1F35C}", label: "Thai" },
-  { emoji: "\u{1F363}", label: "Japanese" },
-  { emoji: "\u{1F95F}", label: "Chinese" },
-  { emoji: "\u{1F372}", label: "Korean" },
-  { emoji: "\u{1F35D}", label: "Italian" },
-  { emoji: "\u{1F990}", label: "Seafood" },
-  { emoji: "\u{1F35B}", label: "Indian" },
-  { emoji: "\u{1F32E}", label: "Mexican" },
-  { emoji: "\u{1F969}", label: "Western" },
-];
+const bouncy = { type: "spring" as const, stiffness: 400, damping: 18 };
+const spring = { type: "spring" as const, stiffness: 300, damping: 22 };
+const gentle = { type: "spring" as const, stiffness: 220, damping: 26 };
 
-const DIET_RESTRICTIONS = [
-  { emoji: "\u{1F96C}", label: "Vegan" },
-  { emoji: "\u{1F54C}", label: "Halal" },
-  { emoji: "\u{1F33E}", label: "Gluten-Free" },
-  { emoji: "\u{1F95B}", label: "Dairy-Free" },
-  { emoji: "\u{1F953}", label: "Keto" },
-  { emoji: "\u{1F437}", label: "No Pork" },
+const CUISINES = [
+  { emoji: "🍜", label: "Thai" },
+  { emoji: "🍣", label: "Japanese" },
+  { emoji: "🥟", label: "Chinese" },
+  { emoji: "🍲", label: "Korean" },
+  { emoji: "🍝", label: "Italian" },
+  { emoji: "🦐", label: "Seafood" },
+  { emoji: "🍛", label: "Indian" },
+  { emoji: "🌮", label: "Mexican" },
+  { emoji: "🥩", label: "Western" },
 ];
 
 const LOCATIONS = [
-  { emoji: "\u{1F362}", label: "Street food" },
-  { emoji: "\u{1F37D}\u{FE0F}", label: "Restaurants" },
-  { emoji: "\u{1F687}", label: "Near BTS" },
-  { emoji: "\u{1F3EC}", label: "At the mall" },
-  { emoji: "\u{1F319}", label: "Late night" },
-  { emoji: "\u{1F30A}", label: "By the river" },
-  { emoji: "\u{1F4C8}", label: "Trendy spots" },
-  { emoji: "\u{1F3D9}\u{FE0F}", label: "Rooftops" },
+  { emoji: "🍢", label: "Street food", desc: "Local vibes" },
+  { emoji: "🍽️", label: "Restaurants", desc: "Sit-down meal" },
+  { emoji: "🚇", label: "Near BTS", desc: "Easy access" },
+  { emoji: "🏬", label: "At the mall", desc: "Indoor vibes" },
+  { emoji: "🌙", label: "Late night", desc: "After hours" },
+  { emoji: "🌊", label: "By the river", desc: "Scenic views" },
+  { emoji: "📈", label: "Trendy spots", desc: "What's hot" },
+  { emoji: "🏙️", label: "Rooftops", desc: "Sky-high dining" },
 ];
 
 const BUDGETS = [
-  { id: "cheap", icon: "\u{0E3F}", label: "Cheap", sub: "Under 150" },
-  { id: "moderate", icon: "\u{0E3F}\u{0E3F}", label: "Moderate", sub: "150-500" },
-  { id: "fancy", icon: "\u{0E3F}\u{0E3F}\u{0E3F}", label: "Fancy", sub: "500-1500" },
-  { id: "splurge", icon: "\u{0E3F}\u{0E3F}\u{0E3F}\u{0E3F}", label: "Splurge", sub: "1500+" },
+  { id: "cheap", label: "฿", sub: "Under 150", emoji: "💰" },
+  { id: "moderate", label: "฿฿", sub: "150–500", emoji: "🍽️" },
+  { id: "fancy", label: "฿฿฿", sub: "500–1,500", emoji: "✨" },
+  { id: "splurge", label: "฿฿฿฿", sub: "1,500+", emoji: "👑" },
 ];
 
-const INTERESTS = [
-  { emoji: "\u{2B50}", label: "Popular spots" },
-  { emoji: "\u{1F4B0}", label: "Budget-friendly" },
-  { emoji: "\u{2600}\u{FE0F}", label: "Outdoor dining" },
-  { emoji: "\u{1F370}", label: "Dessert" },
-  { emoji: "\u{2615}", label: "Coffee" },
-  { emoji: "\u{1F957}", label: "Vegetarian" },
-  { emoji: "\u{1F336}\u{FE0F}", label: "Hot & spicy" },
-  { emoji: "\u{1F372}", label: "Comfort food" },
-  { emoji: "\u{1F942}", label: "Fine dining" },
-];
-
-function SectionCard({ title, icon: Icon, iconColor, expanded, onToggle, children, testId, badge }: {
-  title: string;
-  icon: any;
-  iconColor: string;
-  expanded: boolean;
-  onToggle: () => void;
-  children: React.ReactNode;
-  testId: string;
-  badge?: number;
-}) {
-  return (
-    <motion.div
-      layout
-      className="bg-white rounded-[20px] overflow-hidden border border-gray-100/80"
-      style={{ boxShadow: expanded ? "0 6px 24px rgba(0,0,0,0.06)" : "0 2px 8px rgba(0,0,0,0.03)" }}
-      data-testid={testId}
-    >
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50/50 transition-colors"
-        data-testid={`${testId}-toggle`}
-      >
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: `${iconColor}15` }}
-        >
-          <Icon className="w-4.5 h-4.5" style={{ color: iconColor }} />
-        </div>
-        <div className="flex-1 text-left min-w-0">
-          <p className="text-[14px] font-bold text-foreground">{title}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {badge !== undefined && badge > 0 && (
-            <span className="text-[11px] font-bold text-white bg-foreground rounded-full w-5 h-5 flex items-center justify-center">{badge}</span>
-          )}
-          <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-            <ChevronDown className="w-4 h-4 text-muted-foreground/40" />
-          </motion.div>
-        </div>
-      </button>
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-4 pt-0.5">
-              {children}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
-function ChipGrid({ items, selected, onToggle, testIdPrefix, maxSelect }: {
-  items: { emoji: string; label: string }[];
-  selected: string[];
-  onToggle: (label: string) => void;
-  testIdPrefix: string;
-  maxSelect?: number;
-}) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {items.map((item) => {
-        const isSelected = selected.includes(item.label);
-        const atMax = maxSelect !== undefined && selected.length >= maxSelect && !isSelected;
-        return (
-          <motion.button
-            key={item.label}
-            whileTap={{ scale: 0.93 }}
-            onClick={() => !atMax && onToggle(item.label)}
-            data-testid={`${testIdPrefix}-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-            className={`flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-[13px] font-medium transition-all duration-200 border ${
-              isSelected
-                ? "bg-foreground text-white border-foreground"
-                : atMax
-                  ? "bg-gray-50/50 border-gray-100/40 text-muted-foreground/40"
-                  : "bg-white border-gray-200/80 text-foreground"
-            }`}
-            style={isSelected ? { boxShadow: "0 4px 14px -3px rgba(0,0,0,0.15)" } : {}}
-          >
-            <span className="text-base">{item.emoji}</span>
-            <span>{item.label}</span>
-          </motion.button>
-        );
-      })}
-    </div>
-  );
-}
+const BUDGET_DISPLAY: Record<string, string> = {
+  cheap: "Cheap",
+  moderate: "Moderate",
+  fancy: "Fancy",
+  splurge: "Expensive",
+};
 
 export default function SoloQuiz() {
   const [, navigate] = useLocation();
-  const [expandedSection, setExpandedSection] = useState<string>("cravings");
   const [onboarded, setOnboarded] = useState(() => isOnboardingComplete());
+  const [step, setStep] = useState(0);
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [selectedBudget, setSelectedBudget] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (onboarded) trackEvent("quiz_start");
-  }, [onboarded]);
+  const toggleCuisine = useCallback((label: string) => {
+    setSelectedCuisines(prev =>
+      prev.includes(label) ? prev.filter(c => c !== label) : prev.length < 3 ? [...prev, label] : prev
+    );
+  }, []);
 
-  const [selections, setSelections] = useState<{ cuisines: string[]; diet: string[]; locations: string[]; budget: string; interests: string[] }>({
-    cuisines: [],
-    diet: [],
-    locations: [],
-    budget: "",
-    interests: [],
-  });
+  const toggleLocation = useCallback((label: string) => {
+    setSelectedLocations(prev =>
+      prev.includes(label) ? prev.filter(l => l !== label) : prev.length < 3 ? [...prev, label] : prev
+    );
+  }, []);
 
-  const toggleSelection = (category: keyof typeof selections, item: string) => {
-    setSelections((prev) => {
-      const val = prev[category];
-      if (Array.isArray(val)) {
-        if (val.includes(item)) {
-          return { ...prev, [category]: val.filter((i) => i !== item) };
-        }
-        if (val.length >= 3) return prev;
-        return { ...prev, [category]: [...val, item] };
-      }
-      return { ...prev, [category]: prev[category] === item ? "" : item };
+  const canProceed = step === 0
+    ? selectedCuisines.length > 0
+    : step === 1
+      ? selectedLocations.length > 0
+      : selectedBudget !== null;
+
+  const handleFinish = useCallback(() => {
+    trackEvent("quiz_complete", {
+      cuisines: selectedCuisines.join(","),
+      locations: selectedLocations.join(","),
+      budget: selectedBudget,
     });
-  };
 
-  const toggleSection = (key: string) => {
-    setExpandedSection(prev => prev === key ? "" : key);
-  };
-
-  const totalSelected = selections.cuisines.length + selections.diet.length + selections.locations.length + (selections.budget ? 1 : 0) + selections.interests.length;
-
-  const budgetDisplayMap: Record<string, string> = { cheap: "Cheap", moderate: "Moderate", fancy: "Fancy", splurge: "Expensive" };
-
-  const handleStart = () => {
     const params = new URLSearchParams();
-    if (selections.cuisines.length) params.set("cuisines", selections.cuisines.join(","));
-    if (selections.diet.length) params.set("diet", selections.diet.join(","));
-    if (selections.locations.length) params.set("locations", selections.locations.join(","));
-    if (selections.budget) params.set("budget", budgetDisplayMap[selections.budget] || selections.budget);
-    if (selections.interests.length) params.set("interests", selections.interests.join(","));
+    if (selectedCuisines.length) params.set("cuisines", selectedCuisines.join(","));
+    if (selectedLocations.length) params.set("locations", selectedLocations.join(","));
+    if (selectedBudget) params.set("budget", BUDGET_DISPLAY[selectedBudget] || selectedBudget);
     const qs = params.toString();
     navigate(`/solo/results${qs ? `?${qs}` : ""}`);
-  };
+  }, [selectedCuisines, selectedLocations, selectedBudget, navigate]);
 
-  const cravingsBadge = selections.cuisines.length + selections.diet.length;
-  const settingBadge = selections.locations.length + (selections.budget ? 1 : 0);
-  const interestsBadge = selections.interests.length;
+  const handleSkip = useCallback(() => {
+    navigate("/solo/results");
+  }, [navigate]);
 
   if (!onboarded) {
-    return (
-      <InlineOnboarding onComplete={() => setOnboarded(true)} />
-    );
+    return <InlineOnboarding onComplete={() => setOnboarded(true)} />;
   }
 
   return (
-    <div className="w-full h-[100dvh] bg-[#F8F8F7] flex flex-col overflow-hidden" data-testid="solo-quiz-page">
-      <div className="flex-shrink-0 bg-white/80 backdrop-blur-md border-b border-gray-100/60 z-40">
-        <div className="flex items-center gap-3 px-5 pt-12 pb-3">
-          <button
-            onClick={() => navigate("/")}
-            className="w-9 h-9 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center active:scale-90 transition-all duration-200 flex-shrink-0"
+    <div className="w-full h-[100dvh] bg-[#FAFAF8] flex flex-col overflow-hidden" data-testid="solo-quiz-page">
+      <div className="flex-shrink-0 pt-12 px-5 pb-2 z-40">
+        <div className="flex items-center justify-between mb-5">
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            onClick={() => step > 0 ? setStep(s => s - 1) : navigate("/")}
+            className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"
             data-testid="button-back"
           >
-            <ArrowLeft className="w-4.5 h-4.5 text-foreground" />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-[17px] font-bold text-foreground" data-testid="text-page-title">Solo Session</h1>
-            <p className="text-[11px] text-muted-foreground">Personalize your food discovery</p>
+            <ArrowLeft className="w-4 h-4 text-gray-700" />
+          </motion.button>
+
+          <div className="flex items-center gap-1.5">
+            {[0, 1, 2].map(i => (
+              <motion.div
+                key={i}
+                animate={{
+                  width: i === step ? 28 : 8,
+                  backgroundColor: i <= step ? "#FFCC02" : "#E5E7EB",
+                  borderRadius: 4,
+                }}
+                transition={spring}
+                className="h-2"
+                data-testid={`progress-dot-${i}`}
+              />
+            ))}
           </div>
+
           <button
-            onClick={handleStart}
-            className="text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-full active:scale-95"
+            onClick={handleSkip}
+            className="text-[12px] font-semibold text-gray-400 hover:text-gray-600 transition-colors px-3 py-1.5 rounded-full"
             data-testid="button-quiz-skip"
           >
             Skip
           </button>
         </div>
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h1 className="text-[26px] font-bold text-gray-900 leading-tight mb-1" data-testid="text-page-title">
+              {step === 0 ? "What are you\ncraving?" : step === 1 ? "Set the\nscene" : "What's your\nbudget?"}
+            </h1>
+            <p className="text-[13px] text-gray-400 font-medium">
+              {step === 0 ? "Pick up to 3 cuisines" : step === 1 ? "Where sounds good tonight?" : "We'll find the sweet spot"}
+            </p>
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-6 hide-scrollbar">
-        <div className="px-4 pt-4 space-y-3">
-
-          <SectionCard
-            title="Cravings"
-            icon={Utensils}
-            iconColor="#FFCC02"
-            expanded={expandedSection === "cravings"}
-            onToggle={() => toggleSection("cravings")}
-            testId="section-cravings"
-            badge={cravingsBadge}
-          >
-            <p className="text-[11px] font-semibold text-muted-foreground mb-2.5">Cuisine <span className="font-normal text-muted-foreground/60">(up to 3)</span></p>
-            <ChipGrid
-              items={CUISINES}
-              selected={selections.cuisines}
-              onToggle={(label) => toggleSelection("cuisines", label)}
-              testIdPrefix="chip-cuisine"
-              maxSelect={3}
-            />
-
-            <p className="text-[11px] font-semibold text-muted-foreground mb-2.5 mt-5">Dietary <span className="font-normal text-muted-foreground/60">(optional)</span></p>
-            <ChipGrid
-              items={DIET_RESTRICTIONS}
-              selected={selections.diet}
-              onToggle={(label) => toggleSelection("diet", label)}
-              testIdPrefix="chip-diet"
-              maxSelect={3}
-            />
-          </SectionCard>
-
-          <SectionCard
-            title="Setting & Budget"
-            icon={MapPin}
-            iconColor="#E11D48"
-            expanded={expandedSection === "setting"}
-            onToggle={() => toggleSection("setting")}
-            testId="section-setting"
-            badge={settingBadge}
-          >
-            <p className="text-[11px] font-semibold text-muted-foreground mb-2.5">Where sounds good?</p>
-            <ChipGrid
-              items={LOCATIONS}
-              selected={selections.locations}
-              onToggle={(label) => toggleSelection("locations", label)}
-              testIdPrefix="chip-location"
-              maxSelect={3}
-            />
-
-            <p className="text-[11px] font-semibold text-muted-foreground mb-2.5 mt-5">Budget range</p>
-            <div className="grid grid-cols-4 gap-1.5">
-              {BUDGETS.map((b) => {
-                const active = selections.budget === b.id;
+      <div className="flex-1 overflow-y-auto hide-scrollbar px-5 pt-4 pb-4">
+        <AnimatePresence mode="wait">
+          {step === 0 && (
+            <motion.div
+              key="cuisines"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, x: -40 }}
+              className="grid grid-cols-3 gap-3"
+            >
+              {CUISINES.map((c, i) => {
+                const on = selectedCuisines.includes(c.label);
+                const atMax = selectedCuisines.length >= 3 && !on;
                 return (
                   <motion.button
-                    key={b.id}
-                    whileTap={{ scale: 0.93 }}
-                    onClick={() => setSelections(prev => ({ ...prev, budget: active ? "" : b.id }))}
-                    data-testid={`chip-budget-${b.id}`}
-                    className={`flex flex-col items-center gap-0.5 py-2.5 px-1 rounded-xl transition-all duration-200 ${
-                      active
-                        ? "bg-white border-2 border-foreground"
-                        : "bg-gray-50 border border-gray-100/60"
+                    key={c.label}
+                    initial={{ opacity: 0, scale: 0.7, y: 20 }}
+                    animate={{ opacity: atMax ? 0.4 : 1, scale: 1, y: 0 }}
+                    transition={{ delay: i * 0.04, ...bouncy }}
+                    whileTap={{ scale: 0.88 }}
+                    onClick={() => toggleCuisine(c.label)}
+                    data-testid={`chip-cuisine-${c.label.toLowerCase()}`}
+                    className={`relative rounded-[20px] p-4 flex flex-col items-center gap-2 border-2 transition-all duration-200 ${
+                      on ? "bg-[#FFCC02]/5 border-[#FFCC02] shadow-[0_4px_20px_rgba(255,204,2,0.15)]" : "bg-white border-gray-100"
                     }`}
-                    style={{
-                      boxShadow: active ? "0 3px 12px rgba(0,0,0,0.08)" : "none",
-                    }}
                   >
-                    <span className={`text-[13px] font-bold ${active ? "text-foreground" : "text-muted-foreground/60"}`}>
-                      {b.icon}
-                    </span>
-                    <span className={`text-[9px] font-semibold ${active ? "text-foreground" : "text-muted-foreground"}`}>{b.label}</span>
+                    <AnimatePresence>
+                      {on && (
+                        <motion.div
+                          initial={{ scale: 0, rotate: -90 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          exit={{ scale: 0, rotate: 90 }}
+                          transition={bouncy}
+                          className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#FFCC02] rounded-full flex items-center justify-center shadow-sm"
+                        >
+                          <Check className="w-3 h-3 text-gray-900" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    <motion.span
+                      className="text-3xl"
+                      animate={on ? { scale: [1, 1.3, 1.1], rotate: [0, 10, 0] } : { scale: 1 }}
+                      transition={bouncy}
+                    >
+                      {c.emoji}
+                    </motion.span>
+                    <span className={`text-[12px] font-semibold ${on ? "text-gray-900" : "text-gray-500"}`}>{c.label}</span>
                   </motion.button>
                 );
               })}
-            </div>
-          </SectionCard>
+            </motion.div>
+          )}
 
-          <SectionCard
-            title="Interests"
-            icon={Sparkles}
-            iconColor="#6C2BD9"
-            expanded={expandedSection === "interests"}
-            onToggle={() => toggleSection("interests")}
-            testId="section-interests"
-            badge={interestsBadge}
-          >
-            <p className="text-[11px] font-semibold text-muted-foreground mb-2.5">What sounds good? <span className="font-normal text-muted-foreground/60">(up to 3)</span></p>
-            <ChipGrid
-              items={INTERESTS}
-              selected={selections.interests}
-              onToggle={(label) => toggleSelection("interests", label)}
-              testIdPrefix="chip-interest"
-              maxSelect={3}
-            />
-          </SectionCard>
-        </div>
+          {step === 1 && (
+            <motion.div
+              key="locations"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, x: -40 }}
+              className="grid grid-cols-2 gap-3"
+            >
+              {LOCATIONS.map((s, i) => {
+                const on = selectedLocations.includes(s.label);
+                const atMax = selectedLocations.length >= 3 && !on;
+                return (
+                  <motion.button
+                    key={s.label}
+                    initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20, y: 10 }}
+                    animate={{ opacity: atMax ? 0.4 : 1, x: 0, y: 0 }}
+                    transition={{ delay: i * 0.07, ...bouncy }}
+                    whileTap={{ scale: 0.93 }}
+                    onClick={() => toggleLocation(s.label)}
+                    data-testid={`chip-location-${s.label.toLowerCase().replace(/\s+/g, "-")}`}
+                    className={`rounded-[20px] p-4 flex items-center gap-3 border-2 transition-all duration-200 text-left ${
+                      on ? "bg-[#FFCC02]/5 border-[#FFCC02] shadow-[0_4px_20px_rgba(255,204,2,0.15)]" : "bg-white border-gray-100"
+                    }`}
+                  >
+                    <motion.span
+                      className="text-2xl flex-shrink-0"
+                      animate={on ? { scale: [1, 1.25, 1.1] } : { scale: 1 }}
+                      transition={bouncy}
+                    >
+                      {s.emoji}
+                    </motion.span>
+                    <div className="min-w-0 flex-1">
+                      <div className={`text-[12px] font-semibold ${on ? "text-gray-900" : "text-gray-600"}`}>{s.label}</div>
+                      <div className="text-[10px] text-gray-400">{s.desc}</div>
+                    </div>
+                    <AnimatePresence>
+                      {on && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 0 }}
+                          transition={bouncy}
+                          className="w-5 h-5 bg-[#FFCC02] rounded-full flex items-center justify-center flex-shrink-0"
+                        >
+                          <Check className="w-3 h-3 text-gray-900" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+                );
+              })}
+            </motion.div>
+          )}
+
+          {step === 2 && (
+            <motion.div
+              key="budget"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, x: -40 }}
+              className="space-y-3"
+            >
+              {BUDGETS.map((b, i) => {
+                const on = selectedBudget === b.id;
+                return (
+                  <motion.button
+                    key={b.id}
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.09, ...bouncy }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => setSelectedBudget(on ? null : b.id)}
+                    data-testid={`chip-budget-${b.id}`}
+                    className={`w-full rounded-[20px] p-4 flex items-center gap-4 border-2 transition-all duration-200 ${
+                      on ? "bg-[#FFCC02]/5 border-[#FFCC02] shadow-[0_4px_20px_rgba(255,204,2,0.15)]" : "bg-white border-gray-100"
+                    }`}
+                  >
+                    <motion.div
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl ${on ? "bg-[#FFCC02]/15" : "bg-gray-50"}`}
+                      animate={on ? { scale: [1, 1.15, 1.05], rotate: [0, 5, 0] } : { scale: 1 }}
+                      transition={bouncy}
+                    >
+                      {b.emoji}
+                    </motion.div>
+                    <div className="flex-1 text-left">
+                      <div className={`text-[15px] font-bold ${on ? "text-gray-900" : "text-gray-600"}`}>{b.label}</div>
+                      <div className="text-[11px] text-gray-400">{b.sub} THB</div>
+                    </div>
+                    <motion.div
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${on ? "border-[#FFCC02] bg-[#FFCC02]" : "border-gray-200"}`}
+                      animate={on ? { scale: [0.8, 1.2, 1] } : { scale: 1 }}
+                      transition={bouncy}
+                    >
+                      {on && (
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={bouncy}>
+                          <Check className="w-3.5 h-3.5 text-gray-900" />
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  </motion.button>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      <div className="flex-shrink-0 bg-white/90 backdrop-blur-md border-t border-gray-100/60 px-5 py-3 pb-5 safe-bottom">
-        <button
-          onClick={handleStart}
-          data-testid="button-quiz-next"
-          className="w-full py-4 rounded-2xl bg-[#FFCC02] text-[#2d2000] font-bold text-[15px] active:scale-[0.97] transition-transform duration-200 flex items-center justify-center gap-2"
-          style={{ boxShadow: "0 8px 25px -5px rgba(255,204,2,0.4)" }}
-        >
-          <Sparkles className="w-4 h-4" />
-          {totalSelected > 0 ? `Let's Go! (${totalSelected} selected)` : "Let's Go!"}
-        </button>
+      <div className="flex-shrink-0 px-5 pt-2 pb-5 safe-bottom bg-[#FAFAF8]">
+        <AnimatePresence>
+          {canProceed && (
+            <motion.button
+              initial={{ opacity: 0, y: 24, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 24, scale: 0.9 }}
+              transition={bouncy}
+              whileTap={{ scale: 0.96 }}
+              onClick={step < 2 ? () => setStep(s => s + 1) : handleFinish}
+              data-testid="button-quiz-next"
+              className="w-full py-4 rounded-2xl bg-[#FFCC02] flex items-center justify-center gap-2.5 font-bold text-[15px] text-[#2d2000]"
+              style={{ boxShadow: "0 8px 25px -5px rgba(255,204,2,0.4)" }}
+            >
+              {step < 2 ? (
+                <>
+                  Continue
+                  <motion.div animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.2 }}>
+                    <ArrowRight className="w-5 h-5" />
+                  </motion.div>
+                </>
+              ) : (
+                <>
+                  Let's pick!
+                  <motion.div animate={{ rotate: [0, 15, -15, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
+                    <Flame className="w-5 h-5" />
+                  </motion.div>
+                </>
+              )}
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {selectedCuisines.length > 0 && step === 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-wrap gap-1.5 mt-3 justify-center">
+            {selectedCuisines.map(c => (
+              <motion.span
+                key={c}
+                initial={{ scale: 0, rotate: -10 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={bouncy}
+                className="text-[10px] font-semibold text-gray-700 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2.5 py-1"
+              >
+                {CUISINES.find(cu => cu.label === c)?.emoji} {c}
+              </motion.span>
+            ))}
+          </motion.div>
+        )}
       </div>
     </div>
   );
