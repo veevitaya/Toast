@@ -696,6 +696,8 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
   return (
     <div ref={containerRef} className={isRefineOpen ? "flex flex-col flex-1 min-h-0" : "px-6 pt-4 pb-2"} data-testid="toast-decides-section">
       {!isRefineOpen && uiState === "home" && (
+        <>
+        <h2 className="text-[13px] font-bold text-muted-foreground uppercase tracking-widest mb-3" data-testid="text-toast-decides-label">Toast Decides</h2>
         <motion.div
           layout
           transition={expandSpring}
@@ -916,6 +918,7 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
             </>
           )}
         </motion.div>
+        </>
       )}
 
       <AnimatePresence>

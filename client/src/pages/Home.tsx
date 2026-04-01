@@ -793,7 +793,7 @@ export default function Home() {
 
           <div className="px-6 pt-2 pb-4" style={refineOpen ? { display: "none" } : undefined}>
             <h2
-              className="text-[20px] font-bold text-foreground mb-4"
+              className="text-[13px] font-bold text-muted-foreground uppercase tracking-widest mb-4"
               data-testid="text-who-eating"
             >
               Who's eating with you?
@@ -832,7 +832,7 @@ export default function Home() {
 
           <div className="px-6 pt-6 pb-2" style={refineOpen ? { display: "none" } : undefined}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[11px] font-bold text-foreground uppercase tracking-[0.12em]" data-testid="text-pick-vibe">Pick a Vibe</h2>
+              <h2 className="text-[13px] font-bold text-muted-foreground uppercase tracking-widest" data-testid="text-pick-vibe">Pick a Vibe</h2>
               <span className="text-xs font-medium text-muted-foreground">Opens a world <span className="text-muted-foreground/40">&#8250;</span></span>
             </div>
             <div className="grid grid-cols-4 gap-2.5">
