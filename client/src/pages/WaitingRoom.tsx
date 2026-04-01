@@ -258,7 +258,10 @@ export default function WaitingRoom() {
 
     const fetchSession = async () => {
       try {
-        const res = await fetchWithTimeout(`/api/group/sessions/${sessionId}`, { signal: controller.signal });
+        const res = await fetchWithTimeout(`/api/group/sessions/${sessionId}`, {
+          signal: controller.signal,
+          headers: { "Cache-Control": "no-cache" },
+        });
         if (res.ok) {
           const data = await res.json();
           setMembers(data.members);
@@ -416,16 +419,17 @@ export default function WaitingRoom() {
   const canStart = memberCount >= 2;
 
   const handleStartSwiping = async () => {
-    if (profile) {
-      try {
-        await fetchWithTimeout(`/api/group/sessions/${sessionId}/status`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status: "swiping", lineUserId: profile.userId }),
-        });
-      } catch {}
-    }
-    navigate(`/group/swipe?session=${sessionId}`);
+    if (!hostOfSession || !profile) return;
+    try {
+      const res = await fetchWithTimeout(`/api/group/sessions/${sessionId}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "swiping", lineUserId: profile.userId }),
+      });
+      if (res.ok) {
+        navigate(`/group/swipe?session=${sessionId}`);
+      }
+    } catch {}
   };
 
 
@@ -907,22 +911,34 @@ export default function WaitingRoom() {
       )}
 
       <div className="flex flex-col items-center gap-3 w-full max-w-xs">
-        <motion.button
-          onClick={handleStartSwiping}
-          data-testid="button-start-swiping"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-          className={`w-full py-4 rounded-full font-bold text-[15px] transition-all duration-500 active:scale-[0.96] gpu-accelerated ${
-            canStart
-              ? "bg-[#FFCC02] text-[#2d2000]"
-              : "bg-gray-100 text-muted-foreground"
-          }`}
-          style={canStart ? { boxShadow: "var(--shadow-glow-primary)" } : {}}
-          disabled={!canStart}
-        >
-          {canStart ? "Start Swiping!" : "Waiting for more friends..."}
-        </motion.button>
+        {hostOfSession ? (
+          <motion.button
+            onClick={handleStartSwiping}
+            data-testid="button-start-swiping"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            className={`w-full py-4 rounded-full font-bold text-[15px] transition-all duration-500 active:scale-[0.96] gpu-accelerated ${
+              canStart
+                ? "bg-[#FFCC02] text-[#2d2000]"
+                : "bg-gray-100 text-muted-foreground"
+            }`}
+            style={canStart ? { boxShadow: "var(--shadow-glow-primary)" } : {}}
+            disabled={!canStart}
+          >
+            {canStart ? "Start Swiping!" : "Waiting for more friends..."}
+          </motion.button>
+        ) : (
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            className="w-full py-4 rounded-full bg-gray-100 text-muted-foreground font-bold text-[15px] text-center"
+            data-testid="text-waiting-for-host"
+          >
+            {canStart ? "Waiting for host to start..." : "Waiting for more friends..."}
+          </motion.div>
+        )}
 
         <motion.p
           initial={{ opacity: 0 }}

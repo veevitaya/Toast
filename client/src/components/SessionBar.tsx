@@ -1,11 +1,11 @@
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useSessions, addSession, updateSession, removeSession, type ActiveSession } from "@/lib/sessionStore";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { fetchWithTimeout } from "@/lib/queryClient";
 
-function SessionCard({ session, onNavigate }: { session: ActiveSession; onNavigate: (route: string) => void }) {
+const SessionCard = forwardRef<HTMLDivElement, { session: ActiveSession; onNavigate: (route: string) => void }>(function SessionCard({ session, onNavigate }, ref) {
   const elapsed = Math.floor((Date.now() - session.startedAt) / 60000);
   const timeLabel = elapsed < 1 ? "Just started" : `${elapsed}m ago`;
 
@@ -19,6 +19,7 @@ function SessionCard({ session, onNavigate }: { session: ActiveSession; onNaviga
 
   return (
     <motion.div
+      ref={ref}
       layout
       initial={{ opacity: 0, scale: 0.9, x: 40 }}
       animate={{ opacity: 1, scale: 1, x: 0 }}
@@ -101,7 +102,7 @@ function SessionCard({ session, onNavigate }: { session: ActiveSession; onNaviga
       </motion.div>
     </motion.div>
   );
-}
+});
 
 export function SessionBar() {
   const sessions = useSessions();
