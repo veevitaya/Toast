@@ -45,7 +45,7 @@ const FALLBACK_RECOMMENDATIONS: PersonalizedRec[] = [
   { id: 231, name: "Peppina", category: "Pizza", rating: "4.8", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&auto=format&fit=crop&q=60", address: "Sukhumvit 33", priceLevel: 2, match: 75, reasonChips: ["Highly rated"], confidenceText: "Worth trying based on what's popular now", scores: { taste: 65, daypart: 60, popularity: 85, value: 75 } },
 ];
 
-type UIState = "home" | "refine_open" | "thinking" | "results" | "decision_flow";
+type UIState = "home" | "refine_open" | "thinking" | "results" | "decision_flow" | "dna";
 type DecisionStep = "mood" | "distance" | "avoid" | "results";
 
 const CRAVING_OPTIONS = [
@@ -366,6 +366,14 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
   const { payload: bootstrap, loading: bootstrapLoading } = useBootstrapSession();
 
   const [uiState, setUIState] = useState<UIState>("home");
+  const [isExpanded, setIsExpanded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const scrollToCard = useCallback(() => {
+    requestAnimationFrame(() => {
+      containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
 
   const bootstrapRecs = useMemo(() => {
     if (!bootstrap) return FALLBACK_RECOMMENDATIONS;
@@ -637,8 +645,9 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
     setDecisionAvoid([]);
     setDecisionResults([]);
     setUIState("decision_flow");
+    scrollToCard();
     trackDecisionEvent("primary_cta_clicked", { userId: userProfile?.userId });
-  }, [userProfile?.userId]);
+  }, [userProfile?.userId, scrollToCard]);
 
   const toggleAvoid = useCallback((tag: string) => {
     setAvoidTags(prev =>
@@ -671,187 +680,289 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
 
   const isRefineOpen = uiState === "refine_open";
 
+  const expandSpring = { type: "spring" as const, stiffness: 280, damping: 26 };
+
+  const handleLooksGreat = useCallback(() => {
+    trackDecisionEvent("detail_viewed", { userId: userProfile?.userId, restaurantId: primaryRec.id, metadata: { category: primaryRec.category } });
+    navigate(`/restaurant/${primaryRec.id}`);
+  }, [userProfile?.userId, primaryRec, navigate]);
+
+  const openDNA = useCallback(() => {
+    setUIState("dna");
+    scrollToCard();
+    trackDecisionEvent("dna_viewed", { userId: userProfile?.userId });
+  }, [userProfile?.userId, scrollToCard]);
+
   return (
-    <div className={isRefineOpen ? "flex flex-col flex-1 min-h-0" : "px-6 pt-4 pb-2"} data-testid="toast-decides-section">
-      {!isRefineOpen && <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-[#FFCC02]" />
-          <h2 className="text-[11px] font-bold text-foreground uppercase tracking-[0.12em]" data-testid="text-toast-decides">
-            Toast Decides
-          </h2>
-        </div>
-        <button
-          onClick={() => navigate("/toast-picks")}
-          className="text-xs font-medium text-muted-foreground"
-          data-testid="link-why-this"
+    <div ref={containerRef} className={isRefineOpen ? "flex flex-col flex-1 min-h-0" : "px-6 pt-4 pb-2"} data-testid="toast-decides-section">
+      {!isRefineOpen && uiState === "home" && (
+        <motion.div
+          layout
+          transition={expandSpring}
+          className="rounded-[20px] overflow-hidden bg-white border border-gray-100 relative"
+          style={{ boxShadow: isExpanded ? "0 8px 32px -8px rgba(0,0,0,0.10)" : "0 4px 20px rgba(0,0,0,0.03)" }}
+          data-testid="card-toast-decides"
         >
-          Why this? <span className="text-muted-foreground/40">&#8250;</span>
-        </button>
-      </div>}
+          <motion.div layout="position" className="absolute top-0 left-0 right-0 h-1" style={{ background: "linear-gradient(90deg, #FFCC02, hsl(45, 90%, 65%))" }} />
 
-      {!isRefineOpen && <div
-        className="rounded-[20px] overflow-hidden bg-white border border-gray-100 relative animate-page-in"
-        style={{ boxShadow: "0 6px 24px -6px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03)" }}
-        data-testid="card-toast-decides"
-      >
-        <div className="absolute top-0 left-0 right-0 h-1" style={{ background: "linear-gradient(90deg, #FFCC02, hsl(45, 90%, 65%))" }} />
-
-        {showSkeleton ? (
-          <HeroSkeleton />
-        ) : (
-          <div className="p-5">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-bold text-amber-700 bg-amber-50 rounded-full px-2.5 py-1 flex items-center gap-1.5 border border-amber-100" data-testid="badge-streak">
-                {"\uD83D\uDD25"} 5-day streak
-              </span>
-              <motion.button
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={openDecisionFlow}
-                className="text-[10px] font-semibold text-muted-foreground bg-gray-50 border border-gray-100 rounded-full px-2.5 py-1.5 flex items-center gap-1"
-                data-testid="button-help-decide"
+          {showSkeleton ? (
+            <HeroSkeleton />
+          ) : (
+            <>
+              <motion.div
+                layout="position"
+                className="p-4 w-full text-left cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onClick={() => setIsExpanded(!isExpanded)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setIsExpanded(!isExpanded); } }}
+                aria-expanded={isExpanded}
+                aria-label={isExpanded ? "Collapse recommendation" : "Expand recommendation"}
+                data-testid="button-expand-area"
               >
-                <Zap className="w-3 h-3" /> Help me decide
-              </motion.button>
-            </div>
-
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-[20px]">{"\uD83C\uDF5E"}</span>
-              <p className="text-[19px] font-bold text-foreground leading-snug" data-testid="text-hero-headline">
-                {headline}
-              </p>
-            </div>
-            <p className="text-[13px] text-muted-foreground mb-4">{subheadline}</p>
-
-            <motion.button
-              onClick={() => { trackDecisionEvent("detail_viewed", { userId: userProfile?.userId, restaurantId: primaryRec.id, metadata: { category: primaryRec.category } }); navigate(`/restaurant/${primaryRec.id}`); }}
-              className="relative w-full rounded-2xl overflow-hidden mb-3 group"
-              whileTap={{ scale: 0.98 }}
-              data-testid={`card-primary-rec-${primaryRec.id}`}
-            >
-              <div className="relative w-full h-[180px]">
-                <img
-                  src={optimizeImageUrl(primaryRec.imageUrl, 400)}
-                  alt={primaryRec.name}
-                  className="w-full h-full object-cover"
-                  loading="eager"
-                  decoding="sync"
-                  fetchPriority="high"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-
-                <div className="absolute top-3 right-3 bg-emerald-500/90 backdrop-blur-sm text-white text-[11px] font-bold rounded-full px-2.5 py-1 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  {primaryRec.match}% match
-                </div>
-
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <p className="text-white text-[18px] font-bold leading-tight" data-testid="text-primary-rec-name">{primaryRec.name}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-white/80 text-[11px] flex items-center gap-0.5">
-                      <MapPin className="w-3 h-3" /> {primaryRec.address}
-                    </span>
-                    <span className="text-white/60 text-[11px]">|</span>
-                    <span className="text-white/80 text-[11px] flex items-center gap-0.5">
-                      <Star className="w-3 h-3 text-[#FFCC02]" /> {primaryRec.rating}
-                    </span>
-                    <span className="text-white/60 text-[11px]">|</span>
-                    <span className="text-white/80 text-[11px]">
-                      {"$".repeat(primaryRec.priceLevel || 1)}
-                    </span>
+                <motion.div layout="position" className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#FFCC02]" />
+                    <span className="text-[12px] font-bold text-foreground" data-testid="text-toast-decides">{headline}</span>
                   </div>
-                </div>
-              </div>
-            </motion.button>
-
-            {primaryRec.reasonChips && primaryRec.reasonChips.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {primaryRec.reasonChips.map((chip, i) => (
-                  <span
-                    key={i}
-                    className="text-[10px] font-medium text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1 border border-emerald-100"
-                    data-testid={`chip-reason-${i}`}
+                  <motion.div
+                    animate={{ rotate: isExpanded ? 180 : 0 }}
+                    transition={expandSpring}
+                    className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center"
+                    data-testid="button-expand-toggle"
                   >
-                    {chip}
-                  </span>
-                ))}
-              </div>
-            )}
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </motion.div>
+                </motion.div>
 
-            <div className="flex gap-2 mb-3">
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                onClick={() => navigate(`/restaurant/${primaryRec.id}`)}
-                className="flex-1 h-11 rounded-xl bg-[#FFCC02] flex items-center justify-center gap-2 font-semibold text-sm text-foreground"
-                data-testid="button-choose-this"
-              >
-                Looks great <ArrowRight className="w-4 h-4" />
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                onClick={tryAnother}
-                className="h-11 px-4 rounded-xl border border-gray-200 bg-white flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground"
-                data-testid="button-try-another"
-              >
-                <RotateCcw className="w-3.5 h-3.5" /> Try another
-              </motion.button>
-            </div>
+                <motion.p layout="position" className="text-[11px] text-muted-foreground mb-2.5">{subheadline}</motion.p>
 
-            {secondaryRecs.length > 0 && (
-              <div className="flex gap-2.5">
-                {secondaryRecs.map((rec, idx) => (
-                  <button
-                    key={rec.id}
-                    onClick={() => promoteSecondary(idx)}
-                    className="flex-1 group active:scale-[0.96] transition-transform duration-150"
-                    data-testid={`card-secondary-rec-${rec.id}`}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={primaryRec.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.25 }}
+                    layout="position"
+                    className="flex items-center gap-3"
                   >
-                    <div className="relative w-full h-[80px] rounded-xl overflow-hidden mb-1.5 border border-gray-100">
-                      <img src={optimizeImageUrl(rec.imageUrl, 200, 40)} alt={rec.name} className="w-full h-full object-cover" loading="lazy" decoding="async" onError={(e) => { const img = e.currentTarget; img.style.display = 'none'; }} />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                      <div className="absolute top-1.5 right-1.5 bg-emerald-500/90 backdrop-blur-sm text-white text-[9px] font-bold rounded-full px-1.5 py-0.5">
-                        {rec.match}%
+                    <div className="relative w-[48px] h-[48px] rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
+                      <img src={optimizeImageUrl(primaryRec.imageUrl, 200)} alt={primaryRec.name} className="w-full h-full object-cover" loading="eager" decoding="sync" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[13px] font-bold text-foreground truncate" data-testid="text-primary-rec-name">{primaryRec.name}</span>
                       </div>
-                      <div className="absolute bottom-1.5 left-1.5">
-                        <p className="text-white text-[11px] font-semibold leading-tight drop-shadow">{rec.name}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {primaryRec.category} · {primaryRec.district || primaryRec.address} · <Star className="w-3 h-3 inline text-[#FFCC02] fill-[#FFCC02] -mt-0.5" /> {primaryRec.rating}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0 text-right">
+                      <span className="text-[15px] font-bold text-emerald-600">{primaryRec.match}%</span>
+                      <p className="text-[9px] text-muted-foreground font-medium">match</p>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+
+                <motion.div layout="position" className="mt-3 flex items-center gap-2">
+                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <motion.div
+                      key={primaryRec.id}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${primaryRec.match}%` }}
+                      transition={{ delay: 0.15, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                      className="h-full rounded-full"
+                      style={{ background: primaryRec.match >= 80 ? "linear-gradient(90deg, #22c55e, #16a34a)" : "linear-gradient(90deg, #FFCC02, #eab308)" }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-muted-foreground font-medium flex-shrink-0">confidence</span>
+                </motion.div>
+              </motion.div>
+
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={expandSpring}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-4 pb-4">
+                      <div className="border-t border-gray-100 pt-3">
+                        <motion.button
+                          onClick={handleLooksGreat}
+                          className="relative w-full rounded-2xl overflow-hidden mb-3 group"
+                          whileTap={{ scale: 0.98 }}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.05, ...expandSpring }}
+                          data-testid={`card-primary-rec-${primaryRec.id}`}
+                        >
+                          <div className="relative w-full h-[140px]">
+                            <img
+                              src={optimizeImageUrl(primaryRec.imageUrl, 400)}
+                              alt={primaryRec.name}
+                              className="w-full h-full object-cover"
+                              loading="eager"
+                              decoding="sync"
+                              fetchPriority="high"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                            <div className="absolute top-2.5 left-2.5 bg-[#FFCC02] text-foreground text-[10px] font-bold rounded-full px-2 py-0.5 flex items-center gap-1">
+                              <Sparkles className="w-3 h-3" /> Top Pick
+                            </div>
+                            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between">
+                              <span className="text-white/90 text-[11px] font-medium flex items-center gap-1">
+                                <MapPin className="w-3 h-3" /> {primaryRec.district || primaryRec.address} · {"$".repeat(primaryRec.priceLevel || 1)}
+                              </span>
+                            </div>
+                          </div>
+                        </motion.button>
+
+                        {primaryRec.insight && (
+                          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, ...expandSpring }} className="flex items-start gap-2 mb-3 bg-amber-50/60 rounded-xl px-3 py-2 border border-amber-100/50">
+                            <Brain className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
+                            <p className="text-[11px] text-amber-800 leading-relaxed capitalize">{primaryRec.insight}</p>
+                          </motion.div>
+                        )}
+
+                        {primaryRec.reasonChips && primaryRec.reasonChips.length > 0 && (
+                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="flex flex-wrap gap-1.5 mb-3">
+                            {primaryRec.reasonChips.map((chip, i) => (
+                              <span key={i} className="text-[10px] font-medium text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1 border border-emerald-100" data-testid={`chip-reason-${i}`}>{chip}</span>
+                            ))}
+                          </motion.div>
+                        )}
+
+                        {primaryRec.scores && (
+                          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, ...expandSpring }} className="mb-3 space-y-1.5">
+                            <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider mb-2">Why this pick</p>
+                            <ScoreBar label="Taste match" value={primaryRec.scores.taste} color="#22c55e" />
+                            <ScoreBar label="Right timing" value={primaryRec.scores.daypart} color="#FFCC02" />
+                            <ScoreBar label="Popularity" value={primaryRec.scores.popularity} color="#3b82f6" />
+                            <ScoreBar label="Value" value={primaryRec.scores.value} color="#8b5cf6" />
+                          </motion.div>
+                        )}
+
+                        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, ...expandSpring }} className="flex gap-2 mb-3">
+                          <motion.button
+                            whileTap={{ scale: 0.96 }}
+                            onClick={handleLooksGreat}
+                            className="flex-1 h-11 rounded-xl bg-[#FFCC02] flex items-center justify-center gap-2 font-semibold text-sm text-foreground"
+                            data-testid="button-choose-this"
+                          >
+                            Looks great <ArrowRight className="w-4 h-4" />
+                          </motion.button>
+                          <motion.button
+                            whileTap={{ scale: 0.96 }}
+                            onClick={tryAnother}
+                            className="h-11 w-11 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-muted-foreground"
+                            data-testid="button-try-another"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </motion.button>
+                        </motion.div>
+
+                        {secondaryRecs.length > 0 && (
+                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="flex gap-2.5 mb-3">
+                            {secondaryRecs.map((rec, idx) => (
+                              <div key={rec.id} className="flex-1 cursor-pointer" onClick={() => promoteSecondary(idx)} data-testid={`card-secondary-rec-${rec.id}`}>
+                                <div className="relative w-full h-[56px] rounded-xl overflow-hidden border border-gray-100">
+                                  <img src={optimizeImageUrl(rec.imageUrl, 200, 40)} alt={rec.name} className="w-full h-full object-cover" loading="lazy" decoding="async" onError={(e) => { const img = e.currentTarget; img.style.display = "none"; }} />
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                                  <div className="absolute top-1.5 right-1.5 bg-emerald-500/90 text-white text-[9px] font-bold rounded-full px-1.5 py-0.5">{rec.match}%</div>
+                                  <p className="absolute bottom-1.5 left-1.5 text-white text-[10px] font-semibold drop-shadow">{rec.name}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </motion.div>
+                        )}
+
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="flex gap-2 mb-2">
+                          <button
+                            onClick={openDNA}
+                            className="flex-1 h-9 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-violet-700"
+                            data-testid="button-taste-dna"
+                          >
+                            <Brain className="w-3.5 h-3.5" /> Taste DNA
+                          </button>
+                          <button
+                            onClick={openDecisionFlow}
+                            className="flex-1 h-9 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-1.5 text-[11px] font-medium text-muted-foreground"
+                            data-testid="button-help-decide"
+                          >
+                            <Zap className="w-3.5 h-3.5" /> Help me decide
+                          </button>
+                        </motion.div>
+
+                        <motion.button
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.4 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => { setUIState("refine_open"); onRefineToggle?.(true); trackDecisionEvent("refine_opened", { userId: userProfile?.userId }); }}
+                          className="w-full h-9 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-2 text-[11px] font-medium text-muted-foreground"
+                          data-testid="button-refine"
+                        >
+                          Refine my picks <ChevronRight className="w-3.5 h-3.5" />
+                        </motion.button>
                       </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground truncate">{rec.address} | {rec.rating}</p>
-                  </button>
-                ))}
-              </div>
-            )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          )}
+        </motion.div>
+      )}
 
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider">Match Confidence</span>
-                <span className="text-sm font-bold text-foreground">{primaryRec.match}%</span>
+      <AnimatePresence>
+        {uiState === "dna" && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={expandSpring}
+            className="rounded-[20px] bg-white border border-gray-100 overflow-hidden relative"
+            style={{ boxShadow: "0 8px 32px -8px rgba(0,0,0,0.10)" }}
+            data-testid="dna-view"
+          >
+            <div className="absolute top-0 left-0 right-0 h-1 rounded-t-[20px]" style={{ background: "linear-gradient(90deg, #8b5cf6, #3b82f6, #22c55e, #FFCC02)" }} />
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-violet-600" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-bold text-foreground">Your Taste DNA</p>
+                    <p className="text-[10px] text-muted-foreground">How we picked these for you</p>
+                  </div>
+                </div>
+                <button onClick={() => setUIState("home")} className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center" data-testid="button-close-dna">
+                  <X className="w-4 h-4 text-gray-400" />
+                </button>
               </div>
-              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${primaryRec.match}%` }}
-                  transition={{ delay: 0.2, duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-                  className="h-full rounded-full"
-                  style={{ background: `linear-gradient(90deg, ${primaryRec.match >= 80 ? "#22c55e" : primaryRec.match >= 60 ? "#FFCC02" : "#f59e0b"}, ${primaryRec.match >= 80 ? "#16a34a" : primaryRec.match >= 60 ? "hsl(45, 90%, 55%)" : "#d97706"})` }}
-                />
-              </div>
-              {primaryRec.confidenceText && (
-                <p className="text-[10px] text-muted-foreground mt-1.5">{primaryRec.confidenceText}</p>
-              )}
+
+              <TasteDNAPanel recs={recs} />
+
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                onClick={() => setUIState("home")}
+                whileTap={{ scale: 0.98 }}
+                className="mt-4 w-full h-10 rounded-xl bg-violet-600 text-white flex items-center justify-center gap-2 text-[12px] font-semibold"
+                data-testid="button-back-from-dna"
+              >
+                <ChevronRight className="w-4 h-4 rotate-180" /> Back to recommendation
+              </motion.button>
             </div>
-
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => { setUIState("refine_open"); onRefineToggle?.(true); trackDecisionEvent("refine_opened", { userId: userProfile?.userId }); }}
-              className="mt-3 w-full h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground"
-              data-testid="button-refine"
-            >
-              Refine my picks <ChevronRight className="w-3.5 h-3.5" />
-            </motion.button>
-          </div>
+          </motion.div>
         )}
-      </div>}
+      </AnimatePresence>
 
       <AnimatePresence>
         {uiState === "refine_open" && (
