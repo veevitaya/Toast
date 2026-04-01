@@ -45,8 +45,9 @@ const FALLBACK_RECOMMENDATIONS: PersonalizedRec[] = [
   { id: 231, name: "Peppina", category: "Pizza", rating: "4.8", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&auto=format&fit=crop&q=60", address: "Sukhumvit 33", priceLevel: 2, match: 75, reasonChips: ["Highly rated"], confidenceText: "Worth trying based on what's popular now", scores: { taste: 65, daypart: 60, popularity: 85, value: 75 } },
 ];
 
-type UIState = "home" | "refine_open" | "thinking" | "results" | "decision_flow" | "dna";
+type UIState = "home" | "refine_open" | "thinking" | "results" | "decision_flow" | "dna" | "confirmed";
 type DecisionStep = "mood" | "distance" | "avoid" | "results";
+type InlineDecideStep = "mood" | "distance" | "thinking" | "result";
 
 const CRAVING_OPTIONS = [
   { key: "warm", label: "Warm & comforting", shortLabel: "Comfort", icon: "bowl" },
@@ -67,6 +68,21 @@ const DISTANCE_OPTIONS = [
 
 const AVOID_OPTIONS = [
   "Seafood", "Spicy", "Pork", "Fried", "Long wait", "Dairy", "Gluten",
+];
+
+const INLINE_MOODS = [
+  { id: "comfort", label: "Comfort food", icon: "\uD83C\uDF5C" },
+  { id: "adventurous", label: "Try something new", icon: "\uD83C\uDF0D" },
+  { id: "healthy", label: "Healthy & light", icon: "\uD83E\uDD57" },
+  { id: "indulgent", label: "Treat myself", icon: "\u2728" },
+  { id: "quick", label: "Quick bite", icon: "\u26A1" },
+  { id: "social", label: "Impress someone", icon: "\uD83D\uDCAB" },
+];
+
+const INLINE_DISTANCES = [
+  { id: "close", label: "Walking distance", sub: "< 1 km" },
+  { id: "medium", label: "Short ride", sub: "1-3 km" },
+  { id: "flexible", label: "Anywhere good", sub: "Any distance" },
 ];
 
 const DISTANCE_PILLS = [
@@ -401,6 +417,11 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
   const [decisionResults, setDecisionResults] = useState<PersonalizedRec[]>([]);
   const [decisionLoading, setDecisionLoading] = useState(false);
 
+  const [inlineDecideStep, setInlineDecideStep] = useState<InlineDecideStep>("mood");
+  const [inlineMood, setInlineMood] = useState<string | null>(null);
+  const [inlineDistance, setInlineDistance] = useState<string | null>(null);
+  const [inlineResult, setInlineResult] = useState<PersonalizedRec | null>(null);
+
   const [resultsRecs, setResultsRecs] = useState<PersonalizedRec[]>([]);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -638,16 +659,6 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
     }
   }, [userProfile, decisionCraving, decisionDistance, decisionAvoid, decisionResults, recs, navigate, toast]);
 
-  const openDecisionFlow = useCallback(() => {
-    setDecisionStep("mood");
-    setDecisionCraving(null);
-    setDecisionDistance("flexible");
-    setDecisionAvoid([]);
-    setDecisionResults([]);
-    setUIState("decision_flow");
-    scrollToCard();
-    trackDecisionEvent("primary_cta_clicked", { userId: userProfile?.userId });
-  }, [userProfile?.userId, scrollToCard]);
 
   const toggleAvoid = useCallback((tag: string) => {
     setAvoidTags(prev =>
@@ -684,13 +695,47 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
 
   const handleLooksGreat = useCallback(() => {
     trackDecisionEvent("detail_viewed", { userId: userProfile?.userId, restaurantId: primaryRec.id, metadata: { category: primaryRec.category } });
-    navigate(`/restaurant/${primaryRec.id}`);
-  }, [userProfile?.userId, primaryRec, navigate]);
-
-  const openDNA = useCallback(() => {
-    setUIState("dna");
+    setUIState("confirmed");
     scrollToCard();
-    trackDecisionEvent("dna_viewed", { userId: userProfile?.userId });
+    setTimeout(() => {
+      navigate(`/restaurant/${primaryRec.id}`);
+    }, 2200);
+  }, [userProfile?.userId, primaryRec, navigate, scrollToCard]);
+
+  const handleInlineMoodSelect = useCallback((mood: string) => {
+    setInlineMood(mood);
+    setTimeout(() => setInlineDecideStep("distance"), 300);
+  }, []);
+
+  const handleInlineDistanceSelect = useCallback(async (dist: string) => {
+    setInlineDistance(dist);
+    setInlineDecideStep("thinking");
+    try {
+      const results = await fetchRecs({
+        craving: inlineMood,
+        distancePref: dist === "close" ? "close" : dist === "medium" ? "medium" : "flexible",
+      });
+      const pick = results.length > 0 ? results[0] : recs.length > 1 ? recs[1] : recs[0];
+      setTimeout(() => {
+        setInlineResult(pick);
+        setInlineDecideStep("result");
+      }, 2000);
+    } catch {
+      setTimeout(() => {
+        setInlineResult(recs.length > 1 ? recs[1] : recs[0]);
+        setInlineDecideStep("result");
+      }, 2000);
+    }
+  }, [inlineMood, fetchRecs, recs]);
+
+  const openInlineDecide = useCallback(() => {
+    setInlineDecideStep("mood");
+    setInlineMood(null);
+    setInlineDistance(null);
+    setInlineResult(null);
+    setUIState("decision_flow");
+    scrollToCard();
+    trackDecisionEvent("primary_cta_clicked", { userId: userProfile?.userId });
   }, [userProfile?.userId, scrollToCard]);
 
   return (
@@ -882,17 +927,10 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
                           </motion.div>
                         )}
 
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="flex gap-2 mb-2">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="mb-2">
                           <button
-                            onClick={openDNA}
-                            className="flex-1 h-9 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-violet-700"
-                            data-testid="button-taste-dna"
-                          >
-                            <Brain className="w-3.5 h-3.5" /> Taste DNA
-                          </button>
-                          <button
-                            onClick={openDecisionFlow}
-                            className="flex-1 h-9 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-1.5 text-[11px] font-medium text-muted-foreground"
+                            onClick={openInlineDecide}
+                            className="w-full h-9 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-1.5 text-[11px] font-medium text-muted-foreground"
                             data-testid="button-help-decide"
                           >
                             <Zap className="w-3.5 h-3.5" /> Help me decide
@@ -921,49 +959,9 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
         </>
       )}
 
-      <AnimatePresence>
-        {uiState === "dna" && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={expandSpring}
-            className="rounded-[20px] bg-white border border-gray-100 overflow-hidden relative"
-            style={{ boxShadow: "0 8px 32px -8px rgba(0,0,0,0.10)" }}
-            data-testid="dna-view"
-          >
-            <div className="absolute top-0 left-0 right-0 h-1 rounded-t-[20px]" style={{ background: "linear-gradient(90deg, #8b5cf6, #3b82f6, #22c55e, #FFCC02)" }} />
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center">
-                    <Brain className="w-4 h-4 text-violet-600" />
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-bold text-foreground">Your Taste DNA</p>
-                    <p className="text-[10px] text-muted-foreground">How we picked these for you</p>
-                  </div>
-                </div>
-                <button onClick={() => setUIState("home")} className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center" data-testid="button-close-dna">
-                  <X className="w-4 h-4 text-gray-400" />
-                </button>
-              </div>
-
-              <TasteDNAPanel recs={recs} />
-
-              <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                onClick={() => setUIState("home")}
-                whileTap={{ scale: 0.98 }}
-                className="mt-4 w-full h-10 rounded-xl bg-violet-600 text-white flex items-center justify-center gap-2 text-[12px] font-semibold"
-                data-testid="button-back-from-dna"
-              >
-                <ChevronRight className="w-4 h-4 rotate-180" /> Back to recommendation
-              </motion.button>
-            </div>
-          </motion.div>
+      <AnimatePresence mode="wait">
+        {uiState === "confirmed" && (
+          <ConfirmedView pick={primaryRec} />
         )}
       </AnimatePresence>
 
@@ -1000,28 +998,243 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {uiState === "decision_flow" && (
-          <DecisionFlow
-            step={decisionStep}
-            onStepChange={setDecisionStep}
-            craving={decisionCraving}
-            onCravingSelect={setDecisionCraving}
-            distance={decisionDistance}
-            onDistanceChange={setDecisionDistance}
-            avoid={decisionAvoid}
-            onAvoidToggle={toggleDecisionAvoid}
-            results={decisionResults}
-            loading={decisionLoading}
-            onSubmit={handleDecisionSubmit}
+          <InlineDecideFlow
+            step={inlineDecideStep}
+            selectedMood={inlineMood}
+            selectedDistance={inlineDistance}
+            onMoodSelect={handleInlineMoodSelect}
+            onDistanceSelect={handleInlineDistanceSelect}
             onClose={() => setUIState("home")}
+            result={inlineResult}
             onNavigate={navigate}
-            onSwipeInvite={handleSwipeInvite}
-            swipeLoading={swipeLoading}
           />
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function ConfirmedView({ pick }: { pick: PersonalizedRec }) {
+  const expandSpring = { type: "spring" as const, stiffness: 280, damping: 26 };
+  return (
+    <motion.div
+      initial={{ scale: 0.95, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ scale: 0.95, opacity: 0 }}
+      transition={expandSpring}
+      className="rounded-[20px] border border-emerald-200 overflow-hidden bg-white"
+      style={{ boxShadow: "0 8px 32px -8px rgba(34,197,94,0.2)" }}
+      data-testid="confirmed-view"
+    >
+      <div className="p-5 text-center">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.1 }}
+          className="w-14 h-14 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center mx-auto mb-3"
+        >
+          <Check className="w-7 h-7 text-emerald-600" />
+        </motion.div>
+        <motion.p initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="text-[16px] font-bold text-foreground mb-1">
+          Great choice!
+        </motion.p>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="text-[12px] text-muted-foreground mb-4">
+          Opening {pick.name} for you...
+        </motion.p>
+        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+          <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+            <img src={pick.imageUrl} alt={pick.name} className="w-full h-full object-cover" />
+          </div>
+          <div className="text-left flex-1 min-w-0">
+            <p className="text-[12px] font-bold text-foreground truncate">{pick.name}</p>
+            <p className="text-[10px] text-muted-foreground">{pick.address} · {"฿".repeat(pick.priceLevel)}</p>
+          </div>
+          <span className="text-[12px] font-bold text-emerald-600">{pick.match}%</span>
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
+
+function InlineDecideFlow({ step, selectedMood, selectedDistance, onMoodSelect, onDistanceSelect, onClose, result, onNavigate }: {
+  step: InlineDecideStep;
+  selectedMood: string | null;
+  selectedDistance: string | null;
+  onMoodSelect: (m: string) => void;
+  onDistanceSelect: (d: string) => void;
+  onClose: () => void;
+  result: PersonalizedRec | null;
+  onNavigate: (path: string) => void;
+}) {
+  const expandSpring = { type: "spring" as const, stiffness: 280, damping: 26 };
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={expandSpring}
+      className="rounded-[20px] bg-white border border-gray-100 overflow-hidden relative"
+      style={{ boxShadow: "0 8px 32px -8px rgba(0,0,0,0.10)" }}
+      data-testid="inline-decide-flow"
+    >
+      <div className="absolute top-0 left-0 right-0 h-1 rounded-t-[20px]" style={{ background: "linear-gradient(90deg, #FFCC02, hsl(45, 90%, 65%))" }} />
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-[#FFCC02]" />
+            <span className="text-[13px] font-bold text-foreground">Help me decide</span>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center" data-testid="button-close-decide">
+            <X className="w-4 h-4 text-gray-400" />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1.5 mb-4">
+          {["mood", "distance", "result"].map((s, i) => (
+            <div key={s} className="flex items-center gap-1.5">
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                (step === "mood" && i === 0) || (step === "distance" && i <= 1) || (step === "thinking" && i <= 1) || (step === "result" && i <= 2) ? "bg-[#FFCC02]" : "bg-gray-200"
+              }`} />
+              {i < 2 && <div className={`w-6 h-0.5 rounded-full transition-colors duration-300 ${
+                (step === "distance" && i === 0) || (step === "thinking" && i <= 1) || (step === "result") ? "bg-[#FFCC02]" : "bg-gray-200"
+              }`} />}
+            </div>
+          ))}
+        </div>
+
+        <AnimatePresence mode="wait">
+          {step === "mood" && (
+            <motion.div key="mood" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+              <p className="text-[12px] text-muted-foreground mb-3">What's your mood right now?</p>
+              <div className="grid grid-cols-2 gap-2">
+                {INLINE_MOODS.map((mood) => (
+                  <motion.button
+                    key={mood.id}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => onMoodSelect(mood.id)}
+                    className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-colors ${
+                      selectedMood === mood.id ? "border-[#FFCC02] bg-[#FFCC02]/10" : "border-gray-100 bg-gray-50 hover:border-gray-200"
+                    }`}
+                    data-testid={`inline-mood-${mood.id}`}
+                  >
+                    <span className="text-lg">{mood.icon}</span>
+                    <span className="text-[11px] font-semibold text-foreground">{mood.label}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {step === "distance" && (
+            <motion.div key="distance" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+              <p className="text-[12px] text-muted-foreground mb-3">How far are you willing to go?</p>
+              <div className="space-y-2">
+                {INLINE_DISTANCES.map((dist) => (
+                  <motion.button
+                    key={dist.id}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => onDistanceSelect(dist.id)}
+                    className={`w-full flex items-center justify-between p-3.5 rounded-xl border transition-colors ${
+                      selectedDistance === dist.id ? "border-[#FFCC02] bg-[#FFCC02]/10" : "border-gray-100 bg-gray-50 hover:border-gray-200"
+                    }`}
+                    data-testid={`inline-distance-${dist.id}`}
+                  >
+                    <span className="text-[12px] font-semibold text-foreground">{dist.label}</span>
+                    <span className="text-[10px] text-muted-foreground">{dist.sub}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {step === "thinking" && (
+            <motion.div key="thinking" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-6 text-center">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                className="w-12 h-12 mx-auto mb-3"
+              >
+                <img src={mascotPath} alt="Thinking" className="w-full h-full object-contain" />
+              </motion.div>
+              <p className="text-[13px] font-bold text-foreground mb-2">Toast is thinking...</p>
+              <div className="flex justify-center gap-1.5">
+                {[0, 1, 2, 3, 4].map(i => (
+                  <motion.div
+                    key={i}
+                    className="w-2 h-2 rounded-full bg-[#FFCC02]"
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.15 }}
+                  />
+                ))}
+              </div>
+              <div className="mt-3 space-y-1.5">
+                {["Analyzing your taste profile", "Checking what's popular nearby", "Finding something you'll love..."].map((text, i) => (
+                  <motion.p
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + i * 0.5 }}
+                    className="text-[10px] text-muted-foreground flex items-center justify-center gap-1.5"
+                  >
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.8 + i * 0.5 }}
+                      className="text-emerald-500"
+                    >{"\u2713"}</motion.span>
+                    {text}
+                  </motion.p>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {step === "result" && result && (
+            <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={expandSpring}>
+              <p className="text-[12px] text-muted-foreground mb-3">Based on your mood, here's what I found:</p>
+              <div className="relative w-full h-[130px] rounded-2xl overflow-hidden mb-3">
+                <img src={result.imageUrl} alt={result.name} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                <div className="absolute top-2.5 right-2.5 bg-emerald-500/90 text-white text-[11px] font-bold rounded-full px-2.5 py-1 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> {result.match}%
+                </div>
+                <div className="absolute bottom-2.5 left-2.5">
+                  <p className="text-white text-[16px] font-bold">{result.name}</p>
+                  <p className="text-white/80 text-[11px]">{result.category} · {result.address} · {"฿".repeat(result.priceLevel)}</p>
+                </div>
+              </div>
+              {result.reasonChips && result.reasonChips.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {result.reasonChips.map((chip, i) => (
+                    <span key={i} className="text-[10px] font-medium text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1 border border-emerald-100">{chip}</span>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => onNavigate(`/restaurant/${result.id}`)}
+                  className="flex-1 h-10 rounded-xl bg-[#FFCC02] flex items-center justify-center gap-2 font-semibold text-[13px] text-foreground"
+                  data-testid="button-decide-letsgo"
+                >
+                  Let's go <ArrowRight className="w-4 h-4" />
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={onClose}
+                  className="h-10 px-4 rounded-xl border border-gray-200 bg-white flex items-center justify-center gap-1.5 text-[12px] font-medium text-muted-foreground"
+                  data-testid="button-decide-again"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Again
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.div>
   );
 }
 
@@ -1399,271 +1612,3 @@ function ResultsScreen({ recs, onClose, onRefineAgain, onSwipeInvite, swipeLoadi
   );
 }
 
-interface DecisionFlowProps {
-  step: DecisionStep;
-  onStepChange: (s: DecisionStep) => void;
-  craving: string | null;
-  onCravingSelect: (c: string) => void;
-  distance: string;
-  onDistanceChange: (d: string) => void;
-  avoid: string[];
-  onAvoidToggle: (t: string) => void;
-  results: PersonalizedRec[];
-  loading: boolean;
-  onSubmit: () => void;
-  onClose: () => void;
-  onNavigate: (path: string) => void;
-  onSwipeInvite: () => void;
-  swipeLoading: boolean;
-}
-
-function DecisionFlow({
-  step, onStepChange, craving, onCravingSelect,
-  distance, onDistanceChange, avoid, onAvoidToggle,
-  results, loading, onSubmit, onClose, onNavigate,
-  onSwipeInvite, swipeLoading,
-}: DecisionFlowProps) {
-  const steps: DecisionStep[] = ["mood", "distance", "avoid", "results"];
-  const currentIdx = steps.indexOf(step);
-  const progress = step === "results" ? 100 : ((currentIdx + 1) / 3) * 100;
-
-  const goNext = () => {
-    if (step === "mood") onStepChange("distance");
-    else if (step === "distance") onStepChange("avoid");
-    else if (step === "avoid") onSubmit();
-  };
-
-  const goBack = () => {
-    if (step === "distance") onStepChange("mood");
-    else if (step === "avoid") onStepChange("distance");
-    else if (step === "results") onStepChange("avoid");
-    else onClose();
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-white"
-      data-testid="decision-flow"
-    >
-      <div className="h-full flex flex-col safe-top safe-bottom">
-        <div className="px-5 pt-4 pb-3">
-          <div className="flex items-center justify-between mb-3">
-            <button onClick={goBack} className="text-sm font-medium text-muted-foreground" data-testid="button-decision-back">
-              {step === "mood" ? "Cancel" : "Back"}
-            </button>
-            <div className="flex items-center gap-2">
-              <img src={mascotPath} alt="" className="w-6 h-6 object-contain" />
-              <span className="text-[12px] font-bold text-foreground">Toast Decides</span>
-            </div>
-            <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center" data-testid="button-close-decision">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
-            <motion.div
-              animate={{ width: `${progress}%` }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="h-full rounded-full bg-[#FFCC02]"
-            />
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5">
-          <AnimatePresence mode="wait">
-            {step === "mood" && (
-              <motion.div
-                key="mood"
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -30 }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="py-4"
-              >
-                <h2 className="text-[22px] font-bold text-foreground mb-1">What are you craving?</h2>
-                <p className="text-[13px] text-muted-foreground mb-6">Pick one that matches your mood right now.</p>
-                <div className="grid grid-cols-2 gap-3">
-                  {CRAVING_OPTIONS.map((opt) => (
-                    <motion.button
-                      key={opt.key}
-                      whileTap={{ scale: 0.96 }}
-                      onClick={() => onCravingSelect(opt.key)}
-                      className={`flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all ${
-                        craving === opt.key
-                          ? "bg-[#FFCC02]/10 border-[#FFCC02] shadow-sm"
-                          : "bg-white border-gray-100"
-                      }`}
-                      data-testid={`decision-craving-${opt.key}`}
-                    >
-                      <span className="text-xl">{CRAVING_ICONS[opt.icon]}</span>
-                      <span className="text-[13px] font-medium text-foreground">{opt.label}</span>
-                      {craving === opt.key && <Check className="w-4 h-4 text-[#FFCC02] ml-auto" />}
-                    </motion.button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {step === "distance" && (
-              <motion.div
-                key="distance"
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -30 }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="py-4"
-              >
-                <h2 className="text-[22px] font-bold text-foreground mb-1">How far are you willing to go?</h2>
-                <p className="text-[13px] text-muted-foreground mb-6">Pick your distance preference.</p>
-                <div className="space-y-3">
-                  {DISTANCE_OPTIONS.map((opt) => (
-                    <motion.button
-                      key={opt.value}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => onDistanceChange(opt.value)}
-                      className={`w-full p-4 rounded-2xl border-2 text-left flex items-center justify-between transition-all ${
-                        distance === opt.value
-                          ? "bg-[#FFCC02]/10 border-[#FFCC02] shadow-sm"
-                          : "bg-white border-gray-100"
-                      }`}
-                      data-testid={`decision-distance-${opt.value}`}
-                    >
-                      <span className="text-[14px] font-medium text-foreground">{opt.label}</span>
-                      {distance === opt.value && <Check className="w-5 h-5 text-[#FFCC02]" />}
-                    </motion.button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {step === "avoid" && (
-              <motion.div
-                key="avoid"
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -30 }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="py-4"
-              >
-                <h2 className="text-[22px] font-bold text-foreground mb-1">Anything to avoid?</h2>
-                <p className="text-[13px] text-muted-foreground mb-6">Optional - skip if everything's fine.</p>
-                <div className="flex flex-wrap gap-3">
-                  {AVOID_OPTIONS.map((tag) => (
-                    <motion.button
-                      key={tag}
-                      whileTap={{ scale: 0.93 }}
-                      onClick={() => onAvoidToggle(tag)}
-                      className={`px-4 py-2.5 rounded-full text-[13px] font-medium border-2 transition-all ${
-                        avoid.includes(tag)
-                          ? "bg-red-50 border-red-300 text-red-600"
-                          : "bg-white border-gray-100 text-muted-foreground"
-                      }`}
-                      data-testid={`decision-avoid-${tag.toLowerCase().replace(/\s/g, "-")}`}
-                    >
-                      {avoid.includes(tag) ? "\u2715 " : ""}{tag}
-                    </motion.button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {step === "results" && (
-              <motion.div
-                key="results"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="py-4"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <img src={mascotPath} alt="" className="w-8 h-8 object-contain" />
-                  <h2 className="text-[22px] font-bold text-foreground">Here's what I'd pick</h2>
-                </div>
-                <p className="text-[13px] text-muted-foreground mb-6">Curated just for this moment.</p>
-
-                {loading ? (
-                  <div className="space-y-4">
-                    {[0, 1, 2].map(i => (
-                      <div key={i} className="animate-pulse rounded-2xl bg-gray-50 h-[200px]" />
-                    ))}
-                  </div>
-                ) : (
-                  <DecisionResultsDisplay results={results} onNavigate={onNavigate} />
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {step !== "results" ? (
-          <div className="px-5 py-4 border-t border-gray-100">
-            <div className="flex gap-2">
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                onClick={goNext}
-                disabled={step === "mood" && !craving}
-                className={`flex-1 h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-opacity ${
-                  step === "mood" && !craving
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-[#FFCC02] text-foreground"
-                }`}
-                data-testid="button-decision-next"
-              >
-                {step === "avoid" ? "Show my picks" : "Next"} <ArrowRight className="w-4 h-4" />
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.96 }}
-                onClick={onSwipeInvite}
-                disabled={swipeLoading || (step === "mood" && !craving)}
-                className={`h-12 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-opacity ${
-                  swipeLoading || (step === "mood" && !craving)
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-[#06C755] text-white"
-                }`}
-                data-testid="button-decision-swipe"
-              >
-                <Layers className="w-4 h-4" />
-                {swipeLoading ? "..." : "Swipe"}
-              </motion.button>
-            </div>
-          </div>
-        ) : (
-          <div className="px-5 py-4 border-t border-gray-100">
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={onSwipeInvite}
-              disabled={swipeLoading}
-              className={`w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-opacity ${
-                swipeLoading
-                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  : "bg-[#06C755] text-white"
-              }`}
-              data-testid="button-results-swipe"
-            >
-              <Layers className="w-4 h-4" />
-              {swipeLoading ? "Creating session..." : "Swipe Together via LINE"}
-            </motion.button>
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
-}
-
-const DecisionResultsDisplay = memo(function DecisionResultsDisplay({ results }: { results: PersonalizedRec[]; onNavigate: (path: string) => void }) {
-  const displayRecs = useMemo(() => {
-    if (results.length > 0) return results.slice(0, 3);
-    return FALLBACK_RECOMMENDATIONS;
-  }, [results]);
-
-  return (
-    <div className="space-y-4">
-      {displayRecs.map((rec, idx) => (
-        <InsightCard key={rec.id} rec={rec} rank={idx} />
-      ))}
-      <TasteDNAPanel recs={displayRecs} />
-    </div>
-  );
-});

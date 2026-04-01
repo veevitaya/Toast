@@ -5,7 +5,8 @@ import { useLineProfile } from "@/hooks/use-line-profile";
 import { BottomNav } from "@/components/BottomNav";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { TRENDING_POSTS } from "@/pages/TrendingFeed";
-import { ChevronRight, UserPlus, Unlink, LogIn, LogOut, X, Store, User, Star, TrendingUp, Image, Sparkles, Plus, Check, Crown, Eye, ExternalLink, MapPin, Clock, BarChart3, ArrowUpRight, ArrowDownRight, Utensils, Zap, Calendar, Megaphone, Tag, Percent, Trash2, Send, Users, Target, Search, Shield, AlertTriangle, Upload, FileText, Building2, Phone, Mail, ChevronDown, ShieldCheck, Globe, Pencil } from "lucide-react";
+import { ChevronRight, UserPlus, Unlink, LogIn, LogOut, X, Store, User, Star, TrendingUp, Image, Sparkles, Plus, Check, Crown, Eye, ExternalLink, MapPin, Clock, BarChart3, ArrowUpRight, ArrowDownRight, Utensils, Zap, Calendar, Megaphone, Tag, Percent, Trash2, Send, Users, Target, Search, Shield, AlertTriangle, Upload, FileText, Building2, Phone, Mail, ChevronDown, ShieldCheck, Globe, Pencil, Brain, Heart } from "lucide-react";
+import { useBootstrapSession } from "@/hooks/useBootstrapSession";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient, fetchWithTimeout } from "@/lib/queryClient";
 import type { RestaurantResponse } from "@shared/routes";
@@ -725,6 +726,8 @@ export default function Profile() {
                   <SavedSection t={t} />
                 </div>
               </div>
+
+              <TasteDNASection />
 
               <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-foreground/35 mb-2.5 px-1">{t("profile.section_app")}</p>
               <div className="mb-6">
@@ -3436,6 +3439,83 @@ function OwnerDashboard() {
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+function TasteDNASection() {
+  const { payload: bootstrap } = useBootstrapSession();
+  const dna = bootstrap?.tasteDnaSummary;
+
+  if (!dna) return null;
+
+  const dimensions = [
+    { key: "comfort" as const, label: "Comfort", icon: Heart, color: "#22c55e", value: dna.comfort },
+    { key: "exploration" as const, label: "Explorer", icon: TrendingUp, color: "#3b82f6", value: dna.exploration },
+    { key: "spicy" as const, label: "Spicy", icon: Zap, color: "#ef4444", value: dna.spicy },
+    { key: "healthy" as const, label: "Healthy", icon: Star, color: "#10b981", value: dna.healthy },
+    { key: "indulgent" as const, label: "Indulgent", icon: Sparkles, color: "#f59e0b", value: dna.indulgent },
+    { key: "budget" as const, label: "Value", icon: Clock, color: "#8b5cf6", value: dna.budget },
+    { key: "novelty" as const, label: "Novelty", icon: Brain, color: "#ec4899", value: dna.novelty },
+    { key: "distance" as const, label: "Distance", icon: MapPin, color: "#06b6d4", value: dna.distance },
+  ];
+
+  const dominant = dimensions.reduce((a, b) => a.value > b.value ? a : b);
+
+  return (
+    <>
+      <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-foreground/35 mb-2.5 px-1">Your Taste DNA</p>
+      <div className="mb-6">
+        <div
+          className="bg-white dark:bg-card rounded-[20px] overflow-hidden border border-black/[0.04] dark:border-border p-5"
+          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.02)" }}
+          data-testid="profile-taste-dna"
+        >
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center">
+              <Brain className="w-5 h-5 text-violet-600" />
+            </div>
+            <div>
+              <p className="text-[14px] font-bold text-foreground">Your Taste DNA</p>
+              <p className="text-[11px] text-muted-foreground">How Toast picks restaurants for you</p>
+            </div>
+          </div>
+
+          <div className="text-[11px] text-muted-foreground mb-4 leading-relaxed bg-violet-50/50 rounded-xl px-3 py-2 border border-violet-100/50">
+            <span className="font-semibold text-violet-700">{dominant.label}</span> is your strongest signal — Toast weighs this heavily when picking restaurants for you.
+          </div>
+
+          <div className="grid grid-cols-4 gap-3 mb-4">
+            {dimensions.slice(0, 4).map(({ key, label, icon: Icon, color, value }) => (
+              <div key={key} className="text-center">
+                <div className="w-10 h-10 rounded-xl mx-auto mb-1.5 flex items-center justify-center" style={{ backgroundColor: `${color}15` }}>
+                  <Icon className="w-4 h-4" style={{ color }} />
+                </div>
+                <p className="text-[14px] font-bold text-foreground">{value}%</p>
+                <p className="text-[9px] text-muted-foreground font-medium">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-2">
+            {dimensions.map(({ key, label, color, value }) => (
+              <div key={key} className="flex items-center gap-2">
+                <span className="text-[10px] text-muted-foreground w-[60px] flex-shrink-0">{label}</span>
+                <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${value}%` }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
+                    className="h-full rounded-full"
+                    style={{ backgroundColor: color }}
+                  />
+                </div>
+                <span className="text-[10px] font-semibold text-foreground w-[26px] text-right">{value}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
