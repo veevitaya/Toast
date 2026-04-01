@@ -81,13 +81,27 @@ const DIETARY = [
   { emoji: '🥜', label: 'Nut-Free' },
 ];
 
-const TIME_SLOTS = [
-  { label: 'Now', icon: '⚡' },
-  { label: '12:00', icon: '☀️' },
-  { label: '18:00', icon: '🌅' },
-  { label: '19:30', icon: '🍽️' },
-  { label: '21:00', icon: '🌙' },
+const MEAL_PERIODS = [
+  { id: 'anytime', label: 'Anytime', icon: '✨', sub: 'Flexible' },
+  { id: 'lunch', label: 'Lunch', icon: '☀️', sub: '11am–2pm' },
+  { id: 'dinner', label: 'Dinner', icon: '🌅', sub: '5–9pm' },
+  { id: 'late', label: 'Late', icon: '🌙', sub: '9pm+' },
 ];
+
+function getUpcomingDays(): { key: string; label: string; sub: string; dayNum: number }[] {
+  const days: { key: string; label: string; sub: string; dayNum: number }[] = [];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const now = new Date();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + i);
+    const label = i === 0 ? 'Today' : i === 1 ? 'Tmrw' : dayNames[d.getDay()];
+    const sub = `${d.getDate()}`;
+    days.push({ key: `day-${i}`, label, sub, dayNum: i });
+  }
+  return days;
+}
+const UPCOMING_DAYS = getUpcomingDays();
 
 const MEMBER_STATS = [
   { member: MEMBERS[0], likes: 4, dislikes: 1, superLikes: 1, favCuisine: 'Thai', emoji: '🍜', agreePct: 89 },
@@ -187,8 +201,8 @@ export function GroupJourney() {
   const [selectedBudget, setSelectedBudget] = useState<string | null>(null);
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [selectedDietary, setSelectedDietary] = useState<string[]>([]);
-  const [selectedTime, setSelectedTime] = useState<string>('Now');
-  const [selectedDate, setSelectedDate] = useState<string>('Today');
+  const [selectedDay, setSelectedDay] = useState<number>(0);
+  const [selectedMealPeriod, setSelectedMealPeriod] = useState<string>('anytime');
   const [currentCard, setCurrentCard] = useState(0);
   const [swipeResults, setSwipeResults] = useState<Record<number, 'left' | 'right' | 'up'>>({});
   const [membersJoined, setMembersJoined] = useState(1);
@@ -229,12 +243,14 @@ export function GroupJourney() {
 
   const resetFlow = useCallback(() => {
     setScreen('home'); setSelectedGroupType(null); setSelectedVibes([]); setSelectedBudget(null);
-    setSelectedAreas([]); setSelectedDietary([]); setSelectedTime('Now'); setSelectedDate('Today');
+    setSelectedAreas([]); setSelectedDietary([]); setSelectedDay(0); setSelectedMealPeriod('anytime');
     setCurrentCard(0); setSwipeResults({}); setMembersJoined(1); setSwipeCount(0); setShowMoreOptions(false);
   }, []);
 
   const canInvite = !!selectedGroupType;
-  const selCount = (selectedVibes.length > 0 ? 1 : 0) + (selectedBudget ? 1 : 0) + (selectedAreas.length > 0 ? 1 : 0);
+  const whenLabel = selectedDay === 0 ? 'Today' : UPCOMING_DAYS[selectedDay]?.label || '';
+  const mealLabel = MEAL_PERIODS.find(m => m.id === selectedMealPeriod)?.label || '';
+  const selCount = (selectedVibes.length > 0 ? 1 : 0) + (selectedBudget ? 1 : 0) + (selectedAreas.length > 0 ? 1 : 0) + (selectedDay > 0 || selectedMealPeriod !== 'anytime' ? 1 : 0);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-neutral-900 p-4 font-sans">
@@ -420,11 +436,46 @@ export function GroupJourney() {
                   </div>
                 </motion.div>
 
-                <motion.div className="px-5" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55, ...spring }}>
+                <motion.div className="px-5 mb-4" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.54, ...spring }}>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5"><Clock className="w-3 h-3 text-[#FFCC02]" /> When</p>
+                  <div className="bg-white rounded-[20px] border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.03)] p-3">
+                    <div className="flex gap-1.5 overflow-x-auto no-sb mb-3 pb-0.5">
+                      {UPCOMING_DAYS.map((d, i) => {
+                        const on = selectedDay === d.dayNum;
+                        return (
+                          <motion.button key={d.key} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.56 + i * 0.025, ...spring }} whileTap={{ scale: 0.9 }}
+                            onClick={() => setSelectedDay(d.dayNum)}
+                            className={`flex-shrink-0 w-[52px] rounded-2xl py-2 flex flex-col items-center gap-0.5 transition-all ${on ? 'bg-[#FFCC02] shadow-[0_4px_14px_rgba(255,204,2,0.25)]' : 'bg-[#FAFAF8] hover:bg-gray-100'}`}
+                          >
+                            <span className={`text-[10px] font-bold leading-tight ${on ? 'text-gray-900' : 'text-gray-500'}`}>{d.label}</span>
+                            <span className={`text-[14px] font-black leading-tight ${on ? 'text-gray-900' : 'text-gray-700'}`}>{d.sub}</span>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex gap-1.5">
+                      {MEAL_PERIODS.map((m, i) => {
+                        const on = selectedMealPeriod === m.id;
+                        return (
+                          <motion.button key={m.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6 + i * 0.03, ...spring }} whileTap={{ scale: 0.92 }}
+                            onClick={() => setSelectedMealPeriod(m.id)}
+                            className={`flex-1 rounded-xl py-2 flex flex-col items-center gap-0.5 border-2 transition-all ${on ? 'border-[#FFCC02] bg-[#FFCC02]/8' : 'border-gray-100 bg-[#FAFAF8]'}`}
+                          >
+                            <span className="text-sm leading-none">{m.icon}</span>
+                            <span className={`text-[10px] font-bold leading-tight ${on ? 'text-gray-800' : 'text-gray-500'}`}>{m.label}</span>
+                            <span className={`text-[8px] font-medium leading-none ${on ? 'text-gray-600' : 'text-gray-400'}`}>{m.sub}</span>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+
+                <motion.div className="px-5" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.62, ...spring }}>
                   <motion.button onClick={() => setShowMoreOptions(!showMoreOptions)} className="w-full flex items-center justify-between py-3" whileTap={{ scale: 0.99 }}>
                     <span className="text-[11px] font-semibold text-gray-400 flex items-center gap-1.5">
                       <SlidersHorizontal className="w-3 h-3" />
-                      {showMoreOptions ? 'Less options' : 'More options'}
+                      {showMoreOptions ? 'Less options' : 'Dietary & more'}
                       {selectedDietary.length > 0 && !showMoreOptions && (
                         <span className="text-[9px] bg-[#FFCC02]/10 text-amber-700 rounded-full px-1.5 py-0.5 font-bold border border-[#FFCC02]/20">{selectedDietary.length}</span>
                       )}
@@ -437,7 +488,7 @@ export function GroupJourney() {
                       <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }} className="overflow-hidden">
                         <div className="bg-white rounded-[20px] border border-gray-100 shadow-[0_4px_16px_rgba(0,0,0,0.03)] p-4 mb-3">
                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5"><Leaf className="w-3 h-3" /> Dietary</p>
-                          <div className="flex flex-wrap gap-1.5 mb-4">
+                          <div className="flex flex-wrap gap-1.5">
                             {DIETARY.map((d, i) => {
                               const on = selectedDietary.includes(d.label);
                               return (
@@ -447,19 +498,6 @@ export function GroupJourney() {
                                   <span className="text-xs">{d.emoji}</span>{d.label}
                                 </motion.button>
                               );
-                            })}
-                          </div>
-                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2.5 flex items-center gap-1.5"><Timer className="w-3 h-3" /> When</p>
-                          <div className="flex gap-1.5 mb-2.5">
-                            {['Today', 'Tomorrow', 'Weekend'].map(d => {
-                              const on = selectedDate === d;
-                              return (<motion.button key={d} whileTap={{ scale: 0.93 }} onClick={() => setSelectedDate(d)} className={`flex-1 rounded-xl py-2 text-center border-2 transition-all text-[10px] font-bold ${on ? 'border-[#FFCC02] bg-[#FFCC02]/8 text-gray-800' : 'bg-[#FAFAF8] border-gray-100 text-gray-500'}`}>{d}</motion.button>);
-                            })}
-                          </div>
-                          <div className="flex gap-1.5 overflow-x-auto no-sb">
-                            {TIME_SLOTS.map(t => {
-                              const on = selectedTime === t.label;
-                              return (<motion.button key={t.label} whileTap={{ scale: 0.92 }} onClick={() => setSelectedTime(t.label)} className={`flex-shrink-0 rounded-xl px-2.5 py-1.5 flex flex-col items-center gap-0.5 border-2 min-w-[48px] transition-all ${on ? 'border-[#FFCC02] bg-[#FFCC02]/8' : 'bg-[#FAFAF8] border-gray-100'}`}><span className="text-sm">{t.icon}</span><span className={`text-[9px] font-bold ${on ? 'text-gray-800' : 'text-gray-500'}`}>{t.label}</span></motion.button>);
                             })}
                           </div>
                         </div>
@@ -479,6 +517,7 @@ export function GroupJourney() {
                           {selectedVibes.slice(0, 2).map(v => <span key={v} className="flex-shrink-0 text-[9px] font-semibold text-amber-800 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2 py-0.5">{v}</span>)}
                           {selectedBudget && <span className="flex-shrink-0 text-[9px] font-semibold text-amber-800 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2 py-0.5">{BUDGETS.find(b => b.id === selectedBudget)?.label}</span>}
                           {selectedAreas.slice(0, 1).map(a => <span key={a} className="flex-shrink-0 text-[9px] font-semibold text-amber-800 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2 py-0.5">{a}</span>)}
+                          {(selectedDay > 0 || selectedMealPeriod !== 'anytime') && <span className="flex-shrink-0 text-[9px] font-semibold text-amber-800 bg-[#FFCC02]/10 border border-[#FFCC02]/20 rounded-full px-2 py-0.5">🕐 {whenLabel}{selectedMealPeriod !== 'anytime' ? ` · ${mealLabel}` : ''}</span>}
                         </motion.div>
                       )}
                       <motion.button whileTap={{ scale: 0.97 }} onClick={() => setScreen('invite')} className="w-full h-[54px] rounded-2xl bg-[#FFCC02] flex items-center justify-center gap-2.5 font-bold text-[15px] text-gray-900 shadow-[0_8px_28px_rgba(255,204,2,0.35)] relative overflow-hidden">
