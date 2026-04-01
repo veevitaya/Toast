@@ -933,7 +933,7 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
                             className="w-full h-9 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-1.5 text-[11px] font-medium text-muted-foreground"
                             data-testid="button-help-decide"
                           >
-                            <Zap className="w-3.5 h-3.5" /> Not feeling these? Let's find your craving
+                            <Zap className="w-3.5 h-3.5" /> Not feeling these? Let's find your cravings
                           </button>
                         </motion.div>
                       </div>

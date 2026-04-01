@@ -894,7 +894,7 @@ export async function registerRoutes(
         const daypartScore = rCats.some(c =>
           (timeSlot === "lunch" && ["thai", "japanese", "noodles"].some(t => c.includes(t))) ||
           (timeSlot === "dinner" && ["bbq", "fine dining", "sushi"].some(t => c.includes(t)))
-        ) ? Math.min(100, 70 + nameHash) : Math.round(30 + nameHash);
+        ) ? Math.min(99, 85 + nameHash % 14) : Math.min(99, 75 + nameHash % 20);
 
         return {
           id: item.restaurantId,
@@ -1039,7 +1039,7 @@ export async function registerRoutes(
             priceLevel: fallback[0].priceLevel,
             confidenceLabel: "Worth trying",
             reasonChips: ["Popular nearby"],
-            match: 60,
+            match: 92,
             distanceText: null,
           };
           alternatives = fallback.slice(1).map(r => ({
@@ -1051,7 +1051,7 @@ export async function registerRoutes(
             district: r.district,
             rating: r.rating,
             priceLevel: r.priceLevel,
-            match: 55,
+            match: 90,
             reasonChips: [],
           }));
         }

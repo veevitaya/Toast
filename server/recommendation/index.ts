@@ -164,7 +164,8 @@ export function generateRecommendation(
   const primaryChips = generateReasonChips(primary.restaurant, primary.breakdown, 3);
   const confidenceText = generateConfidenceText(confidence.label, request.daypart);
 
-  const matchScore = Math.round(Math.max(0, Math.min(99, primary.score * 100)));
+  const boostMatch = (raw: number) => Math.round(Math.max(90, Math.min(99, 90 + raw * 9)));
+  const matchScore = boostMatch(primary.score);
 
   const alternatives: RecommendationResult["alternatives"] = [];
   const usedIds = new Set([primary.restaurant.id]);
@@ -180,7 +181,7 @@ export function generateRecommendation(
         district: alt.restaurant.district || null,
         rating: alt.restaurant.rating,
         priceLevel: alt.restaurant.priceLevel,
-        match: Math.round(Math.max(0, Math.min(99, alt.score * 100))),
+        match: boostMatch(alt.score),
         reasonChips: generateReasonChips(alt.restaurant, alt.breakdown, 2),
       });
     }
@@ -199,7 +200,7 @@ export function generateRecommendation(
         district: r.restaurant.district || null,
         rating: r.restaurant.rating,
         priceLevel: r.restaurant.priceLevel,
-        match: Math.round(Math.max(0, Math.min(99, r.score * 100))),
+        match: boostMatch(r.score),
         reasonChips: generateReasonChips(r.restaurant, r.breakdown, 2),
       });
       if (alternatives.length >= 2) break;
