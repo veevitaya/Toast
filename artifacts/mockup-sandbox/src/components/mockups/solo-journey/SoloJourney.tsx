@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import {
   Search, MapPin, SlidersHorizontal, Home, Map as MapIcon, Heart, User, Star,
   Sparkles, ArrowRight, ArrowLeft, ChevronDown, RotateCcw, Zap,
-  Brain, Clock, Check, X, Flame, BadgeCheck, ExternalLink
+  Check, X, Flame, UtensilsCrossed, Trophy, Crown
 } from 'lucide-react';
 
 const spring = { type: "spring" as const, stiffness: 300, damping: 22 };
@@ -11,7 +11,32 @@ const bouncy = { type: "spring" as const, stiffness: 400, damping: 18 };
 const gentle = { type: "spring" as const, stiffness: 220, damping: 26 };
 const snappy = { type: "spring" as const, stiffness: 500, damping: 32 };
 
-type Screen = 'choose' | 'quiz' | 'thinking' | 'result';
+type Screen = 'choose' | 'quiz' | 'battle';
+type BattleSide = 'left' | 'right' | null;
+
+interface MenuItem {
+  id: number;
+  name: string;
+  type: string;
+  tags: string[];
+  restaurantCount: number;
+  imageUrl: string;
+}
+
+const ALL_MENUS: MenuItem[] = [
+  { id: 1, name: 'Pad Thai', type: 'Thai', tags: ['Noodles', 'Spicy', 'Shrimp'], restaurantCount: 9, imageUrl: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600&auto=format&fit=crop&q=60' },
+  { id: 2, name: 'Korean BBQ', type: 'Korean', tags: ['Grilled', 'Meat', 'Group'], restaurantCount: 10, imageUrl: 'https://images.unsplash.com/photo-1583224964978-2257b960c3d3?w=600&auto=format&fit=crop&q=60' },
+  { id: 3, name: 'Tonkotsu Ramen', type: 'Japanese', tags: ['Noodles', 'Pork', 'Rich'], restaurantCount: 7, imageUrl: 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=600&auto=format&fit=crop&q=60' },
+  { id: 5, name: 'Green Curry', type: 'Thai', tags: ['Spicy', 'Coconut', 'Rice'], restaurantCount: 12, imageUrl: 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=600&auto=format&fit=crop&q=60' },
+  { id: 6, name: 'Sushi Omakase', type: 'Japanese', tags: ['Fresh', 'Raw', 'Premium'], restaurantCount: 5, imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600&auto=format&fit=crop&q=60' },
+  { id: 7, name: 'Smash Burger', type: 'Western', tags: ['Burger', 'Cheesy', 'Fries'], restaurantCount: 11, imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=60' },
+  { id: 8, name: 'Som Tum', type: 'Thai', tags: ['Salad', 'Spicy', 'Peanuts'], restaurantCount: 15, imageUrl: 'https://images.unsplash.com/photo-1562565652-a0d8f0c59eb4?w=600&auto=format&fit=crop&q=60' },
+  { id: 9, name: 'Dim Sum', type: 'Chinese', tags: ['Dumpling', 'Tea', 'Brunch'], restaurantCount: 6, imageUrl: 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=600&auto=format&fit=crop&q=60' },
+  { id: 12, name: 'Tom Yum Goong', type: 'Thai', tags: ['Soup', 'Spicy', 'Shrimp'], restaurantCount: 14, imageUrl: 'https://images.unsplash.com/photo-1548943487-a2e4e43b4853?w=600&auto=format&fit=crop&q=60' },
+  { id: 13, name: 'Khao Soi', type: 'Thai', tags: ['Noodles', 'Coconut', 'Spicy'], restaurantCount: 6, imageUrl: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=600&auto=format&fit=crop&q=60' },
+  { id: 18, name: 'Pad Kra Pao', type: 'Thai', tags: ['Spicy', 'Fried egg', 'Basil'], restaurantCount: 20, imageUrl: 'https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=600&auto=format&fit=crop&q=60' },
+  { id: 30, name: 'Wagyu Steak', type: 'Japanese', tags: ['Steak', 'Premium', 'Grilled'], restaurantCount: 4, imageUrl: 'https://images.unsplash.com/photo-1546833998-877b37c2e5c6?w=600&auto=format&fit=crop&q=60' },
+];
 
 const CUISINES = [
   { emoji: '🍜', label: 'Thai' },
@@ -41,38 +66,180 @@ const BUDGETS = [
   { id: 'splurge', label: '฿฿฿฿', sub: '1,500+', emoji: '👑' },
 ];
 
-const THINKING_STEPS = [
-  { label: 'Reading your taste DNA', icon: Brain, delay: 0 },
-  { label: 'Scanning nearby gems', icon: MapPin, delay: 900 },
-  { label: 'Matching your cravings', icon: Flame, delay: 1800 },
-  { label: 'Picking the best spot', icon: Sparkles, delay: 2700 },
-];
+function ToastMascot({ pointDirection }: { pointDirection: 'left' | 'right' | 'center' }) {
+  const xShift = pointDirection === 'left' ? -20 : pointDirection === 'right' ? 20 : 0;
+  const rot = pointDirection === 'left' ? -12 : pointDirection === 'right' ? 12 : 0;
 
-const RESULT = {
-  name: 'Jay Fai',
-  cuisine: 'Thai Street Food',
-  district: 'Old Town',
-  rating: 4.9,
-  reviews: 2847,
-  price: '฿฿฿',
-  match: 97,
-  distance: '1.2 km',
-  waitTime: '~15 min',
-  image: 'https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=800&auto=format&fit=crop&q=80',
-  insight: 'Your Taste DNA shows a deep love for Thai street food — Jay Fai\'s Michelin-starred crab omelet is your perfect match tonight.',
-  chips: ['Michelin Star ⭐', 'Thai street food', 'Your #1 cuisine', 'Worth the wait'],
-  scores: [
-    { label: 'Taste DNA', value: 97, color: '#22c55e' },
-    { label: 'Perfect timing', value: 92, color: '#FFCC02' },
-    { label: 'Trending now', value: 95, color: '#3b82f6' },
-    { label: 'Value score', value: 78, color: '#8b5cf6' },
-  ],
-};
+  return (
+    <motion.div
+      className="flex flex-col items-center mb-1 relative"
+      animate={{ x: xShift }}
+      transition={{ type: 'spring', damping: 14, stiffness: 140 }}
+    >
+      <motion.div
+        className="relative"
+        animate={{ y: [0, -8, 0] }}
+        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <motion.img
+          src="/images/toast_mascot.png"
+          alt="Toast mascot"
+          className="h-20 w-auto object-contain drop-shadow-lg"
+          animate={{ rotate: rot }}
+          transition={pointDirection === 'center'
+            ? { duration: 2, repeat: Infinity, ease: 'easeInOut' }
+            : { type: 'spring', damping: 12, stiffness: 120 }
+          }
+        />
+        <motion.div
+          className="absolute -top-1.5 -right-2.5"
+          animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <Sparkles className="w-4 h-4 text-[#FFCC02]" />
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  );
+}
 
-const ALTS = [
-  { name: 'Thipsamai', match: 94, image: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=400&auto=format&fit=crop&q=60', chip: 'Pad Thai legend' },
-  { name: 'Peppina', match: 91, image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&auto=format&fit=crop&q=60', chip: 'Wood-fired pizza' },
-];
+function BattleCard({ item, side, isSelected, isDismissed, isReplacing, isCurrent, onSelect, round }: {
+  item: MenuItem;
+  side: 'left' | 'right';
+  isSelected: boolean;
+  isDismissed: boolean;
+  isReplacing: boolean;
+  isCurrent: boolean;
+  onSelect: () => void;
+  round: number;
+}) {
+  return (
+    <div className="flex-1 min-w-0">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={`${item.id}-${round}`}
+          initial={isReplacing ? { y: 50, opacity: 0, scale: 0.85, rotateY: side === 'left' ? -15 : 15 } : false}
+          animate={{
+            y: 0,
+            opacity: isDismissed && !isReplacing ? 0.35 : 1,
+            scale: isSelected ? 1.03 : isDismissed && !isReplacing ? 0.94 : 1,
+            rotateY: 0,
+          }}
+          exit={{ y: -30, opacity: 0, scale: 0.85, rotateY: side === 'left' ? 15 : -15 }}
+          transition={bouncy}
+          onClick={onSelect}
+          className="cursor-pointer relative group"
+          style={{ perspective: 600 }}
+        >
+          <div
+            className={`bg-white rounded-[22px] overflow-hidden transition-all duration-300 relative ${
+              isSelected || isCurrent ? 'ring-[2.5px] ring-[#FFCC02]' : 'ring-1 ring-gray-100'
+            }`}
+            style={{
+              boxShadow: isSelected || isCurrent
+                ? '0 16px 40px -8px rgba(255,204,2,0.3), 0 4px 12px rgba(0,0,0,0.04)'
+                : '0 6px 24px -4px rgba(0,0,0,0.06)',
+            }}
+          >
+            <div className="w-full aspect-[4/3] overflow-hidden relative">
+              <motion.img
+                src={item.imageUrl}
+                alt={item.name}
+                className="w-full h-full object-cover"
+                whileHover={{ scale: 1.06 }}
+                transition={{ duration: 0.4 }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+
+              <AnimatePresence>
+                {isSelected && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-[#FFCC02]/25 flex items-center justify-center backdrop-blur-[1px]"
+                  >
+                    <motion.div
+                      initial={{ scale: 0, rotate: -45 }}
+                      animate={{ scale: [0, 1.4, 1], rotate: [0, 15, 0] }}
+                      transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+                      className="w-14 h-14 rounded-full bg-[#FFCC02] flex items-center justify-center shadow-[0_8px_24px_rgba(255,204,2,0.5)]"
+                    >
+                      <Check className="w-6 h-6 text-gray-900" strokeWidth={3} />
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {isDismissed && !isReplacing && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-gray-900/40 flex items-center justify-center backdrop-blur-[2px]"
+                  >
+                    <motion.div
+                      initial={{ scale: 0, rotate: 90 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={bouncy}
+                    >
+                      <X className="w-8 h-8 text-white drop-shadow-md" strokeWidth={2.5} />
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {isCurrent && !isSelected && (
+                <motion.div
+                  initial={{ scale: 0, rotate: -30 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={bouncy}
+                  className="absolute top-2.5 right-2.5 z-10"
+                >
+                  <div className="w-7 h-7 rounded-full bg-[#FFCC02] flex items-center justify-center shadow-[0_4px_12px_rgba(255,204,2,0.4)]">
+                    <Crown className="w-3.5 h-3.5 text-gray-900" />
+                  </div>
+                </motion.div>
+              )}
+
+              <motion.div
+                className="absolute bottom-2 left-2"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, ...spring }}
+              >
+                <span className="text-[9px] font-bold text-white bg-black/30 backdrop-blur-md rounded-full px-2 py-0.5">
+                  {item.type}
+                </span>
+              </motion.div>
+            </div>
+
+            <div className="p-3.5">
+              <h3 className="font-bold text-[14px] text-gray-900 mb-0.5 truncate leading-tight">{item.name}</h3>
+              <div className="flex flex-wrap gap-1 mb-2 overflow-hidden max-h-[1.4rem]">
+                {item.tags.map(tag => (
+                  <span key={tag} className="text-[9px] bg-gray-100 rounded-full px-2 py-0.5 font-medium text-gray-500">{tag}</span>
+                ))}
+              </div>
+              <p className="text-[10px] font-semibold text-gray-400 flex items-center gap-1">
+                <MapPin className="w-3 h-3" /> {item.restaurantCount} places
+              </p>
+            </div>
+          </div>
+
+          <motion.div
+            className="absolute -bottom-1 left-2 right-2 h-[3px] rounded-full"
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: isSelected || isCurrent ? 1 : 0, backgroundColor: isSelected || isCurrent ? '#FFCC02' : '#E5E7EB' }}
+            transition={spring}
+            style={{ transformOrigin: side === 'left' ? 'left' : 'right' }}
+          />
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export function SoloJourney() {
   const [screen, setScreen] = useState<Screen>('choose');
@@ -80,12 +247,18 @@ export function SoloJourney() {
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [selectedSettings, setSelectedSettings] = useState<string[]>([]);
   const [selectedBudget, setSelectedBudget] = useState<string | null>(null);
-  const [thinkingStep, setThinkingStep] = useState(0);
-  const [showCard, setShowCard] = useState(false);
-  const [expandScores, setExpandScores] = useState(false);
   const [soloHover, setSoloHover] = useState(false);
   const [groupHover, setGroupHover] = useState(false);
-  const [heroOffset, setHeroOffset] = useState(0);
+
+  const [leftOption, setLeftOption] = useState<MenuItem>(ALL_MENUS[0]);
+  const [rightOption, setRightOption] = useState<MenuItem>(ALL_MENUS[1]);
+  const [selectedSide, setSelectedSide] = useState<BattleSide>(null);
+  const [replacingSide, setReplacingSide] = useState<BattleSide>(null);
+  const [currentChoice, setCurrentChoice] = useState<MenuItem | null>(null);
+  const [animating, setAnimating] = useState(false);
+  const [usedIds, setUsedIds] = useState<Set<number>>(new Set());
+  const [round, setRound] = useState(0);
+  const [battleRound, setBattleRound] = useState(0);
 
   const toggleCuisine = useCallback((l: string) => {
     setSelectedCuisines(p => p.includes(l) ? p.filter(c => c !== l) : [...p, l]);
@@ -95,18 +268,18 @@ export function SoloJourney() {
     setSelectedSettings(p => p.includes(l) ? p.filter(s => s !== l) : [...p, l]);
   }, []);
 
-  const startThinking = useCallback(() => {
-    setScreen('thinking');
-    setThinkingStep(0);
-    setShowCard(false);
-    setExpandScores(false);
-    THINKING_STEPS.forEach((_, i) =>
-      setTimeout(() => setThinkingStep(i + 1), _.delay + 800)
-    );
-    setTimeout(() => {
-      setScreen('result');
-      setTimeout(() => setShowCard(true), 400);
-    }, 4200);
+  const startBattle = useCallback(() => {
+    const shuffled = [...ALL_MENUS].sort(() => Math.random() - 0.5);
+    setLeftOption(shuffled[0]);
+    setRightOption(shuffled[1]);
+    setUsedIds(new Set([shuffled[0].id, shuffled[1].id]));
+    setCurrentChoice(null);
+    setSelectedSide(null);
+    setReplacingSide(null);
+    setAnimating(false);
+    setRound(0);
+    setBattleRound(0);
+    setScreen('battle');
   }, []);
 
   const goQuiz = useCallback(() => {
@@ -121,6 +294,55 @@ export function SoloJourney() {
     setScreen('choose');
   }, []);
 
+  const getNextMenu = useCallback(() => {
+    const currentIds = new Set([leftOption.id, rightOption.id]);
+    const remaining = ALL_MENUS.filter(m => !usedIds.has(m.id) && !currentIds.has(m.id));
+    if (remaining.length === 0) {
+      const allOther = ALL_MENUS.filter(m => !currentIds.has(m.id));
+      return allOther[Math.floor(Math.random() * allOther.length)] || ALL_MENUS[0];
+    }
+    return remaining[Math.floor(Math.random() * remaining.length)];
+  }, [leftOption, rightOption, usedIds]);
+
+  const handleSelect = useCallback((side: 'left' | 'right') => {
+    if (animating) return;
+    setAnimating(true);
+    setSelectedSide(side);
+
+    const chosen = side === 'left' ? leftOption : rightOption;
+    setCurrentChoice(chosen);
+    setBattleRound(r => r + 1);
+
+    const otherSide = side === 'left' ? 'right' : 'left';
+
+    setTimeout(() => {
+      setReplacingSide(otherSide);
+    }, 500);
+
+    setTimeout(() => {
+      const nextMenu = getNextMenu();
+      setUsedIds(prev => new Set([...prev, nextMenu.id]));
+
+      if (otherSide === 'left') {
+        setLeftOption(nextMenu);
+      } else {
+        setRightOption(nextMenu);
+      }
+
+      setTimeout(() => {
+        setSelectedSide(null);
+        setReplacingSide(null);
+        setAnimating(false);
+        setRound(r => r + 1);
+      }, 400);
+    }, 800);
+  }, [animating, leftOption, rightOption, getNextMenu]);
+
+  const getMascotDirection = (): 'left' | 'right' | 'center' => {
+    if (!selectedSide) return 'center';
+    return selectedSide;
+  };
+
   const canProceed = quizStep === 0 ? selectedCuisines.length > 0 : quizStep === 1 ? selectedSettings.length > 0 : selectedBudget !== null;
 
   return (
@@ -129,11 +351,8 @@ export function SoloJourney() {
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&display=swap');
         .no-sb::-webkit-scrollbar{display:none} .no-sb{-ms-overflow-style:none;scrollbar-width:none}
         @keyframes float{0%,100%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-6px) rotate(-2deg)}75%{transform:translateY(-3px) rotate(2deg)}} .float{animation:float 4s ease-in-out infinite}
-        @keyframes wiggle{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-6deg)}75%{transform:rotate(6deg)}} .wiggle{animation:wiggle 2s ease-in-out infinite}
-        @keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 rgba(255,204,2,0.3)}50%{box-shadow:0 0 0 12px rgba(255,204,2,0)}} .pulse-glow{animation:pulse-glow 2s ease-in-out infinite}
-        @keyframes confetti-pop{0%{transform:scale(0) rotate(0deg);opacity:1}60%{transform:scale(1.3) rotate(180deg);opacity:0.8}100%{transform:scale(1) rotate(360deg);opacity:0}} .confetti{animation:confetti-pop 0.6s ease-out forwards}
-        @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}} .shimmer{background:linear-gradient(90deg,transparent 25%,rgba(255,204,2,0.1) 50%,transparent 75%);background-size:200% 100%;animation:shimmer 2s infinite}
         .glass{background:rgba(255,255,255,0.88);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%)}
+        @keyframes crown-bounce{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-3px) rotate(5deg)}} .crown-bounce{animation:crown-bounce 1.5s ease-in-out infinite}
       `}} />
 
       <div className="relative w-[390px] h-[844px] bg-[#FAFAF8] rounded-[44px] border-[8px] border-gray-900 overflow-hidden shadow-2xl flex flex-col">
@@ -223,16 +442,14 @@ export function SoloJourney() {
                       animate={{ opacity: soloHover ? 1 : 0 }}
                       transition={{ duration: 0.3 }}
                     />
-
                     <div className="relative">
                       <motion.div
                         className="w-[90px] h-[90px] rounded-[24px] bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center overflow-hidden"
                         animate={soloHover ? { scale: [1, 1.08, 1.04], rotate: [0, 3, 0] } : { scale: 1 }}
                         transition={{ duration: 0.5 }}
                       >
-                        <img src="/__mockup/images/toast_char.png" alt="Solo" className="w-[75px] h-[75px] object-contain float" />
+                        <img src="/images/toast_char.png" alt="Solo" className="w-[75px] h-[75px] object-contain float" />
                       </motion.div>
-
                       <motion.div
                         className="absolute -top-1 -right-1 w-6 h-6 bg-[#FFCC02] rounded-full flex items-center justify-center shadow-md"
                         initial={{ scale: 0, rotate: -45 }}
@@ -242,12 +459,10 @@ export function SoloJourney() {
                         <Sparkles className="w-3.5 h-3.5 text-gray-900" />
                       </motion.div>
                     </div>
-
                     <div className="relative z-10">
                       <div className="font-bold text-gray-900 text-[16px]">Solo</div>
                       <div className="text-[11px] text-gray-500 mt-0.5">AI picks just for you</div>
                     </div>
-
                     <motion.div
                       className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FFCC02] to-[#FFB800]"
                       initial={{ scaleX: 0 }}
@@ -272,16 +487,14 @@ export function SoloJourney() {
                       animate={{ opacity: groupHover ? 1 : 0 }}
                       transition={{ duration: 0.3 }}
                     />
-
                     <div className="relative">
                       <motion.div
                         className="w-[90px] h-[90px] rounded-[24px] bg-gradient-to-br from-violet-50 to-pink-50 flex items-center justify-center overflow-hidden"
                         animate={groupHover ? { scale: [1, 1.08, 1.04] } : { scale: 1 }}
                         transition={{ duration: 0.5 }}
                       >
-                        <img src="/__mockup/images/toast_waffle.jpeg" alt="Group" className="w-[80px] h-[80px] object-contain" style={{ mixBlendMode: 'multiply' }} />
+                        <img src="/images/toast_waffle.jpeg" alt="Group" className="w-[80px] h-[80px] object-contain" style={{ mixBlendMode: 'multiply' }} />
                       </motion.div>
-
                       <motion.div
                         className="absolute -top-1 -right-1 w-6 h-6 bg-violet-500 rounded-full flex items-center justify-center shadow-md"
                         initial={{ scale: 0, rotate: 45 }}
@@ -291,12 +504,10 @@ export function SoloJourney() {
                         <Heart className="w-3 h-3 text-white fill-white" />
                       </motion.div>
                     </div>
-
                     <div className="relative z-10">
                       <div className="font-bold text-gray-900 text-[16px]">Group</div>
                       <div className="text-[11px] text-gray-500 mt-0.5">Vote with friends</div>
                     </div>
-
                     <motion.div
                       className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-400 to-pink-400"
                       initial={{ scaleX: 0 }}
@@ -617,13 +828,13 @@ export function SoloJourney() {
                       transition={bouncy}
                       whileTap={{ scale: 0.95 }}
                       whileHover={{ y: -2, boxShadow: '0 8px 28px rgba(255,204,2,0.4)' }}
-                      onClick={quizStep < 2 ? () => setQuizStep(s => s + 1) : startThinking}
+                      onClick={quizStep < 2 ? () => setQuizStep(s => s + 1) : startBattle}
                       className="w-full h-[52px] rounded-2xl bg-[#FFCC02] flex items-center justify-center gap-2.5 font-bold text-[15px] text-gray-900 shadow-[0_6px_24px_rgba(255,204,2,0.35)]"
                     >
                       {quizStep < 2 ? (
                         <>Continue <motion.div animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.2 }}><ArrowRight className="w-5 h-5" /></motion.div></>
                       ) : (
-                        <>Find my perfect spot <motion.div animate={{ rotate: [0, 15, -15, 0] }} transition={{ repeat: Infinity, duration: 2 }}><Sparkles className="w-5 h-5" /></motion.div></>
+                        <>Let's pick! <motion.div animate={{ rotate: [0, 15, -15, 0] }} transition={{ repeat: Infinity, duration: 2 }}><Flame className="w-5 h-5" /></motion.div></>
                       )}
                     </motion.button>
                   )}
@@ -649,411 +860,198 @@ export function SoloJourney() {
             </motion.div>
           )}
 
-          {screen === 'thinking' && (
+          {screen === 'battle' && (
             <motion.div
-              key="thinking"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, scale: 0.9, filter: 'blur(8px)' }}
+              key="battle"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
-              className="flex-1 flex flex-col items-center justify-center px-8 pb-24"
+              className="flex-1 flex flex-col items-center pt-10 px-5 pb-24 overflow-y-auto no-sb"
             >
               <motion.div
-                className="relative mb-10"
-                animate={{ y: [0, -14, 0] }}
-                transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-              >
-                <motion.div
-                  className="w-28 h-28 rounded-[32px] bg-gradient-to-br from-[#FFCC02] to-[#FFB800] flex items-center justify-center shadow-[0_12px_40px_rgba(255,204,2,0.4)]"
-                  animate={{ rotate: [0, 3, -3, 0] }}
-                  transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                >
-                  <motion.span
-                    className="text-6xl"
-                    animate={{ scale: [1, 1.1, 1], rotate: [0, 8, -8, 0] }}
-                    transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-                  >
-                    🍞
-                  </motion.span>
-                </motion.div>
-
-                <motion.div
-                  className="absolute -top-2 -right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg"
-                  animate={{ scale: [1, 1.3, 1], rotate: [0, 180, 360] }}
-                  transition={{ repeat: Infinity, duration: 2.5 }}
-                >
-                  <Sparkles className="w-4 h-4 text-[#FFCC02]" />
-                </motion.div>
-
-                <motion.div
-                  className="absolute -bottom-1 -left-2 w-6 h-6 bg-amber-100 rounded-full flex items-center justify-center"
-                  animate={{ y: [0, -6, 0], opacity: [0.6, 1, 0.6] }}
-                  transition={{ repeat: Infinity, duration: 1.8, delay: 0.5 }}
-                >
-                  <span className="text-xs">✨</span>
-                </motion.div>
-
-                <motion.div
-                  className="absolute inset-[-8px] rounded-[38px] border-2 border-[#FFCC02]/20"
-                  animate={{ scale: [0.95, 1.08, 0.95], opacity: [0.5, 0, 0.5] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                />
-              </motion.div>
-
-              <motion.h2
-                initial={{ opacity: 0, y: 12 }}
+                className="w-full mb-2"
+                initial={{ opacity: 0, y: -12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, ...gentle }}
-                className="text-[24px] font-['Playfair_Display'] font-bold text-gray-900 mb-1.5 text-center"
+                transition={{ delay: 0.1, ...gentle }}
               >
-                Toast is thinking...
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="text-[13px] text-gray-400 mb-10"
-              >
-                Crunching your taste DNA
-              </motion.p>
+                <div className="flex items-center justify-between mb-2">
+                  <motion.button
+                    whileTap={{ scale: 0.85, rotate: -10 }}
+                    onClick={goQuiz}
+                    className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 text-gray-700" />
+                  </motion.button>
 
-              <div className="w-full max-w-[240px] space-y-5">
-                {THINKING_STEPS.map((s, i) => {
-                  const done = thinkingStep > i;
-                  const active = thinkingStep === i + 1;
-                  return (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -24 }}
-                      animate={{ opacity: done || active ? 1 : 0.25, x: 0 }}
-                      transition={{ delay: 0.3 + i * 0.12, ...gentle }}
-                      className="flex items-center gap-3"
-                    >
-                      <motion.div
-                        animate={{
-                          backgroundColor: done ? '#FFCC02' : active ? '#FEF3C7' : '#F3F4F6',
-                          scale: active ? [1, 1.15, 1] : done ? [1, 1.2, 1] : 1,
-                          rotate: done ? [0, 10, 0] : 0,
-                        }}
-                        transition={active ? { scale: { repeat: Infinity, duration: 1 } } : bouncy}
-                        className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                      >
-                        {done ? (
-                          <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={bouncy}>
-                            <Check className="w-4 h-4 text-gray-900" />
-                          </motion.div>
-                        ) : (
-                          <s.icon className={`w-4 h-4 ${active ? 'text-amber-600' : 'text-gray-400'}`} />
-                        )}
-                      </motion.div>
-                      <span className={`text-[13px] font-medium ${done ? 'text-gray-900' : active ? 'text-gray-700' : 'text-gray-400'}`}>
-                        {s.label}
+                  <div className="flex items-center gap-1.5">
+                    {selectedCuisines.slice(0, 3).map(c => (
+                      <span key={c} className="text-[9px] font-medium text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">
+                        {CUISINES.find(cu => cu.label === c)?.emoji} {c}
                       </span>
-                      {done && (
-                        <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={bouncy} className="ml-auto text-[10px]">
-                          ✅
-                        </motion.span>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </div>
+                    ))}
+                    {selectedCuisines.length > 3 && (
+                      <span className="text-[9px] font-medium text-gray-400">+{selectedCuisines.length - 3}</span>
+                    )}
+                  </div>
 
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="mt-10 w-full max-w-[240px]">
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <motion.div
-                    initial={{ width: '0%' }}
-                    animate={{ width: `${Math.min(100, thinkingStep * 25)}%` }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="h-full rounded-full bg-gradient-to-r from-[#FFCC02] to-[#FFB800]"
-                  />
+                    className="flex items-center gap-1 text-[10px] font-bold text-gray-400 bg-gray-100 rounded-full px-2.5 py-1"
+                    key={battleRound}
+                    initial={{ scale: 0.8 }}
+                    animate={{ scale: 1 }}
+                    transition={bouncy}
+                  >
+                    <Flame className="w-3 h-3 text-orange-400" />
+                    Round {battleRound + 1}
+                  </motion.div>
                 </div>
               </motion.div>
-            </motion.div>
-          )}
 
-          {screen === 'result' && (
-            <motion.div
-              key="result"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex-1 overflow-y-auto no-sb pb-24"
-              onScroll={e => setHeroOffset(Math.min((e.currentTarget as HTMLDivElement).scrollTop * 0.35, 60))}
-            >
-              <div className="relative h-[280px] overflow-hidden">
-                <motion.img
-                  src={RESULT.image}
-                  alt={RESULT.name}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  initial={{ scale: 1.15, filter: 'blur(4px)' }}
-                  animate={{ scale: 1, filter: 'blur(0px)', y: heroOffset }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+              <ToastMascot pointDirection={getMascotDirection()} />
 
-                <div className="absolute top-12 left-5 right-5 flex items-center justify-between z-10">
-                  <motion.button
-                    initial={{ opacity: 0, scale: 0.5, rotate: -20 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                    transition={{ delay: 0.3, ...bouncy }}
-                    whileTap={{ scale: 0.85 }}
-                    onClick={reset}
-                    className="w-10 h-10 rounded-full glass flex items-center justify-center shadow-lg"
-                  >
-                    <ArrowLeft className="w-4 h-4 text-gray-900" />
-                  </motion.button>
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5, ...spring }}
-                    className="flex items-center gap-2"
-                  >
-                    <motion.div whileTap={{ scale: 0.85 }} whileHover={{ scale: 1.1 }} className="glass rounded-full px-3 py-1.5 shadow-lg cursor-pointer">
-                      <Heart className="w-4 h-4 text-gray-700" />
-                    </motion.div>
-                    <motion.div whileTap={{ scale: 0.85 }} whileHover={{ scale: 1.1 }} className="glass rounded-full px-3 py-1.5 shadow-lg cursor-pointer">
-                      <ExternalLink className="w-4 h-4 text-gray-700" />
-                    </motion.div>
-                  </motion.div>
-                </div>
-
-                <div className="absolute bottom-4 left-5 right-5 z-10">
-                  <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, ...gentle }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <motion.span
-                        initial={{ scale: 0, rotate: -20 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ delay: 0.7, ...bouncy }}
-                        className="bg-[#FFCC02] text-gray-900 text-[10px] font-bold rounded-full px-2.5 py-1 flex items-center gap-1 shadow-md"
-                      >
-                        <Sparkles className="w-3 h-3" /> Picked for you
-                      </motion.span>
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.8, ...bouncy }}
-                        className="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold rounded-full px-2.5 py-1"
-                      >
-                        ⭐ Michelin Star
-                      </motion.span>
-                    </div>
-                    <motion.h1
-                      className="text-[30px] font-['Playfair_Display'] font-bold text-white leading-tight"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.6, ...gentle }}
-                    >
-                      {RESULT.name}
-                    </motion.h1>
-                    <p className="text-white/80 text-[13px] font-medium mt-0.5 flex items-center gap-2">
-                      {RESULT.cuisine} · <Star className="w-3 h-3 text-[#FFCC02] fill-[#FFCC02]" /> {RESULT.rating} ({RESULT.reviews}) · {RESULT.price}
-                    </p>
-                  </motion.div>
-                </div>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, ...spring }}
+                className="text-center mb-1"
+              >
+                <h2 className="text-[20px] font-['Playfair_Display'] font-bold text-gray-900">
+                  Which one sounds better?
+                </h2>
+                <p className="text-[11px] text-gray-400 font-medium mt-0.5">
+                  Tap to pick — the other gets replaced
+                </p>
+              </motion.div>
 
               <AnimatePresence>
-                {showCard && (
+                {currentChoice && (
                   <motion.div
-                    initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                    initial={{ opacity: 0, y: -8, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ ...bouncy }}
-                    className="px-5 -mt-6 relative z-20"
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={bouncy}
+                    className="flex items-center gap-2 my-2.5 bg-amber-50/80 border border-amber-100/60 rounded-full px-4 py-2 shadow-sm"
                   >
-                    <div className="bg-white rounded-[22px] shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-gray-100/50 overflow-hidden">
-                      <div className="p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2.5">
-                            <motion.div
-                              className="w-11 h-11 rounded-2xl bg-emerald-50 flex items-center justify-center"
-                              initial={{ scale: 0, rotate: -30 }}
-                              animate={{ scale: 1, rotate: 0 }}
-                              transition={{ delay: 0.3, ...bouncy }}
-                            >
-                              <BadgeCheck className="w-5 h-5 text-emerald-600" />
-                            </motion.div>
-                            <div>
-                              <motion.span
-                                className="text-[16px] font-bold text-emerald-600"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.4 }}
-                              >
-                                {RESULT.match}% Match
-                              </motion.span>
-                              <p className="text-[10px] text-gray-400">Based on your Taste DNA</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 text-[11px] text-gray-400">
-                            <MapPin className="w-3.5 h-3.5" /> {RESULT.distance}
-                            <span className="text-gray-200">·</span>
-                            <Clock className="w-3.5 h-3.5" /> {RESULT.waitTime}
-                          </div>
-                        </div>
-
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${RESULT.match}%` }}
-                            transition={{ delay: 0.5, duration: 1, ease: [0.4, 0, 0.2, 1] }}
-                            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600"
-                          />
-                        </div>
-
-                        <motion.div
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.6, ...gentle }}
-                          className="flex items-start gap-2 mb-3 bg-amber-50/60 rounded-xl px-3 py-2.5 border border-amber-100/50"
-                        >
-                          <Brain className="w-3.5 h-3.5 text-amber-600 mt-0.5 flex-shrink-0" />
-                          <p className="text-[11px] text-amber-800 leading-relaxed">{RESULT.insight}</p>
-                        </motion.div>
-
-                        <div className="flex flex-wrap gap-1.5 mb-4">
-                          {RESULT.chips.map((chip, i) => (
-                            <motion.span
-                              key={chip}
-                              initial={{ opacity: 0, scale: 0.6 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: 0.7 + i * 0.08, ...bouncy }}
-                              className="text-[10px] font-medium text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1 border border-emerald-100"
-                            >
-                              {chip}
-                            </motion.span>
-                          ))}
-                        </div>
-
-                        <motion.button
-                          whileTap={{ scale: 0.97 }}
-                          onClick={() => setExpandScores(!expandScores)}
-                          className="w-full text-[11px] font-medium text-gray-400 flex items-center justify-center gap-1 py-1 mb-1"
-                        >
-                          {expandScores ? 'Hide details' : 'See why Toast picked this'}
-                          <motion.div animate={{ rotate: expandScores ? 180 : 0 }} transition={spring}>
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          </motion.div>
-                        </motion.button>
-
-                        <AnimatePresence>
-                          {expandScores && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={gentle}
-                              className="overflow-hidden"
-                            >
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2.5">Why this pick</p>
-                              <div className="space-y-2.5 mb-2">
-                                {RESULT.scores.map((s, i) => (
-                                  <div key={s.label} className="flex items-center gap-2">
-                                    <span className="text-[10px] font-medium text-gray-400 w-[88px] text-right">{s.label}</span>
-                                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                                      <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${s.value}%` }}
-                                        transition={{ delay: 0.1 + i * 0.12, duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
-                                        className="h-full rounded-full"
-                                        style={{ backgroundColor: s.color }}
-                                      />
-                                    </div>
-                                    <motion.span
-                                      className="text-[10px] font-bold text-gray-700 w-8"
-                                      initial={{ opacity: 0 }}
-                                      animate={{ opacity: 1 }}
-                                      transition={{ delay: 0.3 + i * 0.12 }}
-                                    >
-                                      {s.value}%
-                                    </motion.span>
-                                  </div>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-
-                      <div className="border-t border-gray-100 p-4 flex gap-2">
-                        <motion.button
-                          whileTap={{ scale: 0.94 }}
-                          whileHover={{ y: -2, boxShadow: '0 8px 24px rgba(255,204,2,0.35)' }}
-                          className="flex-1 h-[50px] rounded-2xl bg-[#FFCC02] flex items-center justify-center gap-2 font-bold text-[14px] text-gray-900 shadow-[0_4px_16px_rgba(255,204,2,0.3)]"
-                        >
-                          Let's go <motion.div animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.2 }}><ArrowRight className="w-4 h-4" /></motion.div>
-                        </motion.button>
-                        <motion.button
-                          whileTap={{ scale: 0.85, rotate: -90 }}
-                          whileHover={{ scale: 1.08 }}
-                          onClick={startThinking}
-                          className="h-[50px] w-[50px] rounded-2xl border border-gray-200 bg-white flex items-center justify-center text-gray-400"
-                        >
-                          <RotateCcw className="w-4 h-4" />
-                        </motion.button>
-                      </div>
-                    </div>
+                    <motion.div
+                      animate={{ rotate: [0, 8, -8, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <Crown className="w-3.5 h-3.5 text-[#FFCC02]" />
+                    </motion.div>
+                    <span className="text-[11px] font-semibold text-gray-700">Current pick: {currentChoice.name}</span>
+                    <motion.div
+                      className="w-5 h-5 rounded-full bg-[#FFCC02] flex items-center justify-center"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={bouncy}
+                    >
+                      <Trophy className="w-3 h-3 text-gray-900" />
+                    </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              {showCard && (
+              <motion.div
+                className="flex gap-3.5 w-full mb-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, ...gentle }}
+              >
+                <BattleCard
+                  item={leftOption}
+                  side="left"
+                  isSelected={selectedSide === 'left'}
+                  isDismissed={selectedSide !== null && selectedSide !== 'left'}
+                  isReplacing={replacingSide === 'left'}
+                  isCurrent={currentChoice?.id === leftOption.id && selectedSide === null}
+                  onSelect={() => handleSelect('left')}
+                  round={round}
+                />
+
                 <motion.div
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.7, ...gentle }}
-                  className="px-5 mt-5 mb-4"
+                  className="flex items-center justify-center self-center z-10"
+                  animate={{
+                    scale: animating ? [1, 1.3, 1] : 1,
+                    rotate: animating ? [0, 180, 360] : 0,
+                  }}
+                  transition={bouncy}
                 >
-                  <p className="text-[13px] font-bold text-gray-500 uppercase tracking-widest mb-3">Also great for you</p>
-                  <div className="flex gap-3">
-                    {ALTS.map((alt, i) => (
-                      <motion.div
-                        key={alt.name}
-                        initial={{ opacity: 0, y: 20, rotate: i === 0 ? -2 : 2 }}
-                        animate={{ opacity: 1, y: 0, rotate: 0 }}
-                        transition={{ delay: 0.8 + i * 0.12, ...bouncy }}
-                        whileTap={{ scale: 0.96 }}
-                        whileHover={{ y: -4 }}
-                        className="flex-1 bg-white rounded-[18px] border border-gray-100 overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.04)] cursor-pointer"
-                      >
-                        <div className="relative h-[80px] overflow-hidden">
-                          <img src={alt.image} alt={alt.name} className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ delay: 1 + i * 0.1, ...bouncy }}
-                            className="absolute top-2 right-2 bg-emerald-500/90 text-white text-[9px] font-bold rounded-full px-1.5 py-0.5"
-                          >
-                            {alt.match}%
-                          </motion.div>
-                          <p className="absolute bottom-2 left-2 text-white text-[11px] font-semibold drop-shadow">{alt.name}</p>
-                        </div>
-                        <div className="p-2.5">
-                          <span className="text-[9px] font-medium text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5 border border-emerald-100">{alt.chip}</span>
-                        </div>
-                      </motion.div>
-                    ))}
+                  <div className="w-9 h-9 rounded-full bg-white border-2 border-gray-100 flex items-center justify-center shadow-lg -mx-3">
+                    <motion.span
+                      className="text-[13px] font-black text-gray-300"
+                      animate={animating ? { color: '#FFCC02' } : { color: '#D1D5DB' }}
+                    >
+                      VS
+                    </motion.span>
                   </div>
                 </motion.div>
-              )}
 
-              {showCard && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1 }}
-                  className="px-5 mt-2 mb-6"
+                <BattleCard
+                  item={rightOption}
+                  side="right"
+                  isSelected={selectedSide === 'right'}
+                  isDismissed={selectedSide !== null && selectedSide !== 'right'}
+                  isReplacing={replacingSide === 'right'}
+                  isCurrent={currentChoice?.id === rightOption.id && selectedSide === null}
+                  onSelect={() => handleSelect('right')}
+                  round={round}
+                />
+              </motion.div>
+
+              <motion.button
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, ...gentle }}
+                whileTap={{ scale: 0.96 }}
+                whileHover={{ y: -2, boxShadow: '0 10px 32px rgba(255,204,2,0.4)' }}
+                className="w-full py-3.5 rounded-2xl bg-[#FFCC02] text-gray-900 font-bold text-[14px] shadow-[0_6px_24px_rgba(255,204,2,0.3)] flex items-center justify-center gap-2"
+              >
+                <UtensilsCrossed className="w-4 h-4" />
+                Ready to eat!{currentChoice ? ` — ${currentChoice.name}` : ''}
+              </motion.button>
+
+              <div className="flex items-center gap-2.5 w-full mt-3">
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6, ...gentle }}
+                  whileTap={{ scale: 0.94 }}
+                  className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
                 >
-                  <motion.button
-                    whileTap={{ scale: 0.97 }}
-                    whileHover={{ backgroundColor: '#F9FAFB' }}
-                    className="w-full h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-1.5 text-[11px] font-medium text-gray-500"
-                  >
-                    <Zap className="w-3.5 h-3.5" /> Not feeling these? Let's find your cravings
-                  </motion.button>
-                </motion.div>
-              )}
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-50 to-[#FFCC02]/15 flex items-center justify-center">
+                    <Sparkles className="w-3.5 h-3.5 text-[#FFCC02]" />
+                  </div>
+                  <span className="text-[10px] font-semibold text-gray-600">Decide for me</span>
+                </motion.button>
+
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.65, ...gentle }}
+                  whileTap={{ scale: 0.94 }}
+                  onClick={startBattle}
+                  className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
+                >
+                  <div className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center">
+                    <RotateCcw className="w-3.5 h-3.5 text-gray-400" />
+                  </div>
+                  <span className="text-[10px] font-semibold text-gray-600">Shuffle</span>
+                </motion.button>
+
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7, ...gentle }}
+                  whileTap={{ scale: 0.94 }}
+                  className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-gray-100 shadow-sm"
+                >
+                  <div className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center">
+                    <Flame className="w-3.5 h-3.5 text-orange-400" />
+                  </div>
+                  <span className="text-[10px] font-semibold text-gray-600">Trending</span>
+                </motion.button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
