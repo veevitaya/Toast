@@ -1,10 +1,10 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowRight, ArrowLeft, Check, X, Star, Heart, MapPin, Clock,
-  ChevronRight, ChevronDown, Sparkles, Users, Flame, Moon, Sun,
-  Wine, Music, Gamepad2, Clapperboard, Coffee, Footprints, Share2,
-  Bookmark, Navigation, Plus, ChevronUp, Wallet, Zap, Eye
+  ArrowRight, ArrowLeft, Check, Star, Heart, MapPin, Clock,
+  ChevronRight, Sparkles, Users, Flame, Moon,
+  Footprints, Share2,
+  Bookmark, Navigation, Plus, Wallet, Zap, Eye
 } from 'lucide-react';
 
 const spring = { type: "spring" as const, stiffness: 280, damping: 26 };
@@ -630,3 +630,5 @@ export function NightPlanJourney() {
     </div>
   );
 }
+
+
