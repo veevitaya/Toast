@@ -8,7 +8,10 @@ import { useLineProfile } from "@/lib/useLineProfile";
 import { handleImageError } from "@/lib/imageUtils";
 import { throttleTap } from "@/lib/requestLock";
 import { fetchWithTimeout } from "@/lib/queryClient";
-import { Square, X, Trophy, ChevronRight, Crown, Medal, Award, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils, MapPin } from "lucide-react";
+import { isMenuFirstVibe } from "@shared/vibeConfig";
+import { Square, X, Trophy, ChevronRight, Crown, Medal, Award, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils, MapPin, UtensilsCrossed } from "lucide-react";
+
+type SwipePhase = "menu" | "restaurant";
 
 interface MenuItem {
   id: number;
@@ -21,6 +24,17 @@ interface MenuItem {
   address: string;
   imageUrl: string;
   isNew?: boolean;
+}
+
+interface DishItem {
+  id: number;
+  name: string;
+  nameLocal?: string | null;
+  imageUrl: string;
+  category: string;
+  tags: string[];
+  description?: string | null;
+  swipeRightCount?: number;
 }
 
 interface SessionMember {
@@ -271,6 +285,138 @@ function SwipeCardGroup({ item, active, behind, onSwipe, onTap, showHint = false
 }
 
 
+function DishSwipeCard({ dish, active, behind, onSwipe, showHint = false, members }: { dish: DishItem; active: boolean; behind: boolean; onSwipe: (id: number, dir: "left" | "right" | "super") => void; showHint?: boolean; members: SessionMember[] }) {
+  const hintRef = useSwipeHintGroup(active, showHint);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotate = useTransform(x, [-200, 0, 200], [-12, 0, 12]);
+  const yumOpacity = useTransform(x, [0, 80], [0, 1]);
+  const nahOpacity = useTransform(x, [0, -80], [0, 1]);
+  const superOpacity = useTransform(y, [0, -80], [0, 1]);
+  const [dragging, setDragging] = useState(false);
+  const [exiting, setExiting] = useState<{ x: number; y: number } | null>(null);
+  const swiped = useRef(false);
+
+  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
+    if (swiped.current) return;
+    const xThreshold = 120;
+    const yThreshold = -100;
+    if (info.offset.y < yThreshold && Math.abs(info.offset.x) < 80) {
+      swiped.current = true;
+      setExiting({ x: 0, y: -600 });
+      onSwipe(dish.id, "super");
+    } else if (info.offset.x > xThreshold) {
+      swiped.current = true;
+      setExiting({ x: 500, y: info.offset.y });
+      onSwipe(dish.id, "right");
+    } else if (info.offset.x < -xThreshold) {
+      swiped.current = true;
+      setExiting({ x: -500, y: info.offset.y });
+      onSwipe(dish.id, "left");
+    }
+    setTimeout(() => setDragging(false), 50);
+  }, [dish.id, onSwipe]);
+
+  if (!active && !behind) return null;
+
+  return (
+    <motion.div
+      ref={active ? hintRef : undefined}
+      style={{
+        x: active ? x : 0,
+        y: active ? y : 0,
+        rotate: active ? rotate : 0,
+        zIndex: active ? 10 : 5,
+        boxShadow: active
+          ? "0 20px 60px -12px rgba(0,0,0,0.2), 0 4px 20px -4px rgba(0,0,0,0.08)"
+          : "0 10px 30px -8px rgba(0,0,0,0.12)",
+      }}
+      initial={behind ? { scale: 0.95, y: 8 } : { scale: 1, y: 0 }}
+      animate={
+        exiting
+          ? { x: exiting.x, y: exiting.y, opacity: 0, rotate: exiting.x > 0 ? 20 : exiting.x < 0 ? -20 : 0 }
+          : behind
+          ? { scale: 0.96, y: 8, opacity: 0.7 }
+          : { scale: 1, y: 0, opacity: 1 }
+      }
+      transition={exiting ? { duration: 0.35, ease: [0.4, 0, 0.2, 1] } : { type: "spring", damping: 28, stiffness: 280 }}
+      drag={active && !exiting ? true : false}
+      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+      dragElastic={0.9}
+      onDragStart={() => setDragging(true)}
+      onDragEnd={handleDragEnd}
+      className="absolute inset-0 bg-white rounded-[28px] overflow-hidden cursor-grab active:cursor-grabbing select-none gpu-accelerated"
+      data-testid={`dish-card-${dish.id}`}
+    >
+      <div className="relative w-full h-[65%]">
+        <img src={dish.imageUrl} alt={dish.name} className="w-full h-full object-cover" draggable={false} onError={handleImageError} loading={active ? "eager" : "lazy"} decoding="async" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/5" />
+
+        {active && (
+          <>
+            <motion.div style={{ opacity: yumOpacity }} className="absolute top-8 left-6 z-20 gpu-accelerated">
+              <div className="bg-[hsl(160,60%,45%)] text-white text-xl font-black rounded-2xl px-5 py-2.5 -rotate-12 border-[3px] border-white/50" style={{ boxShadow: "0 4px 20px rgba(0,200,100,0.3)" }}>YUM</div>
+            </motion.div>
+            <motion.div style={{ opacity: nahOpacity }} className="absolute top-8 right-6 z-20 gpu-accelerated">
+              <div className="bg-[hsl(348,83%,47%)] text-white text-xl font-black rounded-2xl px-5 py-2.5 rotate-12 border-[3px] border-white/50" style={{ boxShadow: "0 4px 20px rgba(220,38,38,0.3)" }}>NAH</div>
+            </motion.div>
+            <motion.div style={{ opacity: superOpacity }} className="absolute bottom-28 left-1/2 -translate-x-1/2 z-20 gpu-accelerated">
+              <div className="bg-[hsl(45,95%,55%)] text-foreground text-xl font-black rounded-2xl px-5 py-2.5 border-[3px] border-white/50" style={{ boxShadow: "0 4px 20px rgba(234,179,8,0.3)" }}>SUPERLIKE</div>
+            </motion.div>
+          </>
+        )}
+
+        <div className="absolute top-5 left-5">
+          <div className="bg-white/95 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-semibold text-foreground flex items-center gap-1.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+            <UtensilsCrossed className="w-3 h-3" />
+            {dish.category}
+          </div>
+        </div>
+
+        <div className="absolute bottom-0 left-0 right-0 p-5 pb-4">
+          <h2 className="text-white text-[28px] font-bold mb-1 drop-shadow-lg">{dish.name}</h2>
+          {dish.nameLocal && <p className="text-white/80 text-sm font-medium drop-shadow">{dish.nameLocal}</p>}
+        </div>
+      </div>
+
+      <div className="p-5 pt-4 flex flex-col h-[35%]">
+        <div className="flex flex-wrap gap-1.5 mb-3 overflow-hidden max-h-[2.5rem]">
+          {(dish.tags || []).map((tag) => (
+            <span key={tag} className="text-[11px] bg-amber-50 text-amber-700 rounded-full px-2.5 py-1 font-medium border border-amber-100">{tag}</span>
+          ))}
+        </div>
+
+        {dish.description && (
+          <p className="text-foreground/60 text-sm leading-relaxed flex-1 min-h-0 line-clamp-2">{dish.description}</p>
+        )}
+
+        <div className="mt-auto pt-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex -space-x-1.5">
+              {members.map((m) => (
+                m.pictureUrl ? (
+                  <img key={m.lineUserId} src={m.pictureUrl} alt={m.displayName} className="w-5 h-5 rounded-full border-[1.5px] border-white object-cover" />
+                ) : (
+                  <div key={m.lineUserId} className="w-5 h-5 rounded-full border-[1.5px] border-white bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                    <span className="text-[8px] font-bold text-amber-600">{m.displayName.charAt(0)}</span>
+                  </div>
+                )
+              ))}
+            </div>
+            <span className="text-[10px] text-muted-foreground">{members.length} swiping</span>
+          </div>
+          {(dish.swipeRightCount || 0) > 0 && (
+            <span className="text-[10px] text-amber-600 font-medium flex items-center gap-0.5">
+              <Heart className="w-3 h-3 fill-amber-500 text-amber-500" />
+              {dish.swipeRightCount} likes
+            </span>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 function buildTagsFromCategory(category: string): string[] {
   const tags: string[] = [];
   const parts = category.split("•").map(p => p.trim()).filter(Boolean);
@@ -295,6 +441,9 @@ export default function GroupSwipe() {
   }, [sessionCode, lineProfile]);
   const [members, setMembers] = useState<SessionMember[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [dishItems, setDishItems] = useState<DishItem[]>([]);
+  const [swipePhase, setSwipePhase] = useState<SwipePhase>("menu");
+  const [matchedDish, setMatchedDish] = useState<DishItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [pollError, setPollError] = useState(false);
   const pollFailCount = useRef(0);
@@ -333,9 +482,11 @@ export default function GroupSwipe() {
   useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();
-    const loadRestaurants = async () => {
+    const loadCards = async () => {
       try {
-        let data: any[] = [];
+        let restaurantData: any[] = [];
+        let useMenuFirst = true;
+        let vibeForSession: string | null = null;
 
         if (sessionCode) {
           const sessionRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}`, { signal: controller.signal });
@@ -347,92 +498,122 @@ export default function GroupSwipe() {
               setSessionLocationLabel(sessionLocation);
               sessionLocationLabelRef.current = sessionLocation;
             }
-            if (sessionData.session?.sessionType === "trending") {
-              const trendingRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/trending-restaurants`, { signal: controller.signal });
-              if (cancelled) return;
-              if (trendingRes.ok) {
-                const trendingData = await trendingRes.json();
-                data = trendingData.restaurants || [];
-              }
-            } else if (sessionData.session?.sessionType === "saved_list" && sessionData.session?.sourceData) {
-              try {
-                const source = typeof sessionData.session.sourceData === "string"
-                  ? JSON.parse(sessionData.session.sourceData)
-                  : sessionData.session.sourceData;
-                if (source.restaurantIds?.length > 0) {
-                  const allRes = await fetchWithTimeout("/api/restaurants", { signal: controller.signal });
-                  if (cancelled) return;
-                  if (allRes.ok) {
-                    const allData = await allRes.json();
-                    const idSet = new Set(source.restaurantIds);
-                    data = allData.filter((r: any) => idSet.has(r.id));
-                  }
-                }
-              } catch {}
-            } else if ((sessionData.session?.sessionType === "vibe_swipe" || sessionData.session?.sessionType === "toast_decides") && sessionData.session?.sourceData) {
+
+            if (sessionData.session?.sessionType === "vibe_swipe" && sessionData.session?.sourceData) {
               try {
                 const source = typeof sessionData.session.sourceData === "string"
                   ? JSON.parse(sessionData.session.sourceData)
                   : sessionData.session.sourceData;
                 if (source.source === "vibe_swipe" && source.vibe) {
-                  const vibeRes = await fetchWithTimeout("/api/restaurants/by-vibe", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ vibe: source.vibe }),
-                    signal: controller.signal,
-                  });
-                  if (cancelled) return;
-                  if (vibeRes.ok) {
-                    data = await vibeRes.json();
-                  }
-                } else if (source.source === "toast_decides" && source.results?.length > 0) {
-                  const resultIds = new Set(source.results.map((r: any) => r.id));
-                  const allRes = await fetchWithTimeout("/api/restaurants", { signal: controller.signal });
-                  if (cancelled) return;
-                  if (allRes.ok) {
-                    const allData = await allRes.json();
-                    data = allData.filter((r: any) => resultIds.has(r.id));
-                    if (data.length === 0) {
-                      data = source.results;
-                    }
-                  }
+                  vibeForSession = source.vibe;
+                  useMenuFirst = isMenuFirstVibe(source.vibe);
                 }
               } catch {}
+            }
+
+            if (sessionData.session?.sessionType === "saved_list" || sessionData.session?.sessionType === "toast_decides") {
+              useMenuFirst = false;
+            }
+
+            if (!useMenuFirst) {
+              if (sessionData.session?.sessionType === "trending") {
+                const trendingRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/trending-restaurants`, { signal: controller.signal });
+                if (cancelled) return;
+                if (trendingRes.ok) {
+                  const trendingData = await trendingRes.json();
+                  restaurantData = trendingData.restaurants || [];
+                }
+              } else if (sessionData.session?.sessionType === "saved_list" && sessionData.session?.sourceData) {
+                try {
+                  const source = typeof sessionData.session.sourceData === "string"
+                    ? JSON.parse(sessionData.session.sourceData)
+                    : sessionData.session.sourceData;
+                  if (source.restaurantIds?.length > 0) {
+                    const allRes = await fetchWithTimeout("/api/restaurants", { signal: controller.signal });
+                    if (cancelled) return;
+                    if (allRes.ok) {
+                      const allData = await allRes.json();
+                      const idSet = new Set(source.restaurantIds);
+                      restaurantData = allData.filter((r: any) => idSet.has(r.id));
+                    }
+                  }
+                } catch {}
+              } else if (vibeForSession) {
+                const vibeRes = await fetchWithTimeout("/api/restaurants/by-vibe", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ vibe: vibeForSession }),
+                  signal: controller.signal,
+                });
+                if (cancelled) return;
+                if (vibeRes.ok) {
+                  restaurantData = await vibeRes.json();
+                }
+              } else if ((sessionData.session?.sessionType === "toast_decides") && sessionData.session?.sourceData) {
+                try {
+                  const source = typeof sessionData.session.sourceData === "string"
+                    ? JSON.parse(sessionData.session.sourceData)
+                    : sessionData.session.sourceData;
+                  if (source.results?.length > 0) {
+                    const resultIds = new Set(source.results.map((r: any) => r.id));
+                    const allRes = await fetchWithTimeout("/api/restaurants", { signal: controller.signal });
+                    if (cancelled) return;
+                    if (allRes.ok) {
+                      const allData = await allRes.json();
+                      restaurantData = allData.filter((r: any) => resultIds.has(r.id));
+                      if (restaurantData.length === 0) restaurantData = source.results;
+                    }
+                  }
+                } catch {}
+              }
+
+              if (restaurantData.length === 0) {
+                const locationParam = sessionLocationLabelRef.current ? `?location=${encodeURIComponent(sessionLocationLabelRef.current)}` : "";
+                const res = await fetchWithTimeout(`/api/restaurants${locationParam}`, { signal: controller.signal });
+                if (cancelled) return;
+                if (res.ok) {
+                  restaurantData = await res.json();
+                }
+              }
             }
           }
         }
 
-        if (data.length === 0) {
-          const locationParam = sessionLocationLabelRef.current ? `?location=${encodeURIComponent(sessionLocationLabelRef.current)}` : "";
-          const res = await fetchWithTimeout(`/api/restaurants${locationParam}`, { signal: controller.signal });
-          if (cancelled) return;
-          if (res.ok) {
-            data = await res.json();
-          }
-        }
-
         if (cancelled) return;
-        const items: MenuItem[] = data.map((r: any) => ({
-          id: r.id,
-          name: r.name,
-          category: r.category || "Restaurant",
-          tags: buildTagsFromCategory(r.category || ""),
-          description: r.description || "",
-          priceLevel: r.priceLevel || r.price_level || 2,
-          rating: r.rating || "4.0",
-          address: r.address || "Bangkok",
-          imageUrl: r.imageUrl || r.image_url || "",
-          isNew: r.isNew || r.is_new || false,
-        }));
-        items.sort(() => Math.random() - 0.5);
-        setMenuItems(items);
+
+        if (useMenuFirst) {
+          const dishRes = await fetchWithTimeout("/api/menu-items", { signal: controller.signal });
+          if (cancelled) return;
+          if (dishRes.ok) {
+            const dishes: DishItem[] = await dishRes.json();
+            dishes.sort(() => Math.random() - 0.5);
+            setDishItems(dishes);
+            setSwipePhase("menu");
+          }
+        } else {
+          setSwipePhase("restaurant");
+          const items: MenuItem[] = restaurantData.map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            category: r.category || "Restaurant",
+            tags: buildTagsFromCategory(r.category || ""),
+            description: r.description || "",
+            priceLevel: r.priceLevel || r.price_level || 2,
+            rating: r.rating || "4.0",
+            address: r.address || "Bangkok",
+            imageUrl: r.imageUrl || r.image_url || "",
+            isNew: r.isNew || r.is_new || false,
+          }));
+          items.sort(() => Math.random() - 0.5);
+          setMenuItems(items);
+        }
       } catch (err) {
-        console.error("Failed to load restaurants:", err);
+        console.error("Failed to load cards:", err);
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
-    loadRestaurants();
+    loadCards();
     return () => { cancelled = true; controller.abort(); };
   }, [sessionCode]);
 
@@ -480,7 +661,7 @@ export default function GroupSwipe() {
 
         if (!cancelled) {
           try {
-            const matchRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/matches`, { signal: pollController.signal });
+            const matchRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/matches?swipeType=${swipePhase === 'menu' ? 'menu' : 'restaurant'}`, { signal: pollController.signal });
             if (!cancelled && matchRes.ok) {
               const matchData = await matchRes.json();
               if (matchData.matches) {
@@ -570,7 +751,7 @@ export default function GroupSwipe() {
     }
   }, [sessionCode, members]);
 
-  const recordSwipe = useCallback(async (menuItemId: number, direction: "left" | "right" | "super") => {
+  const recordSwipe = useCallback(async (menuItemId: number, direction: "left" | "right" | "super", swipeType: SwipePhase = "restaurant") => {
     if (!sessionCode || !profile) return null;
     try {
       const res = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/swipe`, {
@@ -580,6 +761,7 @@ export default function GroupSwipe() {
           lineUserId: profile.userId,
           menuItemId,
           direction,
+          swipeType,
         }),
       });
       if (res.ok) {
@@ -590,6 +772,89 @@ export default function GroupSwipe() {
     }
     return null;
   }, [sessionCode, profile]);
+
+  const loadRestaurantsForDish = useCallback(async (dish: DishItem) => {
+    try {
+      setLoading(true);
+      setMatchedDish(dish);
+      const res = await fetchWithTimeout(`/api/menu-items/${dish.id}/restaurants`);
+      if (res.ok) {
+        const data = await res.json();
+        const items: MenuItem[] = data.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          category: r.category || "Restaurant",
+          tags: buildTagsFromCategory(r.category || ""),
+          description: r.description || "",
+          priceLevel: r.priceLevel || r.price_level || 2,
+          rating: r.rating || "4.0",
+          address: r.address || "Bangkok",
+          imageUrl: r.imageUrl || r.image_url || "",
+          isNew: r.isNew || r.is_new || false,
+        }));
+        items.sort(() => Math.random() - 0.5);
+        setMenuItems(items);
+        setCurrentIndex(0);
+        setSwipePhase("restaurant");
+        setLiked(new Set());
+        setSuperLiked(new Set());
+        setLikedCount(0);
+      }
+    } catch (err) {
+      console.error("Failed to load restaurants for dish:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const dishSwipeLockRef = useRef(false);
+  const handleDishSwipe = useCallback((id: number, dir: "left" | "right" | "super") => {
+    if (dishSwipeLockRef.current) return;
+    dishSwipeLockRef.current = true;
+    setTimeout(() => { dishSwipeLockRef.current = false; }, 400);
+
+    const dish = dishItems.find((d) => d.id === id);
+    if (!dish) return;
+
+    trackEvent(dir === "left" ? "swipe_left" : "swipe_right", {
+      restaurantId: id,
+      metadata: { category: dish.category || "", type: "menu" },
+    });
+
+    if (dir === "right" || dir === "super") {
+      setLiked((prev) => new Set([...prev, id]));
+      setLikedCount((c) => c + 1);
+      if (dir === "super") setSuperLiked((prev) => new Set([...prev, id]));
+    }
+
+    setLastAction(dir === "right" ? "YUM!" : dir === "super" ? "SUPERLIKE!" : "Nah");
+    setTimeout(() => setLastAction(null), 800);
+
+    recordSwipe(id, dir, "menu").then((result) => {
+      if (!result) return;
+      const { matches, memberCount } = result;
+
+      if (matches && matches.length > 0) {
+        for (const match of matches) {
+          const matched = dishItems.find(d => d.id === match.menuItemId);
+          if (matched && match.voters.length >= memberCount) {
+            setConfetti(true);
+            setMatchNotification(`Everyone matched on ${matched.name}! Loading restaurants...`);
+            setTimeout(() => {
+              setConfetti(false);
+              setMatchNotification(null);
+              loadRestaurantsForDish(matched);
+            }, 2000);
+            return;
+          }
+        }
+      }
+    });
+
+    setTimeout(() => {
+      setCurrentIndex((prev) => prev + 1);
+    }, 300);
+  }, [recordSwipe, dishItems, loadRestaurantsForDish]);
 
   const swipeLockRef = useRef(false);
   const handleSwipe = useCallback((id: number, dir: "left" | "right" | "super") => {
@@ -614,7 +879,7 @@ export default function GroupSwipe() {
     setLastAction(dir === "right" ? "YUM!" : dir === "super" ? "SUPERLIKE!" : "Nah");
     setTimeout(() => setLastAction(null), 800);
 
-    recordSwipe(id, dir).then((result) => {
+    recordSwipe(id, dir, "restaurant").then((result) => {
       if (!result) return;
 
       const { matches, memberCount } = result;
@@ -757,10 +1022,10 @@ export default function GroupSwipe() {
   }, [sessionCode]);
 
   useEffect(() => {
-    if (currentIndex >= menuItems.length && menuItems.length > 0 && !showResults && !fullMatch && !loadingResults) {
+    if (swipePhase === "restaurant" && currentIndex >= menuItems.length && menuItems.length > 0 && !showResults && !fullMatch && !loadingResults) {
       fetchRankedResults().then(() => setShowResults(true));
     }
-  }, [currentIndex, menuItems.length, showResults, fullMatch, loadingResults]);
+  }, [currentIndex, menuItems.length, showResults, fullMatch, loadingResults, swipePhase]);
 
   useEffect(() => {
     if (sessionEnded && !showResults && !loadingResults) {
@@ -769,8 +1034,14 @@ export default function GroupSwipe() {
   }, [sessionEnded, showResults, loadingResults]);
 
   const handleButtonSwipe = (dir: "left" | "right" | "super") => {
-    if (currentIndex < menuItems.length) {
-      handleSwipe(menuItems[currentIndex].id, dir);
+    if (swipePhase === "menu") {
+      if (currentIndex < dishItems.length) {
+        handleDishSwipe(dishItems[currentIndex].id, dir);
+      }
+    } else {
+      if (currentIndex < menuItems.length) {
+        handleSwipe(menuItems[currentIndex].id, dir);
+      }
     }
   };
 
@@ -797,7 +1068,8 @@ export default function GroupSwipe() {
     setFullMatch(false);
     setConfetti(false);
     setMatchedItem(null);
-    if (currentIndex >= menuItems.length) {
+    const totalCards = swipePhase === "menu" ? dishItems.length : menuItems.length;
+    if (currentIndex >= totalCards) {
       fetchRankedResults().then(() => setShowResults(true));
     }
   };
@@ -867,7 +1139,7 @@ export default function GroupSwipe() {
     return (
       <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col overflow-hidden" data-testid="group-summary-page">
         <div className="flex-shrink-0 px-6 pt-12 pb-5">
-          {!sessionEnded && currentIndex < menuItems.length && (
+          {!sessionEnded && ((swipePhase === "menu" && currentIndex < dishItems.length) || (swipePhase === "restaurant" && currentIndex < menuItems.length)) && (
             <button
               onClick={() => setShowResults(false)}
               className="flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground mb-3 active:opacity-70"
@@ -1331,7 +1603,7 @@ export default function GroupSwipe() {
                 className="flex-1 py-3 rounded-full bg-white border border-gray-200 text-foreground font-bold text-[13px] active:scale-[0.96] transition-transform"
                 style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
               >
-                {currentIndex >= menuItems.length ? "Results" : "Keep Swiping"}
+                {(swipePhase === "restaurant" && currentIndex >= menuItems.length) ? "Results" : "Keep Swiping"}
               </button>
 
               {isHost && (
@@ -1428,47 +1700,84 @@ export default function GroupSwipe() {
         )}
       </AnimatePresence>
 
+      {swipePhase === "restaurant" && matchedDish && (
+        <div className="px-5 pb-2">
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-2.5 flex items-center gap-2" data-testid="matched-dish-banner">
+            <UtensilsCrossed className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <span className="text-sm text-amber-800 font-medium">
+              Matched: <span className="font-bold">{matchedDish.name}</span> — now pick a restaurant!
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 relative px-5 pb-4">
-        {menuItems.length === 0 && !loading ? (
-          <div className="flex flex-col items-center justify-center h-full text-center px-6">
-            <p className="text-base font-semibold mb-2">No restaurants found</p>
-            <p className="text-sm text-muted-foreground mb-4">We could not load any restaurants for this session.</p>
-            <button
-              onClick={() => window.location.reload()}
-              data-testid="button-retry-load"
-              className="px-6 py-2.5 rounded-full bg-[#FFCC02] text-[#2d2000] font-semibold text-sm"
-            >
-              Try Again
-            </button>
-          </div>
-        ) : currentIndex >= menuItems.length ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-[#FFCC02] animate-spin" />
-            <p className="text-sm text-muted-foreground mt-4">Tallying results...</p>
-          </div>
+        {swipePhase === "menu" ? (
+          dishItems.length === 0 && !loading ? (
+            <div className="flex flex-col items-center justify-center h-full text-center px-6">
+              <p className="text-base font-semibold mb-2">No dishes found</p>
+              <p className="text-sm text-muted-foreground mb-4">We could not load any dishes for this session.</p>
+              <button onClick={() => window.location.reload()} data-testid="button-retry-load" className="px-6 py-2.5 rounded-full bg-[#FFCC02] text-[#2d2000] font-semibold text-sm">Try Again</button>
+            </div>
+          ) : currentIndex >= dishItems.length ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-[#FFCC02] animate-spin" />
+              <p className="text-sm text-muted-foreground mt-4">Waiting for everyone to finish swiping...</p>
+            </div>
+          ) : (
+            <div className="relative w-full h-full max-w-sm mx-auto">
+              {dishItems.map((dish, idx) => {
+                if (idx < currentIndex || idx > currentIndex + 1) return null;
+                return (
+                  <DishSwipeCard
+                    key={dish.id}
+                    dish={dish}
+                    active={idx === currentIndex}
+                    behind={idx === currentIndex + 1}
+                    onSwipe={handleDishSwipe}
+                    showHint={idx === 0 && currentIndex === 0}
+                    members={members}
+                  />
+                );
+              })}
+            </div>
+          )
         ) : (
-          <div className="relative w-full h-full max-w-sm mx-auto">
-            {menuItems.map((item, idx) => {
-              if (idx < currentIndex || idx > currentIndex + 1) return null;
-              return (
-                <SwipeCardGroup
-                  key={item.id}
-                  item={item}
-                  active={idx === currentIndex}
-                  behind={idx === currentIndex + 1}
-                  onSwipe={handleSwipe}
-                  onTap={() => handleTap(item)}
-                  showHint={idx === 0 && currentIndex === 0}
-                  members={members}
-                />
-              );
-            })}
-          </div>
+          menuItems.length === 0 && !loading ? (
+            <div className="flex flex-col items-center justify-center h-full text-center px-6">
+              <p className="text-base font-semibold mb-2">No restaurants found</p>
+              <p className="text-sm text-muted-foreground mb-4">We could not load any restaurants for this session.</p>
+              <button onClick={() => window.location.reload()} data-testid="button-retry-load" className="px-6 py-2.5 rounded-full bg-[#FFCC02] text-[#2d2000] font-semibold text-sm">Try Again</button>
+            </div>
+          ) : currentIndex >= menuItems.length ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-[#FFCC02] animate-spin" />
+              <p className="text-sm text-muted-foreground mt-4">Tallying results...</p>
+            </div>
+          ) : (
+            <div className="relative w-full h-full max-w-sm mx-auto">
+              {menuItems.map((item, idx) => {
+                if (idx < currentIndex || idx > currentIndex + 1) return null;
+                return (
+                  <SwipeCardGroup
+                    key={item.id}
+                    item={item}
+                    active={idx === currentIndex}
+                    behind={idx === currentIndex + 1}
+                    onSwipe={handleSwipe}
+                    onTap={() => handleTap(item)}
+                    showHint={idx === 0 && currentIndex === 0}
+                    members={members}
+                  />
+                );
+              })}
+            </div>
+          )
         )}
       </div>
 
       <div className="px-6 pb-20 flex flex-col gap-3">
-        {currentIndex < menuItems.length && (
+        {((swipePhase === "menu" && currentIndex < dishItems.length) || (swipePhase === "restaurant" && currentIndex < menuItems.length)) && (
           <div className="flex justify-center items-center gap-5">
             <button
               onClick={() => handleButtonSwipe("left")}

@@ -96,6 +96,9 @@ import {
   type InsertVibeDefinition,
   type VibeMatchingRule,
   type InsertVibeMatchingRule,
+  menuItems,
+  type MenuItem,
+  type InsertMenuItem,
 } from "@shared/schema";
 import { eq, desc, and, or, gte, lte, gt, inArray, count, sql } from "drizzle-orm";
 
@@ -163,7 +166,7 @@ export interface IStorage {
   updateMemberLocation(sessionCode: string, lineUserId: string, latitude: string, longitude: string): Promise<void>;
   recordGroupSwipe(swipe: InsertGroupSwipe): Promise<GroupSwipe>;
   getGroupSwipes(sessionCode: string): Promise<GroupSwipe[]>;
-  getGroupMatches(sessionCode: string): Promise<{ menuItemId: number; voters: string[] }[]>;
+  getGroupMatches(sessionCode: string, swipeType?: string): Promise<{ menuItemId: number; voters: string[] }[]>;
   getPopularRestaurants(days: number, limit: number): Promise<{ restaurantId: number; score: number }[]>;
   getRestaurantsByVibe(vibe: string): Promise<Restaurant[]>;
   getRestaurantByGooglePlaceId(placeId: string): Promise<Restaurant | undefined>;
@@ -198,6 +201,13 @@ export interface IStorage {
   checkIdempotencyKey(key: string): Promise<boolean>;
   createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
   getAuditLogs(filters?: { actorType?: string; action?: string; limit?: number }): Promise<AuditLog[]>;
+
+  getMenuItems(category?: string): Promise<import("@shared/schema").MenuItem[]>;
+  getMenuItemById(id: number): Promise<import("@shared/schema").MenuItem | undefined>;
+  seedMenuItems(data: import("@shared/schema").InsertMenuItem[]): Promise<void>;
+  incrementMenuItemSwipeRight(id: number): Promise<void>;
+  getTrendingMenuItems(limit?: number): Promise<import("@shared/schema").MenuItem[]>;
+  getHotRestaurants(days: number, limit: number): Promise<{ restaurantId: number; score: number }[]>;
 
   getSavedLists(userId: string): Promise<SavedList[]>;
   createSavedList(data: InsertSavedList): Promise<SavedList>;
@@ -604,23 +614,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async recordGroupSwipe(swipe: InsertGroupSwipe): Promise<GroupSwipe> {
+    const swipeType = swipe.swipeType || 'restaurant';
     const [existing] = await db.select().from(groupSwipes)
       .where(and(
         eq(groupSwipes.sessionCode, swipe.sessionCode),
         eq(groupSwipes.lineUserId, swipe.lineUserId),
-        eq(groupSwipes.menuItemId, swipe.menuItemId)
+        eq(groupSwipes.menuItemId, swipe.menuItemId),
+        eq(groupSwipes.swipeType, swipeType)
       ))
       .limit(1);
 
     if (existing) {
       const [updated] = await db.update(groupSwipes)
-        .set({ direction: swipe.direction, swipedAt: swipe.swipedAt })
+        .set({ direction: swipe.direction, swipedAt: swipe.swipedAt, swipeType })
         .where(eq(groupSwipes.id, existing.id))
         .returning();
       return updated;
     }
 
-    const [created] = await db.insert(groupSwipes).values(swipe).returning();
+    const [created] = await db.insert(groupSwipes).values({ ...swipe, swipeType }).returning();
     return created;
   }
 
@@ -628,10 +640,18 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(groupSwipes).where(eq(groupSwipes.sessionCode, sessionCode)).orderBy(groupSwipes.id);
   }
 
-  async getGroupMatches(sessionCode: string): Promise<{ menuItemId: number; voters: string[] }[]> {
+  async getGroupMatches(sessionCode: string, swipeType?: string): Promise<{ menuItemId: number; voters: string[] }[]> {
     const members = await this.getGroupMembers(sessionCode);
     const memberCount = members.length;
     if (memberCount === 0) return [];
+
+    const conditions = [
+      eq(groupSwipes.sessionCode, sessionCode),
+      sql`${groupSwipes.direction} IN ('right', 'super')`,
+    ];
+    if (swipeType) {
+      conditions.push(eq(groupSwipes.swipeType, swipeType));
+    }
 
     const results = await db.select({
       menuItemId: groupSwipes.menuItemId,
@@ -639,10 +659,7 @@ export class DatabaseStorage implements IStorage {
       voterCount: sql<number>`count(DISTINCT ${groupSwipes.lineUserId})`,
     })
       .from(groupSwipes)
-      .where(and(
-        eq(groupSwipes.sessionCode, sessionCode),
-        sql`${groupSwipes.direction} IN ('right', 'super')`
-      ))
+      .where(and(...conditions))
       .groupBy(groupSwipes.menuItemId)
       .having(sql`count(DISTINCT ${groupSwipes.lineUserId}) >= ${memberCount}`);
 
@@ -1766,6 +1783,61 @@ export class DatabaseStorage implements IStorage {
       const combined = [...strictCandidates, ...fallbackCandidates];
       return combined.slice(0, limit);
     });
+  }
+  async getMenuItems(category?: string): Promise<MenuItem[]> {
+    if (category) {
+      return await db.select().from(menuItems)
+        .where(eq(menuItems.category, category))
+        .orderBy(desc(menuItems.swipeRightCount));
+    }
+    return await db.select().from(menuItems).orderBy(desc(menuItems.swipeRightCount));
+  }
+
+  async getMenuItemById(id: number): Promise<MenuItem | undefined> {
+    const [item] = await db.select().from(menuItems).where(eq(menuItems.id, id)).limit(1);
+    return item;
+  }
+
+  async seedMenuItems(data: InsertMenuItem[]): Promise<void> {
+    const existing = await db.select({ id: menuItems.id }).from(menuItems).limit(1);
+    if (existing.length > 0) return;
+    if (data.length > 0) {
+      const batchSize = 50;
+      for (let i = 0; i < data.length; i += batchSize) {
+        await db.insert(menuItems).values(data.slice(i, i + batchSize));
+      }
+    }
+  }
+
+  async incrementMenuItemSwipeRight(id: number): Promise<void> {
+    await db.update(menuItems)
+      .set({ swipeRightCount: sql`${menuItems.swipeRightCount} + 1` })
+      .where(eq(menuItems.id, id));
+  }
+
+  async getTrendingMenuItems(limit: number = 30): Promise<MenuItem[]> {
+    return await db.select().from(menuItems)
+      .orderBy(desc(menuItems.swipeRightCount))
+      .limit(limit);
+  }
+
+  async getHotRestaurants(days: number, limit: number): Promise<{ restaurantId: number; score: number }[]> {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    const results = await db
+      .select({
+        menuItemId: groupSwipes.menuItemId,
+        score: sql<number>`count(*)`.as("score"),
+      })
+      .from(groupSwipes)
+      .where(and(
+        sql`${groupSwipes.direction} IN ('right', 'super')`,
+        sql`${groupSwipes.swipeType} = 'restaurant'`,
+        gte(groupSwipes.swipedAt, since)
+      ))
+      .groupBy(groupSwipes.menuItemId)
+      .orderBy(sql`count(*) DESC`)
+      .limit(limit);
+    return results.map(r => ({ restaurantId: r.menuItemId, score: r.score }));
   }
 }
 

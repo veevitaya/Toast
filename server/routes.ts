@@ -778,12 +778,133 @@ async function seedDatabase() {
   }
 }
 
+async function seedMenuItemsData() {
+  await storage.seedMenuItems([
+    { name: "Pad Thai", nameLocal: "ผัดไทย", imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=800&auto=format&fit=crop&q=60", category: "Thai", tags: ["noodles", "street food", "classic"], description: "Stir-fried rice noodles with shrimp, tofu, peanuts & bean sprouts", swipeRightCount: 120, restaurantIds: [] },
+    { name: "Som Tum", nameLocal: "ส้มตำ", imageUrl: "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=800&auto=format&fit=crop&q=60", category: "Thai", tags: ["salad", "spicy", "isaan"], description: "Green papaya salad with chili, lime, fish sauce & peanuts", swipeRightCount: 95, restaurantIds: [] },
+    { name: "Tom Yum Goong", nameLocal: "ต้มยำกุ้ง", imageUrl: "https://images.unsplash.com/photo-1548943487-a2e4e43b4853?w=800&auto=format&fit=crop&q=60", category: "Thai", tags: ["soup", "spicy", "seafood"], description: "Hot & sour soup with prawns, lemongrass & galangal", swipeRightCount: 110, restaurantIds: [] },
+    { name: "Green Curry", nameLocal: "แกงเขียวหวาน", imageUrl: "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?w=800&auto=format&fit=crop&q=60", category: "Thai", tags: ["curry", "coconut", "spicy"], description: "Aromatic green curry with coconut milk, Thai basil & eggplant", swipeRightCount: 88, restaurantIds: [] },
+    { name: "Massaman Curry", nameLocal: "แกงมัสมั่น", imageUrl: "https://images.unsplash.com/photo-1596797038530-2c107229654b?w=800&auto=format&fit=crop&q=60", category: "Thai", tags: ["curry", "peanut", "rich"], description: "Rich peanut curry with potatoes, onions & warm spices", swipeRightCount: 72, restaurantIds: [] },
+    { name: "Khao Pad", nameLocal: "ข้าวผัด", imageUrl: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=800&auto=format&fit=crop&q=60", category: "Thai", tags: ["rice", "fried", "classic"], description: "Thai fried rice with egg, vegetables & your choice of protein", swipeRightCount: 65, restaurantIds: [] },
+    { name: "Mango Sticky Rice", nameLocal: "ข้าวเหนียวมะม่วง", imageUrl: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&auto=format&fit=crop&q=60", category: "Thai", tags: ["dessert", "sweet", "mango"], description: "Ripe mango slices with sweet coconut sticky rice", swipeRightCount: 100, restaurantIds: [] },
+    { name: "Pad Kra Pao", nameLocal: "ผัดกะเพรา", imageUrl: "https://images.unsplash.com/photo-1569562211093-4ed0d0758f12?w=800&auto=format&fit=crop&q=60", category: "Thai", tags: ["basil", "spicy", "street food"], description: "Stir-fried holy basil with minced pork & fried egg", swipeRightCount: 115, restaurantIds: [] },
+    { name: "Sushi", imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800&auto=format&fit=crop&q=60", category: "Japanese", tags: ["raw fish", "rice", "premium"], description: "Fresh nigiri and maki rolls with premium fish", swipeRightCount: 90, restaurantIds: [] },
+    { name: "Ramen", imageUrl: "https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=800&auto=format&fit=crop&q=60", category: "Japanese", tags: ["noodles", "soup", "comfort"], description: "Rich tonkotsu broth with chashu pork & soft-boiled egg", swipeRightCount: 85, restaurantIds: [] },
+    { name: "Gyoza", imageUrl: "https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=800&auto=format&fit=crop&q=60", category: "Japanese", tags: ["dumplings", "fried", "appetizer"], description: "Pan-fried pork and vegetable dumplings", swipeRightCount: 60, restaurantIds: [] },
+    { name: "Pizza", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&auto=format&fit=crop&q=60", category: "Italian", tags: ["cheese", "baked", "classic"], description: "Wood-fired Neapolitan pizza with fresh mozzarella", swipeRightCount: 78, restaurantIds: [] },
+    { name: "Pasta", imageUrl: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800&auto=format&fit=crop&q=60", category: "Italian", tags: ["noodles", "sauce", "classic"], description: "Fresh handmade pasta with your choice of sauce", swipeRightCount: 70, restaurantIds: [] },
+    { name: "Burger", imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800&auto=format&fit=crop&q=60", category: "American", tags: ["beef", "grilled", "comfort"], description: "Juicy smash burger with secret sauce & hand-cut fries", swipeRightCount: 82, restaurantIds: [] },
+    { name: "Tacos", imageUrl: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&auto=format&fit=crop&q=60", category: "Mexican", tags: ["tortilla", "spicy", "street food"], description: "Authentic corn tortilla tacos with salsa verde", swipeRightCount: 55, restaurantIds: [] },
+    { name: "Korean BBQ", imageUrl: "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=800&auto=format&fit=crop&q=60", category: "Korean", tags: ["grilled", "meat", "social"], description: "Tabletop grilled meats with banchan side dishes", swipeRightCount: 75, restaurantIds: [] },
+    { name: "Bibimbap", imageUrl: "https://images.unsplash.com/photo-1553163147-622ab57be1c7?w=800&auto=format&fit=crop&q=60", category: "Korean", tags: ["rice", "mixed", "healthy"], description: "Mixed rice bowl with vegetables, egg & gochujang sauce", swipeRightCount: 50, restaurantIds: [] },
+    { name: "Dim Sum", imageUrl: "https://images.unsplash.com/photo-1576577445504-6af96477db52?w=800&auto=format&fit=crop&q=60", category: "Chinese", tags: ["dumplings", "steamed", "brunch"], description: "Assorted steamed dumplings, buns & small plates", swipeRightCount: 68, restaurantIds: [] },
+    { name: "Pho", imageUrl: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=800&auto=format&fit=crop&q=60", category: "Vietnamese", tags: ["noodles", "soup", "herbs"], description: "Vietnamese noodle soup with beef broth & fresh herbs", swipeRightCount: 62, restaurantIds: [] },
+    { name: "Steak", imageUrl: "https://images.unsplash.com/photo-1546964124-0cce460f38ef?w=800&auto=format&fit=crop&q=60", category: "Western", tags: ["beef", "grilled", "premium"], description: "Prime cut steak cooked to perfection", swipeRightCount: 73, restaurantIds: [] },
+    { name: "Pad See Ew", nameLocal: "ผัดซีอิ๊ว", imageUrl: "https://images.unsplash.com/photo-1617093727343-374698b1b08d?w=800&auto=format&fit=crop&q=60", category: "Thai", tags: ["noodles", "soy sauce", "comfort"], description: "Wide rice noodles stir-fried in sweet soy sauce with Chinese broccoli", swipeRightCount: 58, restaurantIds: [] },
+    { name: "Khao Soi", nameLocal: "ข้าวซอย", imageUrl: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=800&auto=format&fit=crop&q=60", category: "Thai", tags: ["curry", "noodles", "northern"], description: "Northern Thai coconut curry noodle soup with crispy noodle topping", swipeRightCount: 80, restaurantIds: [] },
+    { name: "Satay", nameLocal: "สะเต๊ะ", imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&auto=format&fit=crop&q=60", category: "Thai", tags: ["grilled", "peanut sauce", "skewer"], description: "Grilled marinated meat skewers with peanut dipping sauce", swipeRightCount: 52, restaurantIds: [] },
+    { name: "Boat Noodles", nameLocal: "ก๋วยเตี๋ยวเรือ", imageUrl: "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=800&auto=format&fit=crop&q=60", category: "Thai", tags: ["noodles", "soup", "street food"], description: "Rich dark broth noodle soup served in small bowls", swipeRightCount: 48, restaurantIds: [] },
+    { name: "Crab Omelette", nameLocal: "ไข่เจียวปู", imageUrl: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=800&auto=format&fit=crop&q=60", category: "Thai", tags: ["egg", "seafood", "crispy"], description: "Fluffy Thai omelette loaded with fresh crab meat", swipeRightCount: 92, restaurantIds: [] },
+    { name: "Acai Bowl", imageUrl: "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=800&auto=format&fit=crop&q=60", category: "Healthy", tags: ["fruit", "superfood", "breakfast"], description: "Blended acai topped with granola, banana & fresh berries", swipeRightCount: 45, restaurantIds: [] },
+    { name: "Poke Bowl", imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=60", category: "Healthy", tags: ["raw fish", "rice", "fresh"], description: "Hawaiian-style raw fish bowl with rice & toppings", swipeRightCount: 56, restaurantIds: [] },
+    { name: "Croissant", imageUrl: "https://images.unsplash.com/photo-1530610476181-d83430b64dcd?w=800&auto=format&fit=crop&q=60", category: "Bakery", tags: ["pastry", "butter", "brunch"], description: "Buttery, flaky French croissant baked fresh daily", swipeRightCount: 42, restaurantIds: [] },
+    { name: "Kakigori", imageUrl: "https://images.unsplash.com/photo-1551024506-0bccd828d307?w=800&auto=format&fit=crop&q=60", category: "Dessert", tags: ["shaved ice", "sweet", "japanese"], description: "Japanese shaved ice with flavored syrup & condensed milk", swipeRightCount: 38, restaurantIds: [] },
+    { name: "Bubble Tea", imageUrl: "https://images.unsplash.com/photo-1541696490-8744a5dc0228?w=800&auto=format&fit=crop&q=60", category: "Drinks", tags: ["tea", "tapioca", "sweet"], description: "Milk tea with chewy tapioca pearls", swipeRightCount: 66, restaurantIds: [] },
+    { name: "Larb", nameLocal: "ลาบ", imageUrl: "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=800&auto=format&fit=crop&q=60", category: "Thai", tags: ["salad", "spicy", "isaan"], description: "Spicy minced meat salad with mint, lime & roasted rice powder", swipeRightCount: 54, restaurantIds: [] },
+    { name: "Chicken Wings", imageUrl: "https://images.unsplash.com/photo-1527477396000-e27163b4bdb1?w=800&auto=format&fit=crop&q=60", category: "American", tags: ["fried", "crispy", "appetizer"], description: "Crispy fried chicken wings with dipping sauce", swipeRightCount: 47, restaurantIds: [] },
+    { name: "Omakase", imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800&auto=format&fit=crop&q=60", category: "Japanese", tags: ["premium", "chef choice", "sushi"], description: "Chef's selection premium multi-course sushi experience", swipeRightCount: 40, restaurantIds: [] },
+  ]);
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   seedAdminUser().catch(console.error);
   seedDatabase().then(() => seedOwnerUser()).catch(console.error);
+  seedMenuItemsData().catch(console.error);
+
+  app.get("/api/menu-items", async (req, res) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const items = await storage.getMenuItems(category);
+      res.json(items);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/menu-items/trending", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 30;
+      const items = await storage.getTrendingMenuItems(Math.min(limit, 50));
+      res.json(items);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/menu-items/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const item = await storage.getMenuItemById(id);
+      if (!item) return res.status(404).json({ message: "Menu item not found" });
+      res.json(item);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/menu-items/:id/restaurants", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+      const menuItem = await storage.getMenuItemById(id);
+      if (!menuItem) return res.status(404).json({ message: "Menu item not found" });
+
+      const allRestaurants = await storage.getRestaurants();
+      const menuName = menuItem.name.toLowerCase();
+      const menuCategory = menuItem.category.toLowerCase();
+      const menuTags = (menuItem.tags || []).map(t => t.toLowerCase());
+
+      const matched = allRestaurants.filter(r => {
+        const catLower = r.category.toLowerCase();
+        const descLower = (r.description || "").toLowerCase();
+        const nameLower = r.name.toLowerCase();
+
+        if (catLower.includes(menuCategory)) return true;
+        if (descLower.includes(menuName) || nameLower.includes(menuName)) return true;
+        if (menuTags.some(tag => catLower.includes(tag) || descLower.includes(tag))) return true;
+        return false;
+      });
+
+      matched.sort((a, b) => (b.trendingScore || 0) - (a.trendingScore || 0));
+      res.json(matched.slice(0, 30));
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/restaurants/hot", async (req, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 7;
+      const limit = parseInt(req.query.limit as string) || 30;
+      const hotIds = await storage.getHotRestaurants(days, Math.min(limit, 50));
+      if (hotIds.length > 0) {
+        const allRestaurants = await storage.getRestaurants();
+        const restaurantMap = new Map(allRestaurants.map(r => [r.id, r]));
+        const results = hotIds
+          .map(h => restaurantMap.get(h.restaurantId))
+          .filter(Boolean);
+        return res.json(results);
+      }
+      const fallback = await storage.getRestaurants("trending");
+      res.json(fallback.slice(0, limit));
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   app.get("/api/restaurants/suggestions", async (req, res) => {
     try {
@@ -3797,6 +3918,7 @@ export async function registerRoutes(
         lineUserId: z.string().min(1).max(100),
         menuItemId: z.number().int().positive(),
         direction: z.enum(["left", "right", "super"]),
+        swipeType: z.enum(["menu", "restaurant"]).default("restaurant"),
       });
       const input = schema.parse(req.body);
 
@@ -3820,10 +3942,10 @@ export async function registerRoutes(
         return res.status(429).json({ message: "Too many swipes, slow down" });
       }
 
-      const idempotencyKey = `swipe:${code}:${input.lineUserId}:${input.menuItemId}`;
+      const idempotencyKey = `swipe:${code}:${input.lineUserId}:${input.menuItemId}:${input.swipeType}`;
       const alreadyProcessed = await storage.checkIdempotencyKey(idempotencyKey);
       if (alreadyProcessed) {
-        const matches = await storage.getGroupMatches(code);
+        const matches = await storage.getGroupMatches(code, input.swipeType);
         const members = await storage.getGroupMembers(code);
         return res.json({ swipe: null, matches, memberCount: members.length, replayed: true });
       }
@@ -3833,12 +3955,17 @@ export async function registerRoutes(
         lineUserId: input.lineUserId,
         menuItemId: input.menuItemId,
         direction: input.direction,
+        swipeType: input.swipeType,
         swipedAt: new Date().toISOString(),
       });
 
+      if ((input.direction === "right" || input.direction === "super") && input.swipeType === "menu") {
+        storage.incrementMenuItemSwipeRight(input.menuItemId).catch(() => {});
+      }
+
       logSessionEvent(code, "SWIPE_SUBMITTED", input.lineUserId, { menuItemId: input.menuItemId, direction: input.direction }, idempotencyKey);
 
-      const matches = await storage.getGroupMatches(code);
+      const matches = await storage.getGroupMatches(code, input.swipeType);
       const members = await storage.getGroupMembers(code);
 
       if (matches.length > 0) {
@@ -3885,7 +4012,8 @@ export async function registerRoutes(
       const { code } = req.params;
       const session = await storage.getGroupSession(code);
       if (!session) return res.status(404).json({ message: "Session not found" });
-      const matches = await storage.getGroupMatches(code);
+      const swipeType = (req.query.swipeType as string) || undefined;
+      const matches = await storage.getGroupMatches(code, swipeType);
       const members = await storage.getGroupMembers(code);
       const restaurantMap = matches.length > 0 ? await buildRestaurantMap(code) : new Map();
       const enrichedMatches = matches.map(m => ({

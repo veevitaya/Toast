@@ -420,6 +420,7 @@ export const groupSwipes = pgTable("group_swipes", {
   lineUserId: text("line_user_id").notNull(),
   menuItemId: integer("menu_item_id").notNull(),
   direction: text("direction").notNull(),
+  swipeType: text("swipe_type").default("restaurant"),
   swipedAt: text("swiped_at").notNull(),
 }, (table) => ({
   sessionCodeIdx: index("group_swipes_session_code_idx").on(table.sessionCode),
@@ -629,3 +630,19 @@ export const vibeMatchingRules = pgTable("vibe_matching_rules", {
 export const insertVibeMatchingRuleSchema = createInsertSchema(vibeMatchingRules).omit({ id: true });
 export type VibeMatchingRule = typeof vibeMatchingRules.$inferSelect;
 export type InsertVibeMatchingRule = z.infer<typeof insertVibeMatchingRuleSchema>;
+
+export const menuItems = pgTable("menu_items", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  nameLocal: text("name_local"),
+  imageUrl: text("image_url").notNull(),
+  category: text("category").notNull(),
+  tags: text("tags").array().default([]),
+  description: text("description"),
+  swipeRightCount: integer("swipe_right_count").default(0),
+  restaurantIds: integer("restaurant_ids").array().default([]),
+});
+
+export const insertMenuItemSchema = createInsertSchema(menuItems).omit({ id: true });
+export type MenuItem = typeof menuItems.$inferSelect;
+export type InsertMenuItem = z.infer<typeof insertMenuItemSchema>;

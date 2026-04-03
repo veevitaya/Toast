@@ -13,6 +13,9 @@ export const VIBE_TAGS = [
   "rooftop",
   "family",
   "cafe",
+  "trending_dishes",
+  "hot_restaurants",
+  "fine_dining",
 ] as const;
 
 export type VibeTag = typeof VIBE_TAGS[number];
@@ -32,6 +35,9 @@ export const VIBE_LABELS: Record<VibeTag, string> = {
   rooftop: "Rooftop",
   family: "Family",
   cafe: "Cafe",
+  trending_dishes: "Trending Dishes",
+  hot_restaurants: "Hot Restaurants",
+  fine_dining: "Fine Dining",
 };
 
 export const VIBE_EMOJI: Record<VibeTag, string> = {
@@ -49,6 +55,9 @@ export const VIBE_EMOJI: Record<VibeTag, string> = {
   rooftop: "🏙️",
   family: "🤗",
   cafe: "☕",
+  trending_dishes: "📈",
+  hot_restaurants: "🔥",
+  fine_dining: "✨",
 };
 
 export const MODE_TO_VIBE: Record<string, VibeTag> = {
@@ -66,7 +75,28 @@ export const MODE_TO_VIBE: Record<string, VibeTag> = {
   rooftop: "rooftop",
   family: "family",
   cafe: "cafe",
+  trending_dishes: "trending_dishes",
+  hot_restaurants: "hot_restaurants",
+  fine_dining: "fine_dining",
 };
+
+export const MENU_FIRST_VIBES: VibeTag[] = [
+  "spicy", "budget", "healthy", "trending_dishes",
+  "street_food", "sweets", "brunch", "delivery",
+];
+
+export const RESTAURANT_FIRST_VIBES: VibeTag[] = [
+  "date_night", "outdoor", "drinks", "hot_restaurants",
+  "rooftop", "late_night", "family", "cafe", "fine_dining",
+];
+
+export function isMenuFirstVibe(vibe: string): boolean {
+  return MENU_FIRST_VIBES.includes(vibe as VibeTag);
+}
+
+export function isRestaurantFirstVibe(vibe: string): boolean {
+  return RESTAURANT_FIRST_VIBES.includes(vibe as VibeTag);
+}
 
 export const BANGKOK_DISTRICTS = [
   "Ari",

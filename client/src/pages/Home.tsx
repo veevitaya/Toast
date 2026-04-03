@@ -134,12 +134,12 @@ const DEFAULT_LAT = 13.7420;
 const DEFAULT_LNG = 100.5400;
 
 const VIBE_TILES_MAIN = [
-  { mode: "trending", label: "Popular", emoji: "🔥", bg: "hsl(45, 55%, 94%)" },
+  { mode: "trending_dishes", label: "Trending Dishes", emoji: "📈", bg: "hsl(45, 55%, 94%)" },
+  { mode: "hot_restaurants", label: "Hot Restaurants", emoji: "🔥", bg: "hsl(15, 55%, 94%)" },
   { mode: "hot", label: "Spicy", emoji: "🌶️", bg: "hsl(15, 65%, 94%)" },
   { mode: "drinks", label: "Drinks", emoji: "🍸", bg: "hsl(280, 40%, 95%)" },
   { mode: "cheap", label: "Budget", emoji: "💰", bg: "hsl(160, 40%, 94%)" },
   { mode: "healthy", label: "Healthy", emoji: "🥗", bg: "hsl(130, 35%, 94%)" },
-  { mode: "outdoor", label: "Outdoor", emoji: "⛱️", bg: "hsl(200, 40%, 94%)" },
   { mode: "partner", label: "Date Night", emoji: "💕", bg: "hsl(345, 50%, 95%)" },
 ];
 
@@ -153,6 +153,8 @@ const VIBE_TILES_EXTRA = [
   { mode: "rooftop", label: "Rooftop", emoji: "🏙️", bg: "hsl(210, 40%, 94%)" },
   { mode: "family", label: "Family", emoji: "👨‍👩‍👧", bg: "hsl(150, 35%, 94%)" },
   { mode: "cafe", label: "Cafe", emoji: "☕", bg: "hsl(30, 40%, 94%)" },
+  { mode: "outdoor", label: "Outdoor", emoji: "⛱️", bg: "hsl(200, 40%, 94%)" },
+  { mode: "fine_dining", label: "Fine Dining", emoji: "✨", bg: "hsl(40, 45%, 94%)" },
 ];
 
 const BANGKOK_LOCATIONS = [
@@ -339,7 +341,7 @@ export default function Home() {
       navigate("/saved");
       return;
     }
-    const vibeTag = mode === "trending" ? "popular" : MODE_TO_VIBE[mode];
+    const vibeTag = MODE_TO_VIBE[mode];
     if (vibeTag) {
       navigate(`/solo/results?vibe=${vibeTag}`);
     } else {
