@@ -588,8 +588,8 @@ export default function RestaurantDetail() {
         <button
           onClick={() => setShowDeliveryDrawer(true)}
           data-testid="button-order-delivery"
-          className="flex-1 py-3.5 rounded-full bg-foreground text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.97] transition-transform duration-200"
-          style={{ boxShadow: "0 4px 15px -3px rgba(0,0,0,0.2)" }}
+          className="flex-1 py-3.5 rounded-full font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.97] transition-transform duration-200"
+          style={{ background: "#FFCC02", color: "#1a1a1a", boxShadow: "0 4px 15px -3px rgba(255,204,2,0.35)" }}
         >
           🛵 Order Delivery
         </button>
