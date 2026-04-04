@@ -538,6 +538,12 @@ export default function GroupSwipe() {
                     }
                   }
                 } catch {}
+              } else if (vibeForSession === "hot_restaurants") {
+                const hotRes = await fetchWithTimeout("/api/restaurants/hot?limit=30", { signal: controller.signal });
+                if (cancelled) return;
+                if (hotRes.ok) {
+                  restaurantData = await hotRes.json();
+                }
               } else if (vibeForSession) {
                 const vibeRes = await fetchWithTimeout("/api/restaurants/by-vibe", {
                   method: "POST",
@@ -582,11 +588,15 @@ export default function GroupSwipe() {
         if (cancelled) return;
 
         if (useMenuFirst) {
-          const dishRes = await fetchWithTimeout("/api/menu-items", { signal: controller.signal });
+          const dishEndpoint = vibeForSession === "trending_dishes" ? "/api/menu-items/trending" : "/api/menu-items";
+          const categoryParam = vibeForSession && vibeForSession !== "trending_dishes" ? `?category=${encodeURIComponent(vibeForSession)}` : "";
+          const dishRes = await fetchWithTimeout(`${dishEndpoint}${categoryParam}`, { signal: controller.signal });
           if (cancelled) return;
           if (dishRes.ok) {
             const dishes: DishItem[] = await dishRes.json();
-            dishes.sort(() => Math.random() - 0.5);
+            if (vibeForSession !== "trending_dishes") {
+              dishes.sort(() => Math.random() - 0.5);
+            }
             setDishItems(dishes);
             setSwipePhase("menu");
           }

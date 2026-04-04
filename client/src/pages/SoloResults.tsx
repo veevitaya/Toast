@@ -342,6 +342,23 @@ export default function SoloResults() {
   const { data: vibeRestaurants, isLoading: vibeLoading } = useQuery<VibeRestaurant[]>({
     queryKey: ["/api/restaurants/by-vibe", vibeParam],
     queryFn: async () => {
+      if (vibeParam === "hot_restaurants") {
+        const res = await fetchWithTimeout("/api/restaurants/hot?limit=30");
+        if (!res.ok) throw new Error("Failed to fetch hot restaurants");
+        return res.json();
+      }
+      if (vibeParam === "trending_dishes") {
+        const res = await fetchWithTimeout("/api/menu-items/trending");
+        if (!res.ok) throw new Error("Failed to fetch trending dishes");
+        const dishes = await res.json();
+        const allRes = await fetchWithTimeout("/api/restaurants");
+        if (!allRes.ok) return [];
+        const allRestaurants = await allRes.json();
+        const dishCategories = new Set(dishes.map((d: any) => d.category?.toLowerCase()));
+        return allRestaurants.filter((r: any) =>
+          dishCategories.has(r.category?.split("•")?.[0]?.trim()?.toLowerCase())
+        );
+      }
       const res = await fetchWithTimeout("/api/restaurants/by-vibe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
