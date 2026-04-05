@@ -8,6 +8,7 @@ import { sendGroupInviteNoRedirect, getAccessToken, getGroupInviteUrl } from "@/
 import { useLineProfile } from "@/lib/useLineProfile";
 import { getSavedDisplayName, getOnboardingProfile } from "@/hooks/use-onboarding";
 import { fetchWithTimeout } from "@/lib/queryClient";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 const BANGKOK_LOCATIONS = [
   { name: "Ari", lat: "13.7710", lng: "100.5450" },
@@ -55,6 +56,7 @@ function isHost(sessionId: string): boolean {
 
 export default function WaitingRoom() {
   const [, navigate] = useLocation();
+  const { t } = useLanguage();
   const sessionId = new URLSearchParams(window.location.search).get("session") || "";
   const hostOfSession = isHost(sessionId);
   const { profile: lineProfile, loading: profileLoading, isLineUser } = useLineProfile({ requireAuth: false });
@@ -199,12 +201,12 @@ export default function WaitingRoom() {
             if (data.members) setMembers(data.members);
             if (data.session) setSessionInfo(data.session);
           } else {
-            setError("Could not create or join session. Please try again.");
+            setError(t("waiting.error_create_join"));
           }
         }
       } else {
         const errData = await joinRes.json().catch(() => null);
-        setError(errData?.message || "Failed to join session. Please try again.");
+        setError(errData?.message || t("waiting.error_join"));
       }
 
       if (loc && sessionId) {
@@ -450,7 +452,7 @@ export default function WaitingRoom() {
           className="px-6 py-3 rounded-full bg-foreground text-white font-bold text-sm"
           data-testid="button-new-group"
         >
-          Start New Group
+          {t("waiting.start_new_group")}
         </button>
         <BottomNav />
       </div>
@@ -485,7 +487,7 @@ export default function WaitingRoom() {
           transition={{ delay: 0.15 }}
           className="text-[24px] font-bold mb-2 text-center"
         >
-          Join the Session
+          {t("waiting.join_session_title")}
         </motion.h1>
 
         <motion.p
@@ -494,7 +496,7 @@ export default function WaitingRoom() {
           transition={{ delay: 0.2 }}
           className="text-muted-foreground text-center text-sm mb-6 max-w-[280px]"
         >
-          Enter your name so your friends know you've joined!
+          {t("waiting.join_session_desc")}
         </motion.p>
 
         <motion.div
@@ -508,7 +510,7 @@ export default function WaitingRoom() {
             value={guestName}
             onChange={(e) => setGuestName(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") handleGuestJoin(); }}
-            placeholder="Your name"
+            placeholder={t("waiting.your_name")}
             className="w-full px-5 py-4 rounded-2xl border border-gray-200 bg-white text-[15px] font-medium text-center focus:outline-none focus:border-[#FFCC02] focus:ring-2 focus:ring-[#FFCC02]/20 transition-all"
             data-testid="input-guest-name"
             autoFocus
@@ -524,7 +526,7 @@ export default function WaitingRoom() {
             style={guestName.trim() ? { boxShadow: "var(--shadow-glow-primary)" } : {}}
             data-testid="button-join-session"
           >
-            {guestJoining ? "Joining..." : "Join Session"}
+            {guestJoining ? t("waiting.joining") : t("waiting.join_session")}
           </button>
 
           {error && (
@@ -538,7 +540,7 @@ export default function WaitingRoom() {
           transition={{ delay: 0.35 }}
           className="text-[11px] text-muted-foreground text-center mt-2 max-w-[240px]"
         >
-          Session code: <span className="font-mono font-bold">{sessionId}</span>
+          {t("waiting.session_code")} <span className="font-mono font-bold">{sessionId}</span>
         </motion.p>
 
         <BottomNav />
@@ -574,7 +576,7 @@ export default function WaitingRoom() {
           transition={{ delay: 0.15 }}
           className="text-[22px] font-bold mb-2 text-center"
         >
-          {sessionDeleted ? "Session Removed" : "Session Expired"}
+          {sessionDeleted ? t("waiting.session_removed") : t("waiting.session_expired")}
         </motion.h1>
         <motion.p
           initial={{ y: 16, opacity: 0 }}
@@ -584,8 +586,8 @@ export default function WaitingRoom() {
           data-testid="text-session-ended-message"
         >
           {sessionDeleted
-            ? "This session was removed by the host. Start a new group session to swipe together!"
-            : "This session has expired after 24 hours. Start a new one to keep the party going!"}
+            ? t("waiting.session_removed_desc")
+            : t("waiting.session_expired_desc")}
         </motion.p>
         <motion.div
           initial={{ y: 16, opacity: 0 }}
@@ -676,7 +678,7 @@ export default function WaitingRoom() {
         className="text-[26px] font-semibold mb-2 text-center"
         data-testid="text-waiting-title"
       >
-        {memberCount < 2 ? "Waiting for friends..." : "Ready to go!"}
+        {memberCount < 2 ? t("waiting.waiting_for_friends_short") : t("waiting.ready_to_go")}
       </motion.h1>
       <motion.div
         initial={{ y: 16, opacity: 0 }}
@@ -926,7 +928,7 @@ export default function WaitingRoom() {
             style={canStart ? { boxShadow: "var(--shadow-glow-primary)" } : {}}
             disabled={!canStart}
           >
-            {canStart ? "Start Swiping!" : "Waiting for more friends..."}
+            {canStart ? t("waiting.start_swiping") : t("waiting.waiting_for_more")}
           </motion.button>
         ) : (
           <motion.div
@@ -936,7 +938,7 @@ export default function WaitingRoom() {
             className="w-full py-4 rounded-full bg-gray-100 text-muted-foreground font-bold text-[15px] text-center"
             data-testid="text-waiting-for-host"
           >
-            {canStart ? "Waiting for host to start..." : "Waiting for more friends..."}
+            {canStart ? t("waiting.waiting_for_host") : t("waiting.waiting_for_more")}
           </motion.div>
         )}
 
@@ -946,7 +948,7 @@ export default function WaitingRoom() {
           transition={{ delay: 0.6 }}
           className="text-[11px] text-muted-foreground text-center"
         >
-          Session code: <span className="font-mono font-bold">{sessionId}</span>
+          {t("waiting.session_code")} <span className="font-mono font-bold">{sessionId}</span>
         </motion.p>
       </div>
 
@@ -968,7 +970,7 @@ export default function WaitingRoom() {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-bold">Invite Friends</h3>
+                <h3 className="text-lg font-bold">{t("waiting.invite_friends")}</h3>
                 <button
                   onClick={() => setShowShareModal(false)}
                   className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
@@ -979,7 +981,7 @@ export default function WaitingRoom() {
               </div>
 
               <div className="bg-gray-50 rounded-2xl p-4 mb-4">
-                <p className="text-xs text-muted-foreground mb-2 font-medium">Share this link with your friends:</p>
+                <p className="text-xs text-muted-foreground mb-2 font-medium">{t("waiting.share_link_desc")}</p>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 bg-white rounded-xl px-3 py-2.5 text-sm font-mono text-gray-700 truncate border border-gray-100" data-testid="text-invite-link">
                     {getGroupInviteUrl(sessionId)}

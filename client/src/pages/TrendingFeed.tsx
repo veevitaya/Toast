@@ -8,6 +8,7 @@ import { shareMessage, sendGroupInviteNoRedirect } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 interface TrendingPost {
   id: number;
@@ -559,6 +560,7 @@ function FullScreenSlide({
 
 export default function TrendingFeed() {
   const [location, navigate] = useLocation();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const { profile } = useLineProfile();
   const containerRef = useRef<HTMLDivElement>(null);

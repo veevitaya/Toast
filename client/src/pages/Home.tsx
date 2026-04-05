@@ -17,6 +17,7 @@ import { useLineProfile } from "@/lib/useLineProfile";
 import { useWeatherGreeting } from "@/hooks/use-weather-greeting";
 import { MODE_TO_VIBE } from "@shared/vibeConfig";
 import { ToastDecides } from "@/components/ToastDecides";
+import { useLanguage } from "@/i18n/LanguageProvider";
 import toastLogoPath from "@assets/toast_logo_nobg.png";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import toastCharPath from "@assets/IMG_9345_1772899599160.png";
@@ -181,6 +182,7 @@ function getContextLine(tempC: number | null, emoji: string): string {
 
 export default function Home() {
   const [, navigate] = useLocation();
+  const { t } = useLanguage();
   const { profile: tasteProfile, getSuggestionTitle, topPreference, getMoodSignal } = useTasteProfile();
   const { recordVibe, freq } = useVibeFrequency();
 
@@ -719,7 +721,7 @@ export default function Home() {
                       className="text-xs font-medium text-muted-foreground"
                       data-testid="button-expand-drawer"
                     >
-                      See more <ChevronDown className="w-3 h-3 inline rotate-180" />
+                      {t("common.see_more")} <ChevronDown className="w-3 h-3 inline rotate-180" />
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
@@ -730,8 +732,8 @@ export default function Home() {
                     >
                       <img src={toastCharPath} alt="" className="w-[52px] h-[52px] object-contain flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-[14px] font-bold text-foreground leading-tight">Solo</p>
-                        <p className="text-[10px] text-muted-foreground whitespace-nowrap">Just for you</p>
+                        <p className="text-[14px] font-bold text-foreground leading-tight">{t("home.solo_mode")}</p>
+                        <p className="text-[10px] text-muted-foreground whitespace-nowrap">{t("home.just_for_you")}</p>
                       </div>
                     </button>
                     <button
@@ -741,8 +743,8 @@ export default function Home() {
                     >
                       <img src={toastWafflePath} alt="" className="w-[62px] h-[56px] object-contain flex-shrink-0 ml-1" style={{ mixBlendMode: "multiply" }} />
                       <div className="min-w-0 pr-3">
-                        <p className="text-[14px] font-bold text-foreground leading-tight">Group</p>
-                        <p className="text-[10px] text-muted-foreground whitespace-nowrap">With friends</p>
+                        <p className="text-[14px] font-bold text-foreground leading-tight">{t("home.group_mode")}</p>
+                        <p className="text-[10px] text-muted-foreground whitespace-nowrap">{t("home.with_friends")}</p>
                       </div>
                     </button>
                   </div>
@@ -798,7 +800,7 @@ export default function Home() {
               className="text-[13px] font-bold text-muted-foreground uppercase tracking-widest mb-4"
               data-testid="text-who-eating"
             >
-              Who's eating with you?
+              {t("home.whos_eating")}
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -808,8 +810,8 @@ export default function Home() {
               >
                 <img src={toastCharPath} alt="" className="w-[80px] h-[80px] object-contain flex-shrink-0" />
                 <div className="ml-2 min-w-0">
-                  <p className="text-[20px] font-bold text-foreground leading-tight">Solo</p>
-                  <p className="text-[12px] text-muted-foreground mt-0.5 whitespace-nowrap">Just for you</p>
+                  <p className="text-[20px] font-bold text-foreground leading-tight">{t("home.solo_mode")}</p>
+                  <p className="text-[12px] text-muted-foreground mt-0.5 whitespace-nowrap">{t("home.just_for_you")}</p>
                 </div>
               </button>
 
@@ -822,8 +824,8 @@ export default function Home() {
                 <div className="flex items-center gap-2 pl-2 pr-5">
                   <img src={toastWafflePath} alt="" className="w-[90px] h-[76px] object-contain flex-shrink-0 -my-2 -ml-2" style={{ mixBlendMode: "multiply" }} />
                   <div className="min-w-0">
-                    <p className="text-[20px] font-bold text-foreground leading-tight">Group</p>
-                    <p className="text-[12px] text-muted-foreground mt-0.5 whitespace-nowrap">With friends</p>
+                    <p className="text-[20px] font-bold text-foreground leading-tight">{t("home.group_mode")}</p>
+                    <p className="text-[12px] text-muted-foreground mt-0.5 whitespace-nowrap">{t("home.with_friends")}</p>
                   </div>
                 </div>
               </button>
@@ -834,8 +836,8 @@ export default function Home() {
 
           <div className="px-6 pt-6 pb-2" style={refineOpen ? { display: "none" } : undefined}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[13px] font-bold text-muted-foreground uppercase tracking-widest" data-testid="text-pick-vibe">Pick a Vibe</h2>
-              <span className="text-xs font-medium text-muted-foreground">Opens a world <span className="text-muted-foreground/40">&#8250;</span></span>
+              <h2 className="text-[13px] font-bold text-muted-foreground uppercase tracking-widest" data-testid="text-pick-vibe">{t("home.pick_a_vibe")}</h2>
+              <span className="text-xs font-medium text-muted-foreground">{t("home.opens_a_world")} <span className="text-muted-foreground/40">&#8250;</span></span>
             </div>
             <div className="grid grid-cols-4 gap-2.5">
               {topVibes.map((vibe, idx) => (
@@ -881,7 +883,7 @@ export default function Home() {
                 >
                   <FoodIcon name="more" size={38} />
                 </motion.div>
-                <span className="text-[11px] font-semibold text-foreground">More</span>
+                <span className="text-[11px] font-semibold text-foreground">{t("common.more")}</span>
               </motion.button>
             </div>
           </div>
@@ -889,8 +891,8 @@ export default function Home() {
           {!refineOpen && (
             <>
               <RestaurantRow
-                title="Your Usuals"
-                subtitle="Places you keep coming back to"
+                title={t("home.your_usuals")}
+                subtitle={t("home.your_usuals_sub")}
                 restaurants={suggestions}
                 isLoading={suggestionsLoading}
                 size="default"
@@ -898,7 +900,7 @@ export default function Home() {
               />
 
               <RestaurantRow
-                title="New near you"
+                title={t("home.new_near_you")}
                 restaurants={nearbyRestaurants}
                 isLoading={nearbyLoading}
                 size="xl"
@@ -930,7 +932,7 @@ export default function Home() {
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder="Search food, restaurants, or areas..."
+                  placeholder={t("home.search_placeholder_full")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-transparent border-none outline-none text-foreground font-medium w-full placeholder:text-muted-foreground text-sm"
@@ -968,7 +970,7 @@ export default function Home() {
                       >
                         <div className="p-4 space-y-4 max-h-[340px] overflow-y-auto">
                           <div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Sort by</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("home.sort_by_label")}</p>
                             <div className="flex flex-wrap gap-1.5">
                               {FILTER_OPTIONS.sortBy.map(o => (
                                 <button key={o.value} onClick={() => setActiveSort(o.value)} data-testid={`filter-sort-${o.value}`}
@@ -978,7 +980,7 @@ export default function Home() {
                             </div>
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Price range</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("home.price_range")}</p>
                             <div className="flex gap-1.5">
                               {FILTER_OPTIONS.priceRange.map(o => (
                                 <button key={o.value} onClick={() => togglePrice(o.value)} data-testid={`filter-price-${o.value}`}
@@ -988,7 +990,7 @@ export default function Home() {
                             </div>
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Dietary</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("home.dietary_label")}</p>
                             <div className="flex flex-wrap gap-1.5">
                               {FILTER_OPTIONS.dietary.map(o => (
                                 <button key={o.value} onClick={() => toggleDietary(o.value)} data-testid={`filter-dietary-${o.value}`}
@@ -998,7 +1000,7 @@ export default function Home() {
                             </div>
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Distance</p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{t("home.distance_label")}</p>
                             <div className="flex flex-wrap gap-1.5">
                               {FILTER_OPTIONS.distance.map(o => (
                                 <button key={o.value} onClick={() => setActiveDistance(activeDistance === o.value ? null : o.value)} data-testid={`filter-distance-${o.value}`}
@@ -1017,7 +1019,7 @@ export default function Home() {
                   className="text-sm font-medium text-muted-foreground flex-shrink-0 ml-1"
                   data-testid="button-close-search"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
               </div>
             </div>

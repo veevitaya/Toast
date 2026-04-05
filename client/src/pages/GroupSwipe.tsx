@@ -9,6 +9,7 @@ import { handleImageError } from "@/lib/imageUtils";
 import { throttleTap } from "@/lib/requestLock";
 import { fetchWithTimeout } from "@/lib/queryClient";
 import { isMenuFirstVibe } from "@shared/vibeConfig";
+import { useLanguage } from "@/i18n/LanguageProvider";
 import { Square, X, Trophy, ChevronRight, Crown, Medal, Award, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils, MapPin, UtensilsCrossed } from "lucide-react";
 
 type SwipePhase = "menu" | "restaurant";
@@ -275,7 +276,7 @@ function SwipeCardGroup({ item, active, behind, onSwipe, onTap, showHint = false
                 )
               ))}
             </div>
-            <span className="text-[10px] text-muted-foreground">{members.length} swiping</span>
+            <span className="text-[10px] text-muted-foreground">{members.length} {t("waiting.swiping")}</span>
           </div>
           <span className="text-xs text-muted-foreground truncate max-w-[40%]">{item.address}</span>
         </div>
@@ -403,7 +404,7 @@ function DishSwipeCard({ dish, active, behind, onSwipe, showHint = false, member
                 )
               ))}
             </div>
-            <span className="text-[10px] text-muted-foreground">{members.length} swiping</span>
+            <span className="text-[10px] text-muted-foreground">{members.length} {t("waiting.swiping")}</span>
           </div>
           {(dish.swipeRightCount || 0) > 0 && (
             <span className="text-[10px] text-amber-600 font-medium flex items-center gap-0.5">
@@ -428,6 +429,7 @@ function buildTagsFromCategory(category: string): string[] {
 
 export default function GroupSwipe() {
   const [, navigate] = useLocation();
+  const { t } = useLanguage();
   const { profile: lineProfile } = useLineProfile();
   const sessionCode = new URLSearchParams(window.location.search).get("session") || "";
   const profile = useMemo(() => {
@@ -1469,7 +1471,7 @@ export default function GroupSwipe() {
               className="w-full py-4 rounded-2xl bg-foreground text-white font-bold text-[15px] active:scale-[0.97] transition-transform"
               style={{ boxShadow: "0 8px 25px -5px rgba(0,0,0,0.25)" }}
             >
-              Back to Home
+              {t("group_swipe.back_to_home")}
             </button>
           )}
         </div>

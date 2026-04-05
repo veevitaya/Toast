@@ -10,6 +10,7 @@ import { useLineProfile } from "@/lib/useLineProfile";
 import { fetchWithTimeout } from "@/lib/queryClient";
 import { isOnboardingComplete } from "@/hooks/use-onboarding";
 import { InlineOnboarding } from "@/pages/Onboarding";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 const LOCATIONS = [
   { id: "bts", icon: "\u{1F687}", label: "Near BTS", sub: "Easy access" },
@@ -139,6 +140,7 @@ function SectionCard({ title, icon: Icon, iconColor, summary, expanded, onToggle
 
 export default function GroupSetup() {
   const [, navigate] = useLocation();
+  const { t } = useLanguage();
   const { profile, refreshProfile } = useLineProfile();
   const [onboarded, setOnboarded] = useState(() => isOnboardingComplete());
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
@@ -275,8 +277,8 @@ export default function GroupSetup() {
             <ArrowLeft className="w-4.5 h-4.5 text-foreground" />
           </button>
           <div className="flex-1">
-            <h1 className="text-[17px] font-bold text-foreground" data-testid="text-page-title">New Session</h1>
-            <p className="text-[11px] text-muted-foreground">Customize your group experience</p>
+            <h1 className="text-[17px] font-bold text-foreground" data-testid="text-page-title">{t("group.new_session")}</h1>
+            <p className="text-[11px] text-muted-foreground">{t("group.customize_group")}</p>
           </div>
         </div>
       </div>
@@ -285,17 +287,17 @@ export default function GroupSetup() {
         {listInviteData && (
           <div className="mx-4 mt-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl">
             <p className="text-sm font-semibold text-amber-900" data-testid="text-list-invite-banner">
-              Swiping from a saved list
+              {t("group.swiping_from_list")}
             </p>
             <p className="text-xs text-amber-700 mt-0.5">
-              {listInviteData.restaurantIds.length} restaurants pre-loaded from your friend's list
+              {t("group.restaurants_preloaded", { count: listInviteData.restaurantIds.length })}
             </p>
           </div>
         )}
         <div className="px-4 pt-4 space-y-3">
 
           <SectionCard
-            title="When"
+            title={t("group.when")}
             icon={CalendarIcon}
             iconColor="#FFCC02"
             summary={whenSummary}
@@ -304,7 +306,7 @@ export default function GroupSetup() {
             testId="section-when"
           >
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-[11px] text-muted-foreground font-medium">Pick a date (optional)</span>
+              <span className="text-[11px] text-muted-foreground font-medium">{t("group.pick_date")}</span>
               {selectedDate && (
                 <button
                   onClick={() => { setSelectedDate(null); const t = roundToNearest15(new Date()); setSelectedHour(t.hour); setSelectedMinute(t.minute); }}
@@ -454,7 +456,7 @@ export default function GroupSetup() {
           </SectionCard>
 
           <SectionCard
-            title="Where"
+            title={t("group.where")}
             icon={MapPin}
             iconColor="#E11D48"
             summary={whereSummary}
@@ -491,7 +493,7 @@ export default function GroupSetup() {
           </SectionCard>
 
           <SectionCard
-            title="Preferences"
+            title={t("group.preferences")}
             icon={Sparkles}
             iconColor="#6C2BD9"
             summary={prefsSummary}
@@ -500,7 +502,7 @@ export default function GroupSetup() {
             testId="section-prefs"
           >
             <div className="mb-4">
-              <p className="text-[11px] font-semibold text-muted-foreground mb-2">Budget</p>
+              <p className="text-[11px] font-semibold text-muted-foreground mb-2">{t("group.budget")}</p>
               <div className="grid grid-cols-4 gap-1.5">
                 {BUDGETS.map((b) => {
                   const active = selectedBudget === b.id;
@@ -533,7 +535,7 @@ export default function GroupSetup() {
             </div>
 
             <div>
-              <p className="text-[11px] font-semibold text-muted-foreground mb-2">Dietary needs <span className="font-normal text-muted-foreground/60">(optional)</span></p>
+              <p className="text-[11px] font-semibold text-muted-foreground mb-2">{t("group.dietary_needs")} <span className="font-normal text-muted-foreground/60">{t("group.dietary_optional")}</span></p>
               <div className="flex flex-wrap gap-1.5">
                 {RESTRICTIONS.map((r) => {
                   const active = selectedRestrictions.includes(r.id);
@@ -562,7 +564,7 @@ export default function GroupSetup() {
           </SectionCard>
 
           <SectionCard
-            title="Your Group"
+            title={t("group.who")}
             icon={Users}
             iconColor="#00B14F"
             summary={groupSummary}
@@ -571,7 +573,7 @@ export default function GroupSetup() {
             testId="section-group"
           >
             <div>
-              <p className="text-[11px] font-semibold text-muted-foreground mb-2">Who are you with?</p>
+              <p className="text-[11px] font-semibold text-muted-foreground mb-2">{t("group.whos_with_you")}</p>
               <div className="grid grid-cols-4 gap-1.5">
                 {GROUP_TYPES.map((g) => {
                   const Icon = g.icon;
@@ -611,7 +613,7 @@ export default function GroupSetup() {
             style={{ boxShadow: "0 6px 20px -4px rgba(0,195,0,0.35)" }}
           >
             <Share2 className="w-4 h-4" />
-            {inviteStatus === "sending" ? "Opening..." : inviteStatus === "sent" ? "Sent!" : "Invite via LINE"}
+            {inviteStatus === "sending" ? "..." : inviteStatus === "sent" ? "✓" : t("group.invite_via_line")}
           </button>
           <button
             onClick={async () => {
@@ -628,7 +630,7 @@ export default function GroupSetup() {
             style={{ boxShadow: "0 6px 20px -4px rgba(255,204,2,0.4)" }}
           >
             <Sparkles className="w-4 h-4" />
-            Start Session
+            {t("group.start_session")}
           </button>
         </div>
       </div>

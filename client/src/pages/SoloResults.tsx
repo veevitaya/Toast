@@ -13,6 +13,7 @@ import { VIBE_LABELS, VIBE_EMOJI, isMenuFirstVibe } from "@shared/vibeConfig";
 import type { VibeTag } from "@shared/vibeConfig";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import drunkToastPath from "@assets/drunk_toast_nobg.png";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 const ALL_MENUS = [
   { id: 1, name: "Pad Thai", type: "Thai", tags: ["Noodles", "Spicy", "Shrimp"], restaurantCount: 9, imageUrl: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600&auto=format&fit=crop&q=60", budget: "Cheap", interests: ["Popular spots", "Hot & spicy", "Comfort food", "Delivery"], dietary: [], setting: ["Street food", "Late night", "Delivery"] },
@@ -331,6 +332,7 @@ function mapVibeRestaurantToMenuItem(r: VibeRestaurant, index: number): MenuItem
 
 export default function SoloResults() {
   const [, navigate] = useLocation();
+  const { t } = useLanguage();
   const { topPreference, profile: tasteProfile, activityLog, searchHistory, getMoodSignal } = useTasteProfile();
   const { profile: userProfile } = useLineProfile();
   const { toast } = useToast();

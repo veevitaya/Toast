@@ -7,6 +7,7 @@ import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { sendInvite } from "@/lib/liff";
 import { BottomNav } from "@/components/BottomNav";
 import { MOCK_HOME_CAMPAIGNS, MOCK_RESTAURANT_CAMPAIGNS, getDealLabel as getCampaignDealLabel } from "@/components/CampaignBanner";
+import { useLanguage } from "@/i18n/LanguageProvider";
 import { Share2 } from "lucide-react";
 import drunkToastImg from "@assets/drunk_toast_nobg.png";
 
@@ -558,6 +559,7 @@ function RestaurantSwipeCard({
 
 export default function SwipePage() {
   const [, navigate] = useLocation();
+  const { t } = useLanguage();
   const params = new URLSearchParams(window.location.search);
   const mode = params.get("mode") || "all";
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -719,7 +721,7 @@ export default function SwipePage() {
           transition={{ delay: 0.2, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
           className="text-[32px] font-semibold text-center mb-2"
         >
-          Perfect match!
+          {t("swipe.perfect_match")}
         </motion.h1>
         <motion.p
           initial={{ y: 16, opacity: 0 }}
@@ -727,7 +729,7 @@ export default function SwipePage() {
           transition={{ delay: 0.3, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
           className="text-muted-foreground text-center mb-6 text-[15px]"
         >
-          You and your partner both loved {matchedRestaurant.name}!
+          {t("swipe.partner_loved", { name: matchedRestaurant.name })}
         </motion.p>
 
         <motion.div
@@ -766,7 +768,7 @@ export default function SwipePage() {
           className="w-full max-w-xs py-4 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-[15px] active:scale-[0.96] transition-transform duration-200"
           style={{ boxShadow: "var(--shadow-glow-primary)" }}
         >
-          View Restaurant →
+          {t("swipe.view_restaurant")}
         </motion.button>
 
         <motion.button
@@ -777,7 +779,7 @@ export default function SwipePage() {
           data-testid="button-home-match"
           className="mt-4 text-sm text-muted-foreground font-semibold hover:text-foreground transition-colors"
         >
-          Back to home
+          {t("swipe.back_to_home")}
         </motion.button>
       </div>
     );
@@ -788,11 +790,11 @@ export default function SwipePage() {
       <div className="flex items-center justify-between px-6 pt-12 pb-3">
         <div className="text-left flex items-center gap-2">
           <div>
-            <h1 className="font-bold text-[22px] tracking-tight">{modeLabels[mode] || "Swipe Mode"}</h1>
+            <h1 className="font-bold text-[22px] tracking-tight">{modeLabels[mode] || t("swipe.swipe_mode")}</h1>
             {isDrinksMode ? (
-              <p className="text-[11px] text-muted-foreground mt-0.5">What are we drinking?</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{t("swipe.what_drinking")}</p>
             ) : isRestaurantMode ? (
-              <p className="text-[11px] text-muted-foreground mt-0.5">Swipe restaurants</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{t("swipe.swipe_restaurants")}</p>
             ) : null}
           </div>
           {isDrinksMode && (
@@ -863,9 +865,9 @@ export default function SwipePage() {
               <span className="text-6xl block">🎉</span>
               <span className="absolute -top-2 -right-3 text-2xl inline-block animate-icon-wiggle gpu-accelerated">✨</span>
             </motion.div>
-            <h2 className="text-2xl font-semibold mb-2">All done!</h2>
-            <p className="text-muted-foreground mb-2 text-sm">You liked {likedCount} out of {items.length} options</p>
-            <p className="text-muted-foreground mb-8 text-xs">Tap below to explore or start over</p>
+            <h2 className="text-2xl font-semibold mb-2">{t("swipe.all_done")}</h2>
+            <p className="text-muted-foreground mb-2 text-sm">{t("swipe.liked_count", { liked: likedCount, total: items.length })}</p>
+            <p className="text-muted-foreground mb-8 text-xs">{t("swipe.tap_below")}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => { setCurrentIndex(0); setLikedCount(0); }}
@@ -873,13 +875,13 @@ export default function SwipePage() {
                 className="px-6 py-3.5 rounded-full bg-foreground text-white font-bold text-sm active:scale-[0.96] transition-transform duration-200"
                 style={{ boxShadow: "0 8px 25px -5px rgba(0,0,0,0.25)" }}
               >
-                Start Over
+                {t("swipe.start_over")}
               </button>
               <button
                 onClick={() => navigate("/")}
                 className="px-6 py-3.5 rounded-full bg-white border-2 border-gray-200 font-bold text-sm active:scale-[0.96] transition-transform duration-200"
               >
-                Home
+                {t("common.home")}
               </button>
             </div>
           </div>

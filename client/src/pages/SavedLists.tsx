@@ -9,6 +9,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Heart, ChevronRight, Star, ArrowLeft, Trash2, Play, Share2, Search, TrendingUp, Eye, List } from "lucide-react";
 import type { RestaurantResponse } from "@shared/routes";
 import { handleImageError } from "@/lib/imageUtils";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 function SavedCard({ restaurant, onNavigate, onRemove }: {
   restaurant: RestaurantResponse;
@@ -145,6 +146,7 @@ function formatTimeAgo(dateStr: string): string {
 
 export default function SavedLists() {
   const [, navigate] = useLocation();
+  const { t } = useLanguage();
   const { data: savedData, unsave, serverLists } = useSavedRestaurants();
   const { profile } = useLineProfile();
   const [selectedList, setSelectedList] = useState<"mine" | "partner" | null>(null);
@@ -236,7 +238,7 @@ export default function SavedLists() {
             </button>
             <div className="flex-1">
               <h1 className="text-xl font-semibold tracking-tight" data-testid="text-list-title">
-                {selectedList === "mine" ? "❤️ My Saves" : "💕 With Partner"}
+                {selectedList === "mine" ? `❤️ ${t("saved.my_saves")}` : `💕 ${t("saved.with_partner")}`}
               </h1>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {displayedRestaurants.length} restaurant{displayedRestaurants.length !== 1 ? "s" : ""}
@@ -286,11 +288,11 @@ export default function SavedLists() {
                   <Heart className="w-7 h-7 text-muted-foreground/30" />
                 </div>
                 <p className="text-sm font-medium text-muted-foreground mb-1">
-                  {selectedList === "mine" ? "No saved restaurants yet" : "No partner picks yet"}
+                  {selectedList === "mine" ? t("saved.no_saved_yet") : t("saved.no_saved_yet")}
                 </p>
                 <p className="text-xs text-muted-foreground/60 mb-6">
                   {selectedList === "mine"
-                    ? "Tap the heart icon on any restaurant to save it"
+                    ? t("saved.tap_heart")
                     : "Save restaurants to share date night ideas"
                   }
                 </p>
@@ -378,7 +380,7 @@ export default function SavedLists() {
             <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
               <List className="w-7 h-7 text-muted-foreground/30" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">No saved restaurants yet</p>
+            <p className="text-sm font-medium text-muted-foreground mb-1">{t("saved.no_saved_yet")}</p>
             <p className="text-xs text-muted-foreground/60 mb-6">Start swiping to build your lists</p>
             <div className="flex flex-wrap gap-2 justify-center">
               <button

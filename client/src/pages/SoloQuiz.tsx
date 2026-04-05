@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { trackEvent } from "@/lib/analytics";
 import { isOnboardingComplete } from "@/hooks/use-onboarding";
 import { InlineOnboarding } from "@/pages/Onboarding";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 const bouncy = { type: "spring" as const, stiffness: 300, damping: 24 };
 const spring = { type: "spring" as const, stiffness: 260, damping: 26 };
@@ -50,6 +51,7 @@ const BUDGET_DISPLAY: Record<string, string> = {
 
 export default function SoloQuiz() {
   const [, navigate] = useLocation();
+  const { t } = useLanguage();
   const [onboarded, setOnboarded] = useState(() => isOnboardingComplete());
   const [step, setStep] = useState(0);
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
@@ -131,7 +133,7 @@ export default function SoloQuiz() {
             className="text-[12px] font-semibold text-gray-400 hover:text-gray-600 transition-colors px-3 py-1.5 rounded-full"
             data-testid="button-quiz-skip"
           >
-            Skip
+            {t("quiz.skip")}
           </button>
         </div>
 
@@ -144,10 +146,10 @@ export default function SoloQuiz() {
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
             <h1 className="text-[26px] font-bold text-gray-900 leading-tight mb-1" data-testid="text-page-title">
-              {step === 0 ? "What are you\ncraving?" : step === 1 ? "Set the\nscene" : "What's your\nbudget?"}
+              {step === 0 ? t("quiz.craving") : step === 1 ? t("quiz.set_scene") : t("quiz.whats_budget")}
             </h1>
             <p className="text-[13px] text-gray-400 font-medium">
-              {step === 0 ? "Pick up to 3 cuisines" : step === 1 ? "Where sounds good tonight?" : "We'll find the sweet spot"}
+              {step === 0 ? t("quiz.pick_cuisines") : step === 1 ? t("quiz.where_sounds_good") : t("quiz.find_sweet_spot")}
             </p>
           </motion.div>
         </AnimatePresence>
@@ -332,14 +334,14 @@ export default function SoloQuiz() {
             >
               {step < 2 ? (
                 <>
-                  Continue
+                  {t("quiz.continue")}
                   <motion.div animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.2 }}>
                     <ArrowRight className="w-5 h-5" />
                   </motion.div>
                 </>
               ) : (
                 <>
-                  Let's pick!
+                  {t("quiz.lets_pick")}
                   <motion.div animate={{ rotate: [0, 15, -15, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
                     <Flame className="w-5 h-5" />
                   </motion.div>

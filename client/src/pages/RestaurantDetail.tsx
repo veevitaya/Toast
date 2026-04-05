@@ -13,6 +13,7 @@ import { SaveBucketPicker } from "@/components/SaveBucketPicker";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { handleImageError } from "@/lib/imageUtils";
 import { RestaurantCampaignBanner, getDealLabel } from "@/components/CampaignBanner";
+import { useLanguage } from "@/i18n/LanguageProvider";
 import type { Campaign } from "@shared/schema";
 import noodsPhoto1 from "@assets/IMG_9279_1772025468067.jpeg";
 import noodsPhoto2 from "@assets/IMG_9280_1772025468067.jpeg";
@@ -248,6 +249,7 @@ function LocationMap({ lat, lng, name }: { lat: number; lng: number; name: strin
 
 export default function RestaurantDetail() {
   const [, navigate] = useLocation();
+  const { t } = useLanguage();
   const [, params] = useRoute("/restaurant/:id");
   const id = params?.id ? parseInt(params.id) : null;
   const [activePhoto, setActivePhoto] = useState(0);
@@ -475,7 +477,7 @@ export default function RestaurantDetail() {
               className="text-sm font-semibold text-foreground mt-1 underline underline-offset-2"
               data-testid="button-show-more"
             >
-              Show more
+              {t("restaurant.show_more")}
             </button>
           )}
         </div>
@@ -506,9 +508,9 @@ export default function RestaurantDetail() {
             <div className="flex items-center gap-3">
               <span className="text-lg">🕐</span>
               <div className="text-left">
-                <p className="font-bold text-sm">Opening Hours</p>
+                <p className="font-bold text-sm">{t("restaurant.opening_hours")}</p>
                 <p className="text-xs text-green-600 font-medium">
-                  Open now · {todayHours?.hours || "11:00 - 22:00"}
+                  {t("restaurant.open_now_hours", { hours: todayHours?.hours || "11:00 - 22:00" })}
                 </p>
               </div>
             </div>
@@ -542,13 +544,13 @@ export default function RestaurantDetail() {
         <div className="flex items-center gap-3 py-3 border-t border-gray-100/80 mb-5">
           <span className="text-lg">📞</span>
           <div>
-            <p className="font-bold text-sm">Phone</p>
+            <p className="font-bold text-sm">{t("restaurant.phone")}</p>
             <p className="text-sm text-muted-foreground">+66 2-XXX-XXXX</p>
           </div>
         </div>
 
         <div className="border-t border-gray-100/80 pt-5 mb-6">
-          <h2 className="font-bold text-lg mb-4">Reviews</h2>
+          <h2 className="font-bold text-lg mb-4">{t("restaurant.reviews")}</h2>
           <div className="space-y-5">
             {MOCK_REVIEWS.map((review, idx) => (
               <div
@@ -573,7 +575,7 @@ export default function RestaurantDetail() {
         </div>
 
         <div className="border-t border-gray-100/80 pt-5 mb-6">
-          <h2 className="font-bold text-lg mb-3">Location</h2>
+          <h2 className="font-bold text-lg mb-3">{t("restaurant.location")}</h2>
           <div className="w-full h-40 rounded-2xl overflow-hidden border border-gray-100" style={{ isolation: "isolate" }}>
             <LocationMap
               lat={Number(restaurant.lat)}
@@ -591,7 +593,7 @@ export default function RestaurantDetail() {
           className="flex-1 py-3.5 rounded-full font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.97] transition-transform duration-200"
           style={{ background: "#FFCC02", color: "#1a1a1a", boxShadow: "0 4px 15px -3px rgba(255,204,2,0.35)" }}
         >
-          🛵 Order Delivery
+          🛵 {t("restaurant.order_delivery")}
         </button>
         <button
           onClick={() => {
@@ -601,7 +603,7 @@ export default function RestaurantDetail() {
           data-testid="button-directions"
           className="py-3.5 px-6 rounded-full bg-gray-100 font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.97] transition-transform duration-200"
         >
-          🗺️ Go
+          🗺️ {t("restaurant.go")}
         </button>
       </div>
 
@@ -627,8 +629,8 @@ export default function RestaurantDetail() {
               data-testid="delivery-drawer"
             >
               <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
-              <p className="text-base font-bold text-foreground mb-1">Order Delivery</p>
-              <p className="text-xs text-muted-foreground mb-5">Choose your preferred delivery app</p>
+              <p className="text-base font-bold text-foreground mb-1">{t("restaurant.order_delivery")}</p>
+              <p className="text-xs text-muted-foreground mb-5">{t("restaurant.choose_delivery")}</p>
               <div className="space-y-2.5">
                 {DELIVERY_APPS.map((app) => (
                   <button
@@ -642,7 +644,7 @@ export default function RestaurantDetail() {
                     </div>
                     <div className="flex-1 text-left">
                       <p className="text-sm font-bold text-foreground">{app.name}</p>
-                      <p className="text-[11px] text-muted-foreground">Open in {app.name} app</p>
+                      <p className="text-[11px] text-muted-foreground">{t("restaurant.open_in_app", { name: app.name })}</p>
                     </div>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground/40"><path d="M9 18l6-6-6-6"/></svg>
                   </button>

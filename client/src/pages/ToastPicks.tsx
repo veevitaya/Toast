@@ -9,6 +9,7 @@ import { SaveBucketPicker } from "@/components/SaveBucketPicker";
 import { Sparkles, ChevronRight, RefreshCw, Heart, Star } from "lucide-react";
 import type { RestaurantResponse } from "@shared/routes";
 import mascotPath from "@assets/toast_mascot_nobg.png";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 const PROFILE_STORAGE_KEY = "toast_user_profile";
 
@@ -135,7 +136,7 @@ function PickCard({ restaurant, index, onNavigate }: { restaurant: RestaurantRes
               style={{ boxShadow: "0 2px 10px rgba(255,204,2,0.4)" }}
             >
               <Sparkles className="w-3 h-3 text-[#2d2000]" />
-              <span className="text-[10px] font-bold text-[#2d2000] uppercase tracking-wide">Top Pick</span>
+              <span className="text-[10px] font-bold text-[#2d2000] uppercase tracking-wide">{t("toast_picks.top_pick")}</span>
             </motion.div>
           )}
           <button
@@ -176,6 +177,7 @@ function PickCard({ restaurant, index, onNavigate }: { restaurant: RestaurantRes
 
 export default function ToastPicks() {
   const [, navigate] = useLocation();
+  const { t } = useLanguage();
   const { profile: tasteProfile, topPreference, getMoodSignal } = useTasteProfile();
   const { data: savedData } = useSavedRestaurants();
   const [phase, setPhase] = useState<"thinking" | "reveal">("thinking");
@@ -394,7 +396,7 @@ export default function ToastPicks() {
                       className="text-center py-12"
                     >
                       <img src={mascotPath} alt="Toast mascot" className="h-12 mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground">Still learning your taste — swipe more to unlock personalized picks!</p>
+                      <p className="text-sm text-muted-foreground">{t("toast_picks.still_learning")}</p>
                     </motion.div>
                   )}
                 </div>
