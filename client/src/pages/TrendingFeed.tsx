@@ -463,7 +463,7 @@ function FullScreenSlide({
         )}
       </div>
 
-      <div className="absolute right-3 z-20 flex flex-col items-center gap-4" style={{ bottom: "210px" }}>
+      <div className="absolute right-3 z-20 flex flex-col items-center gap-4" style={{ bottom: "230px" }}>
         <button
           onClick={(e) => { e.stopPropagation(); onLike(); }}
           className="flex flex-col items-center gap-0.5"
@@ -535,9 +535,9 @@ function FullScreenSlide({
           {post.restaurantName}
         </h3>
 
+        <div className={`${txtSub} text-[13px] font-medium mb-0.5`} data-testid={`text-category-${post.id}`}>{post.category}</div>
+
         <div className="flex items-center gap-2 mb-1">
-          <span className={`${txtSub} text-[13px] font-medium`} data-testid={`text-category-${post.id}`}>{post.category}</span>
-          <span className={txtDot}>·</span>
           <PriceIndicator level={post.priceLevel} isDark={isDark} />
           <span className={txtDot}>·</span>
           <div className="flex items-center gap-0.5" data-testid={`text-rating-${post.id}`}>
@@ -548,10 +548,10 @@ function FullScreenSlide({
         </div>
 
         <div className={`flex items-center gap-1 ${txtMuted} text-[12px]`} data-testid={`text-location-${post.id}`}>
-          <MapPin className="w-3 h-3" />
-          <span>{post.address}</span>
-          <span>·</span>
-          <span>{post.distance}</span>
+          <MapPin className="w-3 h-3 shrink-0" />
+          <span className="truncate">{post.address}</span>
+          <span className="shrink-0">·</span>
+          <span className="shrink-0">{post.distance}</span>
         </div>
       </button>
     </div>
