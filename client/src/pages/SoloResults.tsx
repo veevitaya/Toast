@@ -9,7 +9,7 @@ import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { sendGroupInviteNoRedirect } from "@/lib/liff";
 import { useToast } from "@/hooks/use-toast";
-import { VIBE_LABELS, VIBE_EMOJI } from "@shared/vibeConfig";
+import { VIBE_LABELS, VIBE_EMOJI, isMenuFirstVibe } from "@shared/vibeConfig";
 import type { VibeTag } from "@shared/vibeConfig";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import drunkToastPath from "@assets/drunk_toast_nobg.png";
@@ -347,17 +347,8 @@ export default function SoloResults() {
         if (!res.ok) throw new Error("Failed to fetch hot restaurants");
         return res.json();
       }
-      if (vibeParam === "trending_dishes") {
-        const res = await fetchWithTimeout("/api/menu-items/trending");
-        if (!res.ok) throw new Error("Failed to fetch trending dishes");
-        const dishes = await res.json();
-        const allRes = await fetchWithTimeout("/api/restaurants");
-        if (!allRes.ok) return [];
-        const allRestaurants = await allRes.json();
-        const dishCategories = new Set(dishes.map((d: any) => d.category?.toLowerCase()));
-        return allRestaurants.filter((r: any) =>
-          dishCategories.has(r.category?.split("•")?.[0]?.trim()?.toLowerCase())
-        );
+      if (vibeParam && isMenuFirstVibe(vibeParam)) {
+        return [];
       }
       const res = await fetchWithTimeout("/api/restaurants/by-vibe", {
         method: "POST",
@@ -411,6 +402,45 @@ export default function SoloResults() {
   }, [vibeRestaurants]);
 
   const filteredMenus = useMemo(() => {
+    if (vibeParam && isMenuFirstVibe(vibeParam)) {
+      const vibeToInterest: Record<string, string[]> = {
+        spicy: ["Hot & spicy"],
+        budget: ["Budget-friendly"],
+        healthy: ["Healthy"],
+        trending_dishes: [],
+        street_food: ["Budget-friendly"],
+        sweets: ["Sweets", "Dessert"],
+        brunch: ["Brunch", "Coffee"],
+        delivery: ["Delivery"],
+      };
+      const vibeToSetting: Record<string, string[]> = {
+        street_food: ["Street food"],
+        delivery: ["Delivery"],
+        brunch: ["Outdoor dining", "Trendy spots"],
+      };
+      const vibeToTag: Record<string, string[]> = {
+        spicy: ["Spicy"],
+        healthy: ["Healthy", "Salad", "Fish"],
+        sweets: ["Sweet", "Ice cream", "Cake", "Dessert"],
+        brunch: ["Brunch", "Coffee", "Avocado"],
+      };
+      const interests = vibeToInterest[vibeParam] || [];
+      const settings = vibeToSetting[vibeParam] || [];
+      const tags = vibeToTag[vibeParam] || [];
+      if (interests.length === 0 && settings.length === 0 && tags.length === 0) {
+        return [...ALL_MENUS].sort(() => Math.random() - 0.5);
+      }
+      const scored = ALL_MENUS.map(item => {
+        let score = 0;
+        for (const i of interests) if (item.interests.includes(i)) score += 3;
+        for (const s of settings) if (item.setting.includes(s)) score += 2;
+        for (const t of tags) if (item.tags.some(tag => tag.toLowerCase().includes(t.toLowerCase()))) score += 2;
+        return { item, score };
+      });
+      const filtered = scored.filter(s => s.score > 0).sort((a, b) => b.score - a.score);
+      if (filtered.length >= 4) return filtered.map(s => s.item);
+      return [...ALL_MENUS].sort(() => Math.random() - 0.5);
+    }
     if (vibeParam) {
       if (vibeMenuItems && vibeMenuItems.length >= 2) return vibeMenuItems;
       if (vibeMenuItems && vibeMenuItems.length > 0) return vibeMenuItems;

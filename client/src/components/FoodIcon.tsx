@@ -240,7 +240,8 @@ export function FoodIconFromEmoji({ emoji, size = 32, className = "" }: { emoji:
   if (iconName) {
     return <FoodIcon name={iconName} size={size} className={className} />;
   }
-  return <span className={`text-[${size * 0.7}px] select-none ${className}`}>{emoji}</span>;
+  const fontSize = Math.round(size * 0.75);
+  return <span className={`inline-flex items-center justify-center select-none ${className}`} style={{ width: size, height: size, fontSize: `${fontSize}px`, lineHeight: 1 }}>{emoji}</span>;
 }
 
 export default FoodIcon;
