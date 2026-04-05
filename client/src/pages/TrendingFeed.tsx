@@ -356,6 +356,7 @@ function FullScreenSlide({
   onInviteSwipe: () => void;
   onHeaderBrightness?: (isDark: boolean) => void;
 }) {
+  const { t } = useLanguage();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [direction, setDirection] = useState(0);
   const isDragging = useRef(false);
@@ -458,7 +459,7 @@ function FullScreenSlide({
         )}
         {post.isNew && (
           <div className="bg-[#FFCC02] text-gray-900 px-2.5 py-1 rounded-full" data-testid={`badge-new-${post.id}`}>
-            <span className="text-[11px] font-bold">New</span>
+            <span className="text-[11px] font-bold">{t("trending.new_badge")}</span>
           </div>
         )}
       </div>
@@ -467,49 +468,49 @@ function FullScreenSlide({
         <button
           onClick={(e) => { e.stopPropagation(); onLike(); }}
           className="flex flex-col items-center gap-0.5"
-          aria-label={isLiked ? "Unlike" : "Like"}
+          aria-label={isLiked ? t("trending.liked") : t("trending.like")}
           data-testid={`button-like-${post.id}`}
         >
           <div className={`w-11 h-11 rounded-full ${btnBg} flex items-center justify-center`}>
             <Heart className={`w-[22px] h-[22px] ${isLiked ? "text-red-500 fill-red-500" : btnIcon}`} />
           </div>
-          <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>{isLiked ? "Liked" : "Like"}</span>
+          <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>{isLiked ? t("trending.liked") : t("trending.like")}</span>
         </button>
 
         <button
           onClick={(e) => { e.stopPropagation(); onSave(); }}
           className="flex flex-col items-center gap-0.5"
-          aria-label={isSaved ? "Remove from saved" : "Save"}
+          aria-label={isSaved ? t("trending.saved") : t("trending.save")}
           data-testid={`button-save-${post.id}`}
         >
           <div className={`w-11 h-11 rounded-full flex items-center justify-center ${btnBg}`}>
             <Bookmark className={`w-[22px] h-[22px] ${isSaved ? "text-[#FFCC02] fill-[#FFCC02]" : btnIcon}`} />
           </div>
-          <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>{isSaved ? "Saved" : "Save"}</span>
+          <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>{isSaved ? t("trending.saved") : t("trending.save")}</span>
         </button>
 
         <button
           onClick={(e) => { e.stopPropagation(); onShare(); }}
           className="flex flex-col items-center gap-0.5"
-          aria-label="Share"
+          aria-label={t("trending.share")}
           data-testid={`button-share-${post.id}`}
         >
           <div className={`w-11 h-11 rounded-full ${btnBg} flex items-center justify-center`}>
             <Share2 className={`w-[22px] h-[22px] ${btnIcon}`} />
           </div>
-          <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>Share</span>
+          <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>{t("trending.share")}</span>
         </button>
 
         <button
           onClick={(e) => { e.stopPropagation(); onInviteSwipe(); }}
           className="flex flex-col items-center gap-0.5"
-          aria-label="Invite friends to swipe"
+          aria-label={t("trending.swipe")}
           data-testid={`button-invite-swipe-${post.id}`}
         >
           <div className={`w-11 h-11 rounded-full ${btnBg} flex items-center justify-center`}>
             <Layers className={`w-[22px] h-[22px] ${btnIcon}`} />
           </div>
-          <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>Swipe</span>
+          <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>{t("trending.swipe")}</span>
         </button>
       </div>
 
@@ -622,11 +623,11 @@ export default function TrendingFeed() {
         return next;
       });
       serverUnsave(postId);
-      toast({ title: "Removed from saved" });
+      toast({ title: t("trending.removed_from_saved") });
     } else {
       setSavePickerPostId(postId);
     }
-  }, [savedPosts, serverUnsave, toast]);
+  }, [savedPosts, serverUnsave, toast, t]);
 
   const confirmSave = useCallback((bucket: "mine" | "partner") => {
     if (savePickerPostId === null) return;
@@ -644,10 +645,10 @@ export default function TrendingFeed() {
     }
     setSavePickerPostId(null);
     toast({
-      title: bucket === "mine" ? "Saved to My Saves!" : "Saved to Partner list!",
-      description: "You can find this in your saved items",
+      title: bucket === "mine" ? t("trending.saved_to_mine") : t("trending.saved_to_partner"),
+      description: t("trending.saved_description"),
     });
-  }, [savePickerPostId, serverSaveToMine, serverSaveToPartner, toast]);
+  }, [savePickerPostId, serverSaveToMine, serverSaveToPartner, toast, t]);
 
   const handleLike = useCallback((postId: number) => {
     setLikedPosts((prev) => {
@@ -661,18 +662,18 @@ export default function TrendingFeed() {
   const handleShare = useCallback(async (post: TrendingPost) => {
     const appUrl = window.location.origin;
     const shareUrl = `${appUrl}/trending?id=${post.id}`;
-    const message = `Trending on Toast!\n\n${post.restaurantName} — ${post.category}\n${post.rating} · ${post.address}\n\n"${post.description.slice(0, 100)}..."\n\nCheck it out:\n${shareUrl}`;
+    const message = `${t("trending.share_header")}\n\n${post.restaurantName} — ${post.category}\n${post.rating} · ${post.address}\n\n"${post.description.slice(0, 100)}..."\n\n${t("trending.share_check_it")}\n${shareUrl}`;
     try {
       await shareMessage(message);
     } catch {
       try {
         await navigator.clipboard.writeText(shareUrl);
-        toast({ title: "Link copied!", description: "Share this link with your friends" });
+        toast({ title: t("trending.link_copied"), description: t("trending.link_copied_desc") });
       } catch {
-        toast({ title: "Share link", description: shareUrl });
+        toast({ title: t("trending.share_link_fallback"), description: shareUrl });
       }
     }
-  }, [toast]);
+  }, [toast, t]);
 
   const handleNavigate = useCallback((post: TrendingPost) => {
     navigate(`/restaurant/${post.restaurantId}`);
@@ -742,13 +743,13 @@ export default function TrendingFeed() {
       try {
         const shareResult = await sendGroupInviteNoRedirect(sessionCode);
         toast({
-          title: "Trending swipe session!",
-          description: shareResult.shared ? "Invite sent — heading to waiting room" : "Heading to waiting room",
+          title: t("trending.session_created"),
+          description: shareResult.shared ? t("trending.invite_sent_heading") : t("trending.heading_to_room"),
         });
       } catch {
         toast({
-          title: "Trending swipe session!",
-          description: "Heading to waiting room",
+          title: t("trending.session_created"),
+          description: t("trending.heading_to_room"),
         });
       }
 
@@ -756,14 +757,14 @@ export default function TrendingFeed() {
       navigate(`/group/waiting?session=${sessionCode}`);
     } catch {
       toast({
-        title: "Couldn't create session",
-        description: "Please try again",
+        title: t("trending.session_error"),
+        description: t("trending.session_try_again"),
         variant: "destructive",
       });
     } finally {
       setCreatingSession(false);
     }
-  }, [toast, navigate, profile, creatingSession]);
+  }, [toast, navigate, profile, creatingSession, t]);
 
   return (
     <motion.div
@@ -777,7 +778,7 @@ export default function TrendingFeed() {
         <div className="flex items-center justify-between px-5 py-3">
           <div className="flex items-center gap-2">
             <TrendingUp className={`w-5 h-5 text-[#FFCC02] ${headerIsDark ? "drop-shadow-md" : ""}`} />
-            <h1 className={`text-[20px] font-bold leading-tight transition-colors duration-300 ${headerIsDark ? "text-white drop-shadow-md" : "text-gray-900"}`}>Trending</h1>
+            <h1 className={`text-[20px] font-bold leading-tight transition-colors duration-300 ${headerIsDark ? "text-white drop-shadow-md" : "text-gray-900"}`}>{t("trending.title")}</h1>
           </div>
           <div className={`flex items-center gap-1.5 backdrop-blur-md rounded-full px-2.5 py-1 transition-colors duration-300 ${headerIsDark ? "bg-white/15" : "bg-black/8"}`}>
             <MapPin className="w-3 h-3 text-[#E53935]" />
@@ -826,8 +827,8 @@ export default function TrendingFeed() {
               data-testid="save-picker-sheet"
             >
               <div className="w-10 h-1 bg-gray-300 dark:bg-zinc-600 rounded-full mx-auto mb-4" />
-              <h3 className="text-[17px] font-bold text-center mb-1 text-foreground">Save to which list?</h3>
-              <p className="text-[13px] text-muted-foreground text-center mb-5">Choose where to save this restaurant</p>
+              <h3 className="text-[17px] font-bold text-center mb-1 text-foreground">{t("trending.save_to_list_title")}</h3>
+              <p className="text-[13px] text-muted-foreground text-center mb-5">{t("trending.save_to_list_desc")}</p>
               <div className="flex flex-col gap-3">
                 <button
                   onClick={() => confirmSave("mine")}
@@ -836,8 +837,8 @@ export default function TrendingFeed() {
                 >
                   <span className="text-2xl">❤️</span>
                   <div className="text-left">
-                    <div className="text-[15px] font-semibold text-foreground">My Saves</div>
-                    <div className="text-[12px] text-muted-foreground">Your personal saved list</div>
+                    <div className="text-[15px] font-semibold text-foreground">{t("trending.my_saves")}</div>
+                    <div className="text-[12px] text-muted-foreground">{t("trending.my_saves_desc")}</div>
                   </div>
                 </button>
                 <button
@@ -847,8 +848,8 @@ export default function TrendingFeed() {
                 >
                   <span className="text-2xl">💕</span>
                   <div className="text-left">
-                    <div className="text-[15px] font-semibold text-foreground">With Partner</div>
-                    <div className="text-[12px] text-muted-foreground">Shared list with your partner</div>
+                    <div className="text-[15px] font-semibold text-foreground">{t("trending.with_partner")}</div>
+                    <div className="text-[12px] text-muted-foreground">{t("trending.with_partner_desc")}</div>
                   </div>
                 </button>
               </div>
@@ -857,7 +858,7 @@ export default function TrendingFeed() {
                 className="w-full mt-4 py-3 text-[14px] font-medium text-muted-foreground"
                 data-testid="save-picker-cancel"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </motion.div>
           </>
