@@ -635,6 +635,7 @@ export default function GroupSwipe() {
   menuItemsRef.current = menuItems;
   const sessionEndedRef = useRef(false);
   sessionEndedRef.current = sessionEnded;
+  const loadRestaurantsForDishRef = useRef<((dish: DishItem) => void) | null>(null);
 
   useEffect(() => {
     if (!sessionCode) return;
@@ -679,30 +680,55 @@ export default function GroupSwipe() {
             if (!cancelled && matchRes.ok) {
               const matchData = await matchRes.json();
               if (matchData.matches) {
-                const fullMatches = matchData.matches
-                  .filter((m: any) => m.voters.length >= data.members.length && m.restaurant)
-                  .map((m: any) => {
-                    const r = m.restaurant;
-                    return {
-                      id: r.id,
-                      name: r.name,
-                      category: r.category || "",
-                      tags: buildTagsFromCategory(r.category || ""),
-                      description: r.description || "",
-                      priceLevel: r.priceLevel || 2,
-                      rating: r.rating || "4.0",
-                      address: r.address || "Bangkok",
-                      imageUrl: r.imageUrl || "",
-                      isNew: r.isNew || false,
-                    } as MenuItem;
-                  });
+                if (swipePhase === "menu") {
+                  for (const m of matchData.matches) {
+                    if (m.voters.length >= data.members.length && m.menuItem) {
+                      const dish = m.menuItem;
+                      setConfetti(true);
+                      setMatchNotification(`Everyone matched on ${dish.name || dish.nameLocal}! Loading restaurants...`);
+                      setTimeout(() => {
+                        setConfetti(false);
+                        setMatchNotification(null);
+                        loadRestaurantsForDishRef.current?.({
+                          id: dish.id,
+                          name: dish.name,
+                          nameLocal: dish.nameLocal || "",
+                          category: dish.category || "",
+                          tags: dish.tags || [],
+                          description: dish.description || "",
+                          imageUrl: dish.imageUrl || "",
+                          swipeRightCount: dish.swipeRightCount || 0,
+                        });
+                      }, 2000);
+                      break;
+                    }
+                  }
+                } else {
+                  const fullMatches = matchData.matches
+                    .filter((m: any) => m.voters.length >= data.members.length && m.restaurant)
+                    .map((m: any) => {
+                      const r = m.restaurant;
+                      return {
+                        id: r.id,
+                        name: r.name,
+                        category: r.category || "",
+                        tags: buildTagsFromCategory(r.category || ""),
+                        description: r.description || "",
+                        priceLevel: r.priceLevel || 2,
+                        rating: r.rating || "4.0",
+                        address: r.address || "Bangkok",
+                        imageUrl: r.imageUrl || "",
+                        isNew: r.isNew || false,
+                      } as MenuItem;
+                    });
 
-                setAllMatches(prev => {
-                  const existing = new Set(prev.map(p => p.id));
-                  const newItems = fullMatches.filter((i: MenuItem) => !existing.has(i.id));
-                  if (newItems.length > 0) return [...prev, ...newItems];
-                  return prev;
-                });
+                  setAllMatches(prev => {
+                    const existing = new Set(prev.map(p => p.id));
+                    const newItems = fullMatches.filter((i: MenuItem) => !existing.has(i.id));
+                    if (newItems.length > 0) return [...prev, ...newItems];
+                    return prev;
+                  });
+                }
               }
             }
           } catch {}
@@ -721,9 +747,9 @@ export default function GroupSwipe() {
       }
     };
     fetchSession();
-    const interval = setInterval(fetchSession, 5000);
+    const interval = setInterval(fetchSession, 2000);
     return () => { cancelled = true; clearInterval(interval); pollController.abort(); };
-  }, [sessionCode, profile]);
+  }, [sessionCode, profile, swipePhase]);
 
   useEffect(() => {
     if (allMatches.length > prevMatchCountRef.current) {
@@ -820,6 +846,7 @@ export default function GroupSwipe() {
       setLoading(false);
     }
   }, []);
+  loadRestaurantsForDishRef.current = loadRestaurantsForDish;
 
   const dishSwipeLockRef = useRef(false);
   const handleDishSwipe = useCallback((id: number, dir: "left" | "right" | "super") => {

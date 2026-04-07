@@ -4016,9 +4016,15 @@ export async function registerRoutes(
       const matches = await storage.getGroupMatches(code, swipeType);
       const members = await storage.getGroupMembers(code);
       const restaurantMap = matches.length > 0 ? await buildRestaurantMap(code) : new Map();
+      let menuItemMap = new Map<number, any>();
+      if (matches.length > 0 && swipeType === "menu") {
+        const allMenuItems = await storage.getMenuItems();
+        menuItemMap = new Map(allMenuItems.map(mi => [mi.id, mi]));
+      }
       const enrichedMatches = matches.map(m => ({
         ...m,
         restaurant: restaurantMap.get(m.menuItemId) || null,
+        menuItem: menuItemMap.get(m.menuItemId) || null,
       }));
       res.json({ matches: enrichedMatches, members: sanitizeMembers(members) });
     } catch (err) {
