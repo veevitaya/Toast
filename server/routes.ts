@@ -4044,7 +4044,15 @@ export async function registerRoutes(
       const restaurants = menuItemIds
         .map(id => restaurantMap.get(id))
         .filter(Boolean);
-      res.json({ swipes, members: sanitizeMembers(members), restaurants });
+      const menuSwipes = swipes.filter(s => s.swipeType === "menu");
+      let menuItemsData: any[] = [];
+      if (menuSwipes.length > 0) {
+        const allMenuItems = await storage.getMenuItems();
+        const menuMap = new Map(allMenuItems.map(mi => [mi.id, mi]));
+        const menuIds = [...new Set(menuSwipes.map(s => s.menuItemId))];
+        menuItemsData = menuIds.map(id => menuMap.get(id)).filter(Boolean);
+      }
+      res.json({ swipes, members: sanitizeMembers(members), restaurants, menuItems: menuItemsData });
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
     }

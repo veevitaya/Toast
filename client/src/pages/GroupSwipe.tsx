@@ -510,7 +510,6 @@ export default function GroupSwipe() {
                   : sessionData.session.sourceData;
                 if (source.source === "vibe_swipe" && source.vibe) {
                   vibeForSession = source.vibe;
-                  useMenuFirst = isMenuFirstVibe(source.vibe);
                 }
               } catch {}
             }
@@ -995,7 +994,7 @@ export default function GroupSwipe() {
       const res = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/swipes`);
       if (!res.ok) return;
       const data = await res.json();
-      const { swipes, members: memberList, restaurants: serverRestaurants } = data;
+      const { swipes, members: memberList, restaurants: serverRestaurants, menuItems: serverMenuItems } = data;
 
       const restaurantMap = new Map<number, any>();
       if (serverRestaurants) {
@@ -1003,31 +1002,43 @@ export default function GroupSwipe() {
           restaurantMap.set(r.id, r);
         }
       }
+      const menuItemMap = new Map<number, any>();
+      if (serverMenuItems) {
+        for (const mi of serverMenuItems) {
+          menuItemMap.set(mi.id, mi);
+        }
+      }
 
-      const voteMap = new Map<number, Set<string>>();
+      const voteMap = new Map<number, { voters: Set<string>; swipeType: string }>();
       for (const s of swipes) {
         if (s.direction === "right" || s.direction === "super") {
-          if (!voteMap.has(s.menuItemId)) voteMap.set(s.menuItemId, new Set());
-          voteMap.get(s.menuItemId)!.add(s.lineUserId);
+          if (!voteMap.has(s.menuItemId)) voteMap.set(s.menuItemId, { voters: new Set(), swipeType: s.swipeType || "restaurant" });
+          voteMap.get(s.menuItemId)!.voters.add(s.lineUserId);
         }
       }
 
       const ranked: RankedResult[] = [];
-      for (const [menuItemId, voterIds] of voteMap) {
+      for (const [menuItemId, { voters: voterIds, swipeType }] of voteMap) {
         if (voterIds.size < 2) continue;
-        const r = restaurantMap.get(menuItemId);
-        if (!r) continue;
+        let itemData: any = null;
+        if (swipeType === "menu") {
+          itemData = menuItemMap.get(menuItemId);
+        }
+        if (!itemData) {
+          itemData = restaurantMap.get(menuItemId);
+        }
+        if (!itemData) continue;
         const item: MenuItem = {
-          id: r.id,
-          name: r.name,
-          category: r.category || "",
-          tags: buildTagsFromCategory(r.category || ""),
-          description: r.description || "",
-          priceLevel: r.priceLevel || 2,
-          rating: r.rating || "4.0",
-          address: r.address || "Bangkok",
-          imageUrl: r.imageUrl || "",
-          isNew: r.isNew || false,
+          id: itemData.id,
+          name: itemData.name || itemData.nameLocal || "",
+          category: itemData.category || "",
+          tags: buildTagsFromCategory(itemData.category || ""),
+          description: itemData.description || "",
+          priceLevel: itemData.priceLevel || 2,
+          rating: itemData.rating || "4.0",
+          address: itemData.address || "",
+          imageUrl: itemData.imageUrl || "",
+          isNew: itemData.isNew || false,
         };
         const voters = memberList.filter((m: SessionMember) => voterIds.has(m.lineUserId));
         ranked.push({
