@@ -129,6 +129,7 @@ function useSwipeHintGroup(active: boolean, showHint: boolean) {
 }
 
 function SwipeCardGroup({ item, active, behind, onSwipe, onTap, showHint = false, members }: { item: MenuItem; active: boolean; behind: boolean; onSwipe: (id: number, dir: "left" | "right" | "super") => void; onTap: () => void; showHint?: boolean; members: SessionMember[] }) {
+  const { t } = useLanguage();
   const hintRef = useSwipeHintGroup(active, showHint);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -287,6 +288,7 @@ function SwipeCardGroup({ item, active, behind, onSwipe, onTap, showHint = false
 
 
 function DishSwipeCard({ dish, active, behind, onSwipe, showHint = false, members }: { dish: DishItem; active: boolean; behind: boolean; onSwipe: (id: number, dir: "left" | "right" | "super") => void; showHint?: boolean; members: SessionMember[] }) {
+  const { t } = useLanguage();
   const hintRef = useSwipeHintGroup(active, showHint);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
