@@ -471,7 +471,17 @@
     "session_ended": "Session Ended",
     "host_ended": "The host has ended this session.",
     "go_to_results": "Go to Results",
-    "back_to_home": "Back to Home"
+    "back_to_home": "Back to Home",
+    "its_a_match": "It's a match!",
+    "everyone_agreed": "Everyone agreed on {{name}}!",
+    "view_restaurants": "View Restaurants",
+    "view_restaurant": "View Restaurant",
+    "top_picks": "Top Picks",
+    "keep_swiping": "Keep Swiping",
+    "restaurants_with": "Restaurants with {{name}}",
+    "places_found": "{{count}} places found",
+    "finding_restaurants": "Finding restaurants...",
+    "no_restaurants_found": "No restaurants found for this dish yet"
   },
   "saved": {
     "my_saves": "My Saves",

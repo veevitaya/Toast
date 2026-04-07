@@ -471,7 +471,17 @@
     "session_ended": "เซสชันสิ้นสุดแล้ว",
     "host_ended": "เจ้าภาพได้สิ้นสุดเซสชันนี้แล้ว",
     "go_to_results": "ดูผลลัพธ์",
-    "back_to_home": "กลับหน้าแรก"
+    "back_to_home": "กลับหน้าแรก",
+    "its_a_match": "แมตช์แล้ว!",
+    "everyone_agreed": "ทุกคนเห็นตรงกันว่า {{name}}!",
+    "view_restaurants": "ดูร้านอาหาร",
+    "view_restaurant": "ดูร้านอาหาร",
+    "top_picks": "ตัวเลือกเด็ด",
+    "keep_swiping": "ปัดต่อ",
+    "restaurants_with": "ร้านที่มี {{name}}",
+    "places_found": "เจอ {{count}} ร้าน",
+    "finding_restaurants": "กำลังหาร้าน...",
+    "no_restaurants_found": "ยังไม่มีร้านสำหรับเมนูนี้"
   },
   "saved": {
     "my_saves": "รายการโปรดของฉัน",

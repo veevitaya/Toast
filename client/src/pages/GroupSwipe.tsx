@@ -465,6 +465,10 @@ export default function GroupSwipe() {
   const prevMatchCountRef = useRef(0);
   const [likedCount, setLikedCount] = useState(0);
   const [lastAction, setLastAction] = useState<string | null>(null);
+  const [matchIsDish, setMatchIsDish] = useState(false);
+  const [dishRestaurants, setDishRestaurants] = useState<MenuItem[]>([]);
+  const [showDishRestaurants, setShowDishRestaurants] = useState(false);
+  const [loadingDishRestaurants, setLoadingDishRestaurants] = useState(false);
   const [notifiedPartials, setNotifiedPartials] = useState<Set<number>>(new Set());
   const [isHost, setIsHost] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
@@ -680,15 +684,13 @@ export default function GroupSwipe() {
               const matchData = await matchRes.json();
               if (matchData.matches) {
                 if (swipePhase === "menu") {
-                  for (const m of matchData.matches) {
-                    if (m.voters.length >= data.members.length && m.menuItem) {
-                      const dish = m.menuItem;
-                      setConfetti(true);
-                      setMatchNotification(`Everyone matched on ${dish.name || dish.nameLocal}! Loading restaurants...`);
-                      setTimeout(() => {
-                        setConfetti(false);
-                        setMatchNotification(null);
-                        loadRestaurantsForDishRef.current?.({
+                  if (!fullMatch && !showDishRestaurants) {
+                    for (const m of matchData.matches) {
+                      if (m.voters.length >= data.members.length && m.menuItem) {
+                        const dish = m.menuItem;
+                        setConfetti(true);
+                        setMatchIsDish(true);
+                        setMatchedDish({
                           id: dish.id,
                           name: dish.name,
                           nameLocal: dish.nameLocal || "",
@@ -698,8 +700,21 @@ export default function GroupSwipe() {
                           imageUrl: dish.imageUrl || "",
                           swipeRightCount: dish.swipeRightCount || 0,
                         });
-                      }, 2000);
-                      break;
+                        setMatchedItem({
+                          id: dish.id,
+                          name: dish.name || dish.nameLocal || "",
+                          category: dish.category || "",
+                          tags: dish.tags || [],
+                          description: dish.description || "",
+                          priceLevel: 0,
+                          rating: "",
+                          address: "",
+                          imageUrl: dish.imageUrl || "",
+                          isNew: false,
+                        });
+                        setFullMatch(true);
+                        break;
+                      }
                     }
                   }
                 } else {
@@ -879,12 +894,21 @@ export default function GroupSwipe() {
           const matched = dishItems.find(d => d.id === match.menuItemId);
           if (matched && match.voters.length >= memberCount) {
             setConfetti(true);
-            setMatchNotification(`Everyone matched on ${matched.name}! Loading restaurants...`);
-            setTimeout(() => {
-              setConfetti(false);
-              setMatchNotification(null);
-              loadRestaurantsForDish(matched);
-            }, 2000);
+            setMatchIsDish(true);
+            setMatchedDish(matched);
+            setMatchedItem({
+              id: matched.id,
+              name: matched.name,
+              category: matched.category || "",
+              tags: matched.tags || [],
+              description: matched.description || "",
+              priceLevel: 0,
+              rating: "",
+              address: "",
+              imageUrl: matched.imageUrl || "",
+              isNew: false,
+            });
+            setFullMatch(true);
             return;
           }
         }
@@ -1519,7 +1543,103 @@ export default function GroupSwipe() {
     );
   }
 
+  if (showDishRestaurants && matchedDish) {
+    return (
+      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col" data-testid="dish-restaurants-page">
+        <div className="flex-shrink-0 pt-[max(env(safe-area-inset-top),1rem)] px-5 pb-3 border-b border-gray-100 bg-white/90 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <button onClick={() => { setShowDishRestaurants(false); setFullMatch(true); }} className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center active:scale-95 transition-transform" data-testid="button-back-to-match">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-[17px] font-bold truncate">{t("group_swipe.restaurants_with", { name: matchedDish.name })}</h1>
+              <p className="text-[12px] text-muted-foreground">{t("group_swipe.places_found", { count: dishRestaurants.length })}</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+          {loadingDishRestaurants ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="w-8 h-8 border-2 border-[#FFCC02] border-t-transparent rounded-full animate-spin mb-3" />
+              <p className="text-sm text-muted-foreground">{t("group_swipe.finding_restaurants")}</p>
+            </div>
+          ) : dishRestaurants.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <span className="text-4xl mb-3">🍽️</span>
+              <p className="text-sm text-muted-foreground">{t("group_swipe.no_restaurants_found")}</p>
+            </div>
+          ) : (
+            dishRestaurants.map((r, idx) => (
+              <motion.div
+                key={r.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.06 }}
+                onClick={() => { sessionStorage.setItem("group_results_return", `/group/swipe?session=${sessionCode}`); navigate(`/restaurant/${r.id}`); }}
+                className="flex gap-3 bg-white rounded-2xl p-3 border border-gray-100 cursor-pointer active:scale-[0.98] transition-transform"
+                style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.04)" }}
+                data-testid={`restaurant-card-${r.id}`}
+              >
+                <img src={r.imageUrl} alt={r.name} className="w-20 h-20 rounded-xl object-cover flex-shrink-0" onError={handleImageError} />
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <h3 className="font-bold text-[14px] truncate">{r.name}</h3>
+                  <p className="text-[12px] text-muted-foreground truncate mt-0.5">{r.category}</p>
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <span className="text-[11px] font-medium flex items-center gap-0.5">★ {r.rating}</span>
+                    <span className="text-[11px] text-muted-foreground">{"฿".repeat(r.priceLevel)}</span>
+                    {r.address && <span className="text-[11px] text-muted-foreground truncate">· {r.address}</span>}
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0 self-center" />
+              </motion.div>
+            ))
+          )}
+        </div>
+        <div className="flex-shrink-0 px-5 py-4 pb-[max(env(safe-area-inset-bottom),1.25rem)] border-t border-gray-50 bg-white/80 backdrop-blur-sm">
+          <button
+            onClick={() => navigate("/")}
+            data-testid="button-home-restaurants"
+            className="w-full py-3.5 rounded-full bg-foreground text-white font-bold text-[14px] active:scale-[0.96] transition-transform"
+          >
+            {t("group_swipe.back_to_home")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (fullMatch && matchedItem) {
+    const handleViewRestaurants = async () => {
+      if (!matchedDish) return;
+      setDishRestaurants([]);
+      setLoadingDishRestaurants(true);
+      setFullMatch(false);
+      setShowDishRestaurants(true);
+      try {
+        const res = await fetchWithTimeout(`/api/menu-items/${matchedDish.id}/restaurants`);
+        if (res.ok) {
+          const data = await res.json();
+          const items: MenuItem[] = data.map((r: any) => ({
+            id: r.id,
+            name: r.name,
+            category: r.category || "Restaurant",
+            tags: buildTagsFromCategory(r.category || ""),
+            description: r.description || "",
+            priceLevel: r.priceLevel || r.price_level || 2,
+            rating: r.rating || "4.0",
+            address: r.address || "Bangkok",
+            imageUrl: r.imageUrl || r.image_url || "",
+            isNew: r.isNew || r.is_new || false,
+          }));
+          setDishRestaurants(items);
+        }
+      } catch (err) {
+        console.error("Failed to load restaurants:", err);
+      } finally {
+        setLoadingDishRestaurants(false);
+      }
+    };
+
     return (
       <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col relative overflow-hidden" data-testid="group-match-page">
         <div className="absolute inset-0 pointer-events-none">
@@ -1551,7 +1671,7 @@ export default function GroupSwipe() {
             transition={{ delay: 0.2, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
             className="text-[26px] sm:text-[32px] font-semibold text-center mb-1"
           >
-            It's a match!
+            {t("group_swipe.its_a_match")}
           </motion.h1>
           <motion.p
             initial={{ y: 16, opacity: 0 }}
@@ -1559,7 +1679,7 @@ export default function GroupSwipe() {
             transition={{ delay: 0.3, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
             className="text-muted-foreground text-center mb-3 text-[14px] sm:text-[15px] leading-snug max-w-[260px]"
           >
-            Everyone agreed on {matchedItem.name}!
+            {t("group_swipe.everyone_agreed", { name: matchedItem.name })}
           </motion.p>
           <motion.div
             initial={{ opacity: 0 }}
@@ -1593,8 +1713,7 @@ export default function GroupSwipe() {
             initial={{ y: 24, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            onClick={() => { sessionStorage.setItem("group_results_return", `/group/swipe?session=${sessionCode}`); navigate(`/restaurant/${matchedItem.id}`); }}
-            className="w-full max-w-[280px] rounded-[20px] overflow-hidden cursor-pointer active:scale-[0.97] transition-transform"
+            className="w-full max-w-[280px] rounded-[20px] overflow-hidden"
             style={{ boxShadow: "0 20px 60px -15px rgba(0,0,0,0.18)" }}
             data-testid={`match-card-${matchedItem.id}`}
           >
@@ -1605,11 +1724,13 @@ export default function GroupSwipe() {
             <div className="p-4 bg-white">
               <h3 className="font-semibold text-base leading-tight truncate">{matchedItem.name}</h3>
               <p className="text-[13px] text-muted-foreground mt-0.5 truncate">{matchedItem.category}</p>
-              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                <span className="text-[11px] font-medium">{"\u2605"} {matchedItem.rating}</span>
-                <span className="text-[11px] text-muted-foreground">{"\u0E3F".repeat(matchedItem.priceLevel)}</span>
-                <span className="text-[11px] text-muted-foreground truncate max-w-[140px]">{"\u00B7"} {matchedItem.address}</span>
-              </div>
+              {!matchIsDish && (
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  <span className="text-[11px] font-medium">{"\u2605"} {matchedItem.rating}</span>
+                  <span className="text-[11px] text-muted-foreground">{"\u0E3F".repeat(matchedItem.priceLevel)}</span>
+                  <span className="text-[11px] text-muted-foreground truncate max-w-[140px]">{"\u00B7"} {matchedItem.address}</span>
+                </div>
+              )}
               <div className="flex flex-wrap gap-1 mt-2.5">
                 {matchedItem.tags.slice(0, 3).map((tag) => (
                   <span key={tag} className="text-[10px] bg-gray-100 rounded-full px-2 py-0.5 font-medium">{tag}</span>
@@ -1625,12 +1746,13 @@ export default function GroupSwipe() {
               initial={{ y: 16, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.85, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              onClick={() => navigate(`/restaurant/${matchedItem.id}`)}
+              onClick={matchIsDish ? handleViewRestaurants : () => navigate(`/restaurant/${matchedItem.id}`)}
               data-testid="button-view-restaurant"
-              className="w-full py-3.5 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-[14px] active:scale-[0.96] transition-transform duration-200"
+              className="w-full py-3.5 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-[14px] active:scale-[0.96] transition-transform duration-200 flex items-center justify-center gap-2"
               style={{ boxShadow: "var(--shadow-glow-primary)" }}
             >
-              View Restaurant
+              <Utensils className="w-4 h-4" />
+              {matchIsDish ? t("group_swipe.view_restaurants") : t("group_swipe.view_restaurant")}
             </motion.button>
 
             <motion.div
@@ -1640,22 +1762,22 @@ export default function GroupSwipe() {
               className="flex gap-2 w-full"
             >
               <button
-                onClick={() => { setFullMatch(false); fetchRankedResults().then(() => setShowResults(true)); }}
+                onClick={() => { setFullMatch(false); setMatchIsDish(false); setMatchedDish(null); setDishRestaurants([]); setShowDishRestaurants(false); fetchRankedResults().then(() => setShowResults(true)); }}
                 data-testid="button-view-summary"
                 className="flex-1 py-3 rounded-full bg-white border border-gray-200 text-foreground font-bold text-[13px] active:scale-[0.96] transition-transform flex items-center justify-center gap-1.5"
                 style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
               >
                 <Trophy className="w-3.5 h-3.5" />
-                Top Picks
+                {t("group_swipe.top_picks")}
               </button>
 
               <button
-                onClick={handleContinueSwiping}
+                onClick={() => { setFullMatch(false); setMatchIsDish(false); setMatchedDish(null); setDishRestaurants([]); setShowDishRestaurants(false); handleContinueSwiping(); }}
                 data-testid="button-keep-swiping"
                 className="flex-1 py-3 rounded-full bg-white border border-gray-200 text-foreground font-bold text-[13px] active:scale-[0.96] transition-transform"
                 style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
               >
-                {(swipePhase === "restaurant" && currentIndex >= menuItems.length) ? "Results" : "Keep Swiping"}
+                {t("group_swipe.keep_swiping")}
               </button>
 
               {isHost && (
