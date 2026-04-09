@@ -2,9 +2,13 @@
 type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
 export const modules: ModuleMap = {
   "./components/mockups/group-journey/GroupJourney.tsx": () => import("../components/mockups/group-journey/GroupJourney.tsx"),
-  "./components/mockups/night-plan/NightPlanJourney.tsx": () => import("../components/mockups/night-plan/NightPlanJourney.tsx"),
   "./components/mockups/solo-journey/SoloJourney.tsx": () => import("../components/mockups/solo-journey/SoloJourney.tsx"),
+  "./components/mockups/night-plan/NightPlanJourney.tsx": () => import("../components/mockups/night-plan/NightPlanJourney.tsx"),
   "./components/mockups/toast-home/AirbnbStyle.tsx": () => import("../components/mockups/toast-home/AirbnbStyle.tsx"),
+  "./components/mockups/toast-platform/ActivityDiscovery.tsx": () => import("../components/mockups/toast-platform/ActivityDiscovery.tsx"),
+  "./components/mockups/toast-platform/ContinuationBridge.tsx": () => import("../components/mockups/toast-platform/ContinuationBridge.tsx"),
+  "./components/mockups/toast-platform/NewHome.tsx": () => import("../components/mockups/toast-platform/NewHome.tsx"),
+  "./components/mockups/toast-platform/PlanSummary.tsx": () => import("../components/mockups/toast-platform/PlanSummary.tsx"),
   "./components/mockups/trending-feed/CardReveal.tsx": () => import("../components/mockups/trending-feed/CardReveal.tsx"),
   "./components/mockups/trending-feed/ImmersiveStory.tsx": () => import("../components/mockups/trending-feed/ImmersiveStory.tsx")
 };
