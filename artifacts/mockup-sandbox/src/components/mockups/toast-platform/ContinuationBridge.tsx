@@ -1,134 +1,126 @@
 import React from "react";
-import { ChevronRight, IceCream, Wine, Gamepad2, Ticket, MapPin } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Check, IceCream, Wine, Compass, Ticket } from "lucide-react";
 
 export function ContinuationBridge() {
-  const selectedRestaurant = {
-    name: "Charmgang Curry Shop",
-    area: "Talad Noi, Bangkok",
-    image:
-      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=800",
-  };
-
-  const categories = [
-    {
-      id: "dessert",
-      title: "Dessert",
-      subtext: "Sweet tooth calling",
-      icon: <IceCream className="w-5 h-5 text-white" />,
-      image:
-        "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&q=80&w=600",
-      color: "from-pink-500/80 to-pink-900/90",
-    },
-    {
-      id: "drinks",
-      title: "Drinks",
-      subtext: "Keep the vibe alive",
-      icon: <Wine className="w-5 h-5 text-white" />,
-      image:
-        "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80&w=600",
-      color: "from-blue-500/80 to-indigo-900/90",
-    },
-    {
-      id: "activities",
-      title: "Activities",
-      subtext: "Games & fun times",
-      icon: <Gamepad2 className="w-5 h-5 text-white" />,
-      image:
-        "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=600",
-      color: "from-green-500/80 to-emerald-900/90",
-    },
-    {
-      id: "events",
-      title: "Events",
-      subtext: "Live music & more",
-      icon: <Ticket className="w-5 h-5 text-white" />,
-      image:
-        "https://images.unsplash.com/photo-1540039155733-d76e6d488311?auto=format&fit=crop&q=80&w=600",
-      color: "from-purple-500/80 to-violet-900/90",
-    },
-  ];
-
   return (
-    <div className="w-[390px] min-h-[844px] bg-[#FAFAF8] font-['Figtree',sans-serif] mx-auto overflow-hidden relative shadow-2xl rounded-[40px] border-[8px] border-black">
-      {/* Confetti / Celebration Header */}
-      <div className="px-6 pt-12 pb-6 bg-gradient-to-b from-[#FFCC02]/20 to-transparent">
-        <div className="inline-block px-3 py-1 bg-[#FFCC02] text-black font-bold text-sm rounded-full mb-4 shadow-sm transform -rotate-2">
-          🎉 Match Found!
-        </div>
+    <div className="w-[390px] min-h-[844px] bg-[#FAFAF8] overflow-hidden relative font-['Figtree',sans-serif] mx-auto flex flex-col shadow-2xl">
+      {/* Background ambient gradient */}
+      <div className="absolute top-0 inset-x-0 h-[300px] bg-gradient-to-b from-[#FFCC02]/10 via-[#FFCC02]/5 to-transparent pointer-events-none" />
+
+      {/* Safe Area Padding */}
+      <div className="pt-[44px] px-6 flex flex-col flex-1 relative z-10 pb-6">
         
-        {/* Match Context Card */}
-        <div className="bg-white rounded-2xl p-3 shadow-sm border border-black/5 flex items-center gap-4 mb-8">
-          <img
-            src={selectedRestaurant.image}
-            alt={selectedRestaurant.name}
-            className="w-16 h-16 rounded-xl object-cover"
-          />
-          <div className="flex-1">
-            <h3 className="font-bold text-gray-900 leading-tight">
-              {selectedRestaurant.name}
-            </h3>
-            <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-              <MapPin className="w-3 h-3" />
-              {selectedRestaurant.area}
-            </p>
+        {/* Matched Restaurant Context */}
+        <div className="mt-2 bg-white rounded-2xl p-2 pr-4 flex items-center gap-3 border border-neutral-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] mb-8">
+          <div className="w-12 h-12 rounded-xl overflow-hidden relative shrink-0">
+            <img 
+              src="https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=200&auto=format&fit=crop&q=80" 
+              alt="Gaggan Anand"
+              className="w-full h-full object-cover"
+            />
           </div>
-          <div className="w-8 h-8 rounded-full bg-[#FFCC02]/20 flex items-center justify-center">
-            <ChevronRight className="w-4 h-4 text-[#CC9900]" />
+          <div className="flex-1 min-w-0">
+            <h3 className="text-[15px] font-bold text-neutral-900 truncate">Gaggan Anand</h3>
+            <p className="text-[13px] font-medium text-neutral-500 truncate">Progressive Indian • Sukhumvit</p>
+          </div>
+          <div className="shrink-0 flex items-center gap-1 bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full border border-emerald-100/50">
+            <span className="text-[12px] font-bold tracking-tight">Matched</span>
+            <Check className="w-3.5 h-3.5 stroke-[3]" />
           </div>
         </div>
 
-        {/* Transition Headline */}
-        <div className="space-y-2 mb-6">
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-tight">
-            Your night doesn't <br /> end here ✨
+        {/* Headline Area */}
+        <div className="mb-8">
+          <h1 className="text-[28px] font-extrabold tracking-[-0.03em] text-neutral-900 leading-[1.1] mb-2">
+            Your night doesn't<br />end here
           </h1>
-          <p className="text-gray-600 text-lg">
-            Where to next? Keep the plan going.
+          <p className="text-[14px] font-medium text-neutral-500">
+            Add something amazing to your plan
           </p>
         </div>
-      </div>
 
-      {/* Categories Grid */}
-      <div className="px-6 grid grid-cols-2 gap-4 pb-24">
-        {categories.map((category) => (
-          <button
-            key={category.id}
-            className="relative h-48 rounded-3xl overflow-hidden group text-left active:scale-95 transition-transform duration-200 shadow-sm"
-          >
-            <img
-              src={category.image}
-              alt={category.title}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+        {/* Category Cards Grid */}
+        <div className="grid grid-cols-2 gap-3 mb-auto">
+          {/* Dessert */}
+          <div className="group relative h-[170px] rounded-2xl overflow-hidden cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.97] transition-all bg-white">
+            <img 
+              src="https://images.unsplash.com/photo-1551024601-bec78aea704b?w=600&auto=format&fit=crop&q=80" 
+              alt="Dessert"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            <div
-              className={`absolute inset-0 bg-gradient-to-t ${category.color} opacity-90`}
-            />
-            
-            <div className="absolute inset-0 p-4 flex flex-col justify-between">
-              <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-inner">
-                {category.icon}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#B91C1C]/90 via-[#BE123C]/40 to-transparent mix-blend-multiply" />
+            <div className="absolute inset-x-0 bottom-0 p-4 flex flex-col justify-end">
+              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-3 text-white">
+                <IceCream className="w-[18px] h-[18px] stroke-[2]" />
               </div>
-              
-              <div>
-                <h3 className="text-white font-bold text-xl mb-1 drop-shadow-sm">
-                  {category.title}
-                </h3>
-                <p className="text-white/80 text-xs font-medium leading-tight drop-shadow-sm">
-                  {category.subtext}
-                </p>
-              </div>
+              <h3 className="text-[16px] font-bold text-white mb-0.5 tracking-tight">Dessert</h3>
+              <p className="text-[12px] font-medium text-white/80">Something sweet</p>
             </div>
+          </div>
+
+          {/* Drinks */}
+          <div className="group relative h-[170px] rounded-2xl overflow-hidden cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.97] transition-all bg-white">
+            <img 
+              src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80" 
+              alt="Drinks"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#312E81]/90 via-[#4338CA]/40 to-transparent mix-blend-multiply" />
+            <div className="absolute inset-x-0 bottom-0 p-4 flex flex-col justify-end">
+              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-3 text-white">
+                <Wine className="w-[18px] h-[18px] stroke-[2]" />
+              </div>
+              <h3 className="text-[16px] font-bold text-white mb-0.5 tracking-tight">Drinks</h3>
+              <p className="text-[12px] font-medium text-white/80">Keep the vibe going</p>
+            </div>
+          </div>
+
+          {/* Activities */}
+          <div className="group relative h-[170px] rounded-2xl overflow-hidden cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.97] transition-all bg-white">
+            <img 
+              src="https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=600&auto=format&fit=crop&q=80" 
+              alt="Activities"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#064E3B]/90 via-[#047857]/40 to-transparent mix-blend-multiply" />
+            <div className="absolute inset-x-0 bottom-0 p-4 flex flex-col justify-end">
+              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-3 text-white">
+                <Compass className="w-[18px] h-[18px] stroke-[2]" />
+              </div>
+              <h3 className="text-[16px] font-bold text-white mb-0.5 tracking-tight">Activities</h3>
+              <p className="text-[12px] font-medium text-white/80">Fun times ahead</p>
+            </div>
+          </div>
+
+          {/* Events */}
+          <div className="group relative h-[170px] rounded-2xl overflow-hidden cursor-pointer shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.97] transition-all bg-white">
+            <img 
+              src="https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=600&auto=format&fit=crop&q=80" 
+              alt="Events"
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#7C2D12]/90 via-[#B45309]/40 to-transparent mix-blend-multiply" />
+            <div className="absolute inset-x-0 bottom-0 p-4 flex flex-col justify-end">
+              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-3 text-white">
+                <Ticket className="w-[18px] h-[18px] stroke-[2]" />
+              </div>
+              <h3 className="text-[16px] font-bold text-white mb-0.5 tracking-tight">Events</h3>
+              <p className="text-[12px] font-medium text-white/80">Live & local</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Skip Link */}
+        <div className="mt-6 flex justify-center mb-2">
+          <button className="text-[13px] font-medium text-neutral-400 hover:text-neutral-600 transition-colors py-2 px-4">
+            I'm done for tonight
           </button>
-        ))}
+        </div>
+
       </div>
 
-      {/* Skip / Footer Action */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#FAFAF8] via-[#FAFAF8] to-transparent">
-        <button className="w-full py-4 text-center text-gray-500 font-semibold hover:text-gray-900 transition-colors">
-          Skip — I just want food for now
-        </button>
-      </div>
+      {/* Bottom Indicator */}
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-[134px] h-[5px] bg-black rounded-full opacity-20" />
     </div>
   );
 }
