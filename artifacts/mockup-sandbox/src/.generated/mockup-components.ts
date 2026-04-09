@@ -2,8 +2,12 @@
 type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
 export const modules: ModuleMap = {
   "./components/mockups/group-journey/GroupJourney.tsx": () => import("../components/mockups/group-journey/GroupJourney.tsx"),
-  "./components/mockups/solo-journey/SoloJourney.tsx": () => import("../components/mockups/solo-journey/SoloJourney.tsx"),
   "./components/mockups/night-plan/NightPlanJourney.tsx": () => import("../components/mockups/night-plan/NightPlanJourney.tsx"),
+  "./components/mockups/solo-journey/SoloJourney.tsx": () => import("../components/mockups/solo-journey/SoloJourney.tsx"),
+  "./components/mockups/toast-flows/MatchReveal.tsx": () => import("../components/mockups/toast-flows/MatchReveal.tsx"),
+  "./components/mockups/toast-flows/SessionLobby.tsx": () => import("../components/mockups/toast-flows/SessionLobby.tsx"),
+  "./components/mockups/toast-flows/UpgradePrompt.tsx": () => import("../components/mockups/toast-flows/UpgradePrompt.tsx"),
+  "./components/mockups/toast-flows/VenueDetails.tsx": () => import("../components/mockups/toast-flows/VenueDetails.tsx"),
   "./components/mockups/toast-home/AirbnbStyle.tsx": () => import("../components/mockups/toast-home/AirbnbStyle.tsx"),
   "./components/mockups/toast-platform/ActivityDiscovery.tsx": () => import("../components/mockups/toast-platform/ActivityDiscovery.tsx"),
   "./components/mockups/toast-platform/ContinuationBridge.tsx": () => import("../components/mockups/toast-platform/ContinuationBridge.tsx"),

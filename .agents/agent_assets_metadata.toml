@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "md0oykLl7-WWG9LQl0m3e"
+uri = "file://artifacts/mockup-sandbox/public/images/gaggan.jpg"
+type = "image"
+title = "high end progressive indian fine dining restaurant interior modern romantic atmospheric lighting"
