@@ -119,7 +119,7 @@ export function ToastMix() {
         <div className="h-1 w-[120px] mx-auto mt-3 bg-neutral-200 rounded-full overflow-hidden">
           <div 
             className="h-full bg-[#FFCC02] rounded-full transition-all duration-75 ease-linear"
-            style={{ width: \`\${progress}%\` }}
+            style={{ width: `${progress}%` }}
           />
         </div>
       </div>
