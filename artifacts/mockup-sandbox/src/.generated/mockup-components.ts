@@ -43,6 +43,10 @@ export const modules: ModuleMap = {
   "./components/mockups/toast-ux-system/PlanSystem.tsx": () => import("../components/mockups/toast-ux-system/PlanSystem.tsx"),
   "./components/mockups/toast-ux-system/ResultBridge.tsx": () => import("../components/mockups/toast-ux-system/ResultBridge.tsx"),
   "./components/mockups/toast-ux-system/SoloDecision.tsx": () => import("../components/mockups/toast-ux-system/SoloDecision.tsx"),
+  "./components/mockups/toast-ux-system/ToastMixA.tsx": () => import("../components/mockups/toast-ux-system/ToastMixA.tsx"),
+  "./components/mockups/toast-ux-system/ToastMixB.tsx": () => import("../components/mockups/toast-ux-system/ToastMixB.tsx"),
+  "./components/mockups/toast-ux-system/ToastMixC.tsx": () => import("../components/mockups/toast-ux-system/ToastMixC.tsx"),
+  "./components/mockups/toast-ux-system/ToastMixD.tsx": () => import("../components/mockups/toast-ux-system/ToastMixD.tsx"),
   "./components/mockups/trending-feed/CardReveal.tsx": () => import("../components/mockups/trending-feed/CardReveal.tsx"),
   "./components/mockups/trending-feed/ImmersiveStory.tsx": () => import("../components/mockups/trending-feed/ImmersiveStory.tsx")
 };
