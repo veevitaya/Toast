@@ -6,3 +6,15 @@ id = "md0oykLl7-WWG9LQl0m3e"
 uri = "file://artifacts/mockup-sandbox/public/images/gaggan.jpg"
 type = "image"
 title = "high end progressive indian fine dining restaurant interior modern romantic atmospheric lighting"
+
+[[outputs]]
+id = "JUdxlfZ6ixH5Vv7T2sH7G"
+uri = "file://.local/exports/toast-main-app.tar.gz"
+type = "unspecified"
+title = "Toast Main App — Complete Claude Export (677KB)"
+
+[[outputs]]
+id = "lxUL54RbKKNE3aiw-U0_H"
+uri = "file://.local/exports/toast-main-app/DESIGN_SYSTEM.md"
+type = "text"
+title = "DESIGN_SYSTEM.md — Brief for Claude"
