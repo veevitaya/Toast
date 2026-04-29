@@ -485,6 +485,8 @@ export default function Profile() {
               exit={{ opacity: 0, x: 20 }}
               transition={springConfig}
             >
+              <TasteDNASection />
+
               <StatsRow t={t} />
 
               <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-foreground/35 mb-2.5 mt-3 px-1">{t("profile.section_food")}</p>
@@ -726,8 +728,6 @@ export default function Profile() {
                   <SavedSection t={t} />
                 </div>
               </div>
-
-              <TasteDNASection />
 
               <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-foreground/35 mb-2.5 px-1">{t("profile.section_app")}</p>
               <div className="mb-6">
@@ -3442,80 +3442,182 @@ function OwnerDashboard() {
   );
 }
 
+const PERSONA_NAMES: Record<string, string> = {
+  comfort: "Comfort Seeker",
+  exploration: "Bold Explorer",
+  spicy: "Spice Lover",
+  healthy: "Wellness-Forward",
+  indulgent: "Indulgent Diner",
+  budget: "Smart Spender",
+  novelty: "Trend Hunter",
+  distance: "Neighborhood Local",
+};
+
 function TasteDNASection() {
   const { payload: bootstrap } = useBootstrapSession();
   const dna = bootstrap?.tasteDnaSummary;
+  const [expanded, setExpanded] = useState(false);
 
-  if (!dna) return null;
+  const computed = useMemo(() => {
+    if (!dna) return null;
+    const dims = [
+      { key: "comfort" as const, label: "Comfort", icon: Heart, color: "#22c55e", value: dna.comfort },
+      { key: "exploration" as const, label: "Explorer", icon: TrendingUp, color: "#3b82f6", value: dna.exploration },
+      { key: "spicy" as const, label: "Spicy", icon: Zap, color: "#ef4444", value: dna.spicy },
+      { key: "healthy" as const, label: "Healthy", icon: Star, color: "#10b981", value: dna.healthy },
+      { key: "indulgent" as const, label: "Indulgent", icon: Sparkles, color: "#f59e0b", value: dna.indulgent },
+      { key: "budget" as const, label: "Value", icon: Clock, color: "#8b5cf6", value: dna.budget },
+      { key: "novelty" as const, label: "Novelty", icon: Brain, color: "#ec4899", value: dna.novelty },
+      { key: "distance" as const, label: "Distance", icon: MapPin, color: "#06b6d4", value: dna.distance },
+    ];
+    const sortedDims = [...dims].sort((a, b) => b.value - a.value);
+    const dom = sortedDims[0];
+    return {
+      sorted: sortedDims,
+      dominant: dom,
+      top4: sortedDims.slice(0, 4),
+      persona: PERSONA_NAMES[dom.key] ?? `${dom.label} type`,
+    };
+  }, [dna]);
 
-  const dimensions = [
-    { key: "comfort" as const, label: "Comfort", icon: Heart, color: "#22c55e", value: dna.comfort },
-    { key: "exploration" as const, label: "Explorer", icon: TrendingUp, color: "#3b82f6", value: dna.exploration },
-    { key: "spicy" as const, label: "Spicy", icon: Zap, color: "#ef4444", value: dna.spicy },
-    { key: "healthy" as const, label: "Healthy", icon: Star, color: "#10b981", value: dna.healthy },
-    { key: "indulgent" as const, label: "Indulgent", icon: Sparkles, color: "#f59e0b", value: dna.indulgent },
-    { key: "budget" as const, label: "Value", icon: Clock, color: "#8b5cf6", value: dna.budget },
-    { key: "novelty" as const, label: "Novelty", icon: Brain, color: "#ec4899", value: dna.novelty },
-    { key: "distance" as const, label: "Distance", icon: MapPin, color: "#06b6d4", value: dna.distance },
-  ];
+  if (!computed) return null;
 
-  const dominant = dimensions.reduce((a, b) => a.value > b.value ? a : b);
+  const { sorted, dominant, top4, persona } = computed;
+  const DominantIcon = dominant.icon;
 
   return (
-    <>
-      <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-foreground/35 mb-2.5 px-1">Your Taste DNA</p>
-      <div className="mb-6">
+    <div className="mb-7 -mt-2">
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...springConfig, delay: 0.05 }}
+        className="relative rounded-[28px] overflow-hidden border border-black/[0.04] dark:border-border bg-white dark:bg-card"
+        style={{
+          boxShadow: "0 1px 3px rgba(0,0,0,0.03), 0 18px 48px -12px rgba(0,0,0,0.08)",
+        }}
+        data-testid="profile-taste-dna"
+      >
+        {/* Soft accent gradient tied to dominant trait */}
         <div
-          className="bg-white dark:bg-card rounded-[20px] overflow-hidden border border-black/[0.04] dark:border-border p-5"
-          style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.02)" }}
-          data-testid="profile-taste-dna"
-        >
-          <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-9 h-9 rounded-xl bg-violet-100 flex items-center justify-center">
-              <Brain className="w-5 h-5 text-violet-600" />
+          className="absolute inset-x-0 top-0 h-[140px] pointer-events-none"
+          style={{ background: `linear-gradient(180deg, ${dominant.color}14 0%, ${dominant.color}00 100%)` }}
+        />
+        <div
+          className="absolute -top-20 -right-20 w-56 h-56 rounded-full opacity-25 blur-3xl pointer-events-none"
+          style={{ background: dominant.color }}
+        />
+
+        <div className="relative px-6 pt-5 pb-5">
+          {/* Eyebrow */}
+          <div className="flex items-center gap-1.5 mb-2">
+            <span
+              className="inline-block w-1.5 h-1.5 rounded-full"
+              style={{ background: dominant.color }}
+            />
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: dominant.color }}>
+              Your Taste DNA
+            </p>
+          </div>
+
+          {/* Persona headline */}
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-[26px] font-extrabold tracking-[-0.01em] text-foreground leading-[1.1]" data-testid="text-taste-persona">
+                {persona}
+              </h3>
+              <p className="text-[12px] text-muted-foreground/90 mt-1.5 leading-snug">
+                Toast tunes every pick to your taste — refined with every swipe.
+              </p>
             </div>
-            <div>
-              <p className="text-[14px] font-bold text-foreground">Your Taste DNA</p>
-              <p className="text-[11px] text-muted-foreground">How Toast picks restaurants for you</p>
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{
+                background: `linear-gradient(135deg, ${dominant.color}26, ${dominant.color}10)`,
+                border: `1px solid ${dominant.color}30`,
+              }}
+            >
+              <DominantIcon className="w-[22px] h-[22px]" style={{ color: dominant.color }} strokeWidth={2.4} />
             </div>
           </div>
 
-          <div className="text-[11px] text-muted-foreground mb-4 leading-relaxed bg-violet-50/50 rounded-xl px-3 py-2 border border-violet-100/50">
-            <span className="font-semibold text-violet-700">{dominant.label}</span> is your strongest signal — Toast weighs this heavily when picking restaurants for you.
-          </div>
-
-          <div className="grid grid-cols-4 gap-3 mb-4">
-            {dimensions.slice(0, 4).map(({ key, label, icon: Icon, color, value }) => (
-              <div key={key} className="text-center">
-                <div className="w-10 h-10 rounded-xl mx-auto mb-1.5 flex items-center justify-center" style={{ backgroundColor: `${color}15` }}>
-                  <Icon className="w-4 h-4" style={{ color }} />
-                </div>
-                <p className="text-[14px] font-bold text-foreground">{value}%</p>
-                <p className="text-[9px] text-muted-foreground font-medium">{label}</p>
-              </div>
+          {/* Top-4 trait chips */}
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            {top4.map(({ key, label, icon: Icon, color, value }, idx) => (
+              <motion.div
+                key={key}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + idx * 0.05, duration: 0.35 }}
+                className="flex flex-col items-center justify-center gap-1 py-3 rounded-2xl bg-white/70 dark:bg-white/[0.06] border border-black/[0.04] dark:border-white/10"
+                style={{
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.02), inset 0 1px 0 rgba(255,255,255,0.6)",
+                }}
+                data-testid={`taste-chip-${key}`}
+              >
+                <Icon className="w-[15px] h-[15px]" style={{ color }} strokeWidth={2.4} />
+                <p className="text-[15px] font-extrabold tracking-tight text-foreground leading-none">
+                  {value}
+                  <span className="text-[9px] font-bold text-muted-foreground/70 ml-px">%</span>
+                </p>
+                <p className="text-[9px] text-muted-foreground/80 font-semibold uppercase tracking-[0.04em] leading-none">
+                  {label}
+                </p>
+              </motion.div>
             ))}
           </div>
 
-          <div className="space-y-2">
-            {dimensions.map(({ key, label, color, value }) => (
-              <div key={key} className="flex items-center gap-2">
-                <span className="text-[10px] text-muted-foreground w-[60px] flex-shrink-0">{label}</span>
-                <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${value}%` }}
-                    transition={{ delay: 0.2, duration: 0.5 }}
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: color }}
-                  />
+          {/* Expand toggle */}
+          <button
+            onClick={() => setExpanded(v => !v)}
+            aria-expanded={expanded}
+            aria-controls="taste-dna-breakdown"
+            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-semibold text-foreground/60 hover:text-foreground active:scale-[0.98] transition-all"
+            data-testid="button-taste-expand"
+          >
+            {expanded ? "Hide full breakdown" : "See full breakdown"}
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`} />
+          </button>
+
+          {/* Full breakdown bars */}
+          <AnimatePresence initial={false}>
+            {expanded && (
+              <motion.div
+                id="taste-dna-breakdown"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-2.5 pt-3 pb-1">
+                  {sorted.map(({ key, label, color, value }) => (
+                    <div key={key} className="flex items-center gap-3">
+                      <span className="text-[10.5px] text-muted-foreground/90 w-[64px] flex-shrink-0 font-medium">
+                        {label}
+                      </span>
+                      <div className="flex-1 h-[5px] bg-black/[0.05] dark:bg-white/[0.06] rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${value}%` }}
+                          transition={{ delay: 0.05, duration: 0.6, ease: "easeOut" }}
+                          className="h-full rounded-full"
+                          style={{ background: `linear-gradient(90deg, ${color}b3, ${color})` }}
+                        />
+                      </div>
+                      <span className="text-[10.5px] font-bold text-foreground/75 w-[28px] text-right tabular-nums">
+                        {value}%
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <span className="text-[10px] font-semibold text-foreground w-[26px] text-right">{value}%</span>
-              </div>
-            ))}
-          </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
-    </>
+      </motion.div>
+    </div>
   );
 }
 
