@@ -48,6 +48,10 @@ export interface BootstrapPayload {
   tasteDnaSummary: TasteDnaSummary;
   dailyPick: BootstrapPick | null;
   alternatives: BootstrapPick[];
+  // True when the recommendation engine couldn't find any restaurant that's
+  // a 90%+ match for this user's Taste DNA. The UI shows a 'we're learning
+  // your taste, swipe a few spots' empty state rather than a fake pick.
+  learningMode?: boolean;
 }
 
 const CACHE_KEY = "toast_bootstrap_v2";

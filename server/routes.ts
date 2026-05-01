@@ -1142,40 +1142,17 @@ export async function registerRoutes(
 
       let dailyPick: any = null;
       let alternatives: any[] = [];
+      // learningMode = true means "we couldn't find any restaurant that's truly a
+      // 90%+ match for this user's Taste DNA right now". The frontend uses this
+      // to show a 'we're still learning your taste, swipe a few spots' empty
+      // state instead of falling back to fake/inflated recommendations.
+      let learningMode = false;
 
       if (result) {
         dailyPick = result.primary;
         alternatives = result.alternatives;
       } else {
-        const fallback = allRestaurants.slice(0, 3);
-        if (fallback.length > 0) {
-          dailyPick = {
-            restaurantId: fallback[0].id,
-            name: fallback[0].name,
-            imageUrl: fallback[0].imageUrl,
-            category: fallback[0].category,
-            address: fallback[0].address,
-            district: fallback[0].district,
-            rating: fallback[0].rating,
-            priceLevel: fallback[0].priceLevel,
-            confidenceLabel: "Worth trying",
-            reasonChips: ["Popular nearby"],
-            match: 92,
-            distanceText: null,
-          };
-          alternatives = fallback.slice(1).map(r => ({
-            restaurantId: r.id,
-            name: r.name,
-            imageUrl: r.imageUrl,
-            category: r.category,
-            address: r.address,
-            district: r.district,
-            rating: r.rating,
-            priceLevel: r.priceLevel,
-            match: 90,
-            reasonChips: [],
-          }));
-        }
+        learningMode = true;
       }
 
       let sessionId: number | null = null;
@@ -1210,6 +1187,7 @@ export async function registerRoutes(
         tasteDnaSummary,
         dailyPick,
         alternatives,
+        learningMode,
       });
     } catch (err) {
       console.error("Bootstrap error:", err);

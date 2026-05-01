@@ -326,6 +326,11 @@ const TasteDNAPanel = memo(function TasteDNAPanel({ recs }: { recs: Personalized
 });
 
 function bootstrapToRecs(payload: BootstrapPayload): PersonalizedRec[] {
+  // When the server signals learningMode (no restaurant cleared the 90% Taste DNA
+  // bar) we deliberately return an empty list so the UI can show its "we're
+  // learning your taste" state instead of falling back to fake/inflated picks.
+  if (payload.learningMode) return [];
+
   const picks: PersonalizedRec[] = [];
   if (payload.dailyPick) {
     const p = payload.dailyPick;
@@ -371,6 +376,50 @@ const HeroSkeleton = memo(function HeroSkeleton() {
           <div className="h-[80px] bg-gray-50 rounded-xl flex-1" />
           <div className="h-[80px] bg-gray-50 rounded-xl flex-1" />
         </div>
+      </div>
+    </div>
+  );
+});
+
+// Shown when the recommendation engine couldn't find any restaurant >= 90%
+// match for this user's Taste DNA. Rather than show a fake/inflated pick,
+// we ask them to swipe a few spots so we can learn their taste honestly.
+const LearningModeCard = memo(function LearningModeCard({ onSwipe }: { onSwipe: () => void }) {
+  return (
+    <div className="p-4" data-testid="card-learning-mode">
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-1.5">
+          <Brain className="w-3.5 h-3.5 text-[#FFCC02]" />
+          <span className="text-[12px] font-bold text-foreground" data-testid="text-learning-mode-title">
+            Learning your taste
+          </span>
+        </div>
+      </div>
+      <p className="text-[11px] text-muted-foreground mb-3 leading-relaxed">
+        I want to find you a 90%+ match — not just any pick. Swipe a few spots and I'll surface your perfect one.
+      </p>
+
+      <button
+        type="button"
+        onClick={onSwipe}
+        className="w-full rounded-2xl bg-gradient-to-r from-[#FFCC02] to-[hsl(45,90%,65%)] text-foreground font-semibold text-[13px] py-3 px-4 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+        data-testid="button-learning-mode-swipe"
+      >
+        <Sparkles className="w-4 h-4" />
+        Start swiping to teach me
+        <ArrowRight className="w-4 h-4" />
+      </button>
+
+      <div className="mt-3 flex items-center gap-2">
+        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-gray-200 to-gray-300"
+            style={{ width: "20%" }}
+          />
+        </div>
+        <span className="text-[10px] text-muted-foreground font-medium flex-shrink-0">
+          confidence
+        </span>
       </div>
     </div>
   );
@@ -468,7 +517,15 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
           setApiRecsLoaded(true);
           return data;
         }
+        // Server returned an empty list -> the engine couldn't find any
+        // restaurant >= 90% match for this user's Taste DNA. Enter learning
+        // mode (empty recs) so the UI shows the honest empty state instead
+        // of falling back to inflated fake recommendations.
+        setRecs([]);
+        setApiRecsLoaded(true);
+        return [];
       }
+      // Network/server error -> safe to show fallback rather than block UI
       setRecs(FALLBACK_RECOMMENDATIONS);
       return FALLBACK_RECOMMENDATIONS;
     } catch {
@@ -504,6 +561,12 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
 
   const primaryRec = recs[0] || FALLBACK_RECOMMENDATIONS[0];
   const secondaryRecs = recs.slice(1, 3);
+
+  // We're in "learning mode" when the recommendation engine has finished but
+  // returned no restaurant >= 90% match for this user. In that case we show a
+  // gentle CTA to swipe more, instead of a fake "97% match" pick.
+  const isLearningMode =
+    !bootstrapLoading && !loading && recs.length === 0 && !!bootstrap;
 
   const promoteSecondary = useCallback((idx: number) => {
     setRecs(prev => {
@@ -754,6 +817,8 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
 
           {showSkeleton ? (
             <HeroSkeleton />
+          ) : isLearningMode ? (
+            <LearningModeCard onSwipe={() => navigate("/discover")} />
           ) : (
             <>
               <motion.div
