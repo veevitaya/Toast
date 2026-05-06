@@ -646,3 +646,91 @@ export const menuItems = pgTable("menu_items", {
 export const insertMenuItemSchema = createInsertSchema(menuItems).omit({ id: true });
 export type MenuItem = typeof menuItems.$inferSelect;
 export type InsertMenuItem = z.infer<typeof insertMenuItemSchema>;
+
+// ============================================================================
+// CONTACT US / PARTNERSHIPS
+// ============================================================================
+
+export const CONTACT_SUBMISSION_TYPES = [
+  "user_feedback",
+  "restaurant_partner",
+  "event_activity_partner",
+  "general_partner",
+] as const;
+export type ContactSubmissionType = typeof CONTACT_SUBMISSION_TYPES[number];
+
+export const CONTACT_STATUSES = [
+  "new", "reviewing", "contacted", "qualified", "not_a_fit", "converted", "archived",
+] as const;
+export const CONTACT_PRIORITIES = ["low", "medium", "high", "urgent"] as const;
+export const CONTACT_LEAD_QUALITIES = ["unknown", "low", "medium", "high", "strategic"] as const;
+
+export const contactSubmissions = pgTable("contact_submissions", {
+  id: serial("id").primaryKey(),
+  submissionType: text("submission_type").notNull(),
+  status: text("status").default("new"),
+  priority: text("priority").default("medium"),
+  leadQuality: text("lead_quality").default("unknown"),
+  name: text("name"),
+  email: text("email"),
+  phone: text("phone"),
+  lineId: text("line_id"),
+  preferredContactMethod: text("preferred_contact_method"),
+  companyName: text("company_name"),
+  roleTitle: text("role_title"),
+  businessType: text("business_type"),
+  location: text("location"),
+  websiteUrl: text("website_url"),
+  instagramUrl: text("instagram_url"),
+  googleMapsUrl: text("google_maps_url"),
+  interestType: text("interest_type").array().default([]),
+  message: text("message"),
+  metadata: jsonb("metadata"),
+  assignedTo: integer("assigned_to"),
+  internalNotes: text("internal_notes"),
+  tags: text("tags").array().default([]),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  archivedAt: text("archived_at"),
+}, (table) => ({
+  typeIdx: index("contact_submissions_type_idx").on(table.submissionType),
+  statusIdx: index("contact_submissions_status_idx").on(table.status),
+  createdIdx: index("contact_submissions_created_idx").on(table.createdAt),
+}));
+
+export const insertContactSubmissionSchema = createInsertSchema(contactSubmissions).omit({ id: true });
+export type ContactSubmission = typeof contactSubmissions.$inferSelect;
+export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>;
+
+export const contactSubmissionFiles = pgTable("contact_submission_files", {
+  id: serial("id").primaryKey(),
+  submissionId: integer("submission_id").notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type"),
+  fileSize: integer("file_size"),
+  createdAt: text("created_at").notNull(),
+}, (table) => ({
+  submissionIdx: index("contact_submission_files_submission_idx").on(table.submissionId),
+}));
+
+export const insertContactSubmissionFileSchema = createInsertSchema(contactSubmissionFiles).omit({ id: true });
+export type ContactSubmissionFile = typeof contactSubmissionFiles.$inferSelect;
+export type InsertContactSubmissionFile = z.infer<typeof insertContactSubmissionFileSchema>;
+
+export const contactSubmissionActivity = pgTable("contact_submission_activity", {
+  id: serial("id").primaryKey(),
+  submissionId: integer("submission_id").notNull(),
+  adminUserId: integer("admin_user_id"),
+  actionType: text("action_type").notNull(),
+  oldValue: text("old_value"),
+  newValue: text("new_value"),
+  note: text("note"),
+  createdAt: text("created_at").notNull(),
+}, (table) => ({
+  submissionIdx: index("contact_submission_activity_submission_idx").on(table.submissionId),
+}));
+
+export const insertContactSubmissionActivitySchema = createInsertSchema(contactSubmissionActivity).omit({ id: true });
+export type ContactSubmissionActivity = typeof contactSubmissionActivity.$inferSelect;
+export type InsertContactSubmissionActivity = z.infer<typeof insertContactSubmissionActivitySchema>;

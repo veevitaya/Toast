@@ -99,6 +99,15 @@ import {
   menuItems,
   type MenuItem,
   type InsertMenuItem,
+  contactSubmissions,
+  contactSubmissionFiles,
+  contactSubmissionActivity,
+  type ContactSubmission,
+  type InsertContactSubmission,
+  type ContactSubmissionFile,
+  type InsertContactSubmissionFile,
+  type ContactSubmissionActivity,
+  type InsertContactSubmissionActivity,
 } from "@shared/schema";
 import { eq, desc, and, or, gte, lte, gt, inArray, count, sql } from "drizzle-orm";
 
@@ -266,6 +275,43 @@ export interface IStorage {
   getRestaurantsByVibeStructured(vibe: string, limit: number): Promise<(Restaurant & { vibeMatch: number; matchReasons?: string[] })[]>;
   evaluateVibesFromDB(r: { category: string; priceLevel: number; address: string; operatingHours?: string | null; description?: string }): Promise<{ vibe: string; matched: boolean; reasons: string[] }[]>;
   assignVibesFromDB(r: { category: string; priceLevel: number; address: string; operatingHours?: string | null; description?: string }): Promise<string[]>;
+
+  // Contact submissions
+  createContactSubmission(data: InsertContactSubmission): Promise<ContactSubmission>;
+  listContactSubmissions(filters?: ContactSubmissionFilters): Promise<ContactSubmission[]>;
+  getContactSubmission(id: number): Promise<ContactSubmission | undefined>;
+  updateContactSubmission(id: number, updates: Partial<InsertContactSubmission>): Promise<ContactSubmission | undefined>;
+  archiveContactSubmission(id: number): Promise<ContactSubmission | undefined>;
+  unarchiveContactSubmission(id: number): Promise<ContactSubmission | undefined>;
+  countNewContactSubmissions(): Promise<number>;
+  addContactSubmissionFile(file: InsertContactSubmissionFile): Promise<ContactSubmissionFile>;
+  listContactSubmissionFiles(submissionId: number): Promise<ContactSubmissionFile[]>;
+  addContactSubmissionActivity(activity: InsertContactSubmissionActivity): Promise<ContactSubmissionActivity>;
+  listContactSubmissionActivity(submissionId: number): Promise<ContactSubmissionActivity[]>;
+}
+
+export interface ContactSubmissionFilters {
+  submissionType?: string;
+  status?: string;
+  priority?: string;
+  leadQuality?: string;
+  assignedTo?: number;
+  hasFiles?: boolean;
+  search?: string;
+  archived?: boolean;
+  dateFrom?: string;
+  dateTo?: string;
+  feedbackSatisfactionMin?: number;
+  feedbackSatisfactionMax?: number;
+  feedbackEaseMin?: number;
+  feedbackEaseMax?: number;
+  feedbackWouldRecommend?: string;
+  feedbackWouldUseAgain?: string;
+  feedbackHelpedDecide?: string;
+  feedbackRecommendationRelevance?: string;
+  feedbackDecisionTime?: string;
+  limit?: number;
+  offset?: number;
 }
 
 const MAX_CACHE_ENTRIES = 200;
@@ -1838,6 +1884,123 @@ export class DatabaseStorage implements IStorage {
       .orderBy(sql`count(*) DESC`)
       .limit(limit);
     return results.map(r => ({ restaurantId: r.menuItemId, score: r.score }));
+  }
+
+  // ===== Contact submissions =====
+  async createContactSubmission(data: InsertContactSubmission): Promise<ContactSubmission> {
+    const [row] = await db.insert(contactSubmissions).values(data).returning();
+    return row;
+  }
+
+  async listContactSubmissions(filters: ContactSubmissionFilters = {}): Promise<ContactSubmission[]> {
+    const conds: any[] = [];
+    if (filters.submissionType) conds.push(eq(contactSubmissions.submissionType, filters.submissionType));
+    if (filters.status) conds.push(eq(contactSubmissions.status, filters.status));
+    if (filters.priority) conds.push(eq(contactSubmissions.priority, filters.priority));
+    if (filters.leadQuality) conds.push(eq(contactSubmissions.leadQuality, filters.leadQuality));
+    if (typeof filters.assignedTo === "number") conds.push(eq(contactSubmissions.assignedTo, filters.assignedTo));
+    if (filters.archived === true) {
+      conds.push(sql`${contactSubmissions.archivedAt} IS NOT NULL`);
+    } else if (filters.archived === false) {
+      conds.push(sql`${contactSubmissions.archivedAt} IS NULL`);
+    }
+    if (filters.dateFrom) conds.push(gte(contactSubmissions.createdAt, filters.dateFrom));
+    if (filters.dateTo) conds.push(lte(contactSubmissions.createdAt, filters.dateTo));
+    if (filters.search) {
+      const q = `%${filters.search.toLowerCase()}%`;
+      conds.push(sql`(
+        LOWER(COALESCE(${contactSubmissions.name}, '')) LIKE ${q}
+        OR LOWER(COALESCE(${contactSubmissions.email}, '')) LIKE ${q}
+        OR LOWER(COALESCE(${contactSubmissions.phone}, '')) LIKE ${q}
+        OR LOWER(COALESCE(${contactSubmissions.lineId}, '')) LIKE ${q}
+        OR LOWER(COALESCE(${contactSubmissions.companyName}, '')) LIKE ${q}
+        OR LOWER(COALESCE(${contactSubmissions.location}, '')) LIKE ${q}
+        OR LOWER(COALESCE(${contactSubmissions.message}, '')) LIKE ${q}
+      )`);
+    }
+    // user_feedback metadata filters
+    const m = (key: string) => sql`(${contactSubmissions.metadata}->>${key})`;
+    if (typeof filters.feedbackSatisfactionMin === "number") conds.push(sql`${m("overall_satisfaction_score")}::int >= ${filters.feedbackSatisfactionMin}`);
+    if (typeof filters.feedbackSatisfactionMax === "number") conds.push(sql`${m("overall_satisfaction_score")}::int <= ${filters.feedbackSatisfactionMax}`);
+    if (typeof filters.feedbackEaseMin === "number") conds.push(sql`${m("ease_of_use_score")}::int >= ${filters.feedbackEaseMin}`);
+    if (typeof filters.feedbackEaseMax === "number") conds.push(sql`${m("ease_of_use_score")}::int <= ${filters.feedbackEaseMax}`);
+    if (filters.feedbackWouldRecommend) conds.push(sql`${m("would_recommend_to_friends")} = ${filters.feedbackWouldRecommend}`);
+    if (filters.feedbackWouldUseAgain) conds.push(sql`${m("would_use_again")} = ${filters.feedbackWouldUseAgain}`);
+    if (filters.feedbackHelpedDecide) conds.push(sql`${m("helped_make_decision")} = ${filters.feedbackHelpedDecide}`);
+    if (filters.feedbackRecommendationRelevance) conds.push(sql`${m("recommendation_relevance")} = ${filters.feedbackRecommendationRelevance}`);
+    if (filters.feedbackDecisionTime) conds.push(sql`${m("decision_time")} = ${filters.feedbackDecisionTime}`);
+
+    let q = db.select().from(contactSubmissions).$dynamic();
+    if (conds.length) q = q.where(and(...conds));
+    const rows = await q.orderBy(desc(contactSubmissions.id)).limit(filters.limit ?? 500).offset(filters.offset ?? 0);
+
+    if (filters.hasFiles === true || filters.hasFiles === false) {
+      const ids = rows.map(r => r.id);
+      if (!ids.length) return rows;
+      const fileRows = await db.select({ submissionId: contactSubmissionFiles.submissionId })
+        .from(contactSubmissionFiles).where(inArray(contactSubmissionFiles.submissionId, ids));
+      const withFiles = new Set(fileRows.map(f => f.submissionId));
+      return rows.filter(r => filters.hasFiles ? withFiles.has(r.id) : !withFiles.has(r.id));
+    }
+    return rows;
+  }
+
+  async getContactSubmission(id: number): Promise<ContactSubmission | undefined> {
+    const [row] = await db.select().from(contactSubmissions).where(eq(contactSubmissions.id, id)).limit(1);
+    return row;
+  }
+
+  async updateContactSubmission(id: number, updates: Partial<InsertContactSubmission>): Promise<ContactSubmission | undefined> {
+    const [row] = await db.update(contactSubmissions)
+      .set({ ...updates, updatedAt: new Date().toISOString() })
+      .where(eq(contactSubmissions.id, id))
+      .returning();
+    return row;
+  }
+
+  async archiveContactSubmission(id: number): Promise<ContactSubmission | undefined> {
+    const now = new Date().toISOString();
+    const [row] = await db.update(contactSubmissions)
+      .set({ archivedAt: now, status: "archived", updatedAt: now })
+      .where(eq(contactSubmissions.id, id))
+      .returning();
+    return row;
+  }
+
+  async unarchiveContactSubmission(id: number): Promise<ContactSubmission | undefined> {
+    const [row] = await db.update(contactSubmissions)
+      .set({ archivedAt: null, status: "reviewing", updatedAt: new Date().toISOString() })
+      .where(eq(contactSubmissions.id, id))
+      .returning();
+    return row;
+  }
+
+  async countNewContactSubmissions(): Promise<number> {
+    const [r] = await db.select({ c: count() }).from(contactSubmissions)
+      .where(and(eq(contactSubmissions.status, "new"), sql`${contactSubmissions.archivedAt} IS NULL`));
+    return Number(r?.c ?? 0);
+  }
+
+  async addContactSubmissionFile(file: InsertContactSubmissionFile): Promise<ContactSubmissionFile> {
+    const [row] = await db.insert(contactSubmissionFiles).values(file).returning();
+    return row;
+  }
+
+  async listContactSubmissionFiles(submissionId: number): Promise<ContactSubmissionFile[]> {
+    return await db.select().from(contactSubmissionFiles)
+      .where(eq(contactSubmissionFiles.submissionId, submissionId))
+      .orderBy(desc(contactSubmissionFiles.id));
+  }
+
+  async addContactSubmissionActivity(activity: InsertContactSubmissionActivity): Promise<ContactSubmissionActivity> {
+    const [row] = await db.insert(contactSubmissionActivity).values(activity).returning();
+    return row;
+  }
+
+  async listContactSubmissionActivity(submissionId: number): Promise<ContactSubmissionActivity[]> {
+    return await db.select().from(contactSubmissionActivity)
+      .where(eq(contactSubmissionActivity.submissionId, submissionId))
+      .orderBy(desc(contactSubmissionActivity.id));
   }
 }
 

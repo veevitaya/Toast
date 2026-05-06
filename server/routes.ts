@@ -4848,6 +4848,330 @@ export async function registerRoutes(
     }
   });
 
+  // =========================================================================
+  // CONTACT US / PARTNERSHIPS
+  // =========================================================================
+
+  const ALLOWED_FILE_TYPES = new Set([
+    "image/jpeg", "image/jpg", "image/png", "image/webp",
+    "application/pdf",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ]);
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB per file
+  const MAX_FILES_PER_SUBMISSION = 5;
+
+  function computePriority(submissionType: string, metadata: any): string {
+    if (submissionType === "user_feedback") {
+      const sat = Number(metadata?.overall_satisfaction_score);
+      const ease = Number(metadata?.ease_of_use_score);
+      if ((!isNaN(sat) && sat <= 4) || (!isNaN(ease) && ease <= 4)) return "high";
+    }
+    if (submissionType === "restaurant_partner") {
+      const bt = String(metadata?.business_type || "").toLowerCase();
+      if (["mall", "franchise", "food court"].includes(bt)) return "high";
+      const branches = Number(metadata?.number_of_branches);
+      if (!isNaN(branches) && branches > 1) return "high";
+    }
+    if (submissionType === "general_partner") {
+      const pt = String(metadata?.partnership_type || "");
+      if (["Investor/advisor inquiry", "Sponsorship", "Data/API partnership"].includes(pt)) return "high";
+    }
+    return "medium";
+  }
+
+  app.post("/api/contact", async (req: any, res) => {
+    try {
+      const ip = req.ip || req.connection?.remoteAddress || "unknown";
+      if (rateLimit(`contact:${ip}`, 5, 60_000)) {
+        return res.status(429).json({ message: "Too many submissions. Please try again in a minute." });
+      }
+      const schema = z.object({
+        // Honeypot
+        company_website: z.string().optional(),
+        submissionType: z.enum(["user_feedback", "restaurant_partner", "event_activity_partner", "general_partner"]),
+        name: z.string().max(200).optional().nullable(),
+        email: z.string().email().max(200).optional().nullable().or(z.literal("")),
+        phone: z.string().max(50).optional().nullable(),
+        lineId: z.string().max(100).optional().nullable(),
+        preferredContactMethod: z.string().max(50).optional().nullable(),
+        companyName: z.string().max(200).optional().nullable(),
+        roleTitle: z.string().max(150).optional().nullable(),
+        businessType: z.string().max(100).optional().nullable(),
+        location: z.string().max(300).optional().nullable(),
+        websiteUrl: z.string().max(500).optional().nullable(),
+        instagramUrl: z.string().max(300).optional().nullable(),
+        googleMapsUrl: z.string().max(500).optional().nullable(),
+        interestType: z.array(z.string()).optional().default([]),
+        message: z.string().max(5000).optional().nullable(),
+        metadata: z.record(z.any()).optional().default({}),
+        files: z.array(z.object({
+          fileName: z.string().max(200),
+          fileType: z.string().max(100).optional(),
+          fileSize: z.number().int().min(0).optional(),
+          fileDataUrl: z.string().max(8 * 1024 * 1024), // base64-encoded data URL
+        })).max(MAX_FILES_PER_SUBMISSION).optional().default([]),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Invalid submission", errors: parsed.error.errors });
+      }
+      const data = parsed.data;
+      // Honeypot check — silently accept but discard
+      if (data.company_website && data.company_website.trim() !== "") {
+        return res.status(200).json({ ok: true, id: 0 });
+      }
+      // Require at least one contact method
+      if (!data.email && !data.phone && !data.lineId) {
+        return res.status(400).json({ message: "Please provide email, phone, or LINE ID." });
+      }
+      // Sanitize files
+      const validFiles = (data.files || []).filter(f => {
+        if (f.fileType && !ALLOWED_FILE_TYPES.has(f.fileType)) return false;
+        if (typeof f.fileSize === "number" && f.fileSize > MAX_FILE_SIZE) return false;
+        if (!f.fileDataUrl.startsWith("data:")) return false;
+        return true;
+      });
+
+      const now = new Date().toISOString();
+      const priority = computePriority(data.submissionType, data.metadata);
+      const submission = await storage.createContactSubmission({
+        submissionType: data.submissionType,
+        status: "new",
+        priority,
+        leadQuality: "unknown",
+        name: data.name || null,
+        email: data.email || null,
+        phone: data.phone || null,
+        lineId: data.lineId || null,
+        preferredContactMethod: data.preferredContactMethod || null,
+        companyName: data.companyName || null,
+        roleTitle: data.roleTitle || null,
+        businessType: data.businessType || null,
+        location: data.location || null,
+        websiteUrl: data.websiteUrl || null,
+        instagramUrl: data.instagramUrl || null,
+        googleMapsUrl: data.googleMapsUrl || null,
+        interestType: data.interestType || [],
+        message: data.message || null,
+        metadata: data.metadata || {},
+        assignedTo: null,
+        internalNotes: null,
+        tags: [],
+        createdAt: now,
+        updatedAt: now,
+        archivedAt: null,
+      });
+
+      for (const f of validFiles) {
+        await storage.addContactSubmissionFile({
+          submissionId: submission.id,
+          fileUrl: f.fileDataUrl,
+          fileName: f.fileName,
+          fileType: f.fileType || null,
+          fileSize: f.fileSize ?? null,
+          createdAt: now,
+        });
+      }
+      await storage.addContactSubmissionActivity({
+        submissionId: submission.id,
+        adminUserId: null,
+        actionType: "submitted",
+        oldValue: null,
+        newValue: data.submissionType,
+        note: validFiles.length ? `Submission created with ${validFiles.length} file(s)` : "Submission created",
+        createdAt: now,
+      });
+
+      return res.status(201).json({ ok: true, id: submission.id });
+    } catch (e: any) {
+      console.error("contact submission failed", e);
+      return res.status(500).json({ message: "Failed to submit. Please try again." });
+    }
+  });
+
+  // Admin endpoints — superadmin only
+  function requireSuperadmin(req: any, res: any): boolean {
+    if (req.adminUser?.role !== "superadmin") {
+      res.status(403).json({ message: "Superadmin only" });
+      return false;
+    }
+    return true;
+  }
+
+  app.get("/api/admin/contact-submissions", adminAuth, async (req: any, res) => {
+    if (!requireSuperadmin(req, res)) return;
+    try {
+      const q = req.query as Record<string, string>;
+      const filters: any = {};
+      if (q.submissionType) filters.submissionType = q.submissionType;
+      if (q.status) filters.status = q.status;
+      if (q.priority) filters.priority = q.priority;
+      if (q.leadQuality) filters.leadQuality = q.leadQuality;
+      if (q.assignedTo) filters.assignedTo = parseInt(q.assignedTo, 10);
+      if (q.hasFiles === "true") filters.hasFiles = true;
+      else if (q.hasFiles === "false") filters.hasFiles = false;
+      if (q.search) filters.search = q.search;
+      if (q.archived === "true") filters.archived = true;
+      else if (q.archived === "false") filters.archived = false;
+      if (q.dateFrom) filters.dateFrom = q.dateFrom;
+      if (q.dateTo) filters.dateTo = q.dateTo;
+      if (q.feedbackSatisfactionMin) filters.feedbackSatisfactionMin = parseInt(q.feedbackSatisfactionMin, 10);
+      if (q.feedbackSatisfactionMax) filters.feedbackSatisfactionMax = parseInt(q.feedbackSatisfactionMax, 10);
+      if (q.feedbackEaseMin) filters.feedbackEaseMin = parseInt(q.feedbackEaseMin, 10);
+      if (q.feedbackEaseMax) filters.feedbackEaseMax = parseInt(q.feedbackEaseMax, 10);
+      if (q.feedbackWouldRecommend) filters.feedbackWouldRecommend = q.feedbackWouldRecommend;
+      if (q.feedbackWouldUseAgain) filters.feedbackWouldUseAgain = q.feedbackWouldUseAgain;
+      if (q.feedbackHelpedDecide) filters.feedbackHelpedDecide = q.feedbackHelpedDecide;
+      if (q.feedbackRecommendationRelevance) filters.feedbackRecommendationRelevance = q.feedbackRecommendationRelevance;
+      if (q.feedbackDecisionTime) filters.feedbackDecisionTime = q.feedbackDecisionTime;
+      if (q.limit) filters.limit = Math.min(parseInt(q.limit, 10), 1000);
+      if (q.offset) filters.offset = parseInt(q.offset, 10);
+      const rows = await storage.listContactSubmissions(filters);
+      res.json(rows);
+    } catch (e: any) {
+      console.error(e);
+      res.status(500).json({ message: "Failed to load submissions" });
+    }
+  });
+
+  app.get("/api/admin/contact-submissions/badge", adminAuth, async (req: any, res) => {
+    if (!requireSuperadmin(req, res)) return;
+    try {
+      const newCount = await storage.countNewContactSubmissions();
+      res.json({ newCount });
+    } catch {
+      res.json({ newCount: 0 });
+    }
+  });
+
+  app.get("/api/admin/contact-submissions/export.csv", adminAuth, async (req: any, res) => {
+    if (!requireSuperadmin(req, res)) return;
+    const q = req.query as Record<string, string>;
+    const filters: any = {};
+    if (q.submissionType) filters.submissionType = q.submissionType;
+    if (q.status) filters.status = q.status;
+    if (q.archived === "true") filters.archived = true;
+    else if (q.archived === "false") filters.archived = false;
+    filters.limit = 5000;
+    const rows = await storage.listContactSubmissions(filters);
+    const headers = [
+      "id","submissionType","status","priority","leadQuality","name","email","phone","lineId",
+      "companyName","roleTitle","businessType","location","websiteUrl","interestType","message","createdAt",
+    ];
+    const escape = (v: any) => {
+      if (v === null || v === undefined) return "";
+      const s = Array.isArray(v) ? v.join("; ") : String(v);
+      return `"${s.replace(/"/g, '""').replace(/\n/g, " ")}"`;
+    };
+    const csv = [
+      headers.join(","),
+      ...rows.map(r => headers.map(h => escape((r as any)[h])).join(",")),
+    ].join("\n");
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="contact-submissions-${Date.now()}.csv"`);
+    res.send(csv);
+  });
+
+  app.get("/api/admin/contact-submissions/:id", adminAuth, async (req: any, res) => {
+    if (!requireSuperadmin(req, res)) return;
+    try {
+      const id = parseInt(req.params.id, 10);
+      const sub = await storage.getContactSubmission(id);
+      if (!sub) return res.status(404).json({ message: "Not found" });
+      const [files, activity] = await Promise.all([
+        storage.listContactSubmissionFiles(id),
+        storage.listContactSubmissionActivity(id),
+      ]);
+      res.json({ submission: sub, files, activity });
+    } catch (e) {
+      res.status(500).json({ message: "Failed to load" });
+    }
+  });
+
+  app.patch("/api/admin/contact-submissions/:id", adminAuth, async (req: any, res) => {
+    if (!requireSuperadmin(req, res)) return;
+    try {
+      const id = parseInt(req.params.id, 10);
+      const existing = await storage.getContactSubmission(id);
+      if (!existing) return res.status(404).json({ message: "Not found" });
+
+      const schema = z.object({
+        status: z.enum(["new","reviewing","contacted","qualified","not_a_fit","converted","archived"]).optional(),
+        priority: z.enum(["low","medium","high","urgent"]).optional(),
+        leadQuality: z.enum(["unknown","low","medium","high","strategic"]).optional(),
+        assignedTo: z.number().int().nullable().optional(),
+        internalNotes: z.string().max(10000).nullable().optional(),
+        tags: z.array(z.string().max(50)).max(30).optional(),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ message: "Invalid update", errors: parsed.error.errors });
+
+      const updates = parsed.data;
+      const updated = await storage.updateContactSubmission(id, updates as any);
+      const now = new Date().toISOString();
+
+      const adminId = req.adminUser?.id || null;
+      const trackChanges: Array<[string, any, any]> = [];
+      if (updates.status !== undefined && updates.status !== existing.status) trackChanges.push(["status", existing.status, updates.status]);
+      if (updates.priority !== undefined && updates.priority !== existing.priority) trackChanges.push(["priority", existing.priority, updates.priority]);
+      if (updates.leadQuality !== undefined && updates.leadQuality !== existing.leadQuality) trackChanges.push(["leadQuality", existing.leadQuality, updates.leadQuality]);
+      if (updates.assignedTo !== undefined && updates.assignedTo !== existing.assignedTo) trackChanges.push(["assignedTo", existing.assignedTo, updates.assignedTo]);
+      if (updates.internalNotes !== undefined && updates.internalNotes !== existing.internalNotes) trackChanges.push(["internalNotes", "(prev)", "(updated)"]);
+      if (updates.tags !== undefined) trackChanges.push(["tags", (existing.tags || []).join(","), (updates.tags || []).join(",")]);
+
+      for (const [k, oldV, newV] of trackChanges) {
+        await storage.addContactSubmissionActivity({
+          submissionId: id,
+          adminUserId: adminId,
+          actionType: `update_${k}`,
+          oldValue: oldV === null ? null : String(oldV),
+          newValue: newV === null ? null : String(newV),
+          note: null,
+          createdAt: now,
+        });
+      }
+      res.json(updated);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ message: "Failed to update" });
+    }
+  });
+
+  app.post("/api/admin/contact-submissions/:id/archive", adminAuth, async (req: any, res) => {
+    if (!requireSuperadmin(req, res)) return;
+    try {
+      const id = parseInt(req.params.id, 10);
+      const row = await storage.archiveContactSubmission(id);
+      await storage.addContactSubmissionActivity({
+        submissionId: id, adminUserId: req.adminUser?.id || null,
+        actionType: "archived", oldValue: null, newValue: null, note: null,
+        createdAt: new Date().toISOString(),
+      });
+      res.json(row);
+    } catch {
+      res.status(500).json({ message: "Failed to archive" });
+    }
+  });
+
+  app.post("/api/admin/contact-submissions/:id/unarchive", adminAuth, async (req: any, res) => {
+    if (!requireSuperadmin(req, res)) return;
+    try {
+      const id = parseInt(req.params.id, 10);
+      const row = await storage.unarchiveContactSubmission(id);
+      await storage.addContactSubmissionActivity({
+        submissionId: id, adminUserId: req.adminUser?.id || null,
+        actionType: "unarchived", oldValue: null, newValue: null, note: null,
+        createdAt: new Date().toISOString(),
+      });
+      res.json(row);
+    } catch {
+      res.status(500).json({ message: "Failed to unarchive" });
+    }
+  });
+
   return httpServer;
 }
 

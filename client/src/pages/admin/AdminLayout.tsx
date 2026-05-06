@@ -98,6 +98,7 @@ const adminNavGroups: NavGroup[] = [
     label: "System",
     items: [
       { label: "Reports", icon: FileText, href: "/admin/reports" },
+      { label: "Contact & Partnerships", icon: MessageSquare, href: "/admin/contact-submissions" },
       { label: "Audit Logs", icon: ScrollText, href: "/admin/audit-logs" },
       { label: "Payments", icon: CreditCard, href: "/admin/payments" },
       { label: "App Config", icon: Settings2, href: "/admin/config" },

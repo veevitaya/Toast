@@ -1,5 +1,34 @@
 uploads = []
-generated = []
+
+[[generated]]
+id = "PmXx0Dt3vQT4NY0xOEvZ7"
+uri = "file://client/src/assets/mascots/toast-mascot.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "jW8hG3SLiha9S9BuqgHDQ"
+uri = "file://client/src/assets/mascots/waffle-mascot.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "dkuD7_rXLuNc1bnEPEukO"
+uri = "file://client/src/assets/mascots/popcorn-mascot.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "43wL5TJgSzb0t4Q5cWRaO"
+uri = "file://client/src/assets/mascots/ticket-mascot.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "dhzAX5sN1Y80hD2j-FWIq"
+uri = "file://client/src/assets/mascots/mascot-group-hero.png"
+type = "image"
+title = "generated_image"
 
 [[outputs]]
 id = "md0oykLl7-WWG9LQl0m3e"

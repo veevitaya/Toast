@@ -28,6 +28,8 @@ const LegalCenter = lazy(() => import("@/pages/LegalCenter"));
 const LegalDocumentViewer = lazy(() => import("@/pages/LegalDocumentViewer"));
 const PartnerAccept = lazy(() => import("@/pages/PartnerAccept"));
 const TeamMemberActivate = lazy(() => import("@/pages/TeamMemberActivate"));
+const Contact = lazy(() => import("@/pages/Contact"));
+const AdminContactSubmissions = lazy(() => import("@/pages/admin/AdminContactSubmissions"));
 
 const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
 const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout"));
@@ -152,6 +154,9 @@ function Router() {
           <Route path="/team/activate">
             <Suspense fallback={<PageLoader />}><TeamMemberActivate /></Suspense>
           </Route>
+          <Route path="/contact">
+            <Suspense fallback={<PageLoader />}><Contact /></Suspense>
+          </Route>
           <Route path="/admin/login">
             <AdminLogin />
           </Route>
@@ -211,6 +216,9 @@ function Router() {
           </Route>
           <Route path="/admin/audit-logs">
             <Suspense fallback={<PageLoader />}><AdminLayout><AdminAuditLogs /></AdminLayout></Suspense>
+          </Route>
+          <Route path="/admin/contact-submissions">
+            <Suspense fallback={<PageLoader />}><AdminLayout><AdminContactSubmissions /></AdminLayout></Suspense>
           </Route>
           <Route path="/admin/my-restaurant">
             <Suspense fallback={<PageLoader />}><AdminLayout><AdminOwnerDashboard /></AdminLayout></Suspense>
