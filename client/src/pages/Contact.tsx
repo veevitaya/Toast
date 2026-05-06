@@ -408,21 +408,52 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
         <AnimatePresence mode="wait">
           <motion.div key={step} className="space-y-4">
             {step === 0 && (
-              <FormStepCard icon={<Sparkles className="w-5 h-5" />} title="How was Toast for you?" helper="Just two quick taps — that's all we need.">
-                <Question icon={<Heart className="w-4 h-4" />} label="Overall, how would you rate Toast?">
-                  <RatingScale value={data.overall_satisfaction_score} onChange={n => set("overall_satisfaction_score", n)} testid="rating-overall" />
-                </Question>
-                <div className="h-px bg-gray-100" />
-                <Question icon={<MessageCircle className="w-4 h-4" />} label="Would you recommend Toast to a friend?">
-                  <YesNoMaybe value={data.would_recommend_to_friends} onChange={v => set("would_recommend_to_friends", v)} testid="ynm-recommend" />
-                </Question>
-              </FormStepCard>
+              <>
+                <FormStepCard icon={<Heart className="w-5 h-5" />} title="How do you feel about Toast?" helper="Pick a number that matches your gut.">
+                  <Question label="Overall, how would you rate Toast?">
+                    <RatingScale value={data.overall_satisfaction_score} onChange={n => set("overall_satisfaction_score", n)} testid="rating-overall" />
+                  </Question>
+                </FormStepCard>
+                <FormStepCard icon={<MessageCircle className="w-5 h-5" />} title="Would you stick with us?" helper="The honest answer is the helpful one.">
+                  <Question label="Would you recommend Toast to a friend?">
+                    <YesNoMaybe value={data.would_recommend_to_friends} onChange={v => set("would_recommend_to_friends", v)} testid="ynm-recommend" />
+                  </Question>
+                  <div className="h-px bg-gray-100" />
+                  <Question label="Would you use Toast again yourself?" helper="Optional">
+                    <YesNoMaybe value={data.would_use_again} onChange={v => set("would_use_again", v)} testid="ynm-would-use-again" />
+                  </Question>
+                </FormStepCard>
+              </>
             )}
 
             {step === 1 && (
               <>
-                <FormStepCard icon={<Lightbulb className="w-5 h-5" />} title="Help us make Toast better" helper="All optional — even one line goes a long way.">
-                  <Question icon={<span className="text-base" aria-hidden="true">🛠️</span>} label="What should Toast improve?" helper="The single most useful thing you can tell us.">
+                <FormStepCard icon={<Compass className="w-5 h-5" />} title="What happened when you used Toast?" helper="All optional — these tell us if Toast actually worked.">
+                  <Question label="Did Toast help you decide?">
+                    <YesNoMaybe value={data.helped_make_decision} onChange={v => set("helped_make_decision", v)} testid="ynm-decided" />
+                  </Question>
+                  <div className="h-px bg-gray-100" />
+                  <Question label="Did Toast help you find new restaurants?">
+                    <YesNoMaybe value={data.helped_find_new_restaurants} onChange={v => set("helped_find_new_restaurants", v)} testid="ynm-new-restaurants" />
+                  </Question>
+                  <div className="h-px bg-gray-100" />
+                  <Question icon={<Calendar className="w-4 h-4" />} label="How fast did you decide?" helper="From open to 'okay let's go'.">
+                    <div role="radiogroup" className="grid grid-cols-2 gap-2" data-testid="select-decision-time">
+                      {["Under 1 minute","1–3 minutes","3–5 minutes","5–10 minutes","More than 10 minutes","Still couldn't decide"].map(o => {
+                        const active = data.decision_time === o;
+                        return (
+                          <button key={o} type="button" role="radio" aria-checked={active} onClick={() => set("decision_time", o)}
+                            className={`px-3 py-3 rounded-xl text-[13px] font-semibold transition border ${active ? "bg-[#FFCC02] text-gray-900 border-[#FFCC02] shadow-[0_2px_8px_-2px_rgba(255,204,2,0.4)]" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"}`}
+                            data-testid={`option-decision-time-${o}`}>
+                            {o}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </Question>
+                </FormStepCard>
+                <FormStepCard icon={<Lightbulb className="w-5 h-5" />} title="In your own words" helper="The single most useful section. Even one line helps.">
+                  <Question icon={<span className="text-base" aria-hidden="true">🛠️</span>} label="What should Toast improve?">
                     <StyledTextarea rows={4} placeholder="What slowed you down, felt confusing, or could be better?" value={data.top_two_to_improve} onChange={e => set("top_two_to_improve", e.target.value)} data-testid="textarea-top-improve" />
                   </Question>
                   <Question icon={<span className="text-base" aria-hidden="true">✨</span>} label="What worked well?" helper="Optional">
@@ -431,33 +462,6 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
                   <Question icon={<span className="text-base" aria-hidden="true">💡</span>} label="Any ideas or suggestions?" helper="Optional">
                     <StyledTextarea rows={2} placeholder="Big or small — we read everything." value={data.suggestions} onChange={e => set("suggestions", e.target.value)} data-testid="textarea-suggestions" />
                   </Question>
-                </FormStepCard>
-                <FormStepCard icon={<Compass className="w-5 h-5" />} title="A few quick taps" helper="All optional — skip any.">
-                  <Question label="Would you use Toast again?">
-                    <YesNoMaybe value={data.would_use_again} onChange={v => set("would_use_again", v)} testid="ynm-would-use-again" />
-                  </Question>
-                  <div className="h-px bg-gray-100" />
-                  <Question label="Did Toast help you decide?">
-                    <YesNoMaybe value={data.helped_make_decision} onChange={v => set("helped_make_decision", v)} testid="ynm-decided" />
-                  </Question>
-                  <div className="h-px bg-gray-100" />
-                  <Question label="Did Toast help you find new restaurants?">
-                    <YesNoMaybe value={data.helped_find_new_restaurants} onChange={v => set("helped_find_new_restaurants", v)} testid="ynm-new-restaurants" />
-                  </Question>
-                </FormStepCard>
-                <FormStepCard icon={<Calendar className="w-5 h-5" />} title="How fast did you decide?" helper="Optional — from open to 'okay let's go'.">
-                  <div role="radiogroup" className="grid grid-cols-2 gap-2" data-testid="select-decision-time">
-                    {["Under 1 minute","1–3 minutes","3–5 minutes","5–10 minutes","More than 10 minutes","Still couldn't decide"].map(o => {
-                      const active = data.decision_time === o;
-                      return (
-                        <button key={o} type="button" role="radio" aria-checked={active} onClick={() => set("decision_time", o)}
-                          className={`px-3 py-3 rounded-xl text-[13px] font-semibold transition border ${active ? "bg-[#FFCC02] text-gray-900 border-[#FFCC02] shadow-[0_2px_8px_-2px_rgba(255,204,2,0.4)]" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"}`}
-                          data-testid={`option-decision-time-${o}`}>
-                          {o}
-                        </button>
-                      );
-                    })}
-                  </div>
                 </FormStepCard>
               </>
             )}
