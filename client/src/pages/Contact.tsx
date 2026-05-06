@@ -346,6 +346,11 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
   const next = () => setStep(s => Math.min(s + 1, 2));
   const back = () => setStep(s => Math.max(s - 1, 0));
 
+  // Scroll to top whenever the step changes so users always start at the top
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]);
+
   const submit = async () => {
     if (!stepValid) return;
     setSubmitting(true);
@@ -915,6 +920,11 @@ export default function Contact() {
   useEffect(() => {
     document.title = "Contact Toast — Let's Make Better Plans Together";
   }, []);
+
+  // Scroll to top whenever view or selected category changes (landing → form → success)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [view, category, successCategory]);
 
   const reset = () => { setView("landing"); setCategory(null); setSuccessCategory(null); };
 
