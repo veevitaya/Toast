@@ -433,6 +433,10 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
                   </Question>
                 </FormStepCard>
                 <FormStepCard icon={<Compass className="w-5 h-5" />} title="A few quick taps" helper="All optional — skip any.">
+                  <Question label="Would you use Toast again?">
+                    <YesNoMaybe value={data.would_use_again} onChange={v => set("would_use_again", v)} testid="ynm-would-use-again" />
+                  </Question>
+                  <div className="h-px bg-gray-100" />
                   <Question label="Did Toast help you decide?">
                     <YesNoMaybe value={data.helped_make_decision} onChange={v => set("helped_make_decision", v)} testid="ynm-decided" />
                   </Question>
@@ -440,6 +444,20 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
                   <Question label="Did Toast help you find new restaurants?">
                     <YesNoMaybe value={data.helped_find_new_restaurants} onChange={v => set("helped_find_new_restaurants", v)} testid="ynm-new-restaurants" />
                   </Question>
+                </FormStepCard>
+                <FormStepCard icon={<Calendar className="w-5 h-5" />} title="How fast did you decide?" helper="Optional — from open to 'okay let's go'.">
+                  <div role="radiogroup" className="grid grid-cols-2 gap-2" data-testid="select-decision-time">
+                    {["Under 1 minute","1–3 minutes","3–5 minutes","5–10 minutes","More than 10 minutes","Still couldn't decide"].map(o => {
+                      const active = data.decision_time === o;
+                      return (
+                        <button key={o} type="button" role="radio" aria-checked={active} onClick={() => set("decision_time", o)}
+                          className={`px-3 py-3 rounded-xl text-[13px] font-semibold transition border ${active ? "bg-[#FFCC02] text-gray-900 border-[#FFCC02] shadow-[0_2px_8px_-2px_rgba(255,204,2,0.4)]" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"}`}
+                          data-testid={`option-decision-time-${o}`}>
+                          {o}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </FormStepCard>
               </>
             )}
