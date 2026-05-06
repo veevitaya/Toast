@@ -201,149 +201,159 @@ export default function AdminContactSubmissions() {
 
   const activeFilterCount = [filters.status, filters.priority, filters.leadQuality, filters.hasFiles, filters.dateFrom, filters.dateTo].filter(Boolean).length;
 
+  const todayStr = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+
   return (
-    <div className="space-y-6" data-testid="admin-contact-submissions">
-      {/* Page header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #FFCC02 0%, #FFA500 100%)" }}>
-          <MessageSquare className="w-5 h-5 text-gray-900" />
-        </div>
-        <div className="flex-1">
-          <h2 className="text-xl font-semibold text-gray-800">Contact & Partnerships</h2>
-          <p className="text-xs text-muted-foreground">Inbound feedback, partner leads, and the people knocking on Toast's door.</p>
-        </div>
-        <Button onClick={exportCsv} variant="outline" className="gap-2 rounded-xl" data-testid="button-export-csv">
-          <Download className="w-4 h-4" /> Export CSV
-        </Button>
-      </div>
+    <div className="space-y-5" data-testid="admin-contact-submissions">
+      {/* === Editorial command-center hero === */}
+      <div className="relative overflow-hidden rounded-3xl text-white" data-testid="hero-command-center">
+        <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #1f2937 0%, #111827 60%, #0b0f19 100%)" }} />
+        <div className="absolute -top-24 -right-16 w-72 h-72 rounded-full opacity-20" style={{ background: "radial-gradient(circle, #FFCC02 0%, transparent 70%)" }} />
+        <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #FFA500 0%, transparent 70%)" }} />
 
-      {/* Hero KPI strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard
-          icon={<Inbox className="w-4 h-4" />}
-          label="New & Unread"
-          value={stats.newCount}
-          accent="var(--admin-blue)"
-          tint="var(--admin-blue-10)"
-          sub={`${stats.today} arrived today`}
-          testid="kpi-new"
-        />
-        <KpiCard
-          icon={<AlertTriangle className="w-4 h-4" />}
-          label="Needs Attention"
-          value={stats.urgentCount}
-          accent="var(--admin-pink)"
-          tint="var(--admin-pink-10)"
-          sub="High & urgent priority"
-          testid="kpi-urgent"
-        />
-        <KpiCard
-          icon={<Sparkles className="w-4 h-4" />}
-          label="This Week"
-          value={stats.thisWeek}
-          accent="var(--admin-deep-purple)"
-          tint="var(--admin-deep-purple-10)"
-          sub={`${stats.total} all-time`}
-          testid="kpi-week"
-        />
-        <KpiCard
-          icon={<TrendingUp className="w-4 h-4" />}
-          label="Lead Conversion"
-          value={`${stats.conversionPct}%`}
-          accent="var(--admin-cyan)"
-          tint="var(--admin-cyan-10)"
-          sub="Qualified or better"
-          testid="kpi-conversion"
-        />
-      </div>
-
-      {/* Type cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-        {TYPE_CARDS.map(c => {
-          const s = stats.byType[c.key];
-          const isActive = activeTab.key === c.key;
-          const Icon = c.icon;
-          return (
-            <button
-              key={c.key}
-              onClick={() => setActiveTab(TABS.find(t => t.key === c.key)!)}
-              className={`group relative text-left bg-white rounded-2xl border p-4 pt-5 overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 ${
-                isActive ? "border-gray-900/15 shadow-sm" : "border-gray-100"
-              }`}
-              data-testid={`type-card-${c.key}`}
-              style={isActive ? { boxShadow: `0 0 0 2px ${c.accent}` } : undefined}
-            >
-              <span className="absolute top-0 left-0 right-0 h-1" style={{ backgroundColor: c.accent }} />
-              <span className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-50" style={{ backgroundColor: c.tint }} aria-hidden="true" />
-              <div className="relative flex items-start justify-between mb-3">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: c.accent, color: "white" }}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                {s?.new > 0 && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white border" style={{ color: c.accent, borderColor: `${c.accent}40` }}>
-                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: c.accent }} />
-                    {s.new} new
-                  </span>
-                )}
+        <div className="relative p-6 sm:p-8">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live inbox · {todayStr}
               </div>
-              <p className="relative text-[10px] font-bold uppercase tracking-widest text-gray-400">{c.sub}</p>
-              <p className="relative text-sm font-semibold text-gray-800 mt-0.5">{c.label}</p>
-              <div className="relative flex items-end justify-between mt-3">
-                <div>
-                  <p className="text-3xl font-bold tracking-tight text-foreground leading-none">{s?.total ?? 0}</p>
-                  <p className="text-[10px] text-gray-400 mt-1">total submissions</p>
-                </div>
-                <p className="text-[10px] text-gray-400 text-right">
-                  {s?.lastIso ? <>Last activity<br /><span className="text-gray-600 font-medium">{relTime(s.lastIso)}</span></> : "No submissions yet"}
-                </p>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Pipeline strip */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5" data-testid="pipeline-strip">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-gray-50">
-              <CheckCircle2 className="w-4 h-4 text-gray-500" />
+              <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight">Contact & Partnerships</h2>
+              <p className="mt-1 text-sm text-white/60 max-w-xl">Every voice, every lead, every knock on Toast's door — in one calm, focused workspace.</p>
             </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Lead pipeline</p>
-              <p className="text-sm font-semibold text-gray-800">From new submission to converted partner</p>
+            <div className="flex items-center gap-2">
+              <Button onClick={exportCsv} variant="outline" className="gap-2 rounded-xl bg-white/5 backdrop-blur-sm border-white/15 text-white hover:bg-white/10 hover:text-white" data-testid="button-export-csv">
+                <Download className="w-4 h-4" /> Export
+              </Button>
             </div>
           </div>
+
+          {/* Glass KPI tiles inside hero */}
+          <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <GlassKpi icon={<Inbox className="w-4 h-4" />} label="New & Unread" value={stats.newCount} sub={`${stats.today} today`} accent="#60A5FA" testid="kpi-new" />
+            <GlassKpi icon={<AlertTriangle className="w-4 h-4" />} label="Needs Attention" value={stats.urgentCount} sub="High + urgent" accent="#F472B6" testid="kpi-urgent" />
+            <GlassKpi icon={<Sparkles className="w-4 h-4" />} label="This Week" value={stats.thisWeek} sub={`${stats.total} all-time`} accent="#C084FC" testid="kpi-week" />
+            <GlassKpi icon={<TrendingUp className="w-4 h-4" />} label="Lead Conversion" value={`${stats.conversionPct}%`} sub="Qualified or better" accent="#FFCC02" testid="kpi-conversion" />
+          </div>
+        </div>
+      </div>
+
+      {/* === Channel cards (redesigned, no stripe) === */}
+      <div>
+        <div className="flex items-baseline justify-between mb-3 px-1">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Inbound channels</p>
+            <p className="text-sm font-semibold text-gray-800">Where today's submissions came from</p>
+          </div>
+          <span className="text-[11px] text-gray-400">{stats.total} total · click to filter</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+          {TYPE_CARDS.map(c => {
+            const s = stats.byType[c.key];
+            const isActive = activeTab.key === c.key;
+            const Icon = c.icon;
+            const sharePct = stats.total > 0 ? Math.round(((s?.total ?? 0) / stats.total) * 100) : 0;
+            return (
+              <button
+                key={c.key}
+                onClick={() => setActiveTab(TABS.find(t => t.key === c.key)!)}
+                className={`group relative text-left bg-white rounded-2xl border p-5 transition-all hover:shadow-lg hover:-translate-y-0.5 focus:outline-none ${
+                  isActive ? "border-gray-900 shadow-md" : "border-gray-100 hover:border-gray-200"
+                }`}
+                data-testid={`type-card-${c.key}`}
+              >
+                <div className="flex items-start justify-between mb-5">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105"
+                    style={{ backgroundColor: c.tint, color: c.accent }}>
+                    <Icon className="w-5 h-5" strokeWidth={2.25} />
+                  </div>
+                  {s?.new > 0 ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                      style={{ backgroundColor: c.tint, color: c.accent }}>
+                      <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: c.accent }} />
+                      {s.new} new
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-medium text-gray-300">All caught up</span>
+                  )}
+                </div>
+
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">{c.sub}</p>
+                <p className="text-base font-semibold text-gray-900 mt-0.5">{c.label}</p>
+
+                <div className="flex items-baseline gap-2 mt-4">
+                  <span className="text-4xl font-bold tracking-tight text-gray-900 leading-none tabular-nums">{s?.total ?? 0}</span>
+                  <span className="text-[11px] text-gray-400">submissions</span>
+                </div>
+
+                {/* share bar */}
+                <div className="mt-4 space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px] text-gray-400">
+                    <span>{sharePct}% of inbox</span>
+                    <span>{s?.lastIso ? relTime(s.lastIso) : "—"}</span>
+                  </div>
+                  <div className="h-1 rounded-full bg-gray-100 overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${sharePct}%`, backgroundColor: c.accent }} />
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* === Lead funnel (true proportional funnel) === */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6" data-testid="pipeline-strip">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Lead funnel</p>
+            <p className="text-sm font-semibold text-gray-800">From new submission to converted partner</p>
+          </div>
           <button onClick={() => { setFilters({}); setSearchInput(""); setActiveTab(TABS[0]); }} className="text-[11px] font-medium text-gray-400 hover:text-gray-700" data-testid="button-reset-pipeline">
-            Show all
+            Show all →
           </button>
         </div>
-        <div className="flex items-center gap-1">
+
+        {/* Proportional funnel bar */}
+        <div className="flex h-3 rounded-full overflow-hidden bg-gray-50 mb-4">
           {PIPELINE_STAGES.map((s, i) => {
             const count = stats.pipeline[s.key] || 0;
-            const max = Math.max(1, ...Object.values(stats.pipeline));
-            const pct = (count / max) * 100;
+            const total = PIPELINE_STAGES.reduce((acc, p) => acc + (stats.pipeline[p.key] || 0), 0) || 1;
+            const flex = Math.max(count / total, count > 0 ? 0.04 : 0);
+            return (
+              <div key={s.key}
+                className={`transition-all ${i === 0 ? "" : "ml-0.5"}`}
+                style={{ flex: `${flex} 1 0`, backgroundColor: count > 0 ? s.color : "#e5e7eb", opacity: count > 0 ? 1 : 0.4 }}
+                title={`${s.label}: ${count}`} />
+            );
+          })}
+        </div>
+
+        {/* Stage cards */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          {PIPELINE_STAGES.map((s, i) => {
+            const count = stats.pipeline[s.key] || 0;
             const isActive = filters.status === s.key;
             return (
-              <div key={s.key} className="flex items-center flex-1 min-w-0">
-                <button
-                  onClick={() => setFilters(f => ({ ...f, status: f.status === s.key ? undefined : s.key }))}
-                  className={`flex-1 min-w-0 group rounded-xl px-3 py-3 text-left transition-all border ${isActive ? "border-transparent" : "border-gray-100 hover:border-gray-200"}`}
-                  style={isActive ? { backgroundColor: `${s.color}10`, borderColor: `${s.color}40` } : undefined}
-                  data-testid={`pipeline-stage-${s.key}`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-gray-700 truncate">{s.label}</span>
-                    <span className="text-base font-bold flex-shrink-0" style={{ color: s.color }}>{count}</span>
-                  </div>
-                  <div className="mt-2 h-2 rounded-full bg-gray-100 overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: s.color }} />
-                  </div>
-                </button>
-                {i < PIPELINE_STAGES.length - 1 && (
-                  <ChevronRight className="hidden md:block w-4 h-4 text-gray-300 mx-0.5 flex-shrink-0" />
-                )}
-              </div>
+              <button
+                key={s.key}
+                onClick={() => setFilters(f => ({ ...f, status: f.status === s.key ? undefined : s.key }))}
+                className={`group rounded-xl px-3 py-2.5 text-left transition-all border ${
+                  isActive ? "border-transparent" : "border-gray-100 hover:border-gray-200 hover:bg-gray-50/60"
+                }`}
+                style={isActive ? { backgroundColor: `${s.color}10`, borderColor: `${s.color}40` } : undefined}
+                data-testid={`pipeline-stage-${s.key}`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.color }} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Stage {i + 1}</span>
+                </div>
+                <div className="flex items-baseline justify-between mt-1.5">
+                  <span className="text-sm font-semibold text-gray-800">{s.label}</span>
+                  <span className="text-lg font-bold tabular-nums" style={{ color: count > 0 ? s.color : "#d1d5db" }}>{count}</span>
+                </div>
+              </button>
             );
           })}
         </div>
@@ -452,8 +462,33 @@ export default function AdminContactSubmissions() {
           </div>
         )}
         {!isLoading && rows.length > 0 && (
-          <ul className="divide-y divide-gray-50">
-            {rows.map(r => {
+          <div>
+            {(() => {
+              const groups: Array<{ label: string; items: typeof rows }> = [
+                { label: "Today", items: [] },
+                { label: "Yesterday", items: [] },
+                { label: "This week", items: [] },
+                { label: "Earlier", items: [] },
+              ];
+              const now = new Date();
+              const startToday = new Date(now); startToday.setHours(0, 0, 0, 0);
+              const startYesterday = new Date(startToday.getTime() - 24 * 60 * 60 * 1000);
+              const startWeek = new Date(startToday.getTime() - 7 * 24 * 60 * 60 * 1000);
+              for (const r of rows) {
+                const t = new Date(r.createdAt as any).getTime();
+                if (t >= startToday.getTime()) groups[0].items.push(r);
+                else if (t >= startYesterday.getTime()) groups[1].items.push(r);
+                else if (t >= startWeek.getTime()) groups[2].items.push(r);
+                else groups[3].items.push(r);
+              }
+              return groups.filter(g => g.items.length > 0).map(g => (
+                <div key={g.label}>
+                  <div className="px-5 py-2 bg-gray-50/80 border-y border-gray-100 flex items-center justify-between sticky top-0 z-10 backdrop-blur-sm">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500">{g.label}</span>
+                    <span className="text-[10px] font-medium text-gray-400">{g.items.length}</span>
+                  </div>
+                  <ul className="divide-y divide-gray-50">
+                    {g.items.map(r => {
               const card = TYPE_CARDS.find(c => c.key === r.submissionType);
               const isNew = (r.status || "new") === "new";
               const hasFiles = !!(r as any).hasFiles;
@@ -462,8 +497,7 @@ export default function AdminContactSubmissions() {
                   onClick={() => setOpenId(r.id)}
                   className="group relative px-5 py-4 hover:bg-gray-50/70 cursor-pointer transition-colors flex items-center gap-4"
                   data-testid={`row-submission-${r.id}`}>
-                  <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full" style={{ backgroundColor: card?.accent || "#e5e7eb" }} aria-hidden="true" />
-                  <div className="relative w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                  <div className="relative w-11 h-11 rounded-2xl flex items-center justify-center text-xs font-bold flex-shrink-0"
                     style={{ backgroundColor: card?.tint || "#f3f4f6", color: card?.accent || "#6b7280" }}>
                     {initials(r.name)}
                     {isNew && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white" aria-label="new" />}
@@ -505,7 +539,11 @@ export default function AdminContactSubmissions() {
                 </li>
               );
             })}
-          </ul>
+                  </ul>
+                </div>
+              ));
+            })()}
+          </div>
         )}
       </div>
 
@@ -518,19 +556,20 @@ export default function AdminContactSubmissions() {
   );
 }
 
-function KpiCard({ icon, label, value, accent, tint, sub, testid }: {
-  icon: React.ReactNode; label: string; value: string | number; accent: string; tint: string; sub?: string; testid?: string;
+function GlassKpi({ icon, label, value, accent, sub, testid }: {
+  icon: React.ReactNode; label: string; value: string | number; accent: string; sub?: string; testid?: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-4" data-testid={testid}>
+    <div className="relative rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 p-4 transition-all hover:bg-white/10" data-testid={testid}>
       <div className="flex items-center justify-between mb-3">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: tint, color: accent }}>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${accent}25`, color: accent }}>
           {icon}
         </div>
+        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent, boxShadow: `0 0 8px ${accent}` }} />
       </div>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
-      <p className="text-2xl font-bold tracking-tight text-foreground mt-0.5">{value}</p>
-      {sub && <p className="text-[11px] text-gray-400 mt-1">{sub}</p>}
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">{label}</p>
+      <p className="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1 tabular-nums">{value}</p>
+      {sub && <p className="text-[11px] text-white/40 mt-1">{sub}</p>}
     </div>
   );
 }
