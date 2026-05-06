@@ -809,15 +809,6 @@ function Landing({ onPick }: { onPick: (c: Category) => void }) {
         >
           Feedback, a restaurant, an event, or a partnership idea — tell us where you fit in and we'll route it to the right team.
         </motion.p>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.22 }}
-          className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100 text-[11px] font-semibold text-gray-600"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          We typically reply within 2 business days
-        </motion.div>
       </div>
 
       {/* spacer before section header */}
