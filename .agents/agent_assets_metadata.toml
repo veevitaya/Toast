@@ -71,3 +71,9 @@ id = "7A7TsFIPILRvnCdq33W1t"
 uri = "file://screenshots/contact-bg-match.jpg"
 type = "image"
 title = "Contact page — background now matches main Toast app off-white"
+
+[[outputs]]
+id = "yj5PH3H_N8gCnh9xL1OC7"
+uri = "file://screenshots/contact-rebrand-v3.jpg"
+type = "image"
+title = "Contact — redesigned to match main Toast app branding"
