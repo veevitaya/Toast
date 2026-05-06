@@ -774,18 +774,18 @@ function PartnerForm({ signedInUser, category, onCancel, onSubmitted }: { signed
 // ============================================================================
 function Landing({ onPick }: { onPick: (c: Category) => void }) {
   return (
-    <div className="pt-2 pb-10 space-y-6" data-testid="contact-landing">
+    <div className="pb-10 space-y-3" data-testid="contact-landing">
       {/* HERO IMAGE — above the header */}
       <motion.div
         initial={{ opacity: 0, y: 8, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ type: "spring", stiffness: 220, damping: 22 }}
-        className="relative flex justify-center"
+        className="relative flex justify-center -mb-1"
       >
         <motion.img
           src={heroGroupImg}
           alt="Toast, waffle, popcorn and ticket mascots ready to help"
-          className="w-full max-w-[420px] h-auto select-none pointer-events-none"
+          className="w-full max-w-[360px] h-auto select-none pointer-events-none"
           draggable={false}
           animate={{ y: [0, -4, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -795,20 +795,11 @@ function Landing({ onPick }: { onPick: (c: Category) => void }) {
 
       {/* GREETING */}
       <div className="px-1">
-        <motion.div
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.08 }}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFCC02]/15 text-[11px] font-bold tracking-wide text-gray-900"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#FFCC02]" />
-          CONTACT TOAST
-        </motion.div>
         <motion.h1
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.14 }}
-          className="mt-2.5 text-[26px] sm:text-[28px] font-bold text-foreground leading-[1.15] tracking-tight"
+          transition={{ delay: 0.08 }}
+          className="text-[26px] sm:text-[28px] font-bold text-foreground leading-[1.15] tracking-tight"
           data-testid="text-hero-title"
         >
           Let's make better plans, together.
@@ -816,7 +807,7 @@ function Landing({ onPick }: { onPick: (c: Category) => void }) {
         <motion.p
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.14 }}
           className="mt-1.5 text-[15px] font-medium text-muted-foreground leading-snug"
         >
           Feedback, a restaurant, an event, or a partnership idea — tell us where you fit in and we'll route it to the right team.
@@ -824,13 +815,16 @@ function Landing({ onPick }: { onPick: (c: Category) => void }) {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.28 }}
-          className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100 text-[11px] font-semibold text-gray-600"
+          transition={{ delay: 0.22 }}
+          className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100 text-[11px] font-semibold text-gray-600"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           We typically reply within 2 business days
         </motion.div>
       </div>
+
+      {/* spacer before section header */}
+      <div className="h-2" />
 
       {/* SECTION HEADER */}
       <div className="px-1">
@@ -934,17 +928,22 @@ export default function Contact() {
 
   return (
     <div className="min-h-[100dvh] bg-background" data-testid="page-contact">
-      <header className="sticky top-0 z-10 px-4 py-3 bg-background/85 backdrop-blur-md border-b border-gray-200/60">
-        <div className="max-w-[480px] mx-auto flex items-center">
+      <header className="sticky top-0 z-10 px-4 py-2 bg-background/85 backdrop-blur-md border-b border-gray-200/60">
+        <div className="max-w-[480px] mx-auto flex items-center justify-between gap-2">
           <Link href="/">
             <button className="inline-flex items-center gap-1.5 -ml-1 px-2 py-1.5 rounded-full text-sm font-semibold text-foreground/80 hover:text-foreground hover:bg-gray-100 transition-colors" data-testid="link-back-home">
               <ArrowLeft className="w-4 h-4" strokeWidth={2.4} />
-              Back to Toast
+              Back
             </button>
           </Link>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFCC02]/15 text-[11px] font-bold tracking-wide text-gray-900">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FFCC02]" />
+            CONTACT TOAST
+          </div>
+          <span className="w-12" aria-hidden="true" />
         </div>
       </header>
-      <main className="max-w-[480px] mx-auto px-4 py-4">
+      <main className="max-w-[480px] mx-auto px-4 pt-2 pb-4">
         <AnimatePresence mode="wait">
           {view === "landing" && (
             <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
