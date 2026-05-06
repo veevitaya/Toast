@@ -267,28 +267,34 @@ export default function AdminContactSubmissions() {
             <button
               key={c.key}
               onClick={() => setActiveTab(TABS.find(t => t.key === c.key)!)}
-              className={`group text-left bg-white rounded-2xl border p-4 transition-all hover:shadow-sm hover:-translate-y-0.5 ${
+              className={`group relative text-left bg-white rounded-2xl border p-4 pt-5 overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 ${
                 isActive ? "border-gray-900/15 shadow-sm" : "border-gray-100"
               }`}
               data-testid={`type-card-${c.key}`}
               style={isActive ? { boxShadow: `0 0 0 2px ${c.accent}` } : undefined}
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: c.tint, color: c.accent }}>
+              <span className="absolute top-0 left-0 right-0 h-1" style={{ backgroundColor: c.accent }} />
+              <span className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-50" style={{ backgroundColor: c.tint }} aria-hidden="true" />
+              <div className="relative flex items-start justify-between mb-3">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: c.accent, color: "white" }}>
                   <Icon className="w-5 h-5" />
                 </div>
                 {s?.new > 0 && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ backgroundColor: c.accent, color: "white" }}>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white border" style={{ color: c.accent, borderColor: `${c.accent}40` }}>
+                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: c.accent }} />
                     {s.new} new
                   </span>
                 )}
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{c.sub}</p>
-              <p className="text-sm font-semibold text-gray-800 mt-0.5">{c.label}</p>
-              <div className="flex items-end justify-between mt-3">
-                <p className="text-2xl font-bold tracking-tight text-foreground">{s?.total ?? 0}</p>
-                <p className="text-[10px] text-gray-400">
-                  {s?.lastIso ? `Last · ${relTime(s.lastIso)}` : "No submissions yet"}
+              <p className="relative text-[10px] font-bold uppercase tracking-widest text-gray-400">{c.sub}</p>
+              <p className="relative text-sm font-semibold text-gray-800 mt-0.5">{c.label}</p>
+              <div className="relative flex items-end justify-between mt-3">
+                <div>
+                  <p className="text-3xl font-bold tracking-tight text-foreground leading-none">{s?.total ?? 0}</p>
+                  <p className="text-[10px] text-gray-400 mt-1">total submissions</p>
+                </div>
+                <p className="text-[10px] text-gray-400 text-right">
+                  {s?.lastIso ? <>Last activity<br /><span className="text-gray-600 font-medium">{relTime(s.lastIso)}</span></> : "No submissions yet"}
                 </p>
               </div>
             </button>
@@ -299,39 +305,45 @@ export default function AdminContactSubmissions() {
       {/* Pipeline strip */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5" data-testid="pipeline-strip">
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Lead pipeline</p>
-            <p className="text-sm font-semibold text-gray-800">From new submission to converted partner</p>
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-gray-50">
+              <CheckCircle2 className="w-4 h-4 text-gray-500" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Lead pipeline</p>
+              <p className="text-sm font-semibold text-gray-800">From new submission to converted partner</p>
+            </div>
           </div>
           <button onClick={() => { setFilters({}); setSearchInput(""); setActiveTab(TABS[0]); }} className="text-[11px] font-medium text-gray-400 hover:text-gray-700" data-testid="button-reset-pipeline">
             Show all
           </button>
         </div>
-        <div className="flex items-stretch gap-1.5">
+        <div className="flex items-center gap-1">
           {PIPELINE_STAGES.map((s, i) => {
             const count = stats.pipeline[s.key] || 0;
             const max = Math.max(1, ...Object.values(stats.pipeline));
             const pct = (count / max) * 100;
             const isActive = filters.status === s.key;
             return (
-              <button
-                key={s.key}
-                onClick={() => setFilters(f => ({ ...f, status: f.status === s.key ? undefined : s.key }))}
-                className={`flex-1 group rounded-xl px-3 py-2.5 text-left transition-all ${isActive ? "ring-2 ring-offset-1" : "hover:bg-gray-50"}`}
-                style={isActive ? { backgroundColor: `${s.color}10` } : undefined}
-                data-testid={`pipeline-stage-${s.key}`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-gray-700">{s.label}</span>
-                  <span className="text-xs font-bold" style={{ color: s.color }}>{count}</span>
-                </div>
-                <div className="mt-1.5 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: s.color }} />
-                </div>
+              <div key={s.key} className="flex items-center flex-1 min-w-0">
+                <button
+                  onClick={() => setFilters(f => ({ ...f, status: f.status === s.key ? undefined : s.key }))}
+                  className={`flex-1 min-w-0 group rounded-xl px-3 py-3 text-left transition-all border ${isActive ? "border-transparent" : "border-gray-100 hover:border-gray-200"}`}
+                  style={isActive ? { backgroundColor: `${s.color}10`, borderColor: `${s.color}40` } : undefined}
+                  data-testid={`pipeline-stage-${s.key}`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-gray-700 truncate">{s.label}</span>
+                    <span className="text-base font-bold flex-shrink-0" style={{ color: s.color }}>{count}</span>
+                  </div>
+                  <div className="mt-2 h-2 rounded-full bg-gray-100 overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: s.color }} />
+                  </div>
+                </button>
                 {i < PIPELINE_STAGES.length - 1 && (
-                  <ChevronRight className="hidden lg:block w-3.5 h-3.5 text-gray-300 absolute" style={{ marginTop: -22, marginLeft: "calc(100% - 6px)" }} />
+                  <ChevronRight className="hidden md:block w-4 h-4 text-gray-300 mx-0.5 flex-shrink-0" />
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
@@ -384,29 +396,29 @@ export default function AdminContactSubmissions() {
         {showFilters && (
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
             <Select value={filters.status || "any"} onValueChange={v => setFilters(f => ({ ...f, status: v === "any" ? undefined : v }))}>
-              <SelectTrigger className="rounded-xl" data-testid="filter-status"><SelectValue placeholder="Status" /></SelectTrigger>
-              <SelectContent>
+              <SelectTrigger className="rounded-xl bg-white border-gray-200" data-testid="filter-status"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent className="bg-white">
                 <SelectItem value="any">Any status</SelectItem>
                 {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={filters.priority || "any"} onValueChange={v => setFilters(f => ({ ...f, priority: v === "any" ? undefined : v }))}>
-              <SelectTrigger className="rounded-xl" data-testid="filter-priority"><SelectValue placeholder="Priority" /></SelectTrigger>
-              <SelectContent>
+              <SelectTrigger className="rounded-xl bg-white border-gray-200" data-testid="filter-priority"><SelectValue placeholder="Priority" /></SelectTrigger>
+              <SelectContent className="bg-white">
                 <SelectItem value="any">Any priority</SelectItem>
                 {PRIORITIES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={filters.leadQuality || "any"} onValueChange={v => setFilters(f => ({ ...f, leadQuality: v === "any" ? undefined : v }))}>
-              <SelectTrigger className="rounded-xl" data-testid="filter-lead-quality"><SelectValue placeholder="Lead quality" /></SelectTrigger>
-              <SelectContent>
+              <SelectTrigger className="rounded-xl bg-white border-gray-200" data-testid="filter-lead-quality"><SelectValue placeholder="Lead quality" /></SelectTrigger>
+              <SelectContent className="bg-white">
                 <SelectItem value="any">Any quality</SelectItem>
                 {LEAD_QUALITIES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={filters.hasFiles || "any"} onValueChange={v => setFilters(f => ({ ...f, hasFiles: v === "any" ? undefined : v }))}>
-              <SelectTrigger className="rounded-xl" data-testid="filter-has-files"><SelectValue placeholder="Files" /></SelectTrigger>
-              <SelectContent>
+              <SelectTrigger className="rounded-xl bg-white border-gray-200" data-testid="filter-has-files"><SelectValue placeholder="Files" /></SelectTrigger>
+              <SelectContent className="bg-white">
                 <SelectItem value="any">Any</SelectItem>
                 <SelectItem value="true">Has files</SelectItem>
                 <SelectItem value="false">No files</SelectItem>
@@ -448,8 +460,9 @@ export default function AdminContactSubmissions() {
               return (
                 <li key={r.id}
                   onClick={() => setOpenId(r.id)}
-                  className="group px-5 py-4 hover:bg-gray-50/70 cursor-pointer transition-colors flex items-center gap-4"
+                  className="group relative px-5 py-4 hover:bg-gray-50/70 cursor-pointer transition-colors flex items-center gap-4"
                   data-testid={`row-submission-${r.id}`}>
+                  <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full" style={{ backgroundColor: card?.accent || "#e5e7eb" }} aria-hidden="true" />
                   <div className="relative w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                     style={{ backgroundColor: card?.tint || "#f3f4f6", color: card?.accent || "#6b7280" }}>
                     {initials(r.name)}
@@ -686,11 +699,11 @@ function SubmissionDetail({ id, onClose, listUrl }: { id: number; onClose: () =>
           </div>
           <div>
             <Label className="text-xs uppercase tracking-wider text-gray-400">Tags (comma separated)</Label>
-            <Input value={tagsInput} onChange={e => { setTagsInput(e.target.value); setDirty(true); }} className="mt-1.5 rounded-xl" data-testid="input-tags" />
+            <Input value={tagsInput} onChange={e => { setTagsInput(e.target.value); setDirty(true); }} className="mt-1.5 rounded-xl bg-white border-gray-200" data-testid="input-tags" />
           </div>
           <div>
             <Label className="text-xs uppercase tracking-wider text-gray-400">Internal notes</Label>
-            <Textarea value={internalNotes} onChange={e => { setInternalNotes(e.target.value); setDirty(true); }} rows={4} className="mt-1.5 rounded-xl" data-testid="textarea-internal-notes" />
+            <Textarea value={internalNotes} onChange={e => { setInternalNotes(e.target.value); setDirty(true); }} rows={4} className="mt-1.5 rounded-xl bg-white border-gray-200" data-testid="textarea-internal-notes" />
           </div>
         </Section>
 
@@ -776,8 +789,8 @@ function ControlSelect({ label, value, onChange, options, testid }: { label: str
     <div>
       <Label className="text-xs uppercase tracking-wider text-gray-400">{label}</Label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="mt-1.5 rounded-xl" data-testid={testid}><SelectValue /></SelectTrigger>
-        <SelectContent>
+        <SelectTrigger className="mt-1.5 rounded-xl bg-white border-gray-200 capitalize" data-testid={testid}><SelectValue /></SelectTrigger>
+        <SelectContent className="bg-white">
           {options.map(o => <SelectItem key={o} value={o} className="capitalize">{o.replace(/_/g, " ")}</SelectItem>)}
         </SelectContent>
       </Select>
