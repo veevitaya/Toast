@@ -336,7 +336,7 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
 
   const set = (k: string, v: any) => setData((d: any) => ({ ...d, [k]: v }));
 
-  const wantsContact = !!((data.name || "").trim() || (data.email || "").trim() || (data.phone_or_line || "").trim());
+  const wantsContact = !!((data.email || "").trim() || (data.phone_or_line || "").trim());
 
   const stepValid = (() => {
     if (step === 0) return data.overall_satisfaction_score && data.would_recommend_to_friends;
