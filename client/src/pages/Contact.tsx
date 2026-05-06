@@ -771,13 +771,13 @@ function PartnerForm({ signedInUser, category, onCancel, onSubmitted }: { signed
 // ============================================================================
 function Landing({ onPick }: { onPick: (c: Category) => void }) {
   return (
-    <div className="pb-10 space-y-3" data-testid="contact-landing">
-      {/* PAGE HEADER — above the mascots */}
+    <div className="pb-10" data-testid="contact-landing">
+      {/* PAGE HEADER — left-aligned, above the mascots */}
       <motion.div
         initial={{ opacity: 0, y: -4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="text-center pt-1 pb-1"
+        className="px-1"
         data-testid="text-page-header"
       >
         <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#FFCC02]">Toast</p>
@@ -791,7 +791,7 @@ function Landing({ onPick }: { onPick: (c: Category) => void }) {
         initial={{ opacity: 0, y: 8, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ type: "spring", stiffness: 220, damping: 22 }}
-        className="relative flex justify-center -mb-1"
+        className="relative flex justify-center -mt-1 -mb-3"
       >
         <motion.img
           src={heroGroupImg}
