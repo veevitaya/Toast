@@ -566,34 +566,138 @@ function PartnerForm({ category, onCancel, onSubmitted }: { category: Exclude<Ca
 // LANDING + SUCCESS + WRAPPER
 // ============================================================================
 function Landing({ onPick }: { onPick: (c: Category) => void }) {
+  const floatVariants = [
+    { y: [0, -8, 0], rotate: [0, -3, 0] },
+    { y: [0, -10, 0], rotate: [0, 4, 0] },
+    { y: [0, -7, 0], rotate: [0, -2, 0] },
+    { y: [0, -9, 0], rotate: [0, 3, 0] },
+  ];
+  const heroChars: MascotName[] = ["toast", "waffle", "popcorn", "ticket"];
   return (
-    <div className="space-y-6" data-testid="contact-landing">
-      <div className="text-center pt-4 pb-2">
-        <Mascot name="group" size="hero" className="mx-auto" />
+    <div className="space-y-8 pb-10" data-testid="contact-landing">
+      {/* HERO */}
+      <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FFCC02] via-[#FFD633] to-[#FFE066] px-5 pt-7 pb-6 shadow-[0_10px_40px_-10px_rgba(255,204,2,0.5)]">
+        {/* decorative sun-burst dots */}
+        <div className="pointer-events-none absolute inset-0 opacity-40">
+          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/30 blur-2xl" />
+          <div className="absolute -bottom-12 -left-8 w-32 h-32 rounded-full bg-white/20 blur-2xl" />
+        </div>
+        <div className="relative">
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/70 backdrop-blur text-[11px] font-bold tracking-wide text-gray-800 uppercase"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[#00B14F] animate-pulse" />
+            We read every message
+          </motion.div>
+
+          {/* floating mascots row */}
+          <div className="mt-4 flex justify-center items-end gap-1 h-[160px] sm:h-[180px]">
+            {heroChars.map((name, i) => (
+              <motion.div
+                key={name}
+                initial={{ opacity: 0, y: 24, scale: 0.7 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: 0.05 + i * 0.08, type: "spring", stiffness: 220, damping: 14 }}
+                className="relative"
+              >
+                <motion.div
+                  animate={floatVariants[i]}
+                  transition={{ duration: 3.6 + i * 0.3, repeat: Infinity, ease: "easeInOut", delay: i * 0.2 }}
+                  whileHover={{ scale: 1.12, rotate: 0, transition: { type: "spring", stiffness: 300 } }}
+                  className="cursor-pointer"
+                >
+                  <Mascot name={name} size="lg" />
+                </motion.div>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            className="mt-3 text-center text-[26px] sm:text-[32px] font-extrabold leading-[1.1] text-gray-900 tracking-tight"
+            data-testid="text-hero-title"
+          >
+            Let's make better plans,<br className="hidden sm:block" /> together.
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="mt-2 text-center text-sm sm:text-[15px] text-gray-800/80 max-w-md mx-auto leading-relaxed"
+          >
+            Feedback, a restaurant, an event, or a partnership idea — tell Toast where you fit in and we'll route it to the right team.
+          </motion.p>
+        </div>
       </div>
-      <div className="text-center px-2">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900" data-testid="text-hero-title">Let's Make Better Plans Together</h1>
-        <p className="mt-2 text-sm sm:text-base text-gray-500 max-w-md mx-auto">
-          Got feedback, a restaurant, an event, or a partnership idea? Tell Toast where you fit in — we'll route it to the right team.
-        </p>
+
+      {/* SECTION LABEL */}
+      <div className="flex items-center gap-3 px-1">
+        <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500">Pick what fits you</div>
+        <div className="flex-1 h-px bg-gray-200" />
       </div>
+
+      {/* CARDS */}
       <div className="grid gap-3 sm:grid-cols-2">
-        {TYPE_CARDS.map(card => (
-          <motion.button key={card.key} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
+        {TYPE_CARDS.map((card, i) => (
+          <motion.button
+            key={card.key}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 + i * 0.06, type: "spring", stiffness: 240, damping: 22 }}
+            whileHover={{ y: -4 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => onPick(card.key)}
-            className="group flex items-start gap-4 p-4 sm:p-5 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md text-left transition"
-            data-testid={`card-type-${card.key}`}>
-            <div className="shrink-0 w-16 h-16 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${card.accent}1A` }}>
-              <Mascot name={card.mascot} size="sm" />
-            </div>
-            <div className="flex-1">
-              <div className="font-bold text-gray-900 text-base">{card.title}</div>
-              <div className="text-sm text-gray-500 mt-1 leading-snug">{card.description}</div>
+            className="group relative overflow-hidden flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-white border border-gray-100 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-8px_rgba(0,0,0,0.18)] hover:border-[#FFCC02]/60 text-left transition-all duration-300"
+            data-testid={`card-type-${card.key}`}
+          >
+            {/* hover-revealed brand glow */}
+            <div
+              className="pointer-events-none absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-2xl"
+              style={{ backgroundColor: `${card.accent}40` }}
+            />
+
+            <motion.div
+              whileHover={{ rotate: [0, -8, 8, -4, 0], transition: { duration: 0.6 } }}
+              className="relative shrink-0 w-20 h-20 rounded-2xl flex items-center justify-center"
+              style={{ backgroundColor: `${card.accent}1F` }}
+            >
+              <Mascot name={card.mascot} size="md" className="drop-shadow-sm" />
+              {/* arrow badge */}
+              <motion.div
+                initial={false}
+                className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-[#FFCC02] text-gray-900 flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+              >
+                <ArrowRight className="w-3.5 h-3.5" strokeWidth={3} />
+              </motion.div>
+            </motion.div>
+
+            <div className="relative flex-1 min-w-0">
+              <div className="font-bold text-gray-900 text-[15px] leading-tight">{card.title}</div>
+              <div className="text-[13px] text-gray-500 mt-1 leading-snug line-clamp-2">{card.description}</div>
             </div>
           </motion.button>
         ))}
       </div>
-      <p className="text-xs text-gray-400 text-center pb-6">All submissions are read by Toast's team. We never share your info.</p>
+
+      {/* TRUST FOOTER */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.85 }}
+        className="relative overflow-hidden rounded-2xl bg-white border border-gray-100 p-4 flex items-center gap-3"
+      >
+        <div className="shrink-0 w-10 h-10 rounded-full bg-[#FFCC02]/15 flex items-center justify-center">
+          <span className="text-lg">✉️</span>
+        </div>
+        <div className="flex-1">
+          <div className="text-[13px] font-bold text-gray-900">Real humans, real replies.</div>
+          <div className="text-[12px] text-gray-500 leading-snug">Every submission is read by Toast's team. We never share your info — pinky promise.</div>
+        </div>
+      </motion.div>
     </div>
   );
 }
@@ -640,14 +744,17 @@ export default function Contact() {
   const reset = () => { setView("landing"); setCategory(null); setSuccessCategory(null); };
 
   return (
-    <div className="min-h-[100dvh] bg-[#FFFCF4]" data-testid="page-contact">
-      <header className="px-4 py-3 flex items-center justify-between border-b border-gray-100 bg-white sticky top-0 z-10">
+    <div className="min-h-[100dvh] bg-[#FFFAEC]" data-testid="page-contact">
+      <header className="px-4 py-3 flex items-center justify-between border-b border-[#FFCC02]/20 bg-[#FFFAEC]/90 backdrop-blur sticky top-0 z-10">
         <Link href="/">
-          <button className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900" data-testid="link-back-home">
+          <button className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors" data-testid="link-back-home">
             <ArrowLeft className="w-4 h-4" /> Back to Toast
           </button>
         </Link>
-        <span className="text-xs font-bold tracking-[0.2em] text-gray-400">CONTACT</span>
+        <span className="flex items-center gap-1.5 text-xs font-extrabold tracking-[0.22em] text-gray-700">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#FFCC02]" />
+          CONTACT
+        </span>
         <div className="w-20" />
       </header>
       <main className="max-w-[480px] mx-auto px-4 py-4">

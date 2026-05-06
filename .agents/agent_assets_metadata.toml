@@ -59,3 +59,9 @@ id = "XbSdKxyL9fNDAOv5AlYaM"
 uri = "file://screenshots/contact-admin.jpg"
 type = "image"
 title = "Admin dashboard — login required (Contact & Partnerships appears in sidebar after sign-in)"
+
+[[outputs]]
+id = "IOHyo3KgwReON2HrQ95N_"
+uri = "file://screenshots/contact-redesign-final.jpg"
+type = "image"
+title = "Redesigned Contact landing — brand hero, real mascots, microanimations"
