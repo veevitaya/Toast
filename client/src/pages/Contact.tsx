@@ -576,11 +576,11 @@ function Landing({ onPick }: { onPick: (c: Category) => void }) {
   return (
     <div className="space-y-8 pb-10" data-testid="contact-landing">
       {/* HERO */}
-      <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#FFCC02] via-[#FFD633] to-[#FFE066] px-5 pt-7 pb-6 shadow-[0_10px_40px_-10px_rgba(255,204,2,0.5)]">
-        {/* decorative sun-burst dots */}
-        <div className="pointer-events-none absolute inset-0 opacity-40">
-          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/30 blur-2xl" />
-          <div className="absolute -bottom-12 -left-8 w-32 h-32 rounded-full bg-white/20 blur-2xl" />
+      <div className="relative overflow-hidden rounded-[28px] bg-background border border-[#FFCC02]/25 px-5 pt-7 pb-6 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.08)]">
+        {/* decorative brand accents */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-12 -right-10 w-40 h-40 rounded-full bg-[#FFCC02]/15 blur-2xl" />
+          <div className="absolute -bottom-14 -left-8 w-32 h-32 rounded-full bg-[#FFCC02]/10 blur-2xl" />
         </div>
         <div className="relative">
           <motion.div
