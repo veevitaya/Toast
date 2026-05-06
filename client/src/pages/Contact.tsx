@@ -335,16 +335,16 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
 
   const set = (k: string, v: any) => setData((d: any) => ({ ...d, [k]: v }));
 
+  const wantsContact = !!((data.name || "").trim() || (data.email || "").trim() || (data.phone_or_line || "").trim());
+
   const stepValid = (() => {
-    if (step === 0) return data.overall_satisfaction_score && data.would_use_again && data.would_recommend_to_friends && data.ease_of_use_score;
-    if (step === 1) return data.recommendation_relevance && data.helped_make_decision && data.helped_find_new_restaurants && data.decision_time;
-    if (step === 2) return (data.top_two_liked || "").trim().length > 0;
-    if (step === 3) return data.quote_permission;
-    if (step === 4) return (data.name || "").trim() && ((data.email || "").trim() || (data.phone_or_line || "").trim()) && data.consent;
+    if (step === 0) return data.overall_satisfaction_score && data.would_recommend_to_friends;
+    if (step === 1) return true;
+    if (step === 2) return !wantsContact || data.consent;
     return false;
   })();
 
-  const next = () => setStep(s => Math.min(s + 1, 4));
+  const next = () => setStep(s => Math.min(s + 1, 2));
   const back = () => setStep(s => Math.max(s - 1, 0));
 
   const submit = async () => {
@@ -384,7 +384,7 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
     } finally { setSubmitting(false); }
   };
 
-  const STEP_LABELS = ["Quick vibe check", "Did Toast actually help?", "Tell us more", "Quote permission", "Where to reach you"];
+  const STEP_LABELS = ["Quick rating", "Help us improve", "Stay in touch (optional)"];
 
   return (
     <div className="flex flex-col h-full" data-testid="form-user-feedback">
@@ -399,7 +399,7 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
             <span className="text-[11px] font-bold uppercase tracking-wide text-gray-900">Everyday User</span>
           </div>
         </div>
-        <ProgressBar step={step} total={5} labels={STEP_LABELS} />
+        <ProgressBar step={step} total={3} labels={STEP_LABELS} />
       </div>
 
       {signedInUser && <div className="mb-4"><SignedInBanner user={signedInUser} /></div>}
@@ -408,36 +408,32 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
         <AnimatePresence mode="wait">
           <motion.div key={step} className="space-y-4">
             {step === 0 && (
-              <>
-                <FormStepCard icon={<Sparkles className="w-5 h-5" />} title="The big picture" helper="Two quick numbers and two quick taps.">
-                  <Question icon={<Heart className="w-4 h-4" />} label="Overall, how satisfied are you with Toast?">
-                    <RatingScale value={data.overall_satisfaction_score} onChange={n => set("overall_satisfaction_score", n)} testid="rating-overall" />
-                  </Question>
-                  <div className="h-px bg-gray-100" />
-                  <Question icon={<Sparkles className="w-4 h-4" />} label="Was Toast easy to understand and use?">
-                    <RatingScale value={data.ease_of_use_score} onChange={n => set("ease_of_use_score", n)} testid="rating-ease" lowLabel="Confusing" highLabel="Effortless" />
-                  </Question>
-                </FormStepCard>
-                <FormStepCard icon={<MessageCircle className="w-5 h-5" />} title="Would you come back?">
-                  <Question label="Would you use Toast again?">
-                    <YesNoMaybe value={data.would_use_again} onChange={v => set("would_use_again", v)} testid="ynm-would-use-again" />
-                  </Question>
-                  <div className="h-px bg-gray-100" />
-                  <Question label="Would you recommend Toast to your friends?">
-                    <YesNoMaybe value={data.would_recommend_to_friends} onChange={v => set("would_recommend_to_friends", v)} testid="ynm-recommend" />
-                  </Question>
-                </FormStepCard>
-              </>
+              <FormStepCard icon={<Sparkles className="w-5 h-5" />} title="How was Toast for you?" helper="Just two quick taps — that's all we need.">
+                <Question icon={<Heart className="w-4 h-4" />} label="Overall, how would you rate Toast?">
+                  <RatingScale value={data.overall_satisfaction_score} onChange={n => set("overall_satisfaction_score", n)} testid="rating-overall" />
+                </Question>
+                <div className="h-px bg-gray-100" />
+                <Question icon={<MessageCircle className="w-4 h-4" />} label="Would you recommend Toast to a friend?">
+                  <YesNoMaybe value={data.would_recommend_to_friends} onChange={v => set("would_recommend_to_friends", v)} testid="ynm-recommend" />
+                </Question>
+              </FormStepCard>
             )}
 
             {step === 1 && (
               <>
-                <FormStepCard icon={<Compass className="w-5 h-5" />} title="Did Toast point you somewhere good?">
-                  <Question label="Did the recommendation feel relevant?">
-                    <YesNoMaybe value={data.recommendation_relevance} onChange={v => set("recommendation_relevance", v)} options={["yes","no","somewhat"]} testid="ynm-relevance" />
+                <FormStepCard icon={<Lightbulb className="w-5 h-5" />} title="Help us make Toast better" helper="All optional — even one line goes a long way.">
+                  <Question icon={<span className="text-base" aria-hidden="true">🛠️</span>} label="What should Toast improve?" helper="The single most useful thing you can tell us.">
+                    <StyledTextarea rows={4} placeholder="What slowed you down, felt confusing, or could be better?" value={data.top_two_to_improve} onChange={e => set("top_two_to_improve", e.target.value)} data-testid="textarea-top-improve" />
                   </Question>
-                  <div className="h-px bg-gray-100" />
-                  <Question label="Did Toast help you make a decision?">
+                  <Question icon={<span className="text-base" aria-hidden="true">✨</span>} label="What worked well?" helper="Optional">
+                    <StyledTextarea rows={3} placeholder="Anything you liked or want us to keep doing." value={data.top_two_liked} onChange={e => set("top_two_liked", e.target.value)} data-testid="textarea-top-liked" />
+                  </Question>
+                  <Question icon={<span className="text-base" aria-hidden="true">💡</span>} label="Any ideas or suggestions?" helper="Optional">
+                    <StyledTextarea rows={2} placeholder="Big or small — we read everything." value={data.suggestions} onChange={e => set("suggestions", e.target.value)} data-testid="textarea-suggestions" />
+                  </Question>
+                </FormStepCard>
+                <FormStepCard icon={<Compass className="w-5 h-5" />} title="A few quick taps" helper="All optional — skip any.">
+                  <Question label="Did Toast help you decide?">
                     <YesNoMaybe value={data.helped_make_decision} onChange={v => set("helped_make_decision", v)} testid="ynm-decided" />
                   </Question>
                   <div className="h-px bg-gray-100" />
@@ -445,96 +441,33 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
                     <YesNoMaybe value={data.helped_find_new_restaurants} onChange={v => set("helped_find_new_restaurants", v)} testid="ynm-new-restaurants" />
                   </Question>
                 </FormStepCard>
-                <FormStepCard icon={<Calendar className="w-5 h-5" />} title="How fast did you decide?" helper="From open to 'okay let's go'.">
-                  <div className="grid grid-cols-2 gap-2" data-testid="select-decision-time">
-                    {["Under 1 minute","1–3 minutes","3–5 minutes","5–10 minutes","More than 10 minutes","Still couldn't decide"].map(o => {
-                      const active = data.decision_time === o;
-                      return (
-                        <button key={o} type="button" onClick={() => set("decision_time", o)}
-                          className={`px-3 py-3 rounded-xl text-[13px] font-semibold transition border ${active ? "bg-[#FFCC02] text-gray-900 border-[#FFCC02] shadow-[0_2px_8px_-2px_rgba(255,204,2,0.4)]" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"}`}>
-                          {o}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </FormStepCard>
               </>
             )}
 
             {step === 2 && (
               <>
-                <FormStepCard icon={<Heart className="w-5 h-5" />} title="What worked, what didn't" helper="Top of mind is enough — bullet points are great.">
-                  <Question icon={<span className="text-base">✨</span>} label="Top 2 things you liked">
-                    <StyledTextarea rows={3} placeholder="e.g. The swipe flow, the group sessions…" value={data.top_two_liked} onChange={e => set("top_two_liked", e.target.value)} data-testid="textarea-top-liked" />
-                  </Question>
-                  <Question icon={<span className="text-base">🛠️</span>} label="Top 2 things Toast should improve">
-                    <StyledTextarea rows={3} placeholder="What slowed you down or felt off?" value={data.top_two_to_improve} onChange={e => set("top_two_to_improve", e.target.value)} data-testid="textarea-top-improve" />
-                  </Question>
-                </FormStepCard>
-                <FormStepCard icon={<Lightbulb className="w-5 h-5" />} title="A few quick takes" helper="All optional — skip what doesn't apply.">
-                  <Question label="What do you like most about Toast?">
-                    <StyledTextarea rows={2} value={data.favorite_part} onChange={e => set("favorite_part", e.target.value)} data-testid="textarea-favorite" />
-                  </Question>
-                  <Question label="How do you feel about the visuals?">
-                    <StyledTextarea rows={2} placeholder="Vibes, colors, type, mascots…" value={data.visual_feedback} onChange={e => set("visual_feedback", e.target.value)} data-testid="textarea-visual" />
-                  </Question>
-                  <Question label="Any suggestions?">
-                    <StyledTextarea rows={2} placeholder="Big or small — we read everything." value={data.suggestions} onChange={e => set("suggestions", e.target.value)} data-testid="textarea-suggestions" />
-                  </Question>
-                </FormStepCard>
-              </>
-            )}
-
-            {step === 3 && (
-              <FormStepCard icon={<Quote className="w-5 h-5" />} title="Can we quote you?" helper="For internal learning, pitch decks, or marketing.">
-                <div className="flex flex-col gap-2" data-testid="select-quote-permission">
-                  {[
-                    { v: "yes_with_name", l: "Yes, with my name", emoji: "✅" },
-                    { v: "yes_anonymous", l: "Yes, anonymously", emoji: "🕶️" },
-                    { v: "no", l: "No, please don't", emoji: "🙅" },
-                  ].map(o => {
-                    const active = data.quote_permission === o.v;
-                    return (
-                      <button key={o.v} type="button" onClick={() => set("quote_permission", o.v)}
-                        className={`flex items-center gap-3 text-left px-4 py-3.5 rounded-2xl text-sm font-semibold transition border ${active ? "bg-[#FFCC02]/15 text-gray-900 border-[#FFCC02]" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"}`}>
-                        <span className="text-xl">{o.emoji}</span>
-                        <span className="flex-1">{o.l}</span>
-                        {active && <Check className="w-4 h-4 text-[#FFCC02]" strokeWidth={3} />}
-                      </button>
-                    );
-                  })}
-                </div>
-                {(data.quote_permission === "yes_with_name" || data.quote_permission === "yes_anonymous") && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-2 pt-2 overflow-hidden">
-                    <p className="text-[12px] text-muted-foreground">Drop in any specific lines you'd like us to use (optional).</p>
-                    <StyledInput placeholder="Quote 1" value={data.quote_1} onChange={e => set("quote_1", e.target.value)} data-testid="input-quote-1" />
-                    <StyledInput placeholder="Quote 2" value={data.quote_2} onChange={e => set("quote_2", e.target.value)} data-testid="input-quote-2" />
-                    <StyledInput placeholder="Quote 3" value={data.quote_3} onChange={e => set("quote_3", e.target.value)} data-testid="input-quote-3" />
-                  </motion.div>
-                )}
-              </FormStepCard>
-            )}
-
-            {step === 4 && (
-              <>
-                <FormStepCard icon={<User className="w-5 h-5" />} title="How can we reach you?" helper="So we can follow up if needed.">
-                  <Question icon={<User className="w-4 h-4" />} label="Your name">
+                <FormStepCard icon={<User className="w-5 h-5" />} title="Want a follow-up?" helper="Totally optional. Leave blank to submit anonymously.">
+                  <Question icon={<User className="w-4 h-4" />} label="Your name" helper="Optional">
                     <StyledInput value={data.name} onChange={e => set("name", e.target.value)} adornment={<User className="w-4 h-4" />} data-testid="input-name" />
                   </Question>
-                  <Question icon={<AtSign className="w-4 h-4" />} label="Email">
-                    <StyledInput type="email" placeholder="you@email.com" value={data.email} onChange={e => set("email", e.target.value)} adornment={<AtSign className="w-4 h-4" />} data-testid="input-email" />
-                  </Question>
-                  <Question icon={<Phone className="w-4 h-4" />} label="Phone or LINE" helper="Optional — pick whichever's easiest.">
-                    <StyledInput placeholder="@yourline or +66…" value={data.phone_or_line} onChange={e => set("phone_or_line", e.target.value)} adornment={<Phone className="w-4 h-4" />} data-testid="input-phone-line" />
+                  <Question icon={<AtSign className="w-4 h-4" />} label="Email or LINE" helper="Optional — only if you'd like a reply.">
+                    <StyledInput placeholder="you@email.com or @yourline" value={data.email || data.phone_or_line} onChange={e => {
+                      const v = e.target.value;
+                      const looksLikeLine = /^@/.test(v) || /line/i.test(v);
+                      if (looksLikeLine) { set("phone_or_line", v); set("email", ""); }
+                      else { set("email", v); set("phone_or_line", ""); }
+                    }} adornment={<AtSign className="w-4 h-4" />} data-testid="input-email" />
                   </Question>
                 </FormStepCard>
-                <FormStepCard icon={<Camera className="w-5 h-5" />} title="Anything to show us?" helper="Screenshots make bug reports way easier.">
+                <FormStepCard icon={<Camera className="w-5 h-5" />} title="Want to attach something?" helper="Optional — screenshots help a lot for bugs.">
                   <FileUploader files={files} onChange={setFiles} />
                 </FormStepCard>
-                <label className="flex items-start gap-2.5 text-[13px] text-gray-700 px-1">
-                  <input type="checkbox" checked={data.consent} onChange={e => set("consent", e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#FFCC02]" data-testid="checkbox-consent" />
-                  <span>I'm okay with Toast contacting me about this.</span>
-                </label>
+                {wantsContact && (
+                  <label className="flex items-start gap-2.5 text-[13px] text-gray-700 px-1">
+                    <input type="checkbox" checked={data.consent} onChange={e => set("consent", e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#FFCC02]" data-testid="checkbox-consent" />
+                    <span>I'm okay with Toast contacting me about this.</span>
+                  </label>
+                )}
                 {/* Honeypot */}
                 <input tabIndex={-1} autoComplete="off" type="text" name="company_website" value={data.company_website} onChange={e => set("company_website", e.target.value)} style={{ position: "absolute", left: "-9999px", width: 1, height: 1 }} aria-hidden="true" />
               </>
@@ -544,10 +477,10 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
       </div>
 
       <div className="fixed bottom-0 inset-x-0 px-4 py-3 bg-white/95 backdrop-blur border-t border-gray-100 max-w-[480px] mx-auto">
-        <Button onClick={step === 4 ? submit : next} disabled={!stepValid || submitting}
+        <Button onClick={step === 2 ? submit : next} disabled={!stepValid || submitting}
           className="w-full h-12 rounded-2xl bg-[#FFCC02] hover:bg-[#FFD633] text-gray-900 font-semibold disabled:opacity-50 shadow-[0_4px_14px_-4px_rgba(255,204,2,0.5)]"
           data-testid="button-form-next">
-          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : step === 4 ? <><Send className="w-4 h-4 mr-1.5" /> Submit feedback</> : <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>}
+          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : step === 2 ? <><Send className="w-4 h-4 mr-1.5" /> Submit feedback</> : <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>}
         </Button>
       </div>
     </div>
