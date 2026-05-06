@@ -19,6 +19,38 @@ interface FileAttachment {
   fileDataUrl: string;
 }
 
+interface SignedInUser {
+  displayName: string;
+  lineUserId: string;
+  pictureUrl?: string;
+}
+
+function getSignedInUser(): SignedInUser | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("toast_line_profile");
+    if (!raw) return null;
+    const p = JSON.parse(raw);
+    if (!p?.userId || !p?.displayName) return null;
+    return { displayName: p.displayName, lineUserId: p.userId, pictureUrl: p.pictureUrl };
+  } catch { return null; }
+}
+
+function SignedInBanner({ user }: { user: SignedInUser }) {
+  return (
+    <div className="mb-4 flex items-center gap-3 px-3 py-2.5 rounded-2xl bg-[#FFCC02]/12 border border-[#FFCC02]/30" data-testid="banner-signed-in">
+      {user.pictureUrl
+        ? <img src={user.pictureUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
+        : <div className="w-8 h-8 rounded-full bg-[#FFCC02] flex items-center justify-center text-[13px] font-bold text-[#1a1a1a]">{user.displayName.charAt(0).toUpperCase()}</div>}
+      <div className="flex-1 min-w-0">
+        <div className="text-[12px] text-muted-foreground leading-tight">Signed in as</div>
+        <div className="text-[13px] font-bold text-foreground truncate">{user.displayName}</div>
+      </div>
+      <div className="text-[11px] font-semibold text-[#1a1a1a] bg-white/70 px-2 py-1 rounded-full">Auto-filled</div>
+    </div>
+  );
+}
+
 const TYPE_CARDS: Array<{
   key: Category;
   title: string;
@@ -176,20 +208,26 @@ function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch {} }
 // ============================================================================
 // USER FEEDBACK MULTI-STEP FORM
 // ============================================================================
-function UserFeedbackForm({ onCancel, onSubmitted }: { onCancel: () => void; onSubmitted: (cat: Category) => void }) {
+function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUser: SignedInUser | null; onCancel: () => void; onSubmitted: (cat: Category) => void }) {
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [files, setFiles] = useState<FileAttachment[]>([]);
-  const [data, setData] = useState<any>(() => ({
-    overall_satisfaction_score: null, would_use_again: "", would_recommend_to_friends: "", ease_of_use_score: null,
-    recommendation_relevance: "", helped_make_decision: "", helped_find_new_restaurants: "", decision_time: "",
-    top_two_liked: "", top_two_to_improve: "", favorite_part: "", visual_feedback: "", suggestions: "",
-    quote_permission: "", quote_1: "", quote_2: "", quote_3: "",
-    name: "", email: "", phone_or_line: "", consent: false,
-    company_website: "", // honeypot
-    ...loadDraft().userFeedback,
-  }));
+  const [data, setData] = useState<any>(() => {
+    const draft = loadDraft().userFeedback || {};
+    return {
+      overall_satisfaction_score: null, would_use_again: "", would_recommend_to_friends: "", ease_of_use_score: null,
+      recommendation_relevance: "", helped_make_decision: "", helped_find_new_restaurants: "", decision_time: "",
+      top_two_liked: "", top_two_to_improve: "", favorite_part: "", visual_feedback: "", suggestions: "",
+      quote_permission: "", quote_1: "", quote_2: "", quote_3: "",
+      name: signedInUser?.displayName || "",
+      email: "",
+      phone_or_line: "",
+      consent: false,
+      company_website: "", // honeypot
+      ...draft,
+    };
+  });
 
   useEffect(() => { saveDraft({ ...loadDraft(), userFeedback: data }); }, [data]);
 
@@ -218,7 +256,7 @@ function UserFeedbackForm({ onCancel, onSubmitted }: { onCancel: () => void; onS
         name: data.name?.trim() || null,
         email: data.email?.trim() || null,
         phone: looksLikeLine ? null : phone_or_line || null,
-        lineId: looksLikeLine ? phone_or_line : null,
+        lineId: signedInUser?.lineUserId || (looksLikeLine ? phone_or_line : null),
         message: [data.top_two_liked && `Liked: ${data.top_two_liked}`, data.top_two_to_improve && `Improve: ${data.top_two_to_improve}`,
                   data.favorite_part && `Favorite: ${data.favorite_part}`, data.suggestions && `Suggestions: ${data.suggestions}`]
                   .filter(Boolean).join("\n\n"),
@@ -230,6 +268,7 @@ function UserFeedbackForm({ onCancel, onSubmitted }: { onCancel: () => void; onS
           decision_time: data.decision_time, top_two_liked: data.top_two_liked, top_two_to_improve: data.top_two_to_improve,
           favorite_part: data.favorite_part, visual_feedback: data.visual_feedback, suggestions: data.suggestions,
           quote_permission: data.quote_permission, quote_1: data.quote_1, quote_2: data.quote_2, quote_3: data.quote_3,
+          ...(signedInUser ? { signed_in: true, line_user_id: signedInUser.lineUserId, line_display_name: signedInUser.displayName } : {}),
         },
         files,
         company_website: data.company_website,
@@ -253,13 +292,15 @@ function UserFeedbackForm({ onCancel, onSubmitted }: { onCancel: () => void; onS
         <div className="w-20" />
       </div>
 
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-4">
         <Mascot name="toast" size="md" />
         <div>
           <h2 className="text-xl font-bold text-gray-900" data-testid="text-form-title">Everyday User Feedback</h2>
           <p className="text-sm text-gray-500">{INTRO_COPY.user_feedback}</p>
         </div>
       </div>
+
+      {signedInUser && <SignedInBanner user={signedInUser} />}
 
       <div className="flex-1 overflow-y-auto pb-32 space-y-6">
         {step === 0 && (
@@ -371,20 +412,25 @@ function UserFeedbackForm({ onCancel, onSubmitted }: { onCancel: () => void; onS
 // ============================================================================
 // CONCISE PARTNER FORM (used for the 3 partner categories)
 // ============================================================================
-function PartnerForm({ category, onCancel, onSubmitted }: { category: Exclude<Category, "user_feedback">; onCancel: () => void; onSubmitted: (cat: Category) => void }) {
+function PartnerForm({ signedInUser, category, onCancel, onSubmitted }: { signedInUser: SignedInUser | null; category: Exclude<Category, "user_feedback">; onCancel: () => void; onSubmitted: (cat: Category) => void }) {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [showOptional, setShowOptional] = useState(false);
   const [files, setFiles] = useState<FileAttachment[]>([]);
-  const [data, setData] = useState<any>(() => ({
-    name: "", email_or_line: "", role_title: "",
-    business_name: "", business_type: "", interest_type: "",
-    location: "", number_of_branches: "", website_url: "", instagram_url: "", google_maps_url: "", short_message: "",
-    organization_event_or_venue_name: "", experience_type: "", frequency: "", ticketing_link: "",
-    company_brand_or_app: "", partnership_type: "", short_pitch: "", website_or_social_link: "", budget_range: "", preferred_contact_method: "",
-    company_website: "", // honeypot
-    ...(loadDraft()[category] || {}),
-  }));
+  const [data, setData] = useState<any>(() => {
+    const draft = loadDraft()[category] || {};
+    return {
+      name: signedInUser?.displayName || "",
+      email_or_line: "",
+      role_title: "",
+      business_name: "", business_type: "", interest_type: "",
+      location: "", number_of_branches: "", website_url: "", instagram_url: "", google_maps_url: "", short_message: "",
+      organization_event_or_venue_name: "", experience_type: "", frequency: "", ticketing_link: "",
+      company_brand_or_app: "", partnership_type: "", short_pitch: "", website_or_social_link: "", budget_range: "", preferred_contact_method: "",
+      company_website: "", // honeypot
+      ...draft,
+    };
+  });
 
   useEffect(() => { saveDraft({ ...loadDraft(), [category]: data }); }, [data, category]);
   const set = (k: string, v: any) => setData((d: any) => ({ ...d, [k]: v }));
@@ -436,6 +482,14 @@ function PartnerForm({ category, onCancel, onSubmitted }: { category: Exclude<Ca
         payload.interestType = [data.partnership_type];
         payload.metadata = { partnership_type: data.partnership_type, budget_range: data.budget_range || null };
       }
+      if (signedInUser) {
+        payload.metadata = {
+          ...payload.metadata,
+          signed_in: true,
+          line_user_id: signedInUser.lineUserId,
+          line_display_name: signedInUser.displayName,
+        };
+      }
       const res = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (!res.ok) throw new Error((await res.json()).message || "Failed");
       clearDraft();
@@ -472,13 +526,15 @@ function PartnerForm({ category, onCancel, onSubmitted }: { category: Exclude<Ca
         </button>
         <div className="w-20" />
       </div>
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-4">
         <Mascot name={mascotName} size="md" />
         <div>
           <h2 className="text-xl font-bold text-gray-900" data-testid="text-form-title">{titleByCat[category]}</h2>
           <p className="text-sm text-gray-500">{INTRO_COPY[category]}</p>
         </div>
       </div>
+
+      {signedInUser && <SignedInBanner user={signedInUser} />}
 
       <div className="flex-1 overflow-y-auto pb-32 space-y-5">
         <div><Label>Your name *</Label><Input className="mt-2 rounded-xl" value={data.name} onChange={e => set("name", e.target.value)} data-testid="input-name" /></div>
@@ -733,6 +789,7 @@ export default function Contact() {
   const [view, setView] = useState<View>("landing");
   const [category, setCategory] = useState<Category | null>(null);
   const [successCategory, setSuccessCategory] = useState<Category | null>(null);
+  const [signedInUser] = useState<SignedInUser | null>(() => getSignedInUser());
 
   useEffect(() => {
     document.title = "Contact Toast — Let's Make Better Plans Together";
@@ -761,12 +818,12 @@ export default function Contact() {
           )}
           {view === "form" && category === "user_feedback" && (
             <motion.div key="user-feedback" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <UserFeedbackForm onCancel={reset} onSubmitted={c => { setSuccessCategory(c); setView("success"); }} />
+              <UserFeedbackForm signedInUser={signedInUser} onCancel={reset} onSubmitted={c => { setSuccessCategory(c); setView("success"); }} />
             </motion.div>
           )}
           {view === "form" && category && category !== "user_feedback" && (
             <motion.div key={category} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <PartnerForm category={category} onCancel={reset} onSubmitted={c => { setSuccessCategory(c); setView("success"); }} />
+              <PartnerForm signedInUser={signedInUser} category={category} onCancel={reset} onSubmitted={c => { setSuccessCategory(c); setView("success"); }} />
             </motion.div>
           )}
           {view === "success" && successCategory && (

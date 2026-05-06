@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useLineProfile } from "@/hooks/use-line-profile";
 import { BottomNav } from "@/components/BottomNav";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
@@ -798,8 +798,9 @@ export default function Profile() {
 
                   <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
-                  <button
-                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
+                  <Link
+                    href="/contact?from=profile"
+                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors no-underline text-inherit"
                     data-testid="button-contact-support"
                   >
                     <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #FCE4EC 0%, #F8BBD0 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
@@ -807,9 +808,10 @@ export default function Profile() {
                     </div>
                     <div className="flex-1 text-left">
                       <p className="font-bold text-[15px]">{t("profile.contact_support")}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Feedback, partnerships & more</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
-                  </button>
+                  </Link>
 
                   <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
