@@ -929,21 +929,22 @@ export default function Contact() {
   return (
     <div className="min-h-[100dvh] bg-background" data-testid="page-contact">
       <header className="sticky top-0 z-10 px-4 py-2 bg-background/85 backdrop-blur-md border-b border-gray-200/60">
-        <div className="max-w-[480px] mx-auto flex items-center justify-between gap-2">
+        <div className="max-w-[480px] mx-auto flex items-center">
           <Link href="/">
             <button className="inline-flex items-center gap-1.5 -ml-1 px-2 py-1.5 rounded-full text-sm font-semibold text-foreground/80 hover:text-foreground hover:bg-gray-100 transition-colors" data-testid="link-back-home">
               <ArrowLeft className="w-4 h-4" strokeWidth={2.4} />
-              Back
+              Back to Toast
             </button>
           </Link>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFCC02]/15 text-[11px] font-bold tracking-wide text-gray-900">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FFCC02]" />
-            CONTACT TOAST
-          </div>
-          <span className="w-12" aria-hidden="true" />
         </div>
       </header>
       <main className="max-w-[480px] mx-auto px-4 pt-2 pb-4">
+        <div className="flex justify-end mb-2">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFCC02]/15 text-[11px] font-bold tracking-wide text-gray-900" data-testid="badge-contact-toast">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FFCC02]" />
+            CONTACT TOAST
+          </div>
+        </div>
         <AnimatePresence mode="wait">
           {view === "landing" && (
             <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
