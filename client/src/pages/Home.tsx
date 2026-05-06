@@ -714,7 +714,7 @@ export default function Home() {
               >
                 <div className="px-5 pb-6 pt-1">
                   <div className="flex items-center gap-3 mb-3">
-                    <img src={toastLogoPath} alt="Toast" className="h-10 w-auto" data-testid="img-collapsed-logo" />
+                    <img src={toastLogoPath} alt="Toast" className="h-12 w-auto" data-testid="img-collapsed-logo" />
                     <div className="flex-1" />
                     <button
                       onClick={(e) => { e.stopPropagation(); setDrawerOpen(true); }}
@@ -789,7 +789,7 @@ export default function Home() {
                 src={toastLogoPath}
                 alt="Toast"
                 loading="lazy"
-                className="h-12 w-auto flex-shrink-0 mt-[30px]"
+                className="h-14 w-auto flex-shrink-0 mt-[28px]"
                 data-testid="img-hero-logo"
               />
             </div>
