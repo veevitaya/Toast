@@ -47,3 +47,15 @@ id = "lxUL54RbKKNE3aiw-U0_H"
 uri = "file://.local/exports/toast-main-app/DESIGN_SYSTEM.md"
 type = "text"
 title = "DESIGN_SYSTEM.md — Brief for Claude"
+
+[[outputs]]
+id = "lP7NB59hqxYHMLMv5sYum"
+uri = "file://screenshots/contact-landing.jpg"
+type = "image"
+title = "Contact page — landing (mascots + routing cards)"
+
+[[outputs]]
+id = "XbSdKxyL9fNDAOv5AlYaM"
+uri = "file://screenshots/contact-admin.jpg"
+type = "image"
+title = "Admin dashboard — login required (Contact & Partnerships appears in sidebar after sign-in)"
