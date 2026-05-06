@@ -4923,8 +4923,8 @@ export async function registerRoutes(
       if (data.company_website && data.company_website.trim() !== "") {
         return res.status(200).json({ ok: true, id: 0 });
       }
-      // Require at least one contact method
-      if (!data.email && !data.phone && !data.lineId) {
+      // Require at least one contact method for partner submissions (user feedback is allowed to be anonymous)
+      if (data.submissionType !== "user_feedback" && !data.email && !data.phone && !data.lineId) {
         return res.status(400).json({ message: "Please provide email, phone, or LINE ID." });
       }
       // Sanitize files

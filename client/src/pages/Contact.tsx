@@ -468,7 +468,7 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
             {step === 2 && (
               <>
                 <FormStepCard icon={<User className="w-5 h-5" />} title="Want a follow-up?" helper="Totally optional. Leave blank to submit anonymously.">
-                  <Question icon={<User className="w-4 h-4" />} label="Your name" helper="Optional">
+                  <Question icon={<User className="w-4 h-4" />} label="Your name">
                     <StyledInput value={data.name} onChange={e => set("name", e.target.value)} adornment={<User className="w-4 h-4" />} data-testid="input-name" />
                   </Question>
                   <Question icon={<AtSign className="w-4 h-4" />} label="Email or LINE" helper="Totally optional — leave blank if you'd rather stay anonymous.">
