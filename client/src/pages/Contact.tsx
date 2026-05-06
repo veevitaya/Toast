@@ -772,7 +772,21 @@ function PartnerForm({ signedInUser, category, onCancel, onSubmitted }: { signed
 function Landing({ onPick }: { onPick: (c: Category) => void }) {
   return (
     <div className="pb-10 space-y-3" data-testid="contact-landing">
-      {/* HERO IMAGE — above the header */}
+      {/* PAGE HEADER — above the mascots */}
+      <motion.div
+        initial={{ opacity: 0, y: -4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="text-center pt-1 pb-1"
+        data-testid="text-page-header"
+      >
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#FFCC02]">Toast</p>
+        <h1 className="mt-0.5 text-[22px] sm:text-[24px] font-bold tracking-tight text-foreground">
+          Contact &amp; Partnerships
+        </h1>
+      </motion.div>
+
+      {/* HERO IMAGE — mascots */}
       <motion.div
         initial={{ opacity: 0, y: 8, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
