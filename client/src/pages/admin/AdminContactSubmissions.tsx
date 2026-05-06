@@ -205,35 +205,35 @@ export default function AdminContactSubmissions() {
 
   return (
     <div className="space-y-5" data-testid="admin-contact-submissions">
-      {/* === Editorial command-center hero === */}
-      <div className="relative overflow-hidden rounded-3xl text-white" data-testid="hero-command-center">
-        <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #1f2937 0%, #111827 60%, #0b0f19 100%)" }} />
-        <div className="absolute -top-24 -right-16 w-72 h-72 rounded-full opacity-20" style={{ background: "radial-gradient(circle, #FFCC02 0%, transparent 70%)" }} />
-        <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #FFA500 0%, transparent 70%)" }} />
+      {/* === Light, warm hero === */}
+      <div className="relative overflow-hidden rounded-3xl border border-[#FFCC02]/30" data-testid="hero-command-center"
+        style={{ background: "linear-gradient(135deg, #FFFBEB 0%, #FFF7D6 55%, #FFF0B8 100%)" }}>
+        <div className="absolute -top-24 -right-16 w-72 h-72 rounded-full opacity-40 pointer-events-none" style={{ background: "radial-gradient(circle, #FFCC02 0%, transparent 70%)" }} />
+        <div className="absolute -bottom-24 -left-16 w-72 h-72 rounded-full opacity-25 pointer-events-none" style={{ background: "radial-gradient(circle, #FFA500 0%, transparent 70%)" }} />
 
         <div className="relative p-6 sm:p-8">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-0">
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/70 backdrop-blur-sm border border-white text-[10px] font-bold uppercase tracking-[0.2em] text-gray-700 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Live inbox · {todayStr}
               </div>
-              <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight">Contact & Partnerships</h2>
-              <p className="mt-1 text-sm text-white/60 max-w-xl">Every voice, every lead, every knock on Toast's door — in one calm, focused workspace.</p>
+              <h2 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">Contact & Partnerships</h2>
+              <p className="mt-1 text-sm text-gray-600 max-w-xl">Every voice, every lead, every knock on Toast's door — in one calm, focused workspace.</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button onClick={exportCsv} variant="outline" className="gap-2 rounded-xl bg-white/5 backdrop-blur-sm border-white/15 text-white hover:bg-white/10 hover:text-white" data-testid="button-export-csv">
+              <Button onClick={exportCsv} className="gap-2 rounded-xl bg-gray-900 hover:bg-gray-800 text-white shadow-sm" data-testid="button-export-csv">
                 <Download className="w-4 h-4" /> Export
               </Button>
             </div>
           </div>
 
-          {/* Glass KPI tiles inside hero */}
+          {/* Soft KPI tiles inside hero */}
           <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <GlassKpi icon={<Inbox className="w-4 h-4" />} label="New & Unread" value={stats.newCount} sub={`${stats.today} today`} accent="#60A5FA" testid="kpi-new" />
-            <GlassKpi icon={<AlertTriangle className="w-4 h-4" />} label="Needs Attention" value={stats.urgentCount} sub="High + urgent" accent="#F472B6" testid="kpi-urgent" />
-            <GlassKpi icon={<Sparkles className="w-4 h-4" />} label="This Week" value={stats.thisWeek} sub={`${stats.total} all-time`} accent="#C084FC" testid="kpi-week" />
-            <GlassKpi icon={<TrendingUp className="w-4 h-4" />} label="Lead Conversion" value={`${stats.conversionPct}%`} sub="Qualified or better" accent="#FFCC02" testid="kpi-conversion" />
+            <SoftKpi icon={<Inbox className="w-4 h-4" />} label="New & Unread" value={stats.newCount} sub={`${stats.today} today`} accent="#2563EB" testid="kpi-new" />
+            <SoftKpi icon={<AlertTriangle className="w-4 h-4" />} label="Needs Attention" value={stats.urgentCount} sub="High + urgent" accent="#DC2626" testid="kpi-urgent" />
+            <SoftKpi icon={<Sparkles className="w-4 h-4" />} label="This Week" value={stats.thisWeek} sub={`${stats.total} all-time`} accent="#7C3AED" testid="kpi-week" />
+            <SoftKpi icon={<TrendingUp className="w-4 h-4" />} label="Lead Conversion" value={`${stats.conversionPct}%`} sub="Qualified or better" accent="#059669" testid="kpi-conversion" />
           </div>
         </div>
       </div>
@@ -441,13 +441,24 @@ export default function AdminContactSubmissions() {
 
       {/* Submission list */}
       <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden" data-testid="submissions-list">
+        {/* List header — gives the eye an anchor */}
+        {!isLoading && rows.length > 0 && (
+          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/40">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-gray-900">{activeTab.label}</span>
+              <span className="text-xs text-gray-400">· {rows.length} {rows.length === 1 ? "submission" : "submissions"}</span>
+            </div>
+            <span className="text-[11px] text-gray-400 hidden sm:block">Newest first · click any row to open</span>
+          </div>
+        )}
+
         {isLoading && (
           <div className="divide-y divide-gray-50">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="px-5 py-4 flex items-center gap-4">
-                <Skeleton className="w-10 h-10 rounded-full" />
-                <div className="flex-1 space-y-2"><Skeleton className="h-4 w-1/3" /><Skeleton className="h-3 w-1/2" /></div>
-                <Skeleton className="h-6 w-16 rounded-full" />
+                <Skeleton className="w-12 h-12 rounded-2xl" />
+                <div className="flex-1 space-y-2"><Skeleton className="h-4 w-1/3" /><Skeleton className="h-3 w-2/3" /></div>
+                <Skeleton className="h-6 w-20 rounded-full" />
               </div>
             ))}
           </div>
@@ -462,88 +473,104 @@ export default function AdminContactSubmissions() {
           </div>
         )}
         {!isLoading && rows.length > 0 && (
-          <div>
-            {(() => {
-              const groups: Array<{ label: string; items: typeof rows }> = [
-                { label: "Today", items: [] },
-                { label: "Yesterday", items: [] },
-                { label: "This week", items: [] },
-                { label: "Earlier", items: [] },
-              ];
-              const now = new Date();
-              const startToday = new Date(now); startToday.setHours(0, 0, 0, 0);
-              const startYesterday = new Date(startToday.getTime() - 24 * 60 * 60 * 1000);
-              const startWeek = new Date(startToday.getTime() - 7 * 24 * 60 * 60 * 1000);
-              for (const r of rows) {
-                const t = new Date(r.createdAt as any).getTime();
-                if (t >= startToday.getTime()) groups[0].items.push(r);
-                else if (t >= startYesterday.getTime()) groups[1].items.push(r);
-                else if (t >= startWeek.getTime()) groups[2].items.push(r);
-                else groups[3].items.push(r);
-              }
-              return groups.filter(g => g.items.length > 0).map(g => (
-                <div key={g.label}>
-                  <div className="px-5 py-2 bg-gray-50/80 border-y border-gray-100 flex items-center justify-between sticky top-0 z-10 backdrop-blur-sm">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500">{g.label}</span>
-                    <span className="text-[10px] font-medium text-gray-400">{g.items.length}</span>
-                  </div>
-                  <ul className="divide-y divide-gray-50">
-                    {g.items.map(r => {
+          <ul className="divide-y divide-gray-100">
+            {rows.map((r, idx) => {
               const card = TYPE_CARDS.find(c => c.key === r.submissionType);
               const isNew = (r.status || "new") === "new";
               const hasFiles = !!(r as any).hasFiles;
+              const status = r.status || "new";
+              const priority = r.priority || "medium";
+
+              // Inline date marker — only when day changes
+              const t = new Date(r.createdAt as any);
+              const prevT = idx > 0 ? new Date(rows[idx - 1].createdAt as any) : null;
+              const sameDay = prevT && prevT.toDateString() === t.toDateString();
+              const dayLabel = (() => {
+                const today = new Date(); today.setHours(0,0,0,0);
+                const yesterday = new Date(today.getTime() - 86400000);
+                const d = new Date(t); d.setHours(0,0,0,0);
+                if (d.getTime() === today.getTime()) return "Today";
+                if (d.getTime() === yesterday.getTime()) return "Yesterday";
+                return t.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+              })();
+
+              // Headline: what this person actually wants — message > company > fallback
+              const messagePreview = (r.message || "").trim();
+              const subjectLine = messagePreview
+                || (r.companyName ? `Inquiry from ${r.companyName}` : `New ${card?.label.toLowerCase() || "submission"}`);
+
               return (
-                <li key={r.id}
-                  onClick={() => setOpenId(r.id)}
-                  className="group relative px-5 py-4 hover:bg-gray-50/70 cursor-pointer transition-colors flex items-center gap-4"
-                  data-testid={`row-submission-${r.id}`}>
-                  <div className="relative w-11 h-11 rounded-2xl flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={{ backgroundColor: card?.tint || "#f3f4f6", color: card?.accent || "#6b7280" }}>
-                    {initials(r.name)}
-                    {isNew && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white" aria-label="new" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{r.name || "Anonymous"}</p>
-                      {card && (
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: card.tint, color: card.accent }}>
-                          {card.label}
+                <li key={r.id}>
+                  {!sameDay && (
+                    <div className="px-5 pt-4 pb-1 flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">{dayLabel}</span>
+                      <span className="flex-1 h-px bg-gray-100" />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(r.id)}
+                    className="group w-full text-left px-5 py-4 hover:bg-amber-50/30 transition-colors flex items-start gap-4 focus:outline-none focus:bg-amber-50/40"
+                    data-testid={`row-submission-${r.id}`}
+                  >
+                    {/* Avatar */}
+                    <div className="relative w-12 h-12 rounded-2xl flex items-center justify-center text-sm font-bold flex-shrink-0"
+                      style={{ backgroundColor: card?.tint || "#f3f4f6", color: card?.accent || "#6b7280" }}>
+                      {initials(r.name)}
+                      {isNew && <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-blue-500 ring-2 ring-white" aria-label="new" />}
+                    </div>
+
+                    {/* Content — clear two-line hierarchy */}
+                    <div className="flex-1 min-w-0">
+                      {/* Line 1: Name + type */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[15px] font-semibold text-gray-900 truncate">{r.name || "Anonymous"}</span>
+                        {card && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md uppercase tracking-wide"
+                            style={{ backgroundColor: card.tint, color: card.accent }}>
+                            {card.label}
+                          </span>
+                        )}
+                        {priority === "urgent" && (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded-md">
+                            <Flame className="w-3 h-3" /> URGENT
+                          </span>
+                        )}
+                        <span className="ml-auto text-[11px] text-gray-400 inline-flex items-center gap-1 whitespace-nowrap">
+                          <Clock className="w-3 h-3" /> {relTime(r.createdAt as any)}
                         </span>
-                      )}
-                      {r.priority === "urgent" && (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-red-600">
-                          <Flame className="w-3 h-3" /> URGENT
+                      </div>
+
+                      {/* Line 2: What they want (the most important info) */}
+                      <p className="mt-1 text-sm text-gray-700 line-clamp-1" title={messagePreview || subjectLine}>
+                        {subjectLine}
+                      </p>
+
+                      {/* Line 3: Contact + meta */}
+                      <div className="flex items-center gap-2 mt-1.5 text-[11px] text-gray-400 flex-wrap">
+                        {r.companyName && messagePreview && (
+                          <span className="inline-flex items-center gap-1 text-gray-500"><Building2 className="w-3 h-3" />{r.companyName}</span>
+                        )}
+                        {r.email && <span className="inline-flex items-center gap-1"><Mail className="w-3 h-3" />{r.email}</span>}
+                        {!r.email && r.lineId && <span className="inline-flex items-center gap-1">@{r.lineId}</span>}
+                        {!r.email && !r.lineId && r.phone && <span className="inline-flex items-center gap-1"><Phone className="w-3 h-3" />{r.phone}</span>}
+                        {hasFiles && <span className="inline-flex items-center gap-1 text-gray-400"><Paperclip className="w-3 h-3" />Attached</span>}
+                        {/* Status + priority chips inline on mobile */}
+                        <span className="ml-auto flex items-center gap-1.5">
+                          <Chip value={status} palette={STATUS_COLOR} />
+                          {priority !== "medium" && priority !== "urgent" && <Chip value={priority} palette={PRIORITY_COLOR} />}
+                          {r.leadQuality && r.leadQuality !== "unknown" && <Chip value={r.leadQuality} palette={LEAD_COLOR} />}
                         </span>
-                      )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-500 flex-wrap">
-                      {r.companyName && <span className="truncate">{r.companyName}</span>}
-                      {r.companyName && (r.email || r.phone || r.lineId) && <span className="text-gray-300">·</span>}
-                      {r.email && <span className="inline-flex items-center gap-1"><Mail className="w-3 h-3" />{r.email}</span>}
-                      {!r.email && r.lineId && <span className="inline-flex items-center gap-1">@{r.lineId}</span>}
-                      {!r.email && !r.lineId && r.phone && <span className="inline-flex items-center gap-1"><Phone className="w-3 h-3" />{r.phone}</span>}
-                      {hasFiles && <span className="inline-flex items-center gap-0.5 text-gray-400"><Paperclip className="w-3 h-3" /></span>}
-                    </div>
-                  </div>
-                  <div className="hidden sm:flex items-center gap-1.5">
-                    <Chip value={r.status || "new"} palette={STATUS_COLOR} />
-                    <Chip value={r.priority || "medium"} palette={PRIORITY_COLOR} />
-                    {r.leadQuality && r.leadQuality !== "unknown" && <Chip value={r.leadQuality} palette={LEAD_COLOR} />}
-                  </div>
-                  <div className="text-right flex-shrink-0 ml-2">
-                    <div className="text-[11px] text-gray-400 inline-flex items-center gap-1 whitespace-nowrap">
-                      <Clock className="w-3 h-3" /> {relTime(r.createdAt as any)}
-                    </div>
-                    <div className="text-[11px] text-gray-300 group-hover:text-gray-700 transition mt-1">View →</div>
-                  </div>
+
+                    {/* Chevron */}
+                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-600 group-hover:translate-x-0.5 transition flex-shrink-0 mt-1" />
+                  </button>
                 </li>
               );
             })}
-                  </ul>
-                </div>
-              ));
-            })()}
-          </div>
+          </ul>
         )}
       </div>
 
@@ -556,20 +583,20 @@ export default function AdminContactSubmissions() {
   );
 }
 
-function GlassKpi({ icon, label, value, accent, sub, testid }: {
+function SoftKpi({ icon, label, value, accent, sub, testid }: {
   icon: React.ReactNode; label: string; value: string | number; accent: string; sub?: string; testid?: string;
 }) {
   return (
-    <div className="relative rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 p-4 transition-all hover:bg-white/10" data-testid={testid}>
+    <div className="relative rounded-2xl bg-white/85 backdrop-blur-sm border border-white p-4 transition-all hover:bg-white hover:shadow-md shadow-sm" data-testid={testid}>
       <div className="flex items-center justify-between mb-3">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${accent}25`, color: accent }}>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${accent}15`, color: accent }}>
           {icon}
         </div>
-        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent, boxShadow: `0 0 8px ${accent}` }} />
+        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent }} />
       </div>
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">{label}</p>
-      <p className="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1 tabular-nums">{value}</p>
-      {sub && <p className="text-[11px] text-white/40 mt-1">{sub}</p>}
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500">{label}</p>
+      <p className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 mt-1 tabular-nums">{value}</p>
+      {sub && <p className="text-[11px] text-gray-400 mt-1">{sub}</p>}
     </div>
   );
 }
