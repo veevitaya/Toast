@@ -336,12 +336,10 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
 
   const set = (k: string, v: any) => setData((d: any) => ({ ...d, [k]: v }));
 
-  const wantsContact = !!((data.email || "").trim() || (data.phone_or_line || "").trim());
-
   const stepValid = (() => {
     if (step === 0) return data.overall_satisfaction_score && data.would_recommend_to_friends;
     if (step === 1) return true;
-    if (step === 2) return !wantsContact || data.consent;
+    if (step === 2) return true;
     return false;
   })();
 
@@ -473,7 +471,7 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
                   <Question icon={<User className="w-4 h-4" />} label="Your name" helper="Optional">
                     <StyledInput value={data.name} onChange={e => set("name", e.target.value)} adornment={<User className="w-4 h-4" />} data-testid="input-name" />
                   </Question>
-                  <Question icon={<AtSign className="w-4 h-4" />} label="Email or LINE" helper="Optional — only if you'd like a reply.">
+                  <Question icon={<AtSign className="w-4 h-4" />} label="Email or LINE" helper="Totally optional — leave blank if you'd rather stay anonymous.">
                     <StyledInput placeholder="you@email.com or @yourline" value={data.email || data.phone_or_line} onChange={e => {
                       const v = e.target.value;
                       const looksLikeLine = /^@/.test(v) || /line/i.test(v);
@@ -485,12 +483,6 @@ function UserFeedbackForm({ signedInUser, onCancel, onSubmitted }: { signedInUse
                 <FormStepCard icon={<Camera className="w-5 h-5" />} title="Want to attach something?" helper="Optional — screenshots help a lot for bugs.">
                   <FileUploader files={files} onChange={setFiles} />
                 </FormStepCard>
-                {wantsContact && (
-                  <label className="flex items-start gap-2.5 text-[13px] text-gray-700 px-1">
-                    <input type="checkbox" checked={data.consent} onChange={e => set("consent", e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#FFCC02]" data-testid="checkbox-consent" />
-                    <span>I'm okay with Toast contacting me about this.</span>
-                  </label>
-                )}
                 {/* Honeypot */}
                 <input tabIndex={-1} autoComplete="off" type="text" name="company_website" value={data.company_website} onChange={e => set("company_website", e.target.value)} style={{ position: "absolute", left: "-9999px", width: 1, height: 1 }} aria-hidden="true" />
               </>
