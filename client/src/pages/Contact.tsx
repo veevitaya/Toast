@@ -939,12 +939,14 @@ export default function Contact() {
         </div>
       </header>
       <main className="max-w-[480px] mx-auto px-4 pt-2 pb-4">
-        <div className="flex justify-end mb-2">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFCC02]/15 text-[11px] font-bold tracking-wide text-gray-900" data-testid="badge-contact-toast">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FFCC02]" />
-            CONTACT TOAST
+        {view === "landing" && (
+          <div className="flex justify-end mb-2">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFCC02]/15 text-[11px] font-bold tracking-wide text-gray-900" data-testid="badge-contact-toast">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FFCC02]" />
+              CONTACT TOAST
+            </div>
           </div>
-        </div>
+        )}
         <AnimatePresence mode="wait">
           {view === "landing" && (
             <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
