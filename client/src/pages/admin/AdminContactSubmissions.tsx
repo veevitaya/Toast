@@ -8,7 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Download, Archive, ArchiveRestore, FileText, ExternalLink, X, MessageSquare } from "lucide-react";
+import {
+  Search, Download, Archive, ArchiveRestore, FileText, ExternalLink, X, MessageSquare,
+  Inbox, AlertTriangle, Sparkles, TrendingUp, Heart, Building2, CalendarDays, Handshake,
+  ChevronRight, Filter, Mail, Phone, Paperclip, Clock, Flame, CheckCircle2,
+} from "lucide-react";
 import type { ContactSubmission, ContactSubmissionFile, ContactSubmissionActivity } from "@shared/schema";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -61,6 +65,28 @@ const TABS: Array<{ key: string; label: string; submissionType?: string; archive
   { key: "archived", label: "Archived", archived: true },
 ];
 
+const TYPE_CARDS: Array<{
+  key: string;
+  label: string;
+  sub: string;
+  icon: any;
+  accent: string;
+  tint: string;
+}> = [
+  { key: "user_feedback", label: "User Feedback", sub: "Voices from Toasters", icon: Heart, accent: "var(--admin-pink)", tint: "var(--admin-pink-10)" },
+  { key: "restaurant_partner", label: "Restaurant / Food", sub: "Wants to be on Toast", icon: Building2, accent: "var(--admin-teal)", tint: "var(--admin-teal-10)" },
+  { key: "event_activity_partner", label: "Events & Activities", sub: "Pop-ups, festivals, fun", icon: CalendarDays, accent: "var(--admin-deep-purple)", tint: "var(--admin-deep-purple-10)" },
+  { key: "general_partner", label: "Other Partnerships", sub: "Brands, sponsors, ideas", icon: Handshake, accent: "var(--admin-blue)", tint: "var(--admin-blue-10)" },
+];
+
+const PIPELINE_STAGES: Array<{ key: string; label: string; color: string }> = [
+  { key: "new", label: "New", color: "#3B82F6" },
+  { key: "reviewing", label: "Reviewing", color: "#F59E0B" },
+  { key: "contacted", label: "Contacted", color: "#8B5CF6" },
+  { key: "qualified", label: "Qualified", color: "#10B981" },
+  { key: "converted", label: "Converted", color: "#00B14F" },
+];
+
 interface Filters {
   status?: string;
   priority?: string;
@@ -85,11 +111,31 @@ function buildQuery(tab: typeof TABS[number], f: Filters): string {
   return `/api/admin/contact-submissions?${params.toString()}`;
 }
 
+function relTime(iso: string | Date): string {
+  const t = typeof iso === "string" ? new Date(iso).getTime() : iso.getTime();
+  const diff = Date.now() - t;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return new Date(t).toLocaleDateString();
+}
+
+function initials(name?: string | null): string {
+  if (!name) return "??";
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || "??";
+}
+
 export default function AdminContactSubmissions() {
   const [activeTab, setActiveTab] = useState<typeof TABS[number]>(TABS[0]);
   const [filters, setFilters] = useState<Filters>({});
   const [searchInput, setSearchInput] = useState("");
   const [openId, setOpenId] = useState<number | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setFilters(f => ({ ...f, search: searchInput || undefined })), 300);
@@ -98,6 +144,40 @@ export default function AdminContactSubmissions() {
 
   const url = buildQuery(activeTab, filters);
   const { data: rows = [], isLoading } = useQuery<ContactSubmission[]>({ queryKey: [url] });
+
+  // Stats query — fetch all non-archived for hero KPIs and type cards
+  const { data: allRows = [] } = useQuery<ContactSubmission[]>({
+    queryKey: ["/api/admin/contact-submissions?archived=false"],
+  });
+
+  const stats = useMemo(() => {
+    const now = Date.now();
+    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+    const newCount = allRows.filter(r => (r.status || "new") === "new").length;
+    const urgentCount = allRows.filter(r => r.priority === "urgent" || r.priority === "high").length;
+    const thisWeek = allRows.filter(r => new Date(r.createdAt).getTime() >= weekAgo).length;
+    const today = allRows.filter(r => new Date(r.createdAt).getTime() >= todayStart.getTime()).length;
+    const converted = allRows.filter(r => r.status === "converted" || r.status === "qualified").length;
+    const conversionPct = allRows.length ? Math.round((converted / allRows.length) * 100) : 0;
+    const byType: Record<string, { total: number; new: number; lastIso: string | null }> = {};
+    for (const c of TYPE_CARDS) byType[c.key] = { total: 0, new: 0, lastIso: null };
+    for (const r of allRows) {
+      const b = byType[r.submissionType];
+      if (!b) continue;
+      b.total++;
+      if ((r.status || "new") === "new") b.new++;
+      const iso = typeof r.createdAt === "string" ? r.createdAt : new Date(r.createdAt as any).toISOString();
+      if (!b.lastIso || iso > b.lastIso) b.lastIso = iso;
+    }
+    const pipeline: Record<string, number> = {};
+    for (const s of PIPELINE_STAGES) pipeline[s.key] = 0;
+    for (const r of allRows) {
+      const s = (r.status || "new");
+      if (pipeline[s] !== undefined) pipeline[s]++;
+    }
+    return { newCount, urgentCount, thisWeek, today, conversionPct, byType, pipeline, total: allRows.length };
+  }, [allRows]);
 
   const exportCsv = () => {
     const exportUrl = url.replace("/api/admin/contact-submissions?", "/api/admin/contact-submissions/export.csv?");
@@ -119,32 +199,181 @@ export default function AdminContactSubmissions() {
       });
   };
 
+  const activeFilterCount = [filters.status, filters.priority, filters.leadQuality, filters.hasFiles, filters.dateFrom, filters.dateTo].filter(Boolean).length;
+
   return (
-    <div className="space-y-5" data-testid="admin-contact-submissions">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">Contact & Partnerships</h2>
-          <p className="text-sm text-gray-500">Inbound feedback, partnership leads, and partner submissions.</p>
+    <div className="space-y-6" data-testid="admin-contact-submissions">
+      {/* Page header */}
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #FFCC02 0%, #FFA500 100%)" }}>
+          <MessageSquare className="w-5 h-5 text-gray-900" />
         </div>
-        <Button onClick={exportCsv} variant="outline" className="gap-2" data-testid="button-export-csv">
+        <div className="flex-1">
+          <h2 className="text-xl font-semibold text-gray-800">Contact & Partnerships</h2>
+          <p className="text-xs text-muted-foreground">Inbound feedback, partner leads, and the people knocking on Toast's door.</p>
+        </div>
+        <Button onClick={exportCsv} variant="outline" className="gap-2 rounded-xl" data-testid="button-export-csv">
           <Download className="w-4 h-4" /> Export CSV
         </Button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1" data-testid="tabs">
-        {TABS.map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab)}
-            className={`px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition ${
-              activeTab.key === tab.key ? "bg-gray-900 text-white" : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-100"
-            }`}
-            data-testid={`tab-${tab.key}`}>
-            {tab.label}
-          </button>
-        ))}
+      {/* Hero KPI strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <KpiCard
+          icon={<Inbox className="w-4 h-4" />}
+          label="New & Unread"
+          value={stats.newCount}
+          accent="var(--admin-blue)"
+          tint="var(--admin-blue-10)"
+          sub={`${stats.today} arrived today`}
+          testid="kpi-new"
+        />
+        <KpiCard
+          icon={<AlertTriangle className="w-4 h-4" />}
+          label="Needs Attention"
+          value={stats.urgentCount}
+          accent="var(--admin-pink)"
+          tint="var(--admin-pink-10)"
+          sub="High & urgent priority"
+          testid="kpi-urgent"
+        />
+        <KpiCard
+          icon={<Sparkles className="w-4 h-4" />}
+          label="This Week"
+          value={stats.thisWeek}
+          accent="var(--admin-deep-purple)"
+          tint="var(--admin-deep-purple-10)"
+          sub={`${stats.total} all-time`}
+          testid="kpi-week"
+        />
+        <KpiCard
+          icon={<TrendingUp className="w-4 h-4" />}
+          label="Lead Conversion"
+          value={`${stats.conversionPct}%`}
+          accent="var(--admin-cyan)"
+          tint="var(--admin-cyan-10)"
+          sub="Qualified or better"
+          testid="kpi-conversion"
+        />
       </div>
 
-      {/* Filters */}
+      {/* Type cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+        {TYPE_CARDS.map(c => {
+          const s = stats.byType[c.key];
+          const isActive = activeTab.key === c.key;
+          const Icon = c.icon;
+          return (
+            <button
+              key={c.key}
+              onClick={() => setActiveTab(TABS.find(t => t.key === c.key)!)}
+              className={`group text-left bg-white rounded-2xl border p-4 transition-all hover:shadow-sm hover:-translate-y-0.5 ${
+                isActive ? "border-gray-900/15 shadow-sm" : "border-gray-100"
+              }`}
+              data-testid={`type-card-${c.key}`}
+              style={isActive ? { boxShadow: `0 0 0 2px ${c.accent}` } : undefined}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: c.tint, color: c.accent }}>
+                  <Icon className="w-5 h-5" />
+                </div>
+                {s?.new > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ backgroundColor: c.accent, color: "white" }}>
+                    {s.new} new
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{c.sub}</p>
+              <p className="text-sm font-semibold text-gray-800 mt-0.5">{c.label}</p>
+              <div className="flex items-end justify-between mt-3">
+                <p className="text-2xl font-bold tracking-tight text-foreground">{s?.total ?? 0}</p>
+                <p className="text-[10px] text-gray-400">
+                  {s?.lastIso ? `Last · ${relTime(s.lastIso)}` : "No submissions yet"}
+                </p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Pipeline strip */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-5" data-testid="pipeline-strip">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Lead pipeline</p>
+            <p className="text-sm font-semibold text-gray-800">From new submission to converted partner</p>
+          </div>
+          <button onClick={() => { setFilters({}); setSearchInput(""); setActiveTab(TABS[0]); }} className="text-[11px] font-medium text-gray-400 hover:text-gray-700" data-testid="button-reset-pipeline">
+            Show all
+          </button>
+        </div>
+        <div className="flex items-stretch gap-1.5">
+          {PIPELINE_STAGES.map((s, i) => {
+            const count = stats.pipeline[s.key] || 0;
+            const max = Math.max(1, ...Object.values(stats.pipeline));
+            const pct = (count / max) * 100;
+            const isActive = filters.status === s.key;
+            return (
+              <button
+                key={s.key}
+                onClick={() => setFilters(f => ({ ...f, status: f.status === s.key ? undefined : s.key }))}
+                className={`flex-1 group rounded-xl px-3 py-2.5 text-left transition-all ${isActive ? "ring-2 ring-offset-1" : "hover:bg-gray-50"}`}
+                style={isActive ? { backgroundColor: `${s.color}10` } : undefined}
+                data-testid={`pipeline-stage-${s.key}`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-700">{s.label}</span>
+                  <span className="text-xs font-bold" style={{ color: s.color }}>{count}</span>
+                </div>
+                <div className="mt-1.5 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: s.color }} />
+                </div>
+                {i < PIPELINE_STAGES.length - 1 && (
+                  <ChevronRight className="hidden lg:block w-3.5 h-3.5 text-gray-300 absolute" style={{ marginTop: -22, marginLeft: "calc(100% - 6px)" }} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1" data-testid="tabs">
+          {TABS.map(tab => {
+            const isAll = tab.key === "all";
+            const isArchived = tab.key === "archived";
+            const count = isAll ? stats.total : isArchived ? undefined : stats.byType[tab.key]?.total ?? 0;
+            return (
+              <button key={tab.key} onClick={() => setActiveTab(tab)}
+                className={`px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition flex items-center gap-2 ${
+                  activeTab.key === tab.key ? "bg-gray-900 text-white" : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-100"
+                }`}
+                data-testid={`tab-${tab.key}`}>
+                {tab.label}
+                {count !== undefined && (
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activeTab.key === tab.key ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"}`}>{count}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <button
+          onClick={() => setShowFilters(s => !s)}
+          className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border transition ${
+            showFilters || activeFilterCount > 0 ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-600 border-gray-100 hover:bg-gray-50"
+          }`}
+          data-testid="button-toggle-filters"
+        >
+          <Filter className="w-4 h-4" />
+          Filters
+          {activeFilterCount > 0 && (
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#FFCC02] text-gray-900">{activeFilterCount}</span>
+          )}
+        </button>
+      </div>
+
+      {/* Search + Filters (collapsible) */}
       <div className="bg-white border border-gray-100 rounded-2xl p-3 sm:p-4 space-y-3">
         <div className="relative">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -152,89 +381,119 @@ export default function AdminContactSubmissions() {
             placeholder="Search name, email, phone, company, location, message…" className="pl-9 rounded-xl"
             data-testid="input-search" />
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-          <Select value={filters.status || "any"} onValueChange={v => setFilters(f => ({ ...f, status: v === "any" ? undefined : v }))}>
-            <SelectTrigger className="rounded-xl" data-testid="filter-status"><SelectValue placeholder="Status" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">Any status</SelectItem>
-              {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={filters.priority || "any"} onValueChange={v => setFilters(f => ({ ...f, priority: v === "any" ? undefined : v }))}>
-            <SelectTrigger className="rounded-xl" data-testid="filter-priority"><SelectValue placeholder="Priority" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">Any priority</SelectItem>
-              {PRIORITIES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={filters.leadQuality || "any"} onValueChange={v => setFilters(f => ({ ...f, leadQuality: v === "any" ? undefined : v }))}>
-            <SelectTrigger className="rounded-xl" data-testid="filter-lead-quality"><SelectValue placeholder="Lead quality" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">Any quality</SelectItem>
-              {LEAD_QUALITIES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={filters.hasFiles || "any"} onValueChange={v => setFilters(f => ({ ...f, hasFiles: v === "any" ? undefined : v }))}>
-            <SelectTrigger className="rounded-xl" data-testid="filter-has-files"><SelectValue placeholder="Files" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="any">Any</SelectItem>
-              <SelectItem value="true">Has files</SelectItem>
-              <SelectItem value="false">No files</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="ghost" onClick={() => { setFilters({}); setSearchInput(""); }} data-testid="button-clear-filters">Clear</Button>
-        </div>
+        {showFilters && (
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
+            <Select value={filters.status || "any"} onValueChange={v => setFilters(f => ({ ...f, status: v === "any" ? undefined : v }))}>
+              <SelectTrigger className="rounded-xl" data-testid="filter-status"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any status</SelectItem>
+                {STATUSES.map(s => <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filters.priority || "any"} onValueChange={v => setFilters(f => ({ ...f, priority: v === "any" ? undefined : v }))}>
+              <SelectTrigger className="rounded-xl" data-testid="filter-priority"><SelectValue placeholder="Priority" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any priority</SelectItem>
+                {PRIORITIES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filters.leadQuality || "any"} onValueChange={v => setFilters(f => ({ ...f, leadQuality: v === "any" ? undefined : v }))}>
+              <SelectTrigger className="rounded-xl" data-testid="filter-lead-quality"><SelectValue placeholder="Lead quality" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any quality</SelectItem>
+                {LEAD_QUALITIES.map(s => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={filters.hasFiles || "any"} onValueChange={v => setFilters(f => ({ ...f, hasFiles: v === "any" ? undefined : v }))}>
+              <SelectTrigger className="rounded-xl" data-testid="filter-has-files"><SelectValue placeholder="Files" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any</SelectItem>
+                <SelectItem value="true">Has files</SelectItem>
+                <SelectItem value="false">No files</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="ghost" onClick={() => { setFilters({}); setSearchInput(""); }} data-testid="button-clear-filters">Clear</Button>
+          </div>
+        )}
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm" data-testid="submissions-table">
-            <thead className="bg-gray-50 text-gray-500 text-[11px] uppercase tracking-wider">
-              <tr>
-                <th className="text-left px-4 py-3 font-semibold">Date</th>
-                <th className="text-left px-4 py-3 font-semibold">Type</th>
-                <th className="text-left px-4 py-3 font-semibold">Name</th>
-                <th className="text-left px-4 py-3 font-semibold">Company</th>
-                <th className="text-left px-4 py-3 font-semibold">Contact</th>
-                <th className="text-left px-4 py-3 font-semibold">Status</th>
-                <th className="text-left px-4 py-3 font-semibold">Priority</th>
-                <th className="text-left px-4 py-3 font-semibold">Lead</th>
-                <th className="text-right px-4 py-3 font-semibold"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading && Array.from({ length: 4 }).map((_, i) => (
-                <tr key={i} className="border-t border-gray-50">
-                  {Array.from({ length: 9 }).map((_, j) => <td key={j} className="px-4 py-4"><Skeleton className="h-4 w-full" /></td>)}
-                </tr>
-              ))}
-              {!isLoading && rows.length === 0 && (
-                <tr><td colSpan={9} className="px-4 py-12 text-center text-gray-400 text-sm" data-testid="empty-state">
-                  <MessageSquare className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                  No submissions match these filters.
-                </td></tr>
-              )}
-              {!isLoading && rows.map(r => (
-                <tr key={r.id} onClick={() => setOpenId(r.id)}
-                  className="border-t border-gray-50 hover:bg-gray-50/80 cursor-pointer transition"
+      {/* Submission list */}
+      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden" data-testid="submissions-list">
+        {isLoading && (
+          <div className="divide-y divide-gray-50">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="px-5 py-4 flex items-center gap-4">
+                <Skeleton className="w-10 h-10 rounded-full" />
+                <div className="flex-1 space-y-2"><Skeleton className="h-4 w-1/3" /><Skeleton className="h-3 w-1/2" /></div>
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+            ))}
+          </div>
+        )}
+        {!isLoading && rows.length === 0 && (
+          <div className="px-4 py-16 text-center" data-testid="empty-state">
+            <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-3">
+              <MessageSquare className="w-6 h-6 text-gray-300" />
+            </div>
+            <p className="text-sm font-medium text-gray-600">Nothing here yet</p>
+            <p className="text-xs text-gray-400 mt-1">No submissions match these filters.</p>
+          </div>
+        )}
+        {!isLoading && rows.length > 0 && (
+          <ul className="divide-y divide-gray-50">
+            {rows.map(r => {
+              const card = TYPE_CARDS.find(c => c.key === r.submissionType);
+              const isNew = (r.status || "new") === "new";
+              const hasFiles = !!(r as any).hasFiles;
+              return (
+                <li key={r.id}
+                  onClick={() => setOpenId(r.id)}
+                  className="group px-5 py-4 hover:bg-gray-50/70 cursor-pointer transition-colors flex items-center gap-4"
                   data-testid={`row-submission-${r.id}`}>
-                  <td className="px-4 py-3 text-gray-500 text-[12px] whitespace-nowrap">
-                    {new Date(r.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-gray-700 text-[12px]">{TYPE_LABELS[r.submissionType] || r.submissionType}</td>
-                  <td className="px-4 py-3 font-medium text-gray-900">{r.name || "—"}</td>
-                  <td className="px-4 py-3 text-gray-600">{r.companyName || "—"}</td>
-                  <td className="px-4 py-3 text-gray-600 text-[12px]">{r.email || r.lineId || r.phone || "—"}</td>
-                  <td className="px-4 py-3"><Chip value={r.status || "new"} palette={STATUS_COLOR} /></td>
-                  <td className="px-4 py-3"><Chip value={r.priority || "medium"} palette={PRIORITY_COLOR} /></td>
-                  <td className="px-4 py-3"><Chip value={r.leadQuality || "unknown"} palette={LEAD_COLOR} /></td>
-                  <td className="px-4 py-3 text-right"><span className="text-xs text-gray-400 hover:text-gray-700">View →</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  <div className="relative w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={{ backgroundColor: card?.tint || "#f3f4f6", color: card?.accent || "#6b7280" }}>
+                    {initials(r.name)}
+                    {isNew && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white" aria-label="new" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{r.name || "Anonymous"}</p>
+                      {card && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: card.tint, color: card.accent }}>
+                          {card.label}
+                        </span>
+                      )}
+                      {r.priority === "urgent" && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-red-600">
+                          <Flame className="w-3 h-3" /> URGENT
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-500 flex-wrap">
+                      {r.companyName && <span className="truncate">{r.companyName}</span>}
+                      {r.companyName && (r.email || r.phone || r.lineId) && <span className="text-gray-300">·</span>}
+                      {r.email && <span className="inline-flex items-center gap-1"><Mail className="w-3 h-3" />{r.email}</span>}
+                      {!r.email && r.lineId && <span className="inline-flex items-center gap-1">@{r.lineId}</span>}
+                      {!r.email && !r.lineId && r.phone && <span className="inline-flex items-center gap-1"><Phone className="w-3 h-3" />{r.phone}</span>}
+                      {hasFiles && <span className="inline-flex items-center gap-0.5 text-gray-400"><Paperclip className="w-3 h-3" /></span>}
+                    </div>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-1.5">
+                    <Chip value={r.status || "new"} palette={STATUS_COLOR} />
+                    <Chip value={r.priority || "medium"} palette={PRIORITY_COLOR} />
+                    {r.leadQuality && r.leadQuality !== "unknown" && <Chip value={r.leadQuality} palette={LEAD_COLOR} />}
+                  </div>
+                  <div className="text-right flex-shrink-0 ml-2">
+                    <div className="text-[11px] text-gray-400 inline-flex items-center gap-1 whitespace-nowrap">
+                      <Clock className="w-3 h-3" /> {relTime(r.createdAt as any)}
+                    </div>
+                    <div className="text-[11px] text-gray-300 group-hover:text-gray-700 transition mt-1">View →</div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
 
       <Sheet open={openId !== null} onOpenChange={o => !o && setOpenId(null)}>
@@ -242,6 +501,23 @@ export default function AdminContactSubmissions() {
           {openId !== null && <SubmissionDetail id={openId} onClose={() => setOpenId(null)} listUrl={url} />}
         </SheetContent>
       </Sheet>
+    </div>
+  );
+}
+
+function KpiCard({ icon, label, value, accent, tint, sub, testid }: {
+  icon: React.ReactNode; label: string; value: string | number; accent: string; tint: string; sub?: string; testid?: string;
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-4" data-testid={testid}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: tint, color: accent }}>
+          {icon}
+        </div>
+      </div>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
+      <p className="text-2xl font-bold tracking-tight text-foreground mt-0.5">{value}</p>
+      {sub && <p className="text-[11px] text-gray-400 mt-1">{sub}</p>}
     </div>
   );
 }
