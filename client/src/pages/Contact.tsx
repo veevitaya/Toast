@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, ChevronDown, Loader2, Mail, Paperclip, X, Home, Sparkles, Heart, MessageCircle, Quote, User, AtSign, Phone, Camera, Building2, Tag, Compass, MapPin, Globe, Instagram, Map, Calendar, Briefcase, Send, Lightbulb } from "lucide-react";
 import { Mascot, MascotPair, mascotForCategory, type MascotName } from "@/components/Mascot";
+import heroGroupImg from "@/assets/mascots/hero-group.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -772,20 +773,32 @@ function PartnerForm({ signedInUser, category, onCancel, onSubmitted }: { signed
 // LANDING + SUCCESS + WRAPPER
 // ============================================================================
 function Landing({ onPick }: { onPick: (c: Category) => void }) {
-  const floatVariants = [
-    { y: [0, -6, 0], rotate: [0, -3, 0] },
-    { y: [0, -8, 0], rotate: [0, 3, 0] },
-    { y: [0, -5, 0], rotate: [0, -2, 0] },
-    { y: [0, -7, 0], rotate: [0, 2, 0] },
-  ];
-  const heroChars: MascotName[] = ["toast", "waffle", "popcorn", "ticket"];
   return (
-    <div className="pt-2 pb-10 space-y-7" data-testid="contact-landing">
+    <div className="pt-2 pb-10 space-y-6" data-testid="contact-landing">
+      {/* HERO IMAGE — above the header */}
+      <motion.div
+        initial={{ opacity: 0, y: 8, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: "spring", stiffness: 220, damping: 22 }}
+        className="relative flex justify-center"
+      >
+        <motion.img
+          src={heroGroupImg}
+          alt="Toast, waffle, popcorn and ticket mascots ready to help"
+          className="w-full max-w-[420px] h-auto select-none pointer-events-none"
+          draggable={false}
+          animate={{ y: [0, -4, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          data-testid="img-hero-group"
+        />
+      </motion.div>
+
       {/* GREETING */}
       <div className="px-1">
         <motion.div
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08 }}
           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FFCC02]/15 text-[11px] font-bold tracking-wide text-gray-900"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-[#FFCC02]" />
@@ -794,7 +807,7 @@ function Landing({ onPick }: { onPick: (c: Category) => void }) {
         <motion.h1
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.06 }}
+          transition={{ delay: 0.14 }}
           className="mt-2.5 text-[26px] sm:text-[28px] font-bold text-foreground leading-[1.15] tracking-tight"
           data-testid="text-hero-title"
         >
@@ -803,49 +816,21 @@ function Landing({ onPick }: { onPick: (c: Category) => void }) {
         <motion.p
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12 }}
+          transition={{ delay: 0.2 }}
           className="mt-1.5 text-[15px] font-medium text-muted-foreground leading-snug"
         >
           Feedback, a restaurant, an event, or a partnership idea — tell us where you fit in and we'll route it to the right team.
         </motion.p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.28 }}
+          className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100 text-[11px] font-semibold text-gray-600"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          We typically reply within 2 business days
+        </motion.div>
       </div>
-
-      {/* MASCOT STAGE */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.18 }}
-        className="relative overflow-hidden rounded-[20px] bg-white border border-gray-100/80 px-4 pt-5 pb-4 shadow-[0_6px_20px_-4px_rgba(0,0,0,0.06),0_2px_6px_-2px_rgba(0,0,0,0.03)]"
-      >
-        {/* subtle stage line */}
-        <div className="pointer-events-none absolute left-0 right-0 bottom-12 h-px bg-gradient-to-r from-transparent via-gray-200/60 to-transparent" />
-        <div className="relative flex justify-center items-end gap-2 h-[140px]">
-          {heroChars.map((name, i) => (
-            <motion.div
-              key={name}
-              initial={{ opacity: 0, y: 18, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: 0.22 + i * 0.07, type: "spring", stiffness: 240, damping: 16 }}
-            >
-              <motion.div
-                animate={floatVariants[i]}
-                transition={{ duration: 3.6 + i * 0.3, repeat: Infinity, ease: "easeInOut", delay: i * 0.2 }}
-                whileHover={{ scale: 1.1, transition: { type: "spring", stiffness: 320 } }}
-                className="cursor-pointer"
-              >
-                <Mascot name={name} size="md" />
-              </motion.div>
-            </motion.div>
-          ))}
-        </div>
-        {/* reply-time chip */}
-        <div className="relative mt-2 flex items-center justify-center">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100 text-[11px] font-semibold text-gray-600">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            We typically reply within 2 business days
-          </div>
-        </div>
-      </motion.div>
 
       {/* SECTION HEADER */}
       <div className="px-1">
