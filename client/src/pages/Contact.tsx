@@ -713,51 +713,46 @@ function PartnerForm({ signedInUser, category, onCancel, onSubmitted }: { signed
           </FormStepCard>
         )}
 
-        {/* Optional details */}
-        <button type="button" onClick={() => setShowOptional(s => !s)} className="flex items-center justify-between w-full px-4 py-3.5 rounded-2xl bg-white border border-gray-100/80 hover:border-gray-200 hover:bg-gray-50/50 text-[13px] font-bold text-gray-800 transition shadow-[0_2px_6px_-2px_rgba(0,0,0,0.04)]" data-testid="button-toggle-optional">
-          <span className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4" style={{ color: accent }} />
-            {showOptional ? "Hide extra details" : "Add more details (optional)"}
-          </span>
-          <ChevronDown className={`w-4 h-4 transition ${showOptional ? "rotate-180" : ""}`} />
-        </button>
+        {/* Comments + attachments — always visible for restaurant/event */}
+        {(category === "restaurant_partner" || category === "event_activity_partner") && (
+          <FormStepCard icon={<MessageCircle className="w-5 h-5" />} title="Anything else we should know?" helper="Optional — links, hours, schedule, photos, menu, etc." accent={accent}>
+            <Question icon={<MessageCircle className="w-4 h-4" />} label="Comments">
+              <StyledTextarea rows={5} placeholder={category === "restaurant_partner"
+                ? "Tell us about your restaurant — branches, website, Instagram, Google Maps, anything you'd like us to see."
+                : "Tell us about the event — dates, venue, ticketing link, website, socials, anything you'd like us to see."}
+                value={data.short_message} onChange={e => set("short_message", e.target.value)} data-testid="textarea-short-message" />
+            </Question>
+            <Question icon={<Camera className="w-4 h-4" />} label="Attachments" helper="Menu, deck, photos — up to 5 files.">
+              <FileUploader files={files} onChange={setFiles} />
+            </Question>
+          </FormStepCard>
+        )}
 
-        <AnimatePresence>
-          {showOptional && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-              <FormStepCard icon={<Lightbulb className="w-5 h-5" />} title="More about you" helper="All optional — fill what matters." accent={accent}>
-                {category === "restaurant_partner" && (
-                  <>
-                    <Question icon={<MapPin className="w-4 h-4" />} label="Location"><StyledInput value={data.location} onChange={e => set("location", e.target.value)} adornment={<MapPin className="w-4 h-4" />} data-testid="input-location-optional" /></Question>
-                    <Question icon={<Building2 className="w-4 h-4" />} label="Number of branches"><StyledInput placeholder="e.g. 1, 3, 12+" value={data.number_of_branches} onChange={e => set("number_of_branches", e.target.value)} adornment={<Building2 className="w-4 h-4" />} data-testid="input-branches" /></Question>
-                    <Question icon={<Globe className="w-4 h-4" />} label="Website"><StyledInput placeholder="https://" value={data.website_url} onChange={e => set("website_url", e.target.value)} adornment={<Globe className="w-4 h-4" />} data-testid="input-website" /></Question>
-                    <Question icon={<Instagram className="w-4 h-4" />} label="Instagram"><StyledInput placeholder="@handle" value={data.instagram_url} onChange={e => set("instagram_url", e.target.value)} adornment={<Instagram className="w-4 h-4" />} data-testid="input-instagram" /></Question>
-                    <Question icon={<Map className="w-4 h-4" />} label="Google Maps link"><StyledInput placeholder="https://maps.google.com/…" value={data.google_maps_url} onChange={e => set("google_maps_url", e.target.value)} adornment={<Map className="w-4 h-4" />} data-testid="input-gmaps" /></Question>
-                  </>
-                )}
-                {category === "event_activity_partner" && (
-                  <>
-                    <Question icon={<Calendar className="w-4 h-4" />} label="Frequency"><ChipGroup value={data.frequency} onChange={v => set("frequency", v)} options={["One-time event","Weekly","Monthly","Ongoing venue","Seasonal"]} testid="select-frequency" /></Question>
-                    <Question icon={<Globe className="w-4 h-4" />} label="Website"><StyledInput placeholder="https://" value={data.website_url} onChange={e => set("website_url", e.target.value)} adornment={<Globe className="w-4 h-4" />} data-testid="input-website" /></Question>
-                    <Question icon={<Instagram className="w-4 h-4" />} label="Instagram"><StyledInput placeholder="@handle" value={data.instagram_url} onChange={e => set("instagram_url", e.target.value)} adornment={<Instagram className="w-4 h-4" />} data-testid="input-instagram" /></Question>
-                    <Question icon={<Tag className="w-4 h-4" />} label="Ticketing link"><StyledInput placeholder="https://" value={data.ticketing_link} onChange={e => set("ticketing_link", e.target.value)} adornment={<Tag className="w-4 h-4" />} data-testid="input-ticketing" /></Question>
-                  </>
-                )}
-                {category === "general_partner" && (
-                  <>
+        {/* Optional details — only for general_partner */}
+        {category === "general_partner" && (
+          <>
+            <button type="button" onClick={() => setShowOptional(s => !s)} className="flex items-center justify-between w-full px-4 py-3.5 rounded-2xl bg-white border border-gray-100/80 hover:border-gray-200 hover:bg-gray-50/50 text-[13px] font-bold text-gray-800 transition shadow-[0_2px_6px_-2px_rgba(0,0,0,0.04)]" data-testid="button-toggle-optional">
+              <span className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4" style={{ color: accent }} />
+                {showOptional ? "Hide extra details" : "Add more details (optional)"}
+              </span>
+              <ChevronDown className={`w-4 h-4 transition ${showOptional ? "rotate-180" : ""}`} />
+            </button>
+
+            <AnimatePresence>
+              {showOptional && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                  <FormStepCard icon={<Lightbulb className="w-5 h-5" />} title="More about you" helper="All optional — fill what matters." accent={accent}>
                     <Question icon={<Globe className="w-4 h-4" />} label="Website or social link"><StyledInput placeholder="https://" value={data.website_or_social_link} onChange={e => set("website_or_social_link", e.target.value)} adornment={<Globe className="w-4 h-4" />} data-testid="input-website-social" /></Question>
                     <Question icon={<Tag className="w-4 h-4" />} label="Budget range"><ChipGroup value={data.budget_range} onChange={v => set("budget_range", v)} options={["Not sure yet","Under ฿25,000","฿25,000–฿100,000","฿100,000–฿500,000","฿500,000+"]} testid="select-budget" /></Question>
                     <Question icon={<MessageCircle className="w-4 h-4" />} label="Preferred contact method"><StyledInput placeholder="Email, LINE, Slack…" value={data.preferred_contact_method} onChange={e => set("preferred_contact_method", e.target.value)} adornment={<MessageCircle className="w-4 h-4" />} data-testid="input-preferred-contact" /></Question>
-                  </>
-                )}
-                {(category === "restaurant_partner" || category === "event_activity_partner") && (
-                  <Question icon={<MessageCircle className="w-4 h-4" />} label="Short message"><StyledTextarea rows={3} placeholder="Anything else we should know?" value={data.short_message} onChange={e => set("short_message", e.target.value)} data-testid="textarea-short-message" /></Question>
-                )}
-                <Question icon={<Camera className="w-4 h-4" />} label="Attachments" helper="Menu, deck, photos — up to 5 files."><FileUploader files={files} onChange={setFiles} /></Question>
-              </FormStepCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                    <Question icon={<Camera className="w-4 h-4" />} label="Attachments" helper="Deck, photos — up to 5 files."><FileUploader files={files} onChange={setFiles} /></Question>
+                  </FormStepCard>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        )}
 
         <input tabIndex={-1} autoComplete="off" type="text" name="company_website" value={data.company_website} onChange={e => set("company_website", e.target.value)} style={{ position: "absolute", left: "-9999px", width: 1, height: 1 }} aria-hidden="true" />
       </div>
