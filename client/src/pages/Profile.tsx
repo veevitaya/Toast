@@ -854,67 +854,6 @@ export default function Profile() {
                     </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
                   </button>
-
-                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
-
-                  <button
-                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
-                    data-testid="button-privacy-policy"
-                  >
-                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #E0F7FA 0%, #B2EBF2 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
-                      🔒
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-bold text-[15px]">{t("profile.privacy_policy")}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
-                  </button>
-
-                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
-
-                  <button
-                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
-                    data-testid="button-terms-of-service"
-                  >
-                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #E8F5E9 0%, #C8E6C9 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
-                      📄
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-bold text-[15px]">{t("profile.terms_of_service")}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
-                  </button>
-
-                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
-
-                  <button
-                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
-                    data-testid="button-about-app"
-                  >
-                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #FFF8E1 0%, #FFE082 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
-                      🍞
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-bold text-[15px]">{t("profile.about_app")}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">{t("profile.about_app_desc")}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
-                  </button>
-
-                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
-
-                  <button
-                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors"
-                    data-testid="button-rate-app"
-                  >
-                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #FFFDE7 0%, #FFF9C4 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
-                      ⭐
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="font-bold text-[15px]">{t("profile.rate_app")}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
-                  </button>
                 </div>
               </div>
 
