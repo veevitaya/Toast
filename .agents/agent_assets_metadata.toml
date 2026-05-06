@@ -65,3 +65,9 @@ id = "IOHyo3KgwReON2HrQ95N_"
 uri = "file://screenshots/contact-redesign-final.jpg"
 type = "image"
 title = "Redesigned Contact landing — brand hero, real mascots, microanimations"
+
+[[outputs]]
+id = "7A7TsFIPILRvnCdq33W1t"
+uri = "file://screenshots/contact-bg-match.jpg"
+type = "image"
+title = "Contact page — background now matches main Toast app off-white"

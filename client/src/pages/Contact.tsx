@@ -744,8 +744,8 @@ export default function Contact() {
   const reset = () => { setView("landing"); setCategory(null); setSuccessCategory(null); };
 
   return (
-    <div className="min-h-[100dvh] bg-[#FFFAEC]" data-testid="page-contact">
-      <header className="px-4 py-3 flex items-center justify-between border-b border-[#FFCC02]/20 bg-[#FFFAEC]/90 backdrop-blur sticky top-0 z-10">
+    <div className="min-h-[100dvh] bg-background" data-testid="page-contact">
+      <header className="px-4 py-3 flex items-center justify-between border-b border-[#FFCC02]/20 bg-background/90 backdrop-blur sticky top-0 z-10">
         <Link href="/">
           <button className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors" data-testid="link-back-home">
             <ArrowLeft className="w-4 h-4" /> Back to Toast
