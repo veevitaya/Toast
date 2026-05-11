@@ -63,22 +63,29 @@ export function TutorialOverlay({ featureId, onClose }: Props) {
       {/* Soft top-to-bottom dim so the live screen still peeks through */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/40 to-black/70 pointer-events-auto" />
 
+      {/* Subtle yellow vignette to brand the dim */}
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top,rgba(255,204,2,0.10),transparent_55%)]" />
+
       {/* Top: progress dots + skip */}
       <div className="absolute top-0 inset-x-0 pt-[env(safe-area-inset-top)] pointer-events-auto">
         <div className="flex items-center justify-between px-5 pt-4">
-          <div className="flex gap-1.5" data-testid="tutorial-progress">
+          <div className="flex gap-1.5 items-center" data-testid="tutorial-progress">
             {flow.steps.map((_, i) => (
               <span
                 key={i}
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === stepIndex ? "w-6 bg-[#FFCC02]" : "w-1.5 bg-white/40"
+                  i === stepIndex
+                    ? "w-7 bg-gradient-to-r from-[#FFCC02] to-[#FFE889] shadow-[0_0_10px_rgba(255,204,2,0.6)]"
+                    : i < stepIndex
+                    ? "w-1.5 bg-[#FFCC02]/70"
+                    : "w-1.5 bg-white/35"
                 }`}
               />
             ))}
           </div>
           <button
             onClick={handleSkip}
-            className="text-[13px] font-medium text-white/80 active:text-white px-2 py-1"
+            className="text-[12px] font-semibold text-white/85 active:text-white px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/15"
             data-testid="button-tutorial-skip"
           >
             Skip
@@ -95,38 +102,51 @@ export function TutorialOverlay({ featureId, onClose }: Props) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -10, opacity: 0 }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
-            className="mx-3 mb-3 rounded-[28px] bg-[#FFF8E1] shadow-[0_-12px_40px_rgba(0,0,0,0.25)] overflow-hidden"
+            className="mx-3 mb-3 rounded-[28px] bg-white shadow-[0_-16px_50px_rgba(0,0,0,0.28),0_-2px_0_#FFCC02] overflow-hidden ring-1 ring-black/[0.04]"
           >
+            {/* Premium yellow accent bar */}
+            <div className="h-1.5 bg-gradient-to-r from-[#FFCC02] via-[#FFE889] to-[#FFCC02]" />
+
             <StepIllustration kind={step.illustration} />
 
             <div className="px-5 pt-4 pb-5">
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#FF9F1C] mb-1.5">
-                Step {stepIndex + 1} · {flow.title}
-              </p>
-              <h2 className="text-[22px] leading-tight font-extrabold text-[#222222]" data-testid="tutorial-title">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#222222] bg-[#FFCC02] px-2 py-1 rounded-full shadow-[0_2px_8px_rgba(255,204,2,0.45)]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#222222]" />
+                  Step {stepIndex + 1} of {flow.steps.length}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#222222]/50">
+                  {flow.title}
+                </span>
+              </div>
+              <h2 className="text-[22px] leading-tight font-extrabold text-[#222222] tracking-tight" data-testid="tutorial-title">
                 {step.title}
               </h2>
               <p className="text-[13.5px] text-[#222222]/65 mt-1.5 leading-snug">{step.subtitle}</p>
 
               {step.bubble && (
-                <div className="mt-3 flex items-start gap-2.5 rounded-2xl bg-white p-3 border border-black/[0.04]">
-                  <div className="w-9 h-9 rounded-full bg-[#FFE889] shrink-0 overflow-hidden flex items-center justify-center">
+                <div className="mt-3 flex items-start gap-2.5 rounded-2xl bg-gradient-to-br from-[#FFF8E1] to-white p-3 border border-[#FFCC02]/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FFE889] to-[#FFCC02] shrink-0 overflow-hidden flex items-center justify-center ring-2 ring-white shadow-[0_4px_12px_rgba(255,204,2,0.4)]">
                     <img
                       src={MASCOTS[step.mascot || "toast"] || toastMascot}
                       alt="Toast mascot"
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <p className="text-[13px] leading-snug text-[#222222]/80 pt-1">{step.bubble}</p>
+                  <p className="text-[13px] leading-snug text-[#222222]/85 pt-1.5 font-medium">{step.bubble}</p>
                 </div>
               )}
 
               <button
                 onClick={handleNext}
-                className="mt-4 w-full h-12 rounded-full bg-[#222222] text-white text-[15px] font-bold shadow-md active:scale-[0.98] transition-transform"
+                className="group mt-4 w-full h-13 py-3.5 rounded-full bg-[#222222] text-white text-[15px] font-bold shadow-[0_8px_24px_rgba(34,34,34,0.35),inset_0_1px_0_rgba(255,255,255,0.08)] active:scale-[0.98] transition-all relative overflow-hidden"
                 data-testid="button-tutorial-cta"
               >
-                {step.cta}
+                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-[#FFCC02]/0 to-[#FFCC02]/10 opacity-0 group-active:opacity-100 transition-opacity" />
+                <span className="relative flex items-center justify-center gap-2">
+                  {step.cta}
+                  <span className="text-[#FFCC02]">{isLast ? "✓" : "→"}</span>
+                </span>
               </button>
             </div>
           </motion.div>
