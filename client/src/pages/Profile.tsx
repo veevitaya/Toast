@@ -799,6 +799,23 @@ export default function Profile() {
                   <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
 
                   <Link
+                    href="/help"
+                    className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors no-underline text-inherit"
+                    data-testid="button-how-toast-works"
+                  >
+                    <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg" style={{ background: "linear-gradient(140deg, #FFF8E1 0%, #FFE889 100%)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}>
+                      🍞
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-[15px]">How Toast Works</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">Replay any walkthrough</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40" />
+                  </Link>
+
+                  <div className="mx-5 h-px bg-black/[0.04] dark:bg-border" />
+
+                  <Link
                     href="/contact?from=profile"
                     className="w-full px-5 py-4 flex items-center gap-4 active:bg-gray-50/50 dark:active:bg-muted/50 transition-colors no-underline text-inherit"
                     data-testid="button-contact-support"

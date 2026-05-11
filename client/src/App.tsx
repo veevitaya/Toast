@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/i18n/LanguageProvider";
 import { lazy, Suspense } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SessionBar } from "@/components/SessionBar";
+import { TutorialController } from "@/components/tutorial/TutorialController";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 
@@ -29,6 +30,7 @@ const LegalDocumentViewer = lazy(() => import("@/pages/LegalDocumentViewer"));
 const PartnerAccept = lazy(() => import("@/pages/PartnerAccept"));
 const TeamMemberActivate = lazy(() => import("@/pages/TeamMemberActivate"));
 const Contact = lazy(() => import("@/pages/Contact"));
+const HelpHub = lazy(() => import("@/pages/HelpHub"));
 const AdminContactSubmissions = lazy(() => import("@/pages/admin/AdminContactSubmissions"));
 
 const AdminLogin = lazy(() => import("@/pages/admin/AdminLogin"));
@@ -96,6 +98,7 @@ function Router() {
   return (
     <Suspense fallback={<PageLoader />}>
         <GlobalSessionBar />
+        <TutorialController />
         <Switch location={location}>
           <Route path="/">
             <AnimatedPage><Home /></AnimatedPage>
@@ -156,6 +159,9 @@ function Router() {
           </Route>
           <Route path="/contact">
             <Suspense fallback={<PageLoader />}><Contact /></Suspense>
+          </Route>
+          <Route path="/help">
+            <Suspense fallback={<PageLoader />}><HelpHub /></Suspense>
           </Route>
           <Route path="/admin/login">
             <AdminLogin />
