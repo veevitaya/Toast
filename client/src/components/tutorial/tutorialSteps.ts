@@ -28,7 +28,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
     id: "solo",
     title: "Solo Play",
     startPath: "/",
-    finishPath: "/swipe?mode=mood",
+    finishPath: "/",
     steps: [
       {
         title: "Pick your vibe.",
@@ -54,6 +54,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "toast",
         bubble: "Spicy. Cozy. Noodle mood. Toast remembers.",
         cta: "Show me how",
+        navigateTo: "/profile",
         illustration: "tasteDna",
       },
       {
@@ -62,6 +63,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "toast",
         bubble: "You swipe the food. Toast finds the place.",
         cta: "Start Solo Play",
+        navigateTo: "/toast-picks",
       },
     ],
   },
@@ -86,6 +88,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "popcorn",
         bubble: "Tap. Send. Wait for the chaos.",
         cta: "Next",
+        navigateTo: "/group/setup",
         spotlight: "group-invite",
       },
       {
@@ -94,6 +97,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "popcorn",
         bubble: "Start when enough people are in.",
         cta: "Start demo swipe",
+        navigateTo: "/group/waiting",
       },
       {
         title: "Everyone swipes separately.",
@@ -101,6 +105,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "popcorn",
         bubble: "Toast looks for overlap.",
         cta: "Find match",
+        navigateTo: "/group/swipe",
         illustration: "phones",
       },
       {
