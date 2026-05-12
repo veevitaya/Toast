@@ -1,4 +1,12 @@
 import type { TutorialFeatureId } from "@/lib/tutorialState";
+import soloHome from "@assets/tutorial/solo-1-home.jpg";
+import soloSwipe from "@assets/tutorial/solo-2-swipe.jpg";
+import soloProfile from "@assets/tutorial/solo-3-profile.jpg";
+import soloPicks from "@assets/tutorial/solo-4-picks.jpg";
+import groupSetup from "@assets/tutorial/group-1-setup.jpg";
+import groupWaiting from "@assets/tutorial/group-3-waiting.jpg";
+import groupSwipe from "@assets/tutorial/group-4-swipe.jpg";
+import trendingShot from "@assets/tutorial/trending-1.jpg";
 
 export interface TutorialStep {
   title: string;
@@ -6,10 +14,8 @@ export interface TutorialStep {
   mascot?: string;
   bubble?: string;
   cta: string;
-  /** Optional path to navigate to before showing this step. */
-  navigateTo?: string;
-  /** Optional data-tour attribute value to spotlight. */
-  spotlight?: string;
+  /** Static screenshot rendered as the step background. */
+  screenshot: string;
   /** Optional inline illustration node id (handled in overlay). */
   illustration?: "tasteDna" | "confetti" | "phones" | "reroll" | "trendChips";
 }
@@ -17,8 +23,7 @@ export interface TutorialStep {
 export interface TutorialFlow {
   id: TutorialFeatureId;
   title: string;
-  startPath: string;
-  /** Where to land the user after the final step's CTA. */
+  /** Where to land the user after completion / skip. */
   finishPath: string;
   steps: TutorialStep[];
 }
@@ -27,7 +32,6 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
   solo: {
     id: "solo",
     title: "Solo Play",
-    startPath: "/",
     finishPath: "/",
     steps: [
       {
@@ -36,8 +40,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "toast",
         bubble: "Start with your mood. Toast gets smarter from there.",
         cta: "Next",
-        navigateTo: "/",
-        spotlight: "toast-decides",
+        screenshot: soloHome,
       },
       {
         title: "Swipe what looks good.",
@@ -45,8 +48,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "toast",
         bubble: "Yup, that's a yes. No hard feelings on the lefts.",
         cta: "Got it",
-        navigateTo: "/swipe?mode=mood",
-        spotlight: "swipe-deck",
+        screenshot: soloSwipe,
       },
       {
         title: "Toast learns your Taste DNA.",
@@ -54,7 +56,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "toast",
         bubble: "Spicy. Cozy. Noodle mood. Toast remembers.",
         cta: "Show me how",
-        navigateTo: "/profile",
+        screenshot: soloProfile,
         illustration: "tasteDna",
       },
       {
@@ -63,14 +65,13 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "toast",
         bubble: "You swipe the food. Toast finds the place.",
         cta: "Start Solo Play",
-        navigateTo: "/toast-picks",
+        screenshot: soloPicks,
       },
     ],
   },
   group: {
     id: "group",
     title: "Group Play",
-    startPath: "/group/setup",
     finishPath: "/group/setup",
     steps: [
       {
@@ -79,8 +80,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "popcorn",
         bubble: "The host sets the rules. Everyone else brings opinions.",
         cta: "Next",
-        navigateTo: "/group/setup",
-        spotlight: "group-setup-form",
+        screenshot: groupSetup,
       },
       {
         title: "Invite through LINE.",
@@ -88,8 +88,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "popcorn",
         bubble: "Tap. Send. Wait for the chaos.",
         cta: "Next",
-        navigateTo: "/group/setup",
-        spotlight: "group-invite",
+        screenshot: groupSetup,
       },
       {
         title: "Wait for the crew.",
@@ -97,7 +96,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "popcorn",
         bubble: "Start when enough people are in.",
         cta: "Start demo swipe",
-        navigateTo: "/group/waiting",
+        screenshot: groupWaiting,
       },
       {
         title: "Everyone swipes separately.",
@@ -105,7 +104,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "popcorn",
         bubble: "Toast looks for overlap.",
         cta: "Find match",
-        navigateTo: "/group/swipe",
+        screenshot: groupSwipe,
         illustration: "phones",
       },
       {
@@ -114,6 +113,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "popcorn",
         bubble: "Finally. A decision without 47 messages.",
         cta: "Next",
+        screenshot: groupSwipe,
         illustration: "confetti",
       },
       {
@@ -122,6 +122,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "popcorn",
         bubble: "Toast helps the group escape decision jail.",
         cta: "Start Group Play",
+        screenshot: groupSwipe,
         illustration: "reroll",
       },
     ],
@@ -129,7 +130,6 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
   trending: {
     id: "trending",
     title: "Trending",
-    startPath: "/trending",
     finishPath: "/trending",
     steps: [
       {
@@ -138,8 +138,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "toast",
         bubble: "Trending. Popular nearby. Group favorite.",
         cta: "Next",
-        navigateTo: "/trending",
-        spotlight: "trending-feed",
+        screenshot: trendingShot,
       },
       {
         title: "Tap anything that catches your eye.",
@@ -147,7 +146,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "toast",
         bubble: "Tags, prices, and the spots serving it — all in one tap.",
         cta: "Next",
-        spotlight: "trending-card",
+        screenshot: trendingShot,
       },
       {
         title: "Use it your way.",
@@ -155,6 +154,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "toast",
         bubble: "Trends are just the shortcut. You still get to choose.",
         cta: "Explore Trending",
+        screenshot: trendingShot,
         illustration: "trendChips",
       },
     ],

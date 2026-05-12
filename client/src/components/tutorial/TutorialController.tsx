@@ -37,6 +37,14 @@ export function TutorialController() {
 
   // Auto-trigger from ?tutorial= or first-visit per route.
   useEffect(() => {
+    // Suppress overlay (used for clean screenshots): /?tutorial=off
+    if (typeof window !== "undefined") {
+      const t = new URLSearchParams(window.location.search).get("tutorial");
+      if (t === "off") {
+        setActive(null);
+        return;
+      }
+    }
     const queryFeature = readQueryFeature();
     if (queryFeature) {
       setActive(queryFeature);

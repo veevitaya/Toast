@@ -31,17 +31,6 @@ export function TutorialOverlay({ featureId, onClose }: Props) {
   const step = flow.steps[stepIndex];
   const isLast = stepIndex === flow.steps.length - 1;
 
-  // Navigate the underlying app to the screen this step describes.
-  useEffect(() => {
-    if (step.navigateTo && typeof window !== "undefined") {
-      const current = window.location.pathname + window.location.search;
-      if (!current.startsWith(step.navigateTo.split("?")[0])) {
-        navigate(step.navigateTo, { replace: true });
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stepIndex]);
-
   const handleNext = () => {
     if (isLast) {
       markTutorialCompleted(featureId);
@@ -59,12 +48,23 @@ export function TutorialOverlay({ featureId, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] pointer-events-none" data-testid={`tutorial-overlay-${featureId}`}>
-      {/* Soft top-to-bottom dim so the live screen still peeks through */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/40 to-black/70 pointer-events-auto" />
+    <div className="fixed inset-0 z-[9999] pointer-events-none bg-[#FFF8E1]" data-testid={`tutorial-overlay-${featureId}`}>
+      {/* Step screenshot as full-bleed background */}
+      <AnimatePresence mode="wait">
+        <motion.img
+          key={step.screenshot}
+          src={step.screenshot}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover object-top pointer-events-auto"
+          initial={{ opacity: 0, scale: 1.02 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+        />
+      </AnimatePresence>
 
-      {/* Subtle yellow vignette to brand the dim */}
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top,rgba(255,204,2,0.10),transparent_55%)]" />
+      {/* Soft dim so coach card stays readable */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/20 to-black/55 pointer-events-auto" />
 
       {/* Top: progress dots + skip */}
       <div className="absolute top-0 inset-x-0 pt-[env(safe-area-inset-top)] pointer-events-auto">
@@ -102,11 +102,8 @@ export function TutorialOverlay({ featureId, onClose }: Props) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -10, opacity: 0 }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
-            className="mx-3 mb-3 rounded-[28px] bg-white shadow-[0_-16px_50px_rgba(0,0,0,0.28),0_-2px_0_#FFCC02] overflow-hidden ring-1 ring-black/[0.04]"
+            className="mx-3 mb-3 rounded-[28px] bg-white shadow-[0_-16px_50px_rgba(0,0,0,0.28)] overflow-hidden ring-1 ring-black/[0.04]"
           >
-            {/* Premium yellow accent bar */}
-            <div className="h-1.5 bg-gradient-to-r from-[#FFCC02] via-[#FFE889] to-[#FFCC02]" />
-
             <StepIllustration kind={step.illustration} />
 
             <div className="px-5 pt-4 pb-5">
@@ -139,13 +136,12 @@ export function TutorialOverlay({ featureId, onClose }: Props) {
 
               <button
                 onClick={handleNext}
-                className="group mt-4 w-full h-13 py-3.5 rounded-full bg-[#222222] text-white text-[15px] font-bold shadow-[0_8px_24px_rgba(34,34,34,0.35),inset_0_1px_0_rgba(255,255,255,0.08)] active:scale-[0.98] transition-all relative overflow-hidden"
+                className="mt-4 w-full py-3.5 rounded-full bg-[#FFCC02] text-[#222222] text-[15px] font-bold shadow-[0_8px_24px_rgba(255,204,2,0.45)] active:scale-[0.98] transition-transform"
                 data-testid="button-tutorial-cta"
               >
-                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-[#FFCC02]/0 to-[#FFCC02]/10 opacity-0 group-active:opacity-100 transition-opacity" />
-                <span className="relative flex items-center justify-center gap-2">
+                <span className="flex items-center justify-center gap-2">
                   {step.cta}
-                  <span className="text-[#FFCC02]">{isLast ? "✓" : "→"}</span>
+                  <span>{isLast ? "✓" : "→"}</span>
                 </span>
               </button>
             </div>
