@@ -356,7 +356,7 @@ export default function RestaurantDetail() {
   const todayHours = MOCK_HOURS.find((h) => h.day === today);
 
   return (
-    <div className="w-full min-h-[100dvh] bg-[#FCFCFC] pb-40" data-testid="restaurant-detail-page">
+    <div className="w-full h-[100dvh] overflow-y-auto hide-scrollbar bg-[#FCFCFC] pb-40" data-testid="restaurant-detail-page">
       <div className="relative w-full h-72 overflow-hidden">
         <div
           ref={scrollRef}
