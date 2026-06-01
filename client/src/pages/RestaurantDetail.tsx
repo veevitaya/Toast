@@ -295,7 +295,7 @@ export default function RestaurantDetail() {
         <span className="text-4xl">😕</span>
         <p className="text-muted-foreground">Restaurant not found</p>
         <button
-          onClick={() => window.history.back()}
+          onClick={() => navigate("/")}
           className="px-6 py-3 rounded-full bg-foreground text-white font-bold text-sm active:scale-[0.95] transition-transform duration-200"
         >
           Go back
@@ -392,9 +392,13 @@ export default function RestaurantDetail() {
             if (groupReturn) {
               sessionStorage.removeItem("group_results_return");
               navigate(groupReturn);
-            } else {
-              window.history.back();
+              return;
             }
+            const current = window.location.pathname;
+            window.history.back();
+            setTimeout(() => {
+              if (window.location.pathname === current) navigate("/");
+            }, 150);
           }}
           className="absolute top-4 left-4 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center z-10 active:scale-[0.90] transition-transform duration-150"
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}

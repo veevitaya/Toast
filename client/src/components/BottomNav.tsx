@@ -39,9 +39,13 @@ export function BottomNav({ showBack = true, onBack, hidden = false }: BottomNav
   const handleBack = () => {
     if (onBack) {
       onBack();
-    } else {
-      window.history.back();
+      return;
     }
+    const current = window.location.pathname;
+    window.history.back();
+    setTimeout(() => {
+      if (window.location.pathname === current) navigate("/");
+    }, 150);
   };
 
   return (
