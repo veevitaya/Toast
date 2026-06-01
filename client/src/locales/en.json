@@ -495,7 +495,9 @@
     "got_it": "Got it. I'll make this\neasy for you.",
     "finding": "Finding your picks…",
     "todays_picks": "Today's picks",
-    "subtitle": "Three spots we think you'll love"
+    "other_options": "Or try these",
+    "see_details": "See details",
+    "show_others": "Show me others"
   },
   "quiz": {
     "title": "Taste Quiz",
