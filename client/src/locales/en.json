@@ -517,7 +517,13 @@
     "lets_pick": "Let's pick!",
     "hint_cuisine": "Pick a cuisine to continue",
     "hint_location": "Pick a setting to continue",
-    "hint_budget": "Pick a budget to continue"
+    "hint_budget": "Pick a budget to continue",
+    "compare_title": "What sounds good?",
+    "compare_sub": "All optional — tap what you fancy, skip the rest",
+    "section_cuisine": "Craving",
+    "section_scene": "The scene",
+    "section_budget": "Budget",
+    "show_picks": "Show my picks"
   },
   "soloJourney": {
     "compare": "Compare options",
