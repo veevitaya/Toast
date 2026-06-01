@@ -492,7 +492,10 @@
     "curated_for_you": "Curated just for you",
     "heres_what": "Here's what I'd pick\nfor your {{meal}}",
     "still_learning": "Still learning your taste — swipe more to unlock personalized picks!",
-    "got_it": "Got it. I'll make this\neasy for you."
+    "got_it": "Got it. I'll make this\neasy for you.",
+    "finding": "Finding your picks…",
+    "todays_picks": "Today's picks",
+    "subtitle": "Three spots we think you'll love"
   },
   "quiz": {
     "title": "Taste Quiz",

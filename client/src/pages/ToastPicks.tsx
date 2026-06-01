@@ -104,6 +104,7 @@ function scoreRestaurant(
 }
 
 function PickCard({ restaurant, index, onNavigate }: { restaurant: RestaurantResponse; index: number; onNavigate: () => void }) {
+  const { t } = useLanguage();
   const { isSaved, getBucket } = useSavedRestaurants();
   const [showPicker, setShowPicker] = useState(false);
   const saved = isSaved(restaurant.id);
@@ -178,7 +179,7 @@ function PickCard({ restaurant, index, onNavigate }: { restaurant: RestaurantRes
 export default function ToastPicks() {
   const [, navigate] = useLocation();
   const { t } = useLanguage();
-  const { profile: tasteProfile, topPreference, getMoodSignal } = useTasteProfile();
+  const { profile: tasteProfile } = useTasteProfile();
   const { data: savedData } = useSavedRestaurants();
   const [phase, setPhase] = useState<"thinking" | "reveal">("thinking");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -201,7 +202,7 @@ export default function ToastPicks() {
   }, [allRestaurants, tasteProfile, userProfile, savedData, refreshKey]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setPhase("reveal"), 3200);
+    const timer = setTimeout(() => setPhase("reveal"), 1900);
     return () => clearTimeout(timer);
   }, [refreshKey]);
 
@@ -209,57 +210,6 @@ export default function ToastPicks() {
     setPhase("thinking");
     setRefreshKey(k => k + 1);
   };
-
-  const thinkingMessage = useMemo(() => {
-    const hour = new Date().getHours();
-    const date = new Date().getDate();
-    const day = new Date().getDay();
-    const isWeekend = day === 0 || day === 6;
-    const isEndOfMonth = date >= 25;
-    const isStartOfMonth = date <= 5;
-    const hasHistory = topPreference.score > 0;
-
-    const lines: string[] = [];
-
-    if (hasHistory) {
-      lines.push(`Your ${topPreference.label} taste? Noted.`);
-    } else {
-      lines.push("Reading your taste...");
-    }
-
-    if (isEndOfMonth) {
-      lines.push("Month-end, wallet-friendly picks.");
-    } else if (isStartOfMonth) {
-      lines.push("Payday energy activated.");
-    }
-
-    if (isWeekend) {
-      lines.push("Weekend mode, no rush.");
-    } else if (hour >= 17 && hour < 21) {
-      lines.push("Dinner picks loading...");
-    } else if (hour >= 11 && hour < 14) {
-      lines.push("Lunchtime spot incoming.");
-    } else if (hour >= 22 || hour < 5) {
-      lines.push("Late night? Say less.");
-    }
-
-    return lines;
-  }, [topPreference, refreshKey]);
-
-  const reasonText = useMemo(() => {
-    const reasons: string[] = [];
-    if (topPreference.key !== "Thai") {
-      reasons.push(`your love for ${topPreference.label}`);
-    }
-    reasons.push(`${timeContext.meal} time`);
-    if (userProfile.defaultBudget <= 2) {
-      reasons.push("your budget");
-    }
-    if (userProfile.cuisinePreferences.length > 0) {
-      reasons.push("your cuisine picks");
-    }
-    return reasons.length > 0 ? `Based on ${reasons.slice(0, 2).join(" & ")}` : "Curated just for you";
-  }, [topPreference, timeContext, userProfile]);
 
   return (
     <div className="w-full min-h-[100dvh] bg-[hsl(30,20%,97%)]" data-testid="toast-picks-page">
@@ -301,32 +251,17 @@ export default function ToastPicks() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="text-[22px] font-semibold text-foreground tracking-tight leading-snug mb-3"
+                  className="text-[20px] font-semibold text-foreground tracking-tight leading-snug"
                   data-testid="text-toast-thinking"
                 >
-                  Got it. I'll make this<br />easy for you.
+                  {t("toast_picks.finding")}
                 </motion.p>
-
-                <div className="space-y-2 mt-2 max-w-[280px]">
-                  {thinkingMessage.map((line, i) => (
-                    <motion.p
-                      key={`${refreshKey}-${i}`}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.6 + i * 0.7 }}
-                      className="text-sm text-muted-foreground leading-relaxed"
-                      data-testid={`text-thinking-line-${i}`}
-                    >
-                      {line}
-                    </motion.p>
-                  ))}
-                </div>
 
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6 + thinkingMessage.length * 0.7 }}
-                  className="mt-8 flex gap-1.5"
+                  transition={{ delay: 0.6 }}
+                  className="mt-7 flex gap-1.5"
                 >
                   {[0, 1, 2].map(i => (
                     <motion.div
@@ -345,38 +280,28 @@ export default function ToastPicks() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5 }}
               >
-                <div className="flex items-center justify-between mb-8">
-                  <motion.p
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="text-[11px] font-bold uppercase tracking-[0.2em] text-foreground/30"
-                  >
-                    Toast Picks
-                  </motion.p>
-                  <motion.button
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 }}
-                    onClick={handleRefresh}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/60 backdrop-blur-md text-muted-foreground text-xs font-medium active:scale-95 transition-transform"
-                    data-testid="button-refresh-picks"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    Refresh
-                  </motion.button>
-                </div>
-
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 0.5 }}
-                  className="text-center mb-8"
+                  transition={{ delay: 0.15, duration: 0.5 }}
+                  className="flex items-end justify-between mb-7"
                 >
-                  <p className="text-[11px] font-bold text-muted-foreground/50 mb-2">{timeContext.greeting}</p>
-                  <h1 className="text-[24px] font-semibold text-foreground tracking-tight leading-tight mb-2">
-                    Here's what I'd pick<br />for your {timeContext.meal}
-                  </h1>
-                  <p className="text-xs text-muted-foreground">{reasonText}</p>
+                  <div>
+                    <p className="text-[12px] font-semibold text-[#FFCC02] mb-1.5">{timeContext.greeting}</p>
+                    <h1 className="text-[28px] font-bold text-foreground tracking-tight leading-none">
+                      {t("toast_picks.todays_picks")}
+                    </h1>
+                    <p className="text-[13px] text-muted-foreground mt-2">{t("toast_picks.subtitle")}</p>
+                  </div>
+                  <button
+                    onClick={handleRefresh}
+                    className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-muted-foreground active:scale-90 transition-transform flex-shrink-0"
+                    style={{ boxShadow: "0 2px 10px -2px rgba(0,0,0,0.08)" }}
+                    aria-label="Refresh picks"
+                    data-testid="button-refresh-picks"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
                 </motion.div>
 
                 <div className="space-y-4 pb-32">
