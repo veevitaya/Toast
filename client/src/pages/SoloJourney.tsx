@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, Sparkles, MapPin, Star, Check, RotateCcw,
-  Navigation, Heart, Share2, Bike, SlidersHorizontal,
+  Navigation, Heart, Share2, Bike, GitCompare, ChevronRight,
 } from "lucide-react";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
@@ -249,7 +249,7 @@ export default function SoloJourney() {
     <div className="min-h-screen bg-[#FCFCFC] flex flex-col items-center" data-testid="page-solo-journey">
       <div className="w-full max-w-md flex flex-col flex-1">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-3">
+      <div className="flex items-center px-5 pt-5 pb-3">
         <button
           onClick={() => (step === "intent" ? navigate("/") : restart())}
           className="w-10 h-10 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center justify-center active:scale-95 transition-transform"
@@ -257,14 +257,6 @@ export default function SoloJourney() {
           aria-label={t("common.back")}
         >
           <ArrowLeft className="w-5 h-5 text-foreground" />
-        </button>
-        <button
-          onClick={() => navigate("/solo/quiz")}
-          className="flex items-center gap-1.5 rounded-full bg-white border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.06)] pl-3 pr-3.5 py-2 text-[13px] font-bold text-foreground active:scale-95 transition-transform"
-          data-testid="button-compare-options"
-        >
-          <SlidersHorizontal className="w-4 h-4 text-[#C79200]" />
-          {t("soloJourney.compare")}
         </button>
       </div>
 
@@ -303,6 +295,13 @@ export default function SoloJourney() {
                   </motion.button>
                 ))}
               </div>
+              <button
+                onClick={() => navigate("/solo/quiz")}
+                className="mt-6 mx-auto flex items-center gap-1.5 text-[13.5px] font-semibold text-muted-foreground active:scale-95 transition-transform"
+                data-testid="button-compare-intent"
+              >
+                <GitCompare className="w-4 h-4 text-[#C79200]" /> {t("soloJourney.compare")}
+              </button>
             </motion.div>
           )}
 
@@ -459,6 +458,22 @@ export default function SoloJourney() {
                       </div>
                     </div>
                   )}
+
+                  {/* Compare options — a distinct feature, not a filter */}
+                  <button
+                    onClick={() => navigate("/solo/quiz")}
+                    className="mt-4 w-full rounded-3xl bg-white border border-black/[0.05] shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-3.5 flex items-center gap-3.5 active:scale-[0.98] transition-transform text-left"
+                    data-testid="button-compare-options"
+                  >
+                    <div className="w-11 h-11 rounded-2xl bg-[#FFF6DA] flex items-center justify-center flex-shrink-0">
+                      <GitCompare className="w-5 h-5 text-[#C79200]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[15px] font-extrabold text-foreground leading-tight">{t("soloJourney.compare")}</p>
+                      <p className="text-[12.5px] text-muted-foreground leading-snug mt-0.5">{t("soloJourney.compare_desc")}</p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground/40 flex-shrink-0" />
+                  </button>
 
                   {learning && (
                     <p className="text-[12.5px] text-muted-foreground text-center mt-3 px-3 leading-snug flex items-center justify-center gap-1.5" data-testid="text-learning">
