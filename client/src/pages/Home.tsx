@@ -726,7 +726,7 @@ export default function Home() {
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleModeClickAnimated("/solo/quiz", e.currentTarget); }}
+                      onClick={(e) => { e.stopPropagation(); handleModeClickAnimated("/solo", e.currentTarget); }}
                       className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 h-[72px] border border-gray-100 shadow-md"
                       data-testid="button-solo-collapsed"
                     >
@@ -804,7 +804,7 @@ export default function Home() {
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={(e) => handleModeClickAnimated("/solo/quiz", e.currentTarget)}
+                onClick={(e) => handleModeClickAnimated("/solo", e.currentTarget)}
                 data-testid="button-solo"
                 className="flex items-center rounded-[20px] bg-white pl-3 pr-5 h-[100px] border border-gray-100 shadow-md transition-transform duration-150 ease-out active:scale-[0.97] animate-page-in"
               >

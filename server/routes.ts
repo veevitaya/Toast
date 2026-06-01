@@ -1053,6 +1053,144 @@ export async function registerRoutes(
     }
   });
 
+  // Toast Decides solo journey: mood-driven, always-lands-a-pick recommendation.
+  // Maps a single mood onto real engine inputs (craving boosts + price), uses
+  // guaranteePick so thin-data users still get one confident pick, supports
+  // excludeIds for "Another option", and returns a `learning` flag that drives
+  // the subtle trust line in the UI.
+  app.post("/api/solo/decide", async (req, res) => {
+    try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`solo-decide:${ip}`, 40, 10000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+      const { userId, hour, dayOfWeek, mood, excludeIds, avoidTags } = req.body as {
+        userId?: string;
+        hour?: number;
+        dayOfWeek?: number;
+        mood?: string;
+        excludeIds?: number[];
+        avoidTags?: string[];
+      };
+
+      const allRestaurants = await getCached("restaurants:all", 30000, () => storage.getRestaurants());
+      const excludeSet = new Set((excludeIds || []).filter((n) => typeof n === "number"));
+      const filteredPool = excludeSet.size > 0
+        ? allRestaurants.filter((r) => !excludeSet.has(r.id))
+        : allRestaurants;
+      // Never let "Another option" dead-end the journey: if excludes have
+      // exhausted the pool, fall back to the full set so we still land a pick.
+      const candidatePool = filteredPool.length > 0 ? filteredPool : allRestaurants;
+
+      const now = new Date();
+      const h = typeof hour === "number" ? hour : now.getHours();
+      const dow = typeof dayOfWeek === "number" ? dayOfWeek : now.getDay();
+      const timeSlot =
+        h >= 6 && h < 11 ? "morning" :
+        h >= 11 && h < 14 ? "lunch" :
+        h >= 14 && h < 17 ? "afternoon" :
+        h >= 17 && h < 21 ? "dinner" : "latenight";
+      const isWeekend = dow === 0 || dow === 6;
+
+      // Mood -> engine inputs. craving feeds cuisineBoosts (via the shared
+      // CRAVING_MAP), price caps the budget, and `refineLighter`/`surprise`
+      // tweak behavior. Keeps the engine's strict ranking intact.
+      const CRAVING_MAP: Record<string, string[]> = {
+        "comforting": ["ramen", "noodles", "curry", "soup", "thai"],
+        "adventurous": ["fusion", "ethiopian", "peruvian", "middle eastern"],
+        "healthy": ["salad", "poke", "smoothie", "vegan", "healthy"],
+        "indulgent": ["bbq", "burger", "pizza", "dessert", "fine dining"],
+        "surprise": [],
+      };
+      const MOOD_MAP: Record<string, { craving?: string; price?: number }> = {
+        comforting: { craving: "comforting" },
+        exciting: { craving: "adventurous" },
+        healthy: { craving: "healthy" },
+        cheap: { price: 1 },
+        worth: { craving: "indulgent", price: 3 },
+        surprise: { craving: "surprise" },
+      };
+      const moodKey = (mood || "surprise").toLowerCase();
+      const mapped = MOOD_MAP[moodKey] || MOOD_MAP.surprise;
+      const cuisineBoosts = mapped.craving ? (CRAVING_MAP[mapped.craving] || []) : [];
+
+      let tasteDnaData = null;
+      let contextPatterns = null;
+      let mealMemory = null;
+      let userEvents: any[] = [];
+      let behaviorEvents: any[] = [];
+
+      if (userId && !String(userId).startsWith("guest_")) {
+        [tasteDnaData, contextPatterns, mealMemory, userEvents, behaviorEvents] = await Promise.all([
+          storage.getTasteDna(userId),
+          storage.getContextPatterns(userId),
+          storage.getRecentMealMemory(userId),
+          storage.getUserEvents(userId, 80),
+          storage.getUserBehaviorEvents(userId, 80),
+        ]);
+      }
+
+      const { buildUserHistory, generateRecommendation } = await import("./recommendation/index");
+      const userHistory = buildUserHistory(userEvents, behaviorEvents);
+
+      const result = generateRecommendation(
+        candidatePool,
+        {
+          userId: userId || "anonymous",
+          daypart: timeSlot,
+          isWeekend,
+          mood: mapped.craving,
+          avoidTags: avoidTags || [],
+          cuisineBoosts,
+          pricePref: mapped.price,
+          guaranteePick: true,
+        },
+        tasteDnaData,
+        contextPatterns,
+        mealMemory,
+        userHistory,
+        userEvents.length
+      );
+
+      if (!result) {
+        return res.json({ pick: null, alternatives: [], learning: true });
+      }
+
+      const formatPick = (item: any) => {
+        const r = allRestaurants.find((rest) => rest.id === item.restaurantId) || null;
+        return {
+          id: item.restaurantId,
+          name: item.name,
+          category: item.category || r?.category || null,
+          rating: item.rating ?? r?.rating ?? null,
+          imageUrl: item.imageUrl || r?.imageUrl || null,
+          address: item.address || r?.address || null,
+          priceLevel: item.priceLevel ?? r?.priceLevel ?? null,
+          district: item.district || r?.district || null,
+          lat: r?.lat ?? null,
+          lng: r?.lng ?? null,
+          reasonChips: item.reasonChips || [],
+          confidenceText: item.confidenceLabel || result.primary.confidenceLabel || null,
+          description: r?.description || null,
+          vibes: r?.vibes || [],
+        };
+      };
+
+      // "Learning" when we don't yet have a meaningful taste signal for this
+      // user. Drives the subtle "Toast keeps learning, picks get sharper" line.
+      const learning = !tasteDnaData || userEvents.length < 8;
+
+      res.json({
+        pick: formatPick(result.primary),
+        alternatives: result.alternatives.map(formatPick),
+        learning,
+      });
+    } catch (err) {
+      console.error("Solo decide error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.post("/api/session/bootstrap", async (req, res) => {
     try {
       const { accessToken, lat, lng, timezone, locale } = req.body;

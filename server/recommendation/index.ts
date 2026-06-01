@@ -16,6 +16,14 @@ export interface RecommendationRequest {
   pricePref?: number;
   avoidTags?: string[];
   cuisineBoosts?: string[];
+  /**
+   * When true (used by the Toast Decides solo journey), the engine always
+   * returns a confident pick — even if no candidate clears the 90% Taste DNA
+   * bar — by falling back to the top-ranked candidate on mood + time +
+   * distance + quality. The strict honest-matching path (returns null) is
+   * still used by the Home discovery card.
+   */
+  guaranteePick?: boolean;
 }
 
 export interface RecommendationResult {
@@ -179,16 +187,20 @@ export function generateRecommendation(
   const matchScore = honestMatch(primary.score);
 
   const MATCH_THRESHOLD = 90;
-  if (matchScore < MATCH_THRESHOLD) {
+  if (matchScore < MATCH_THRESHOLD && !request.guaranteePick) {
     return null;
   }
+  // For the solo journey we always land a confident pick, so we relax the
+  // alternative bar too — otherwise "Another option" would have nothing to show
+  // for thin-data users.
+  const altThreshold = request.guaranteePick ? 0 : MATCH_THRESHOLD;
 
   const alternatives: RecommendationResult["alternatives"] = [];
   const usedIds = new Set([primary.restaurant.id]);
   for (const alt of [familiarAlternative, exploratoryAlternative]) {
     if (!alt || usedIds.has(alt.restaurant.id)) continue;
     const altMatch = honestMatch(alt.score);
-    if (altMatch < MATCH_THRESHOLD) continue;
+    if (altMatch < altThreshold) continue;
     usedIds.add(alt.restaurant.id);
     alternatives.push({
       restaurantId: alt.restaurant.id,
@@ -208,7 +220,7 @@ export function generateRecommendation(
     for (const r of ranked) {
       if (usedIds.has(r.restaurant.id)) continue;
       const rMatch = honestMatch(r.score);
-      if (rMatch < MATCH_THRESHOLD) continue;
+      if (rMatch < altThreshold) continue;
       usedIds.add(r.restaurant.id);
       alternatives.push({
         restaurantId: r.restaurant.id,

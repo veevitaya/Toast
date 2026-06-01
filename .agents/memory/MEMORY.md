@@ -1,0 +1,1 @@
+- [Recommendation engine guaranteePick](recommendation-engine.md) — honest 90% match gate, guaranteePick opt-in for Solo, exclude-pool dead-end risk, app-wide body-userId auth convention.
