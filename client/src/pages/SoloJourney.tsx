@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, Sparkles, MapPin, Star, Check, RotateCcw,
-  Navigation, Heart, Share2, Bike, ChevronRight,
+  Navigation, Heart, Share2, Bike, SlidersHorizontal,
 } from "lucide-react";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
@@ -246,12 +246,13 @@ export default function SoloJourney() {
   const priceStr = (n: number | null) => "\u0E3F".repeat(Math.max(1, n || 1));
 
   return (
-    <div className="min-h-screen bg-[#FFFBF2] flex flex-col" data-testid="page-solo-journey">
+    <div className="min-h-screen bg-[#FCFCFC] flex flex-col items-center" data-testid="page-solo-journey">
+      <div className="w-full max-w-md flex flex-col flex-1">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-2">
+      <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <button
           onClick={() => (step === "intent" ? navigate("/") : restart())}
-          className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
+          className="w-10 h-10 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center justify-center active:scale-95 transition-transform"
           data-testid="button-back"
           aria-label={t("common.back")}
         >
@@ -259,10 +260,11 @@ export default function SoloJourney() {
         </button>
         <button
           onClick={() => navigate("/solo/quiz")}
-          className="text-[13px] font-semibold text-muted-foreground flex items-center gap-1 active:scale-95 transition-transform"
+          className="flex items-center gap-1.5 rounded-full bg-white border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.06)] pl-3 pr-3.5 py-2 text-[13px] font-bold text-foreground active:scale-95 transition-transform"
           data-testid="button-compare-options"
         >
-          {t("soloJourney.compare")} <ChevronRight className="w-4 h-4" />
+          <SlidersHorizontal className="w-4 h-4 text-[#C79200]" />
+          {t("soloJourney.compare")}
         </button>
       </div>
 
@@ -615,7 +617,7 @@ export default function SoloJourney() {
                         <button
                           key={f.id}
                           onClick={() => handleFeedback(f.id)}
-                          className="flex-1 flex flex-col items-center gap-1 rounded-2xl py-2 active:scale-95 transition-transform hover:bg-[#FFFBF2]"
+                          className="flex-1 flex flex-col items-center gap-1 rounded-2xl py-2 active:scale-95 transition-transform hover:bg-gray-50"
                           data-testid={`button-feedback-${f.id}`}
                         >
                           <span className="text-[26px]">{f.emoji}</span>
@@ -637,6 +639,7 @@ export default function SoloJourney() {
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
       </div>
     </div>
   );

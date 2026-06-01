@@ -106,9 +106,9 @@ export default function SoloQuiz() {
       : t("quiz.hint_budget");
 
   return (
-    <div className="w-full h-[100dvh] bg-[#FFFBF2] flex flex-col overflow-hidden" data-testid="solo-quiz-page">
+    <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center overflow-hidden" data-testid="solo-quiz-page">
       {/* Header */}
-      <div className="flex-shrink-0 pt-12 px-5 pb-3 z-40">
+      <div className="w-full max-w-md flex-shrink-0 pt-12 px-5 pb-3 z-40">
         <div className="flex items-center justify-between mb-6">
           <motion.button
             whileTap={{ scale: 0.9 }}
@@ -167,7 +167,7 @@ export default function SoloQuiz() {
       </div>
 
       {/* Options */}
-      <div className="flex-1 overflow-y-auto hide-scrollbar px-5 pt-4 pb-4">
+      <div className="w-full max-w-md flex-1 overflow-y-auto hide-scrollbar px-5 pt-4 pb-4">
         <AnimatePresence mode="wait">
           {step === 0 && (
             <motion.div
@@ -307,7 +307,7 @@ export default function SoloQuiz() {
                     }`}
                   >
                     <motion.div
-                      className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl will-change-transform ${on ? "bg-[#FFCC02]/20" : "bg-[#FFFBF2]"}`}
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl will-change-transform ${on ? "bg-[#FFCC02]/20" : "bg-gray-50"}`}
                       animate={on ? { scale: [1, 1.08, 1.02] } : { scale: 1 }}
                       transition={spring}
                     >
@@ -337,7 +337,7 @@ export default function SoloQuiz() {
       </div>
 
       {/* Footer CTA — always visible, disabled until a choice is made */}
-      <div className="flex-shrink-0 px-5 pt-3 pb-5 safe-bottom bg-[#FFFBF2] border-t border-black/[0.04]">
+      <div className="w-full max-w-md flex-shrink-0 px-5 pt-3 pb-5 safe-bottom bg-[#FCFCFC] border-t border-black/[0.04]">
         {selectedCuisines.length > 0 && step === 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="flex flex-wrap gap-1.5 mb-3 justify-center">
             {selectedCuisines.map(c => (
