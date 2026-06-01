@@ -511,7 +511,10 @@
     "where_sounds_good": "อยากไปที่ไหนคืนนี้?",
     "find_sweet_spot": "เราจะหาให้พอดี",
     "continue": "ต่อไป",
-    "lets_pick": "เลือกเลย!"
+    "lets_pick": "เลือกเลย!",
+    "hint_cuisine": "เลือกประเภทอาหารเพื่อไปต่อ",
+    "hint_location": "เลือกบรรยากาศเพื่อไปต่อ",
+    "hint_budget": "เลือกงบประมาณเพื่อไปต่อ"
   },
   "soloJourney": {
     "compare": "เทียบตัวเลือก",

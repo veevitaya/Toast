@@ -511,7 +511,10 @@
     "where_sounds_good": "Where sounds good tonight?",
     "find_sweet_spot": "We'll find the sweet spot",
     "continue": "Continue",
-    "lets_pick": "Let's pick!"
+    "lets_pick": "Let's pick!",
+    "hint_cuisine": "Pick a cuisine to continue",
+    "hint_location": "Pick a setting to continue",
+    "hint_budget": "Pick a budget to continue"
   },
   "soloJourney": {
     "compare": "Compare options",
