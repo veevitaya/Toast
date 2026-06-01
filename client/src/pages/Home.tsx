@@ -806,27 +806,25 @@ export default function Home() {
               <button
                 onClick={(e) => handleModeClickAnimated("/solo", e.currentTarget)}
                 data-testid="button-solo"
-                className="flex items-center rounded-[20px] bg-white pl-3 pr-5 h-[100px] border border-gray-100 shadow-md transition-transform duration-150 ease-out active:scale-[0.97] animate-page-in"
+                className="flex items-center gap-2 rounded-[20px] bg-white pl-2.5 pr-3 h-[100px] border border-gray-100 shadow-md overflow-hidden transition-transform duration-150 ease-out active:scale-[0.97] animate-page-in"
               >
-                <img src={toastCharPath} alt="" className="w-[80px] h-[80px] object-contain flex-shrink-0" />
-                <div className="ml-2 min-w-0">
-                  <p className="text-[20px] font-bold text-foreground leading-tight">{t("home.solo_mode")}</p>
-                  <p className="text-[12px] text-muted-foreground mt-0.5 whitespace-nowrap">{t("home.just_for_you")}</p>
+                <img src={toastCharPath} alt="" className="w-[60px] h-[60px] object-contain flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[18px] font-bold text-foreground leading-tight truncate">{t("home.solo_mode")}</p>
+                  <p className="text-[12px] text-muted-foreground mt-0.5 truncate">{t("home.just_for_you")}</p>
                 </div>
               </button>
 
               <button
                 onClick={(e) => handleModeClickAnimated("/group/setup", e.currentTarget)}
                 data-testid="button-group"
-                className="flex items-center justify-center rounded-[20px] bg-white h-[100px] border border-gray-100 shadow-md overflow-hidden transition-transform duration-150 ease-out active:scale-[0.97] animate-page-in"
+                className="flex items-center gap-2 rounded-[20px] bg-white pl-2 pr-3 h-[100px] border border-gray-100 shadow-md overflow-hidden transition-transform duration-150 ease-out active:scale-[0.97] animate-page-in"
                 style={{ animationDelay: "40ms" }}
               >
-                <div className="flex items-center gap-2 pl-2 pr-5">
-                  <img src={toastWafflePath} alt="" className="w-[90px] h-[76px] object-contain flex-shrink-0 -my-2 -ml-2" style={{ mixBlendMode: "multiply" }} />
-                  <div className="min-w-0">
-                    <p className="text-[20px] font-bold text-foreground leading-tight">{t("home.group_mode")}</p>
-                    <p className="text-[12px] text-muted-foreground mt-0.5 whitespace-nowrap">{t("home.with_friends")}</p>
-                  </div>
+                <img src={toastWafflePath} alt="" className="w-[68px] h-[64px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[18px] font-bold text-foreground leading-tight truncate">{t("home.group_mode")}</p>
+                  <p className="text-[12px] text-muted-foreground mt-0.5 truncate">{t("home.with_friends")}</p>
                 </div>
               </button>
             </div>
