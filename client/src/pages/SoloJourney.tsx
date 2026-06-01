@@ -79,6 +79,7 @@ export default function SoloJourney() {
   const [step, setStep] = useState<Step>("intent");
   const [mood, setMood] = useState<string | null>(null);
   const [pick, setPick] = useState<SoloPick | null>(null);
+  const [alternatives, setAlternatives] = useState<SoloPick[]>([]);
   const [learning, setLearning] = useState(false);
   const [excludeIds, setExcludeIds] = useState<number[]>([]);
   const [refineOpen, setRefineOpen] = useState(false);
@@ -110,6 +111,7 @@ export default function SoloJourney() {
       const data: SoloDecideResponse = await res.json();
       if (!data.pick) throw new Error("no pick");
       setPick(data.pick);
+      setAlternatives((data.alternatives || []).slice(0, 2));
       setLearning(data.learning);
       return data.pick;
     } catch (e) {
@@ -169,6 +171,15 @@ export default function SoloJourney() {
     runDecision(chipMood, excludeRef.current);
   };
 
+  const handlePickAlternative = (alt: SoloPick) => {
+    if (!pick || alt.id === pick.id) return;
+    const prev = pick;
+    setPick(alt);
+    setAlternatives((alts) => alts.map((a) => (a.id === alt.id ? prev : a)));
+    setRefined(true);
+    trackDecisionEvent("alternative_requested", { userId, restaurantId: alt.id, metadata: { source: "solo_journey_swap" } });
+  };
+
   const handleAccept = () => {
     if (!pick) return;
     setStep("locked");
@@ -223,6 +234,7 @@ export default function SoloJourney() {
     setStep("intent");
     setMood(null);
     setPick(null);
+    setAlternatives([]);
     setRefined(false);
     setRefineOpen(false);
     setFeedbackGiven(null);
@@ -402,6 +414,49 @@ export default function SoloJourney() {
                       )}
                     </div>
                   </motion.div>
+
+                  {alternatives.length > 0 && (
+                    <div className="mt-4" data-testid="section-alternatives">
+                      <p className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground mb-2 px-0.5" data-testid="text-more-options">
+                        {t("soloJourney.more_options")}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {alternatives.slice(0, 2).map((alt) => (
+                          <button
+                            key={alt.id}
+                            onClick={() => handlePickAlternative(alt)}
+                            className="rounded-2xl bg-white overflow-hidden border border-black/[0.04] shadow-[0_2px_12px_rgba(0,0,0,0.05)] active:scale-[0.97] transition-transform text-left"
+                            data-testid={`card-alt-${alt.id}`}
+                          >
+                            <div className="relative h-24 w-full bg-gray-100">
+                              {alt.imageUrl && (
+                                <img
+                                  src={alt.imageUrl} alt={alt.name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                                />
+                              )}
+                              {alt.rating && (
+                                <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 rounded-full bg-white/95 px-1.5 py-0.5 shadow-sm">
+                                  <Star className="w-3 h-3 text-[#FFB800] fill-[#FFB800]" />
+                                  <span className="text-[11px] font-bold text-foreground">{alt.rating}</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="p-2.5">
+                              <h3 className="text-[14px] font-bold text-foreground leading-tight truncate" data-testid={`text-alt-name-${alt.id}`}>
+                                {alt.name}
+                              </h3>
+                              <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground mt-0.5">
+                                <span className="truncate">{alt.district || alt.category}</span>
+                                <span className="text-[#C79200] font-semibold flex-shrink-0">{priceStr(alt.priceLevel)}</span>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {learning && (
                     <p className="text-[12.5px] text-muted-foreground text-center mt-3 px-3 leading-snug flex items-center justify-center gap-1.5" data-testid="text-learning">

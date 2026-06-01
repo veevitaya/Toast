@@ -160,7 +160,6 @@
     "restaurants_preloaded": "{{count}} ร้านที่โหลดจากรายการเพื่อน",
     "invite_via_line": "เชิญผ่าน LINE",
     "start_session": "เริ่มเซสชัน",
-    "pick_date": "เลือกวัน (ไม่บังคับ)",
     "budget": "งบประมาณ",
     "dietary_needs": "ข้อจำกัดด้านอาหาร",
     "dietary_optional": "(ไม่บังคับ)",
@@ -221,7 +220,6 @@
     "all_cuisines": "อาหารทุกประเภท",
     "open_in_line": "เปิดใน LINE เพื่อใช้งานเต็มรูปแบบ",
     "connected_via_line": "เชื่อมต่อผ่าน LINE",
-
     "section_food": "คุณและรสนิยม",
     "section_food_desc": "ความชอบ, บัญชี & ร้านที่บันทึก",
     "section_app": "ตั้งค่าแอป",
@@ -230,24 +228,20 @@
     "section_account_desc": "LINE, คู่หู & ร้านที่บันทึก",
     "section_about": "เกี่ยวกับ & กฎหมาย",
     "section_about_desc": "ความเป็นส่วนตัว, เงื่อนไข & ข้อมูลแอป",
-
     "partner": "คู่หู",
     "invite_partner": "เชิญหรือเพิ่มคู่หูมื้ออาหาร",
     "link_partner": "เชื่อมต่อคู่หู",
     "partner_name_placeholder": "ชื่อคู่หู",
     "enter_display_name": "กรอกชื่อที่แสดง",
     "add": "เพิ่ม",
-
     "saved_restaurants": "ร้านที่บันทึก",
     "no_saved": "ยังไม่มีร้านที่บันทึก",
     "no_saved_yet": "ยังไม่มีร้านที่บันทึก",
     "tap_heart_to_save": "กดหัวใจที่ร้านอาหารเพื่อบันทึก",
-
     "dietary_title": "ข้อจำกัดทางอาหาร",
     "dietary_subtitle": "ข้อจำกัดทางอาหาร",
     "cuisine_title": "อาหารที่ชอบ",
     "cuisine_subtitle": "อาหารที่ชอบ",
-
     "settings_title": "การตั้งค่า",
     "budget_level": "ระดับงบประมาณ",
     "search_radius": "รัศมีค้นหา",
@@ -256,19 +250,16 @@
     "budget_upscale": "ระดับสูง",
     "budget_fine": "ไฟน์ไดนิ่ง",
     "anywhere": "ทุกที่",
-
     "language_title": "ภาษา",
     "language_subtitle": "ภาษาของแอป",
     "language_auto": "อัตโนมัติ",
     "language_english": "English",
     "language_thai": "ไทย",
-
     "notifications": "การแจ้งเตือน",
     "notifications_desc": "ดีล, แนะนำ & อัปเดต",
     "clear_data": "ล้างข้อมูลแอป",
     "clear_data_desc": "รีเซ็ตการตั้งค่า & ประวัติ",
     "clear_data_confirm": "การดำเนินการนี้จะรีเซ็ตการตั้งค่า, ประวัติการปัด, และร้านที่บันทึกทั้งหมด คุณแน่ใจหรือไม่?",
-
     "privacy_policy": "นโยบายความเป็นส่วนตัว",
     "terms_of_service": "ข้อกำหนดการใช้บริการ",
     "about_app": "เกี่ยวกับ Toast",
@@ -276,11 +267,9 @@
     "rate_app": "ให้คะแนนแอป",
     "contact_support": "ติดต่อเรา",
     "app_version": "เวอร์ชันแอป",
-
     "login_line": "เข้าสู่ระบบด้วย LINE",
     "logout_line": "ออกจากระบบ",
     "logged_in_as": "เข้าสู่ระบบเป็น",
-
     "become_owner": "เจ้าของร้านอาหาร?",
     "become_owner_title": "เป็นเจ้าของร้านอาหาร",
     "become_owner_desc": "นำร้านของคุณมาบน Toast แล้วเข้าถึงผู้ใช้หลายพันคนในกรุงเทพฯ",
@@ -301,7 +290,6 @@
     "your_email": "your@email.com",
     "phone_number": "เบอร์โทรศัพท์",
     "your_phone": "เบอร์โทรศัพท์ของคุณ",
-
     "halal": "ฮาลาล",
     "vegetarian": "มังสวิรัติ",
     "vegan": "วีแกน",
@@ -566,6 +554,7 @@
     "fb_thanks": "ขอบคุณนะ จะจำไว้เลย",
     "start_over": "เริ่มใหม่",
     "no_location": "ยังไม่มีพิกัดของร้านนี้",
-    "link_copied": "คัดลอกลิงก์แล้ว"
+    "link_copied": "คัดลอกลิงก์แล้ว",
+    "more_options": "ตัวเลือกอื่น"
   }
 }

@@ -160,7 +160,6 @@
     "restaurants_preloaded": "{{count}} restaurants pre-loaded from your friend's list",
     "invite_via_line": "Invite via LINE",
     "start_session": "Start Session",
-    "pick_date": "Pick a date (optional)",
     "budget": "Budget",
     "dietary_needs": "Dietary needs",
     "dietary_optional": "(optional)",
@@ -221,7 +220,6 @@
     "all_cuisines": "All cuisines",
     "open_in_line": "Open in LINE for full features",
     "connected_via_line": "Connected via LINE",
-
     "section_food": "You & Your Taste",
     "section_food_desc": "Preferences, account & saved",
     "section_app": "App Settings",
@@ -230,24 +228,20 @@
     "section_account_desc": "LINE, partner & saved",
     "section_about": "About & Legal",
     "section_about_desc": "Privacy, terms & app info",
-
     "partner": "Partner",
     "invite_partner": "Invite or add a dining partner",
     "link_partner": "Link Partner",
     "partner_name_placeholder": "Partner's name",
     "enter_display_name": "Enter their display name",
     "add": "Add",
-
     "saved_restaurants": "Saved Restaurants",
     "no_saved": "No saved restaurants",
     "no_saved_yet": "No restaurants saved yet",
     "tap_heart_to_save": "Tap the heart on any restaurant to save it",
-
     "dietary_title": "Dietary Restrictions",
     "dietary_subtitle": "Dietary preferences",
     "cuisine_title": "Favorite Cuisines",
     "cuisine_subtitle": "Favorite cuisines",
-
     "settings_title": "Settings",
     "budget_level": "Budget Level",
     "search_radius": "Search Radius",
@@ -256,19 +250,16 @@
     "budget_upscale": "Upscale",
     "budget_fine": "Fine dining",
     "anywhere": "Anywhere",
-
     "language_title": "Language",
     "language_subtitle": "App language",
     "language_auto": "Auto",
     "language_english": "English",
     "language_thai": "ไทย",
-
     "notifications": "Notifications",
     "notifications_desc": "Deals, recommendations & updates",
     "clear_data": "Clear App Data",
     "clear_data_desc": "Reset preferences & history",
     "clear_data_confirm": "This will reset all your preferences, swipe history, and saved restaurants. Are you sure?",
-
     "privacy_policy": "Privacy Policy",
     "terms_of_service": "Terms of Service",
     "about_app": "About Toast",
@@ -276,11 +267,9 @@
     "rate_app": "Rate the App",
     "contact_support": "Contact Us",
     "app_version": "App Version",
-
     "login_line": "Log in with LINE",
     "logout_line": "Sign out",
     "logged_in_as": "Logged in as",
-
     "become_owner": "Restaurant Owner?",
     "become_owner_title": "Become a Restaurant Owner",
     "become_owner_desc": "Get your restaurant on Toast and reach thousands of diners in Bangkok.",
@@ -301,7 +290,6 @@
     "your_email": "your@email.com",
     "phone_number": "Phone Number",
     "your_phone": "Your phone number",
-
     "halal": "Halal",
     "vegetarian": "Vegetarian",
     "vegan": "Vegan",
@@ -566,6 +554,7 @@
     "fb_thanks": "Thanks — I'll remember that.",
     "start_over": "Start over",
     "no_location": "No location for this spot yet.",
-    "link_copied": "Link copied"
+    "link_copied": "Link copied",
+    "more_options": "Other ideas"
   }
 }
