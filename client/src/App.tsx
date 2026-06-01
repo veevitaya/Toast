@@ -7,7 +7,6 @@ import { LanguageProvider } from "@/i18n/LanguageProvider";
 import { lazy, Suspense } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SessionBar } from "@/components/SessionBar";
-import { TutorialController } from "@/components/tutorial/TutorialController";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 
@@ -99,7 +98,6 @@ function Router() {
   return (
     <Suspense fallback={<PageLoader />}>
         <GlobalSessionBar />
-        <TutorialController />
         <Switch location={location}>
           <Route path="/">
             <AnimatedPage><Home /></AnimatedPage>
