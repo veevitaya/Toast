@@ -39,12 +39,12 @@ interface SoloDecideResponse {
 type Step = "intent" | "loading" | "result" | "locked";
 
 const MOODS = [
-  { id: "comforting", emoji: "\uD83C\uDF5C", key: "mood_comfort" },
-  { id: "exciting", emoji: "\uD83C\uDF0D", key: "mood_exciting" },
-  { id: "healthy", emoji: "\uD83E\uDD57", key: "mood_healthy" },
-  { id: "cheap", emoji: "\uD83D\uDCB8", key: "mood_cheap" },
-  { id: "worth", emoji: "\u2728", key: "mood_worth" },
-  { id: "surprise", emoji: "\uD83C\uDFB2", key: "mood_surprise" },
+  { id: "comforting", emoji: "\uD83C\uDF5C", key: "mood_comfort", subKey: "mood_comfort_sub", tint: "#FFF1E0" },
+  { id: "exciting", emoji: "\uD83C\uDF0D", key: "mood_exciting", subKey: "mood_exciting_sub", tint: "#E8F4FF" },
+  { id: "healthy", emoji: "\uD83E\uDD57", key: "mood_healthy", subKey: "mood_healthy_sub", tint: "#E9F8EC" },
+  { id: "cheap", emoji: "\uD83D\uDCB8", key: "mood_cheap", subKey: "mood_cheap_sub", tint: "#FFF6DA" },
+  { id: "worth", emoji: "\u2728", key: "mood_worth", subKey: "mood_worth_sub", tint: "#F3ECFF" },
+  { id: "surprise", emoji: "\uD83C\uDFB2", key: "mood_surprise", subKey: "mood_surprise_sub", tint: "#FFE9EC" },
 ];
 
 const REFINE_CHIPS = [
@@ -246,7 +246,7 @@ export default function SoloJourney() {
   const priceStr = (n: number | null) => "\u0E3F".repeat(Math.max(1, n || 1));
 
   return (
-    <div className="min-h-screen bg-[#FCFCFC] flex flex-col items-center" data-testid="page-solo-journey">
+    <div className="min-h-screen bg-[#FBF7EF] flex flex-col items-center" data-testid="page-solo-journey">
       <div className="w-full max-w-md flex flex-col flex-1">
       {/* Header */}
       <div className="flex items-center px-5 pt-5 pb-3">
@@ -270,7 +270,13 @@ export default function SoloJourney() {
               className="flex-1 flex flex-col"
             >
               <div className="flex flex-col items-center text-center pt-6 pb-6">
-                <img src={mascotPath} alt="Toast" className="w-24 h-24 object-contain mb-3" data-testid="img-mascot" />
+                <motion.img
+                  src={mascotPath} alt="Toast"
+                  className="w-24 h-24 object-contain mb-3"
+                  animate={{ y: [0, -7, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  data-testid="img-mascot"
+                />
                 <h1 className="text-[26px] font-extrabold text-foreground leading-tight" data-testid="text-intent-title">
                   {t("soloJourney.intent_title")}
                 </h1>
@@ -285,22 +291,39 @@ export default function SoloJourney() {
                     initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04 }}
                     onClick={() => handleMood(m.id)}
-                    className="flex flex-col items-start gap-2 rounded-3xl bg-white p-4 h-[112px] border border-black/[0.04] shadow-[0_2px_12px_rgba(0,0,0,0.05)] active:scale-[0.97] transition-transform"
+                    className="flex flex-col items-start gap-2.5 rounded-[26px] bg-white p-4 border border-black/[0.04] shadow-[0_4px_20px_rgba(0,0,0,0.05)] active:scale-[0.97] transition-transform text-left"
                     data-testid={`button-mood-${m.id}`}
                   >
-                    <span className="text-[30px] leading-none">{m.emoji}</span>
-                    <span className="text-[15px] font-bold text-foreground text-left leading-tight">
-                      {t(`soloJourney.${m.key}`)}
+                    <span
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-[26px] leading-none"
+                      style={{ background: m.tint }}
+                    >
+                      {m.emoji}
                     </span>
+                    <div className="min-w-0">
+                      <span className="block text-[15px] font-extrabold text-foreground leading-tight">
+                        {t(`soloJourney.${m.key}`)}
+                      </span>
+                      <span className="block text-[12px] text-muted-foreground leading-snug mt-0.5">
+                        {t(`soloJourney.${m.subKey}`)}
+                      </span>
+                    </div>
                   </motion.button>
                 ))}
               </div>
               <button
                 onClick={() => navigate("/solo/quiz")}
-                className="mt-6 mx-auto flex items-center gap-1.5 text-[13.5px] font-semibold text-muted-foreground active:scale-95 transition-transform"
+                className="mt-5 w-full rounded-[22px] bg-white border border-black/[0.05] shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-3.5 flex items-center gap-3 active:scale-[0.98] transition-transform text-left"
                 data-testid="button-compare-intent"
               >
-                <GitCompare className="w-4 h-4 text-[#C79200]" /> {t("soloJourney.compare")}
+                <div className="w-10 h-10 rounded-xl bg-[#FFF6DA] flex items-center justify-center flex-shrink-0">
+                  <GitCompare className="w-5 h-5 text-[#C79200]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-bold text-foreground leading-tight">{t("soloJourney.compare")}</p>
+                  <p className="text-[12px] text-muted-foreground leading-snug">{t("soloJourney.compare_desc")}</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground/40 flex-shrink-0" />
               </button>
             </motion.div>
           )}
@@ -364,7 +387,7 @@ export default function SoloJourney() {
                     className="rounded-[28px] bg-white overflow-hidden border border-black/[0.04] shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
                     data-testid="card-pick"
                   >
-                    <div className="relative h-52 w-full bg-gray-100">
+                    <div className="relative h-60 w-full bg-gray-100">
                       {pick.imageUrl && (
                         <img
                           src={pick.imageUrl} alt={pick.name}
@@ -372,7 +395,7 @@ export default function SoloJourney() {
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       )}
-                      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 to-transparent" />
+                      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
                       {pick.rating && (
                         <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 shadow-sm">
                           <Star className="w-3.5 h-3.5 text-[#FFB800] fill-[#FFB800]" />
