@@ -870,9 +870,11 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
                         {primaryRec.category} · {primaryRec.district || primaryRec.address} · <Star className="w-3 h-3 inline text-[#FFCC02] fill-[#FFCC02] -mt-0.5" /> {primaryRec.rating}
                       </p>
                     </div>
-                    <div className="flex-shrink-0 text-right">
-                      <span className="text-[15px] font-bold text-emerald-600">{primaryRec.match}%</span>
-                      <p className="text-[9px] text-muted-foreground font-medium">match</p>
+                    <div className="flex-shrink-0">
+                      <div className="flex items-center gap-1 bg-emerald-50 text-emerald-700 rounded-full px-2.5 py-1 border border-emerald-100">
+                        <span className="text-[13px] font-extrabold">{primaryRec.match}%</span>
+                        <span className="text-[9px] font-bold uppercase tracking-wide">match</span>
+                      </div>
                     </div>
                   </motion.div>
                 </AnimatePresence>
@@ -921,12 +923,13 @@ export function ToastDecides({ onRefineToggle }: { onRefineToggle?: (open: boole
                               decoding="sync"
                               fetchPriority="high"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                            <div className="absolute top-2.5 left-2.5 bg-[#FFCC02] text-foreground text-[10px] font-bold rounded-full px-2 py-0.5 flex items-center gap-1">
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                            <div className="absolute top-2.5 left-2.5 bg-[#FFCC02] text-foreground text-[10px] font-extrabold rounded-full px-2.5 py-1 flex items-center gap-1" style={{ boxShadow: "0 2px 8px rgba(255,204,2,0.45)" }}>
                               <Sparkles className="w-3 h-3" /> Top Pick
                             </div>
-                            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between">
-                              <span className="text-white/90 text-[11px] font-medium flex items-center gap-1">
+                            <div className="absolute bottom-2.5 left-3 right-3">
+                              <p className="text-white text-[17px] font-extrabold leading-tight drop-shadow-sm line-clamp-1">{primaryRec.name}</p>
+                              <span className="text-white/85 text-[11px] font-medium flex items-center gap-1 mt-0.5">
                                 <MapPin className="w-3 h-3" /> {primaryRec.district || primaryRec.address} · {"$".repeat(primaryRec.priceLevel || 1)}
                               </span>
                             </div>
@@ -1246,7 +1249,16 @@ function InlineDecideFlow({ step, selectedMood, selectedDistance, onMoodSelect, 
 
           {step === "result" && result && (
             <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={expandSpring}>
-              <p className="text-[12px] text-muted-foreground mb-3">Based on your mood, here's what I found:</p>
+              <div className="flex flex-col items-center text-center mb-3">
+                <motion.img
+                  src={mascotPath}
+                  alt="Toast mascot"
+                  className="w-12 h-12 object-contain mb-1"
+                  animate={{ rotate: [0, -6, 6, 0] }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <p className="text-[15px] font-extrabold text-foreground">This is the one! 🎉</p>
+              </div>
               <div className="relative w-full h-[130px] rounded-2xl overflow-hidden mb-3">
                 <img src={result.imageUrl} alt={result.name} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -1272,7 +1284,7 @@ function InlineDecideFlow({ step, selectedMood, selectedDistance, onMoodSelect, 
                   className="flex-1 h-10 rounded-xl bg-[#FFCC02] flex items-center justify-center gap-2 font-semibold text-[13px] text-foreground"
                   data-testid="button-decide-letsgo"
                 >
-                  Let's go <ArrowRight className="w-4 h-4" />
+                  Let's eat! 🍴 <ArrowRight className="w-4 h-4" />
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.96 }}
