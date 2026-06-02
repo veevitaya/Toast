@@ -289,12 +289,10 @@ export default function SoloJourney() {
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04 }}
                       onClick={() => handleMood(m.id)}
-                      className={`relative h-[120px] rounded-[20px] bg-white p-4 flex flex-col justify-between text-left shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-all border ${isSurprise ? "border-[#FFCC02]/60 ring-1 ring-[#FFCC02]/25" : "border-black/[0.06]"}`}
+                      className={`relative h-[120px] rounded-[20px] p-4 flex flex-col justify-between text-left shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-all border ${isSurprise ? "border-[#FFCC02]/70 ring-1 ring-[#FFCC02]/30 bg-gradient-to-br from-[#FFF8E1] to-[#FFFDF7]" : "border-[#FFCC02]/20 bg-gradient-to-br from-[#FFFCF2] to-white"}`}
                       data-testid={`button-mood-${m.id}`}
                     >
-                      <span
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center text-[19px] leading-none ${isSurprise ? "bg-[#FFF6DA]" : "bg-[#F6F3EC]"}`}
-                      >
+                      <span className="text-[30px] leading-none">
                         {m.emoji}
                       </span>
                       <div>
@@ -313,11 +311,11 @@ export default function SoloJourney() {
               {/* Compare — refined secondary */}
               <button
                 onClick={() => navigate("/solo/quiz")}
-                className="mt-3 w-full rounded-[20px] bg-white border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 flex items-center gap-3.5 active:scale-[0.98] transition-all text-left"
+                className="mt-3 w-full rounded-[20px] bg-gradient-to-br from-[#FFFCF2] to-white border border-[#FFCC02]/20 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 flex items-center gap-3.5 active:scale-[0.98] transition-all text-left"
                 data-testid="button-compare-intent"
               >
-                <div className="w-10 h-10 rounded-xl bg-[#F6F3EC] flex items-center justify-center flex-shrink-0">
-                  <GitCompare className="w-[18px] h-[18px] text-foreground/70" />
+                <div className="w-10 h-10 rounded-xl bg-[#FFF6DA] flex items-center justify-center flex-shrink-0">
+                  <GitCompare className="w-[18px] h-[18px] text-[#C79200]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-semibold text-foreground leading-tight">{t("soloJourney.compare")}</p>
