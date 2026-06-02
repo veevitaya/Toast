@@ -988,10 +988,10 @@ export default function SoloResults() {
 
       <ToastMascot pointDirection={getMascotDirection()} drunk={isDrinksMode} />
 
-      <h2 className="text-lg font-semibold mb-0.5" data-testid="text-choose-prompt">
-        {isDrinksMode ? "What are we drinking?" : "Which one sounds better?"}
+      <h2 className="text-[22px] font-extrabold text-gray-900 tracking-tight mb-0.5" data-testid="text-choose-prompt">
+        {isDrinksMode ? "What are we sipping? 🥂" : "Which one wins? 🍴"}
       </h2>
-      <p className="text-xs text-muted-foreground mb-5">{isDrinksMode ? "Tap to pick your drink" : "Tap to pick — the other gets replaced"}</p>
+      <p className="text-[13px] text-muted-foreground mb-5">{isDrinksMode ? "Tap your favorite" : "Tap your favorite · we'll swap the other"}</p>
 
       {currentChoice && (
         <motion.div
@@ -1085,6 +1085,7 @@ export default function SoloResults() {
               onClick={() => { if (thinkingTimerRef.current) { clearTimeout(thinkingTimerRef.current); thinkingTimerRef.current = null; } setShowDecideForMe(false); setDecideStep("thinking"); }}
               className="absolute top-14 right-5 z-10 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
               data-testid="button-close-decide"
+              aria-label="Close"
             >
               <X className="w-4 h-4 text-muted-foreground" />
             </button>
@@ -1163,86 +1164,65 @@ export default function SoloResults() {
                 transition={{ duration: 0.5 }}
               >
                 <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", damping: 12, stiffness: 150 }}
-                  className="w-14 h-14 rounded-full bg-[#FFCC02] flex items-center justify-center mb-4"
-                  style={{ boxShadow: "0 6px 20px -4px rgba(255,204,2,0.4)" }}
+                  initial={{ scale: 0, y: 10 }}
+                  animate={{ scale: 1, y: 0 }}
+                  transition={{ type: "spring", damping: 11, stiffness: 160 }}
+                  className="relative mb-3"
                 >
-                  <Sparkles className="w-6 h-6 text-[#2d2000]" />
-                </motion.div>
-                <h2 className="text-xl font-bold text-foreground mb-1" data-testid="text-toast-suggests">Toast knows you</h2>
-                <p className="text-sm text-muted-foreground mb-6">
-                  {tasteDnaSummary.totalSwipes > 5
-                    ? `Based on ${tasteDnaSummary.totalSwipes} taste signals & right now`
-                    : "Based on your preferences, time & trends"}
-                </p>
-
-                {tasteDnaSummary.topLikes.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="flex flex-wrap gap-1.5 mb-5 justify-center"
-                  >
-                    {tasteDnaSummary.topLikes.slice(0, 3).map((like) => (
-                      <span key={like} className="text-[10px] bg-[#FFCC02]/15 text-[#2d2000] rounded-full px-2.5 py-1 font-semibold flex items-center gap-1">
-                        <Check className="w-2.5 h-2.5" /> {like}
-                      </span>
-                    ))}
-                    {tasteDnaSummary.topDislikes.slice(0, 1).map((dis) => (
-                      <span key={dis} className="text-[10px] bg-red-50 text-red-600 rounded-full px-2.5 py-1 font-semibold flex items-center gap-1">
-                        <X className="w-2.5 h-2.5" /> {dis}
-                      </span>
-                    ))}
+                  <motion.img
+                    src={mascotPath}
+                    alt="Toast mascot"
+                    className="w-[92px] h-[92px] object-contain"
+                    animate={{ rotate: [0, -6, 6, 0] }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  <motion.div className="absolute -top-1 -right-1" animate={{ rotate: [0, 20, -20, 0], scale: [1, 1.25, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
+                    <Sparkles className="w-5 h-5 text-[#FFCC02]" />
                   </motion.div>
-                )}
+                </motion.div>
+                <h2 className="text-[24px] font-extrabold text-foreground tracking-tight mb-1" data-testid="text-toast-suggests">
+                  {isDrinksMode ? "Sip on this! 🥂" : "This is the one! 🎉"}
+                </h2>
+                <p className="text-[13px] text-muted-foreground mb-5">Toast picked it just for you</p>
 
                 <motion.div
                   initial={{ y: 30, opacity: 0, scale: 0.95 }}
                   animate={{ y: 0, opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2, type: "spring", damping: 18, stiffness: 200 }}
-                  className="w-full max-w-sm bg-white dark:bg-card rounded-2xl overflow-hidden ring-2 ring-[#FFCC02] mb-6"
-                  style={{ boxShadow: "0 12px 40px -8px rgba(255,204,2,0.25)" }}
+                  transition={{ delay: 0.15, type: "spring", damping: 18, stiffness: 200 }}
+                  className="w-full max-w-sm bg-white dark:bg-card rounded-3xl overflow-hidden ring-2 ring-[#FFCC02] mb-3"
+                  style={{ boxShadow: "0 16px 44px -10px rgba(255,204,2,0.3)" }}
                   data-testid="card-ai-recommendation"
                 >
                   <div className="w-full aspect-[16/10] overflow-hidden relative">
                     <img src={aiRecommendation.imageUrl} alt={aiRecommendation.name} className="w-full h-full object-cover" />
-                    <div className="absolute top-3 left-3 bg-[#FFCC02] text-[#2d2000] text-xs font-bold rounded-full px-3 py-1 flex items-center gap-1" style={{ boxShadow: "0 2px 8px rgba(255,204,2,0.4)" }}>
-                      <Sparkles className="w-3 h-3" /> Picked for you
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/5 to-transparent" />
+                    <div className="absolute top-3 left-3 bg-[#FFCC02] text-[#2d2000] text-[11px] font-extrabold rounded-full px-3 py-1 flex items-center gap-1" style={{ boxShadow: "0 2px 8px rgba(255,204,2,0.4)" }}>
+                      <Sparkles className="w-3 h-3" /> Your match
+                    </div>
+                    <div className="absolute bottom-3 left-4 right-4">
+                      <h3 className="text-[22px] font-extrabold text-white leading-tight drop-shadow-sm" data-testid="text-recommendation-name">{aiRecommendation.name}</h3>
+                      <p className="text-[12px] font-semibold text-white/85">{aiRecommendation.type}</p>
                     </div>
                   </div>
-                  <div className="p-5">
-                    <h3 className="text-xl font-bold text-foreground mb-1" data-testid="text-recommendation-name">{aiRecommendation.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">{aiRecommendation.type}</p>
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      {aiRecommendation.tags.map((tag) => (
-                        <span key={tag} className="text-xs bg-gray-100 dark:bg-muted rounded-full px-2.5 py-0.5 font-medium text-muted-foreground">{tag}</span>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {aiRecommendation.restaurantCount} places nearby</span>
-                      <span className="flex items-center gap-1"><Wallet className="w-3 h-3" /> {aiRecommendation.budget}</span>
-                    </div>
-
-                    <div className="mt-4 pt-3 border-t border-gray-100 dark:border-border">
-                      <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest mb-2">Why this pick</p>
-                      <p className="text-xs text-muted-foreground leading-relaxed" data-testid="text-recommendation-reason">
-                        {(() => {
-                          const timeCtx = getTimeContext();
-                          const reasons: string[] = [];
-                          if (tasteDnaSummary.topLikes.some(l => [aiRecommendation.name, aiRecommendation.type, ...aiRecommendation.tags].join(" ").toLowerCase().includes(l.toLowerCase()))) {
-                            reasons.push("matches your taste DNA");
-                          }
-                          reasons.push(`perfect for ${timeCtx.label.toLowerCase()}`);
-                          if (aiRecommendation.restaurantCount > 8) reasons.push(`${aiRecommendation.restaurantCount} great options nearby`);
-                          if (quizAnswers.cuisines.length > 0) reasons.push("aligns with your quiz picks");
-                          return reasons.slice(0, 3).join(" \u00B7 ");
-                        })()}
-                      </p>
-                    </div>
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <span className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-500"><MapPin className="w-3.5 h-3.5 text-[#FFCC02]" /> {aiRecommendation.restaurantCount} places nearby</span>
+                    <span className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-500"><Wallet className="w-3.5 h-3.5 text-[#FFCC02]" /> {aiRecommendation.budget}</span>
                   </div>
                 </motion.div>
+
+                {tasteDnaSummary.topLikes.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex flex-wrap items-center justify-center gap-1.5 mb-6 max-w-sm"
+                  >
+                    <span className="text-[12px] text-muted-foreground">Because you love</span>
+                    {tasteDnaSummary.topLikes.slice(0, 2).map((like) => (
+                      <span key={like} className="text-[11px] bg-[#FFCC02]/15 text-[#2d2000] rounded-full px-2.5 py-1 font-bold">{like}</span>
+                    ))}
+                  </motion.div>
+                )}
 
                 <motion.button
                   onClick={handleAcceptRecommendation}
@@ -1250,11 +1230,11 @@ export default function SoloResults() {
                   whileTap={{ scale: 0.96 }}
                   initial={{ y: 15, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="w-full max-w-sm py-4 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-sm mb-3"
-                  style={{ boxShadow: "0 6px 20px -4px rgba(255,204,2,0.4)" }}
+                  transition={{ delay: 0.4 }}
+                  className="w-full max-w-sm py-4 rounded-full bg-[#FFCC02] text-[#2d2000] font-extrabold text-[15px] mb-2"
+                  style={{ boxShadow: "0 8px 24px -4px rgba(255,204,2,0.45)" }}
                 >
-                  Let's go — {aiRecommendation.name}
+                  {isDrinksMode ? "Let's drink! 🥂" : "Let's eat! 🍴"}
                 </motion.button>
 
                 <motion.button
@@ -1263,10 +1243,10 @@ export default function SoloResults() {
                   whileTap={{ scale: 0.95 }}
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="text-sm font-medium text-muted-foreground py-2"
+                  transition={{ delay: 0.5 }}
+                  className="text-[13px] font-semibold text-muted-foreground py-2"
                 >
-                  I'll keep choosing myself
+                  Nah, let me choose
                 </motion.button>
               </motion.div>
             )}
