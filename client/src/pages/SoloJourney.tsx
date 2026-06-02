@@ -246,7 +246,7 @@ export default function SoloJourney() {
   const priceStr = (n: number | null) => "\u0E3F".repeat(Math.max(1, n || 1));
 
   return (
-    <div className="min-h-screen bg-[#FBF7EF] flex flex-col items-center" data-testid="page-solo-journey">
+    <div className="min-h-screen bg-background flex flex-col items-center" data-testid="page-solo-journey">
       <div className="w-full max-w-md flex flex-col flex-1">
       {/* Header */}
       <div className="flex items-center px-5 pt-5 pb-3">
@@ -269,61 +269,69 @@ export default function SoloJourney() {
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
               className="flex-1 flex flex-col"
             >
-              <div className="flex flex-col items-center text-center pt-6 pb-6">
+              {/* Editorial header — title left, mascot as a side accent */}
+              <div className="flex items-start justify-between gap-3 pt-2 pb-5">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-[30px] font-extrabold text-foreground leading-[1.08]" data-testid="text-intent-title">
+                    {t("soloJourney.intent_title")}
+                  </h1>
+                  <p className="text-[15px] text-muted-foreground mt-2 leading-snug" data-testid="text-intent-sub">
+                    {t("soloJourney.intent_sub")}
+                  </p>
+                </div>
                 <motion.img
                   src={mascotPath} alt="Toast"
-                  className="w-24 h-24 object-contain mb-3"
-                  animate={{ y: [0, -7, 0] }}
+                  className="w-16 h-16 object-contain flex-shrink-0 -mt-0.5"
+                  animate={{ y: [0, -6, 0] }}
                   transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                   data-testid="img-mascot"
                 />
-                <h1 className="text-[26px] font-extrabold text-foreground leading-tight" data-testid="text-intent-title">
-                  {t("soloJourney.intent_title")}
-                </h1>
-                <p className="text-[15px] text-muted-foreground mt-1.5" data-testid="text-intent-sub">
-                  {t("soloJourney.intent_sub")}
-                </p>
               </div>
-              <div className="grid grid-cols-2 gap-3 mt-2">
+
+              {/* Mood options — full-width editorial rows */}
+              <div className="space-y-2.5">
                 {MOODS.map((m, i) => (
                   <motion.button
                     key={m.id}
-                    initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04 }}
                     onClick={() => handleMood(m.id)}
-                    className="flex flex-col items-start gap-2.5 rounded-[26px] bg-white p-4 border border-black/[0.04] shadow-[0_4px_20px_rgba(0,0,0,0.05)] active:scale-[0.97] transition-transform text-left"
+                    className="w-full flex items-center gap-3.5 rounded-[22px] bg-white p-3 pr-4 border border-black/[0.04] shadow-[0_2px_14px_rgba(0,0,0,0.05)] active:scale-[0.98] transition-transform text-left"
                     data-testid={`button-mood-${m.id}`}
                   >
                     <span
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-[26px] leading-none"
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center text-[28px] leading-none flex-shrink-0"
                       style={{ background: m.tint }}
                     >
                       {m.emoji}
                     </span>
-                    <div className="min-w-0">
-                      <span className="block text-[15px] font-extrabold text-foreground leading-tight">
+                    <div className="flex-1 min-w-0">
+                      <span className="block text-[16px] font-extrabold text-foreground leading-tight">
                         {t(`soloJourney.${m.key}`)}
                       </span>
-                      <span className="block text-[12px] text-muted-foreground leading-snug mt-0.5">
+                      <span className="block text-[13px] text-muted-foreground leading-snug mt-0.5">
                         {t(`soloJourney.${m.subKey}`)}
                       </span>
                     </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground/30 flex-shrink-0" />
                   </motion.button>
                 ))}
               </div>
+
+              {/* Compare — secondary, distinct treatment */}
               <button
                 onClick={() => navigate("/solo/quiz")}
-                className="mt-5 w-full rounded-[22px] bg-white border border-black/[0.05] shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-3.5 flex items-center gap-3 active:scale-[0.98] transition-transform text-left"
+                className="mt-4 w-full rounded-[22px] border border-dashed border-[#FFCC02]/50 bg-[#FFCC02]/[0.07] p-3.5 flex items-center gap-3 active:scale-[0.98] transition-transform text-left"
                 data-testid="button-compare-intent"
               >
-                <div className="w-10 h-10 rounded-xl bg-[#FFF6DA] flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center flex-shrink-0">
                   <GitCompare className="w-5 h-5 text-[#C79200]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-bold text-foreground leading-tight">{t("soloJourney.compare")}</p>
                   <p className="text-[12px] text-muted-foreground leading-snug">{t("soloJourney.compare_desc")}</p>
                 </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground/40 flex-shrink-0" />
+                <ChevronRight className="w-5 h-5 text-[#C79200]/60 flex-shrink-0" />
               </button>
             </motion.div>
           )}
@@ -378,16 +386,13 @@ export default function SoloJourney() {
                 </div>
               ) : (
                 <>
-                  <p className="text-[13px] font-bold uppercase tracking-widest text-[#C79200] mt-1 mb-3" data-testid="text-eyebrow">
-                    {refined ? t("soloJourney.refined_eyebrow") : t("soloJourney.result_eyebrow")}
-                  </p>
-
+                  {/* Immersive full-bleed hero */}
                   <motion.div
                     layout
-                    className="rounded-[28px] bg-white overflow-hidden border border-black/[0.04] shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
+                    className="-mx-5 relative"
                     data-testid="card-pick"
                   >
-                    <div className="relative h-60 w-full bg-gray-100">
+                    <div className="relative h-72 w-full bg-gray-100 overflow-hidden rounded-b-[32px]">
                       {pick.imageUrl && (
                         <img
                           src={pick.imageUrl} alt={pick.name}
@@ -395,90 +400,94 @@ export default function SoloJourney() {
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       )}
-                      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
+                      <div className="absolute top-4 left-5">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFCC02] px-3 py-1.5 text-[11.5px] font-extrabold uppercase tracking-wider text-black shadow-sm" data-testid="text-eyebrow">
+                          <Sparkles className="w-3.5 h-3.5" /> {refined ? t("soloJourney.refined_eyebrow") : t("soloJourney.result_eyebrow")}
+                        </span>
+                      </div>
                       {pick.rating && (
-                        <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 shadow-sm">
+                        <div className="absolute top-4 right-5 flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 shadow-sm">
                           <Star className="w-3.5 h-3.5 text-[#FFB800] fill-[#FFB800]" />
                           <span className="text-[13px] font-bold text-foreground">{pick.rating}</span>
                         </div>
                       )}
-                      <div className="absolute bottom-3 left-4 right-4">
-                        <h2 className="text-[24px] font-extrabold text-white leading-tight drop-shadow-sm" data-testid="text-pick-name">
+                      <div className="absolute bottom-5 left-5 right-5">
+                        <h2 className="text-[28px] font-extrabold text-white leading-[1.1] drop-shadow-md line-clamp-2" data-testid="text-pick-name">
                           {pick.name}
                         </h2>
+                        <div className="flex items-center gap-2 text-[13px] text-white/90 mt-2">
+                          <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span className="truncate">{pick.district || pick.address || pick.category}</span>
+                          <span className="text-white/50">{"\u00B7"}</span>
+                          <span className="font-bold">{priceStr(pick.priceLevel)}</span>
+                        </div>
                       </div>
                     </div>
+                  </motion.div>
 
-                    <div className="p-4">
-                      <div className="flex items-center gap-2 text-[13px] text-muted-foreground mb-3">
-                        <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span className="truncate">{pick.district || pick.address || pick.category}</span>
-                        <span className="text-muted-foreground/40">{"\u00B7"}</span>
-                        <span className="font-semibold text-[#C79200]">{priceStr(pick.priceLevel)}</span>
-                      </div>
-
+                  {/* Why Toast picked this — checklist panel */}
+                  {(pick.confidenceText || pick.reasonChips.length > 0) && (
+                    <div className="mt-5 rounded-[24px] bg-white border border-black/[0.04] shadow-[0_2px_14px_rgba(0,0,0,0.05)] p-4">
                       {pick.confidenceText && (
-                        <p className="text-[14px] font-semibold text-foreground mb-3" data-testid="text-confidence">
+                        <p className="text-[15px] font-bold text-foreground leading-snug mb-3" data-testid="text-confidence">
                           {pick.confidenceText}
                         </p>
                       )}
-
                       {pick.reasonChips.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
+                        <div className="space-y-2.5">
                           {pick.reasonChips.map((chip, i) => (
-                            <span
-                              key={i}
-                              className="inline-flex items-center gap-1 rounded-full bg-[#FFF6DA] px-3 py-1.5 text-[12.5px] font-semibold text-[#8A6A00]"
-                              data-testid={`chip-reason-${i}`}
-                            >
-                              <Check className="w-3 h-3" /> {chip}
-                            </span>
+                            <div key={i} className="flex items-start gap-2.5" data-testid={`chip-reason-${i}`}>
+                              <span className="w-6 h-6 rounded-full bg-[#FFF6DA] flex items-center justify-center flex-shrink-0 mt-px">
+                                <Check className="w-3.5 h-3.5 text-[#C79200]" strokeWidth={3} />
+                              </span>
+                              <span className="text-[13.5px] font-medium text-foreground leading-snug">{chip}</span>
+                            </div>
                           ))}
                         </div>
                       )}
                     </div>
-                  </motion.div>
+                  )}
 
                   {alternatives.length > 0 && (
-                    <div className="mt-4" data-testid="section-alternatives">
-                      <p className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground mb-2 px-0.5" data-testid="text-more-options">
+                    <div className="mt-5 space-y-2.5" data-testid="section-alternatives">
+                      <p className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground mb-1 px-0.5" data-testid="text-more-options">
                         {t("soloJourney.more_options")}
                       </p>
-                      <div className="grid grid-cols-2 gap-2.5">
-                        {alternatives.slice(0, 2).map((alt) => (
-                          <button
-                            key={alt.id}
-                            onClick={() => handlePickAlternative(alt)}
-                            className="rounded-2xl bg-white overflow-hidden border border-black/[0.04] shadow-[0_2px_12px_rgba(0,0,0,0.05)] active:scale-[0.97] transition-transform text-left"
-                            data-testid={`card-alt-${alt.id}`}
-                          >
-                            <div className="relative h-24 w-full bg-gray-100">
-                              {alt.imageUrl && (
-                                <img
-                                  src={alt.imageUrl} alt={alt.name}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                                />
-                              )}
+                      {alternatives.slice(0, 2).map((alt) => (
+                        <button
+                          key={alt.id}
+                          onClick={() => handlePickAlternative(alt)}
+                          className="w-full flex items-center gap-3 rounded-2xl bg-white p-2.5 border border-black/[0.04] shadow-[0_2px_12px_rgba(0,0,0,0.05)] active:scale-[0.98] transition-transform text-left"
+                          data-testid={`card-alt-${alt.id}`}
+                        >
+                          <div className="relative w-[72px] h-[72px] rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                            {alt.imageUrl && (
+                              <img
+                                src={alt.imageUrl} alt={alt.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                              />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-[15px] font-bold text-foreground leading-tight truncate" data-testid={`text-alt-name-${alt.id}`}>
+                              {alt.name}
+                            </h3>
+                            <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground mt-1">
+                              <span className="truncate">{alt.district || alt.category}</span>
+                              <span className="text-[#C79200] font-semibold flex-shrink-0">{priceStr(alt.priceLevel)}</span>
                               {alt.rating && (
-                                <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 rounded-full bg-white/95 px-1.5 py-0.5 shadow-sm">
+                                <span className="flex items-center gap-0.5 flex-shrink-0">
                                   <Star className="w-3 h-3 text-[#FFB800] fill-[#FFB800]" />
-                                  <span className="text-[11px] font-bold text-foreground">{alt.rating}</span>
-                                </div>
+                                  <span className="font-semibold">{alt.rating}</span>
+                                </span>
                               )}
                             </div>
-                            <div className="p-2.5">
-                              <h3 className="text-[14px] font-bold text-foreground leading-tight truncate" data-testid={`text-alt-name-${alt.id}`}>
-                                {alt.name}
-                              </h3>
-                              <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground mt-0.5">
-                                <span className="truncate">{alt.district || alt.category}</span>
-                                <span className="text-[#C79200] font-semibold flex-shrink-0">{priceStr(alt.priceLevel)}</span>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-muted-foreground/30 flex-shrink-0" />
+                        </button>
+                      ))}
                     </div>
                   )}
 
