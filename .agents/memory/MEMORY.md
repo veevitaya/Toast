@@ -1,1 +1,1 @@
-- [Recommendation engine guaranteePick](recommendation-engine.md) — honest 90% match gate, guaranteePick opt-in for Solo, exclude-pool dead-end risk, app-wide body-userId auth convention.
+- [Toast premium aesthetic](toast-premium-aesthetic.md) — what "friendly+premium, not childish" means for Toast UI, and the hard bg-background rule.

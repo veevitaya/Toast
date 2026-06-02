@@ -375,13 +375,16 @@ export default function SoloJourney() {
                 </div>
               ) : (
                 <>
-                  {/* Cinematic hero — editorial, refined */}
+                  {/* Hero pick card — unified, editorial */}
                   <motion.div
                     layout
-                    className="-mx-5 relative mb-5"
+                    initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 240, damping: 24 }}
+                    className="rounded-[28px] bg-white border border-black/[0.06] shadow-[0_12px_40px_-10px_rgba(0,0,0,0.18)] overflow-hidden"
                     data-testid="card-pick"
                   >
-                    <div className="relative h-80 w-full bg-gray-100 overflow-hidden rounded-b-[28px]">
+                    {/* Image */}
+                    <div className="relative h-72 w-full bg-gray-100">
                       {pick.imageUrl && (
                         <img
                           src={pick.imageUrl} alt={pick.name}
@@ -389,54 +392,78 @@ export default function SoloJourney() {
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-                      <div className="absolute top-4 left-5">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-black/45 backdrop-blur-md ring-1 ring-white/15 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white" data-testid="text-eyebrow">
-                          <Sparkles className="w-3.5 h-3.5 text-[#FFCC02]" /> {refined ? t("soloJourney.refined_eyebrow") : t("soloJourney.result_eyebrow")}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-black/10" />
+                      <div className="absolute top-4 left-4">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFCC02] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-black shadow-[0_3px_10px_rgba(0,0,0,0.18)]" data-testid="text-eyebrow">
+                          <Sparkles className="w-3.5 h-3.5" /> {refined ? t("soloJourney.refined_eyebrow") : t("soloJourney.result_eyebrow")}
                         </span>
                       </div>
                       {pick.rating && (
-                        <div className="absolute top-4 right-5 flex items-center gap-1 rounded-full bg-black/45 backdrop-blur-md ring-1 ring-white/15 px-2.5 py-1">
+                        <div className="absolute top-4 right-4 flex items-center gap-1 rounded-full bg-white/95 backdrop-blur-md px-2.5 py-1 shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
                           <Star className="w-3.5 h-3.5 text-[#FFCC02] fill-[#FFCC02]" />
-                          <span className="text-[13px] font-semibold text-white">{pick.rating}</span>
+                          <span className="text-[13px] font-bold text-foreground">{pick.rating}</span>
                         </div>
                       )}
-                      <div className="absolute bottom-6 left-5 right-5">
-                        <h2 className="text-[28px] font-bold text-white leading-[1.08] tracking-tight drop-shadow-md line-clamp-2" data-testid="text-pick-name">
-                          {pick.name}
-                        </h2>
-                        <div className="flex items-center gap-2 text-[13px] text-white/85 mt-2">
-                          <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                          <span className="truncate">{pick.district || pick.address || pick.category}</span>
-                          <span className="text-white/40">{"\u00B7"}</span>
-                          <span className="font-semibold">{priceStr(pick.priceLevel)}</span>
+                    </div>
+
+                    {/* Body */}
+                    <div className="p-5">
+                      <h2 className="text-[24px] font-bold text-foreground leading-[1.12] tracking-tight line-clamp-2" data-testid="text-pick-name">
+                        {pick.name}
+                      </h2>
+                      {(() => {
+                        const loc = pick.district || pick.address || pick.category;
+                        const price = priceStr(pick.priceLevel);
+                        return (loc || price) ? (
+                          <div className="flex items-center gap-2 text-[13px] text-muted-foreground mt-2">
+                            <MapPin className="w-4 h-4 flex-shrink-0 text-foreground/40" />
+                            {loc && <span className="truncate">{loc}</span>}
+                            {loc && price && <span className="text-black/15">{"\u00B7"}</span>}
+                            {price && <span className="font-semibold text-foreground/70">{price}</span>}
+                          </div>
+                        ) : null;
+                      })()}
+
+                      {pick.vibes && pick.vibes.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-3">
+                          {pick.vibes.slice(0, 3).map((v) => (
+                            <span key={v} className="rounded-full bg-[#F6F3EC] px-2.5 py-1 text-[11.5px] font-medium text-foreground/70 capitalize">
+                              {v.replace(/[_-]+/g, " ")}
+                            </span>
+                          ))}
                         </div>
-                      </div>
+                      )}
+
+                      {/* Verdict */}
+                      {pick.confidenceText && (
+                        <div className="mt-4 flex items-start gap-2.5 rounded-2xl bg-[#FFFBF0] border border-[#FFCC02]/25 p-3.5" data-testid="text-confidence">
+                          <span className="w-6 h-6 rounded-full bg-[#FFCC02] flex items-center justify-center flex-shrink-0">
+                            <Sparkles className="w-3.5 h-3.5 text-black" />
+                          </span>
+                          <p className="text-[14px] font-semibold text-foreground leading-snug">{pick.confidenceText}</p>
+                        </div>
+                      )}
+
+                      {/* Why this one */}
+                      {pick.reasonChips.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-black/[0.06]">
+                          <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-muted-foreground mb-3">
+                            {t("soloJourney.why_title")}
+                          </p>
+                          <div className="space-y-2.5">
+                            {pick.reasonChips.map((chip, i) => (
+                              <div key={i} className="flex items-start gap-2.5" data-testid={`chip-reason-${i}`}>
+                                <span className="w-5 h-5 rounded-full bg-[#FFF6DA] flex items-center justify-center flex-shrink-0 mt-px">
+                                  <Check className="w-3 h-3 text-[#C79200]" strokeWidth={3} />
+                                </span>
+                                <span className="text-[13.5px] text-foreground/80 leading-snug">{chip}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
-
-                  {/* Verdict line */}
-                  {pick.confidenceText && (
-                    <p className="text-center text-[15px] font-semibold text-foreground px-4 leading-snug" data-testid="text-confidence">
-                      {pick.confidenceText}
-                    </p>
-                  )}
-
-                  {/* Why Toast picked this — checklist */}
-                  {pick.reasonChips.length > 0 && (
-                    <div className="mt-4 rounded-[20px] bg-white border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4">
-                      <div className="space-y-3">
-                        {pick.reasonChips.map((chip, i) => (
-                          <div key={i} className="flex items-start gap-2.5" data-testid={`chip-reason-${i}`}>
-                            <span className="w-5 h-5 rounded-full bg-[#FFF6DA] flex items-center justify-center flex-shrink-0 mt-px">
-                              <Check className="w-3 h-3 text-[#C79200]" strokeWidth={3} />
-                            </span>
-                            <span className="text-[13.5px] text-foreground/80 leading-snug">{chip}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   {alternatives.length > 0 && (
                     <div className="mt-5 space-y-2.5" data-testid="section-alternatives">
