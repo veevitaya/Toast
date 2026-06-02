@@ -244,7 +244,6 @@ export default function SoloJourney() {
   };
 
   const priceStr = (n: number | null) => "\u0E3F".repeat(Math.max(1, n || 1));
-  const moodBy = (id: string) => MOODS.find((x) => x.id === id);
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center" data-testid="page-solo-journey">
@@ -271,8 +270,8 @@ export default function SoloJourney() {
               className="flex-1 flex flex-col"
             >
               {/* Header */}
-              <div className="pt-2 pb-5">
-                <h1 className="text-[30px] font-extrabold text-foreground leading-[1.08]" data-testid="text-intent-title">
+              <div className="pt-2 pb-6">
+                <h1 className="text-[27px] font-bold text-foreground leading-[1.1] tracking-tight" data-testid="text-intent-title">
                   {t("soloJourney.intent_title")}
                 </h1>
                 <p className="text-[15px] text-muted-foreground mt-2 leading-snug" data-testid="text-intent-sub">
@@ -280,100 +279,51 @@ export default function SoloJourney() {
                 </p>
               </div>
 
-              {/* Mood bento — varied tiles, mascot built into the "let Toast choose" hero */}
-              <div className="grid grid-cols-2 gap-3 auto-rows-[104px]">
-                {(() => {
-                  const m = moodBy("surprise");
-                  if (!m) return null;
+              {/* Mood grid — uniform, refined cards */}
+              <div className="grid grid-cols-2 gap-3">
+                {MOODS.map((m, i) => {
+                  const isSurprise = m.id === "surprise";
                   return (
                     <motion.button
                       key={m.id}
-                      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04 }}
                       onClick={() => handleMood(m.id)}
-                      className="col-span-2 relative overflow-hidden rounded-[26px] p-4 flex flex-col justify-center text-left border border-black/[0.03] active:scale-[0.98] transition-transform"
-                      style={{ background: "#FFF3CC" }}
+                      className={`relative h-[120px] rounded-[20px] bg-white p-4 flex flex-col justify-between text-left shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-all border ${isSurprise ? "border-[#FFCC02]/60 ring-1 ring-[#FFCC02]/25" : "border-black/[0.06]"}`}
                       data-testid={`button-mood-${m.id}`}
                     >
-                      <span className="text-[19px] font-extrabold text-foreground leading-tight">
-                        {t(`soloJourney.${m.key}`)}
+                      <span
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center text-[19px] leading-none ${isSurprise ? "bg-[#FFF6DA]" : "bg-[#F6F3EC]"}`}
+                      >
+                        {m.emoji}
                       </span>
-                      <span className="text-[12.5px] text-foreground/60 leading-snug mt-0.5 max-w-[60%] line-clamp-2">
-                        {t(`soloJourney.${m.subKey}`)}
-                      </span>
-                      <span className="absolute right-3 top-3 text-[20px]">{m.emoji}</span>
-                      <motion.img
-                        src={mascotPath} alt="Toast"
-                        className="absolute -right-1 -bottom-3 w-24 h-24 object-contain pointer-events-none drop-shadow-sm"
-                        animate={{ y: [0, -5, 0] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                        data-testid="img-mascot"
-                      />
-                    </motion.button>
-                  );
-                })()}
-
-                {(() => {
-                  const m = moodBy("comforting");
-                  if (!m) return null;
-                  return (
-                    <motion.button
-                      key={m.id}
-                      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.04 }}
-                      onClick={() => handleMood(m.id)}
-                      className="row-span-2 relative overflow-hidden rounded-[26px] p-4 flex flex-col justify-between text-left border border-black/[0.03] active:scale-[0.98] transition-transform"
-                      style={{ background: m.tint }}
-                      data-testid={`button-mood-${m.id}`}
-                    >
-                      <span className="text-[34px] leading-none">{m.emoji}</span>
                       <div>
-                        <span className="block text-[17px] font-extrabold text-foreground leading-tight">
+                        <span className="block text-[15px] font-semibold text-foreground leading-tight">
                           {t(`soloJourney.${m.key}`)}
                         </span>
-                        <span className="block text-[12.5px] text-foreground/60 leading-snug mt-1">
+                        <span className="block text-[12px] text-muted-foreground leading-snug mt-0.5 line-clamp-1">
                           {t(`soloJourney.${m.subKey}`)}
                         </span>
                       </div>
                     </motion.button>
                   );
-                })()}
-
-                {["exciting", "healthy", "cheap", "worth"].map((id, i) => {
-                  const m = moodBy(id);
-                  if (!m) return null;
-                  return (
-                    <motion.button
-                      key={m.id}
-                      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: (i + 2) * 0.04 }}
-                      onClick={() => handleMood(m.id)}
-                      className="relative overflow-hidden rounded-[22px] p-3.5 flex flex-col justify-between text-left border border-black/[0.03] active:scale-[0.98] transition-transform"
-                      style={{ background: m.tint }}
-                      data-testid={`button-mood-${m.id}`}
-                    >
-                      <span className="text-[26px] leading-none">{m.emoji}</span>
-                      <span className="text-[14.5px] font-extrabold text-foreground leading-[1.15]">
-                        {t(`soloJourney.${m.key}`)}
-                      </span>
-                    </motion.button>
-                  );
                 })}
               </div>
 
-              {/* Compare — secondary, distinct treatment */}
+              {/* Compare — refined secondary */}
               <button
                 onClick={() => navigate("/solo/quiz")}
-                className="mt-4 w-full rounded-[22px] border border-dashed border-[#FFCC02]/50 bg-[#FFCC02]/[0.07] p-3.5 flex items-center gap-3 active:scale-[0.98] transition-transform text-left"
+                className="mt-3 w-full rounded-[20px] bg-white border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 flex items-center gap-3.5 active:scale-[0.98] transition-all text-left"
                 data-testid="button-compare-intent"
               >
-                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center flex-shrink-0">
-                  <GitCompare className="w-5 h-5 text-[#C79200]" />
+                <div className="w-10 h-10 rounded-xl bg-[#F6F3EC] flex items-center justify-center flex-shrink-0">
+                  <GitCompare className="w-[18px] h-[18px] text-foreground/70" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-bold text-foreground leading-tight">{t("soloJourney.compare")}</p>
-                  <p className="text-[12px] text-muted-foreground leading-snug">{t("soloJourney.compare_desc")}</p>
+                  <p className="text-[14px] font-semibold text-foreground leading-tight">{t("soloJourney.compare")}</p>
+                  <p className="text-[12px] text-muted-foreground leading-snug mt-0.5">{t("soloJourney.compare_desc")}</p>
                 </div>
-                <ChevronRight className="w-5 h-5 text-[#C79200]/60 flex-shrink-0" />
+                <ChevronRight className="w-5 h-5 text-muted-foreground/40 flex-shrink-0" />
               </button>
             </motion.div>
           )}
@@ -387,9 +337,9 @@ export default function SoloJourney() {
             >
               <motion.img
                 src={mascotPath} alt="Toast"
-                className="w-28 h-28 object-contain mb-5"
-                animate={{ rotate: [0, -6, 6, -6, 0], y: [0, -6, 0] }}
-                transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+                className="w-24 h-24 object-contain mb-5"
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
               />
               <div className="flex items-center gap-2 text-foreground">
                 <Sparkles className="w-5 h-5 text-[#FFB800]" />
@@ -428,13 +378,13 @@ export default function SoloJourney() {
                 </div>
               ) : (
                 <>
-                  {/* Cinematic hero with Toast's stamp of approval */}
+                  {/* Cinematic hero — editorial, refined */}
                   <motion.div
                     layout
-                    className="-mx-5 relative mb-12"
+                    className="-mx-5 relative mb-5"
                     data-testid="card-pick"
                   >
-                    <div className="relative h-80 w-full bg-gray-100 overflow-hidden rounded-b-[36px]">
+                    <div className="relative h-80 w-full bg-gray-100 overflow-hidden rounded-b-[28px]">
                       {pick.imageUrl && (
                         <img
                           src={pick.imageUrl} alt={pick.name}
@@ -442,56 +392,49 @@ export default function SoloJourney() {
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
                       <div className="absolute top-4 left-5">
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FFCC02] px-3 py-1.5 text-[11.5px] font-extrabold uppercase tracking-wider text-black shadow-sm" data-testid="text-eyebrow">
-                          <Sparkles className="w-3.5 h-3.5" /> {refined ? t("soloJourney.refined_eyebrow") : t("soloJourney.result_eyebrow")}
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-black/45 backdrop-blur-md ring-1 ring-white/15 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white" data-testid="text-eyebrow">
+                          <Sparkles className="w-3.5 h-3.5 text-[#FFCC02]" /> {refined ? t("soloJourney.refined_eyebrow") : t("soloJourney.result_eyebrow")}
                         </span>
                       </div>
                       {pick.rating && (
-                        <div className="absolute top-4 right-5 flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 shadow-sm">
-                          <Star className="w-3.5 h-3.5 text-[#FFB800] fill-[#FFB800]" />
-                          <span className="text-[13px] font-bold text-foreground">{pick.rating}</span>
+                        <div className="absolute top-4 right-5 flex items-center gap-1 rounded-full bg-black/45 backdrop-blur-md ring-1 ring-white/15 px-2.5 py-1">
+                          <Star className="w-3.5 h-3.5 text-[#FFCC02] fill-[#FFCC02]" />
+                          <span className="text-[13px] font-semibold text-white">{pick.rating}</span>
                         </div>
                       )}
-                      <div className="absolute bottom-8 left-5 right-5">
-                        <h2 className="text-[30px] font-extrabold text-white leading-[1.05] drop-shadow-md line-clamp-2" data-testid="text-pick-name">
+                      <div className="absolute bottom-6 left-5 right-5">
+                        <h2 className="text-[28px] font-bold text-white leading-[1.08] tracking-tight drop-shadow-md line-clamp-2" data-testid="text-pick-name">
                           {pick.name}
                         </h2>
-                        <div className="flex items-center gap-2 text-[13px] text-white/90 mt-2">
+                        <div className="flex items-center gap-2 text-[13px] text-white/85 mt-2">
                           <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
                           <span className="truncate">{pick.district || pick.address || pick.category}</span>
-                          <span className="text-white/50">{"\u00B7"}</span>
-                          <span className="font-bold">{priceStr(pick.priceLevel)}</span>
+                          <span className="text-white/40">{"\u00B7"}</span>
+                          <span className="font-semibold">{priceStr(pick.priceLevel)}</span>
                         </div>
                       </div>
                     </div>
-                    <motion.div
-                      initial={{ scale: 0, rotate: -24 }} animate={{ scale: 1, rotate: -8 }}
-                      transition={{ type: "spring", stiffness: 260, damping: 16, delay: 0.15 }}
-                      className="absolute left-1/2 -translate-x-1/2 -bottom-8 z-10 w-[68px] h-[68px] rounded-full bg-[#FFCC02] ring-4 ring-background shadow-[0_8px_20px_rgba(255,204,2,0.5)] flex items-center justify-center overflow-hidden"
-                    >
-                      <img src={mascotPath} alt="Toast" className="w-12 h-12 object-contain" />
-                    </motion.div>
                   </motion.div>
 
                   {/* Verdict line */}
                   {pick.confidenceText && (
-                    <p className="text-center text-[15.5px] font-bold text-foreground px-3 leading-snug" data-testid="text-confidence">
+                    <p className="text-center text-[15px] font-semibold text-foreground px-4 leading-snug" data-testid="text-confidence">
                       {pick.confidenceText}
                     </p>
                   )}
 
                   {/* Why Toast picked this — checklist */}
                   {pick.reasonChips.length > 0 && (
-                    <div className="mt-4 rounded-[24px] bg-white border border-black/[0.04] shadow-[0_2px_14px_rgba(0,0,0,0.05)] p-4">
-                      <div className="space-y-2.5">
+                    <div className="mt-4 rounded-[20px] bg-white border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4">
+                      <div className="space-y-3">
                         {pick.reasonChips.map((chip, i) => (
                           <div key={i} className="flex items-start gap-2.5" data-testid={`chip-reason-${i}`}>
-                            <span className="w-6 h-6 rounded-full bg-[#FFF6DA] flex items-center justify-center flex-shrink-0 mt-px">
-                              <Check className="w-3.5 h-3.5 text-[#C79200]" strokeWidth={3} />
+                            <span className="w-5 h-5 rounded-full bg-[#FFF6DA] flex items-center justify-center flex-shrink-0 mt-px">
+                              <Check className="w-3 h-3 text-[#C79200]" strokeWidth={3} />
                             </span>
-                            <span className="text-[13.5px] font-medium text-foreground leading-snug">{chip}</span>
+                            <span className="text-[13.5px] text-foreground/80 leading-snug">{chip}</span>
                           </div>
                         ))}
                       </div>
@@ -500,17 +443,17 @@ export default function SoloJourney() {
 
                   {alternatives.length > 0 && (
                     <div className="mt-5 space-y-2.5" data-testid="section-alternatives">
-                      <p className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground mb-1 px-0.5" data-testid="text-more-options">
+                      <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-muted-foreground mb-1 px-0.5" data-testid="text-more-options">
                         {t("soloJourney.more_options")}
                       </p>
                       {alternatives.slice(0, 2).map((alt) => (
                         <button
                           key={alt.id}
                           onClick={() => handlePickAlternative(alt)}
-                          className="w-full flex items-center gap-3 rounded-2xl bg-white p-2.5 border border-black/[0.04] shadow-[0_2px_12px_rgba(0,0,0,0.05)] active:scale-[0.98] transition-transform text-left"
+                          className="w-full flex items-center gap-3 rounded-[18px] bg-white p-2.5 border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-all text-left"
                           data-testid={`card-alt-${alt.id}`}
                         >
-                          <div className="relative w-[72px] h-[72px] rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                          <div className="relative w-[68px] h-[68px] rounded-[14px] overflow-hidden bg-gray-100 flex-shrink-0">
                             {alt.imageUrl && (
                               <img
                                 src={alt.imageUrl} alt={alt.name}
@@ -520,16 +463,16 @@ export default function SoloJourney() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-[15px] font-bold text-foreground leading-tight truncate" data-testid={`text-alt-name-${alt.id}`}>
+                            <h3 className="text-[15px] font-semibold text-foreground leading-tight truncate" data-testid={`text-alt-name-${alt.id}`}>
                               {alt.name}
                             </h3>
                             <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground mt-1">
                               <span className="truncate">{alt.district || alt.category}</span>
-                              <span className="text-[#C79200] font-semibold flex-shrink-0">{priceStr(alt.priceLevel)}</span>
+                              <span className="text-foreground/60 font-medium flex-shrink-0">{priceStr(alt.priceLevel)}</span>
                               {alt.rating && (
                                 <span className="flex items-center gap-0.5 flex-shrink-0">
-                                  <Star className="w-3 h-3 text-[#FFB800] fill-[#FFB800]" />
-                                  <span className="font-semibold">{alt.rating}</span>
+                                  <Star className="w-3 h-3 text-[#FFCC02] fill-[#FFCC02]" />
+                                  <span className="font-medium">{alt.rating}</span>
                                 </span>
                               )}
                             </div>
@@ -540,17 +483,17 @@ export default function SoloJourney() {
                     </div>
                   )}
 
-                  {/* Compare options — a distinct feature, not a filter */}
+                  {/* Compare options — refined secondary */}
                   <button
                     onClick={() => navigate("/solo/quiz")}
-                    className="mt-4 w-full rounded-3xl bg-white border border-black/[0.05] shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-3.5 flex items-center gap-3.5 active:scale-[0.98] transition-transform text-left"
+                    className="mt-4 w-full rounded-[20px] bg-white border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 flex items-center gap-3.5 active:scale-[0.98] transition-all text-left"
                     data-testid="button-compare-options"
                   >
-                    <div className="w-11 h-11 rounded-2xl bg-[#FFF6DA] flex items-center justify-center flex-shrink-0">
-                      <GitCompare className="w-5 h-5 text-[#C79200]" />
+                    <div className="w-10 h-10 rounded-xl bg-[#F6F3EC] flex items-center justify-center flex-shrink-0">
+                      <GitCompare className="w-[18px] h-[18px] text-foreground/70" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[15px] font-extrabold text-foreground leading-tight">{t("soloJourney.compare")}</p>
+                      <p className="text-[15px] font-semibold text-foreground leading-tight">{t("soloJourney.compare")}</p>
                       <p className="text-[12.5px] text-muted-foreground leading-snug mt-0.5">{t("soloJourney.compare_desc")}</p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-muted-foreground/40 flex-shrink-0" />
@@ -593,7 +536,7 @@ export default function SoloJourney() {
                   <div className="mt-auto pt-5 space-y-2.5">
                     <button
                       onClick={handleAccept}
-                      className="w-full rounded-2xl bg-[#FFCC02] h-14 text-[16px] font-extrabold text-black flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-[0_4px_16px_rgba(255,204,2,0.4)]"
+                      className="w-full rounded-2xl bg-[#FFCC02] h-14 text-[16px] font-bold text-black flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-[0_4px_14px_rgba(255,204,2,0.25)]"
                       data-testid="button-accept"
                     >
                       {t("soloJourney.looks_good")} <ArrowRight className="w-5 h-5" />
@@ -601,14 +544,14 @@ export default function SoloJourney() {
                     <div className="grid grid-cols-2 gap-2.5">
                       <button
                         onClick={handleAnother}
-                        className="rounded-2xl bg-white h-12 text-[14px] font-bold text-foreground border border-black/[0.06] flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                        className="rounded-2xl bg-white h-12 text-[14px] font-semibold text-foreground border border-black/[0.06] flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
                         data-testid="button-another"
                       >
                         <RotateCcw className="w-4 h-4" /> {t("soloJourney.another")}
                       </button>
                       <button
                         onClick={() => setRefineOpen((p) => !p)}
-                        className="rounded-2xl bg-white h-12 text-[14px] font-bold text-foreground border border-black/[0.06] flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
+                        className="rounded-2xl bg-white h-12 text-[14px] font-semibold text-foreground border border-black/[0.06] flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
                         data-testid="button-refine-toggle"
                       >
                         {t("soloJourney.refine_cta")}
