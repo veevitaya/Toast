@@ -528,8 +528,8 @@
     "show_picks": "Show my picks"
   },
   "soloJourney": {
-    "compare": "Compare options",
-    "compare_desc": "See a few top spots side by side and pick your own.",
+    "compare": "Need more options?",
+    "compare_desc": "Line up a few top spots side by side and pick your own.",
     "intent_title": "What sounds good?",
     "intent_sub": "Pick one — Toast takes it from here.",
     "mood_comfort": "Comforting & easy",
