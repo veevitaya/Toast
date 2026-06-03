@@ -77,3 +77,9 @@ id = "yj5PH3H_N8gCnh9xL1OC7"
 uri = "file://screenshots/contact-rebrand-v3.jpg"
 type = "image"
 title = "Contact — redesigned to match main Toast app branding"
+
+[[outputs]]
+id = "vqcFDQwQVVCwLt5aih6a5"
+uri = "file://attached_assets/screenshots/92ec004f-3b01-4d87-9e5c-b6c40fd566ac-00-omhxo1bzmnio_spock_replit_dev_mockup_preview_toast-more-options_CompareTray.png"
+type = "image"
+title = "Flow A — Compare Tray (preview)"

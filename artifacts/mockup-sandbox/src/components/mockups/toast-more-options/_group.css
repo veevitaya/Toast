@@ -1,0 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+.toast-more {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.toast-more h1,
+.toast-more h2,
+.toast-more h3,
+.toast-more .font-display {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
