@@ -66,8 +66,6 @@ export const modules: ModuleMap = {
   "./components/mockups/toast-tutorials/HelpHub.tsx": () => import("../components/mockups/toast-tutorials/HelpHub.tsx"),
   "./components/mockups/toast-tutorials/SoloTutorial.tsx": () => import("../components/mockups/toast-tutorials/SoloTutorial.tsx"),
   "./components/mockups/toast-tutorials/TrendingTutorial.tsx": () => import("../components/mockups/toast-tutorials/TrendingTutorial.tsx"),
-  "./components/mockups/trending-feed/CardReveal.tsx": () => import("../components/mockups/trending-feed/CardReveal.tsx"),
-  "./components/mockups/trending-feed/ImmersiveStory.tsx": () => import("../components/mockups/trending-feed/ImmersiveStory.tsx"),
   "./components/mockups/toast-ux-system/EntrySession.tsx": () => import("../components/mockups/toast-ux-system/EntrySession.tsx"),
   "./components/mockups/toast-ux-system/FlowPathAlternatives.tsx": () => import("../components/mockups/toast-ux-system/FlowPathAlternatives.tsx"),
   "./components/mockups/toast-ux-system/FlowPathFinalLocked.tsx": () => import("../components/mockups/toast-ux-system/FlowPathFinalLocked.tsx"),
@@ -96,5 +94,7 @@ export const modules: ModuleMap = {
   "./components/mockups/toast-ux-system/ToastMixB.tsx": () => import("../components/mockups/toast-ux-system/ToastMixB.tsx"),
   "./components/mockups/toast-ux-system/ToastMixC.tsx": () => import("../components/mockups/toast-ux-system/ToastMixC.tsx"),
   "./components/mockups/toast-ux-system/ToastMixD.tsx": () => import("../components/mockups/toast-ux-system/ToastMixD.tsx"),
-  "./components/mockups/toast-ux-system/TransitionFoodToFlow.tsx": () => import("../components/mockups/toast-ux-system/TransitionFoodToFlow.tsx")
+  "./components/mockups/toast-ux-system/TransitionFoodToFlow.tsx": () => import("../components/mockups/toast-ux-system/TransitionFoodToFlow.tsx"),
+  "./components/mockups/trending-feed/CardReveal.tsx": () => import("../components/mockups/trending-feed/CardReveal.tsx"),
+  "./components/mockups/trending-feed/ImmersiveStory.tsx": () => import("../components/mockups/trending-feed/ImmersiveStory.tsx")
 };
