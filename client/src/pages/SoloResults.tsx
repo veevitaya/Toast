@@ -443,6 +443,7 @@ export default function SoloResults() {
 
   const quizAnswers = useMemo(() => parseQuizParams(), []);
   const vibeParam = quizAnswers.vibe;
+  const editParam = useMemo(() => new URLSearchParams(window.location.search).get("edit") === "1", []);
 
   const [prefsOverride, setPrefsOverride] = useState<EditPrefs | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
@@ -1143,7 +1144,7 @@ export default function SoloResults() {
 
   return (
     <div className="w-full min-h-[100dvh] bg-[#FCFCFC] flex flex-col items-center pt-10 px-6 pb-32" data-testid="solo-results-page">
-      {!!hasFilters && (
+      {(!!hasFilters || editParam) && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}

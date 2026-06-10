@@ -69,6 +69,21 @@ const DELIVERY = [
 
 const LOADING_LINES = ["loading_1", "loading_2", "loading_3"];
 
+function moodToComparePath(mood: string | null): string {
+  const seed: Record<string, [string, string]> = {
+    comforting: ["interests", "Comfort food"],
+    exciting: ["locations", "Trendy spots"],
+    healthy: ["interests", "Healthy"],
+    cheap: ["budget", "Cheap"],
+    worth: ["budget", "Expensive,Fancy"],
+  };
+  const params = new URLSearchParams();
+  const s = mood ? seed[mood] : undefined;
+  if (s) params.set(s[0], s[1]);
+  params.set("edit", "1");
+  return `/solo/results?${params.toString()}`;
+}
+
 export default function SoloJourney() {
   const [, navigate] = useLocation();
   const { t } = useLanguage();
@@ -309,7 +324,7 @@ export default function SoloJourney() {
 
               {/* Compare — refined secondary */}
               <button
-                onClick={() => navigate("/solo/quiz")}
+                onClick={() => navigate(moodToComparePath(mood))}
                 className="mt-3 w-full rounded-[20px] bg-white border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 flex items-center gap-3.5 active:scale-[0.98] transition-all text-left"
                 data-testid="button-compare-intent"
               >
@@ -509,7 +524,7 @@ export default function SoloJourney() {
 
                   {/* Compare options — refined secondary */}
                   <button
-                    onClick={() => navigate("/solo/quiz")}
+                    onClick={() => navigate(moodToComparePath(mood))}
                     className="mt-4 w-full rounded-[20px] bg-white border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 flex items-center gap-3.5 active:scale-[0.98] transition-all text-left"
                     data-testid="button-compare-options"
                   >
