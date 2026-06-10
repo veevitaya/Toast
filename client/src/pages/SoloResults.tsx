@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { fetchWithTimeout } from "@/lib/queryClient";
 import { BottomNav } from "@/components/BottomNav";
-import { Sparkles, Clock, Wallet, TrendingUp, MapPin, UtensilsCrossed, X, Check, Star, Users, Crown, Flame, RotateCcw } from "lucide-react";
+import { Sparkles, Clock, Wallet, TrendingUp, MapPin, UtensilsCrossed, X, Check, Star, Users, Crown, Flame, RotateCcw, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { useTasteProfile } from "@/hooks/use-taste-profile";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { sendGroupInviteNoRedirect } from "@/lib/liff";
@@ -330,6 +330,109 @@ function mapVibeRestaurantToMenuItem(r: VibeRestaurant, index: number): MenuItem
   };
 }
 
+type EditPrefs = { cuisines: string[]; budget: string[]; locations: string[]; interests: string[] };
+
+const EDIT_SPRING = { type: "spring" as const, stiffness: 260, damping: 26 };
+
+const EDIT_CRAVINGS: { label: string; value: string | null }[] = [
+  { label: "Any", value: null },
+  { label: "🌶️ Spicy", value: "Hot & spicy" },
+  { label: "🍲 Comfort", value: "Comfort food" },
+  { label: "🥗 Healthy", value: "Healthy" },
+  { label: "🍰 Sweets", value: "Dessert" },
+  { label: "🍹 Drinks", value: "Drinks" },
+];
+const EDIT_CUISINES = ["Any", "Thai", "Japanese", "Korean", "Italian", "Chinese", "Western", "Indian"];
+const EDIT_SCENES: { label: string; value: string | null }[] = [
+  { label: "Any", value: null },
+  { label: "Street food", value: "Street food" },
+  { label: "Restaurants", value: "Restaurants" },
+  { label: "Near BTS", value: "Near BTS" },
+  { label: "Trendy", value: "Trendy spots" },
+  { label: "Outdoor", value: "Outdoor dining" },
+  { label: "Late night", value: "Late night" },
+];
+const EDIT_BUDGETS: { label: string; value: string[] }[] = [
+  { label: "Any", value: [] },
+  { label: "฿", value: ["Cheap"] },
+  { label: "฿฿", value: ["Moderate"] },
+  { label: "฿฿฿", value: ["Expensive", "Fancy"] },
+];
+
+function EditChip({ active, pillId, onClick, children }: { active: boolean; pillId: string; onClick: () => void; children: ReactNode }) {
+  return (
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.92 }}
+      onClick={onClick}
+      className="relative shrink-0 rounded-full px-3 py-1.5 text-[12px] font-bold"
+    >
+      <span className="absolute inset-0 rounded-full bg-gray-100" />
+      {active && (
+        <motion.span
+          layoutId={pillId}
+          transition={EDIT_SPRING}
+          className="absolute inset-0 rounded-full bg-[#FFCC02]"
+          style={{ boxShadow: "0 4px 12px -4px rgba(255,204,2,0.6)" }}
+        />
+      )}
+      <span className={`relative z-[1] ${active ? "text-[#2d2000]" : "text-gray-600"}`}>{children}</span>
+    </motion.button>
+  );
+}
+
+function EditRow({ label, value, children }: { label: string; value: string; children: ReactNode }) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-1 px-0.5">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{label}</p>
+        <p className="text-[10px] font-extrabold text-[#9A7400]">{value}</p>
+      </div>
+      <div className="relative">
+        <div className="flex gap-1.5 overflow-x-auto hide-scrollbar px-0.5 pb-0.5">{children}</div>
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0.5 w-7 bg-gradient-to-l from-white to-transparent" />
+      </div>
+    </div>
+  );
+}
+
+function EditBudget({ value, onChange }: { value: string[]; onChange: (b: string[]) => void }) {
+  const label = value.length === 0 ? "Any price" : value.includes("Cheap") ? "฿ Cheap" : value.includes("Moderate") ? "฿฿ Moderate" : "฿฿฿ Pricey";
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-1 px-0.5">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Budget</p>
+        <p className="text-[10px] font-extrabold text-[#9A7400]">{label}</p>
+      </div>
+      <div className="flex gap-1 p-1 rounded-full bg-gray-100">
+        {EDIT_BUDGETS.map((b) => {
+          const active = b.value.length === value.length && b.value.every((v) => value.includes(v));
+          return (
+            <motion.button
+              key={b.label}
+              type="button"
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onChange(b.value)}
+              className="relative flex-1 py-1.5 rounded-full text-[12px] font-bold"
+              data-testid={`segment-budget-${b.label}`}
+            >
+              {active && (
+                <motion.span
+                  layoutId="sr-budget"
+                  transition={EDIT_SPRING}
+                  className="absolute inset-0 rounded-full bg-[#FFCC02]"
+                  style={{ boxShadow: "0 4px 12px -4px rgba(255,204,2,0.6)" }}
+                />
+              )}
+              <span className={`relative z-[1] ${active ? "text-[#2d2000]" : "text-gray-500"}`}>{b.label}</span>
+            </motion.button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function SoloResults() {
   const [, navigate] = useLocation();
   const { t } = useLanguage();
@@ -340,6 +443,11 @@ export default function SoloResults() {
 
   const quizAnswers = useMemo(() => parseQuizParams(), []);
   const vibeParam = quizAnswers.vibe;
+
+  const [prefsOverride, setPrefsOverride] = useState<EditPrefs | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const prefsOverrideRef = useRef(prefsOverride);
+  prefsOverrideRef.current = prefsOverride;
 
   const { data: vibeRestaurants, isLoading: vibeLoading } = useQuery<VibeRestaurant[]>({
     queryKey: ["/api/restaurants/by-vibe", vibeParam],
@@ -404,6 +512,9 @@ export default function SoloResults() {
   }, [vibeRestaurants]);
 
   const filteredMenus = useMemo(() => {
+    if (prefsOverride) {
+      return filterMenus({ ...quizAnswers, vibe: null, ...prefsOverride });
+    }
     if (vibeParam && isMenuFirstVibe(vibeParam)) {
       const vibeToInterest: Record<string, string[]> = {
         spicy: ["Hot & spicy"],
@@ -452,7 +563,7 @@ export default function SoloResults() {
       return quizDbRestaurants.map((r, i) => mapVibeRestaurantToMenuItem(r, i));
     }
     return filterMenus(quizAnswers);
-  }, [quizAnswers, vibeMenuItems, vibeParam, quizDbRestaurants]);
+  }, [quizAnswers, vibeMenuItems, vibeParam, quizDbRestaurants, prefsOverride]);
 
   const isDrinksMode = vibeParam === "drinks" || quizAnswers.interests.includes("Drinks");
 
@@ -461,14 +572,28 @@ export default function SoloResults() {
   const vibeLabel = vibeParam && (VIBE_LABELS as Record<string, string>)[vibeParam];
   const vibeEmoji = vibeParam && (VIBE_EMOJI as Record<string, string>)[vibeParam];
 
+  const displayCuisines = prefsOverride ? prefsOverride.cuisines : quizAnswers.cuisines;
+  const displayBudget = prefsOverride ? prefsOverride.budget : quizAnswers.budget;
+  const displayLocations = prefsOverride ? prefsOverride.locations : quizAnswers.locations;
+  const displayInterests = prefsOverride ? prefsOverride.interests : quizAnswers.interests;
+  const displayVibe = prefsOverride ? null : vibeParam;
+
   const allFilterChips = [
-    ...(vibeParam ? [{ label: `${vibeEmoji || ""} ${vibeLabel || vibeParam}`.trim(), type: "vibe" as const }] : []),
-    ...quizAnswers.cuisines.map((c) => ({ label: c, type: "cuisine" })),
-    ...quizAnswers.budget.map((b) => ({ label: b, type: "budget" })),
+    ...(displayVibe ? [{ label: `${vibeEmoji || ""} ${vibeLabel || displayVibe}`.trim(), type: "vibe" as const }] : []),
+    ...displayCuisines.map((c) => ({ label: c, type: "cuisine" })),
+    ...displayBudget.map((b) => ({ label: b, type: "budget" })),
     ...quizAnswers.diet.map((d) => ({ label: d, type: "diet" })),
-    ...quizAnswers.locations.map((l) => ({ label: l, type: "location" })),
-    ...quizAnswers.interests.map((i) => ({ label: i, type: "interest" })),
+    ...displayLocations.map((l) => ({ label: l, type: "location" })),
+    ...displayInterests.map((i) => ({ label: i, type: "interest" })),
   ];
+
+  const isEdited = prefsOverride !== null;
+  const cravingActive = (v: string | null) => (v === null ? displayInterests.length === 0 : displayInterests.length === 1 && displayInterests[0] === v);
+  const cuisineActive = (c: string) => (c === "Any" ? displayCuisines.length === 0 : displayCuisines.length === 1 && displayCuisines[0] === c);
+  const sceneActive = (v: string | null) => (v === null ? displayLocations.length === 0 : displayLocations.length === 1 && displayLocations[0] === v);
+  const cravingEcho = displayInterests.length === 0 ? "Any" : (EDIT_CRAVINGS.find((x) => x.value === displayInterests[0])?.label ?? displayInterests[0]);
+  const cuisineEcho = displayCuisines.length === 0 ? "Any" : displayCuisines.length === 1 ? displayCuisines[0] : `${displayCuisines.length} picked`;
+  const sceneEcho = displayLocations.length === 0 ? "Any" : displayLocations.length === 1 ? (EDIT_SCENES.find((x) => x.value === displayLocations[0])?.label ?? displayLocations[0]) : `${displayLocations.length} picked`;
 
   const [currentChoice, setCurrentChoice] = useState<MenuItem | null>(null);
   const [usedIds, setUsedIds] = useState<Set<number>>(new Set([filteredMenus[0]?.id, filteredMenus[1]?.id].filter(Boolean)));
@@ -477,6 +602,7 @@ export default function SoloResults() {
   const [round, setRound] = useState(1);
 
   useEffect(() => {
+    if (prefsOverrideRef.current) return;
     if (vibeMenuItems && vibeMenuItems.length >= 2) {
       setLeftOption(vibeMenuItems[0]);
       setRightOption(vibeMenuItems[1]);
@@ -492,12 +618,71 @@ export default function SoloResults() {
   const [decideStep, setDecideStep] = useState<"thinking" | "result">("thinking");
   const [aiRecommendation, setAiRecommendation] = useState<MenuItem | null>(null);
   const thinkingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const selectTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const clearSelectTimers = () => {
+    selectTimersRef.current.forEach((t) => clearTimeout(t));
+    selectTimersRef.current = [];
+  };
 
   useEffect(() => {
     return () => {
       if (thinkingTimerRef.current) clearTimeout(thinkingTimerRef.current);
+      clearSelectTimers();
     };
   }, []);
+
+  const defaultPoolRef = useRef<MenuItem[]>(filteredMenus);
+  useEffect(() => {
+    if (!prefsOverride) defaultPoolRef.current = filteredMenus;
+  }, [filteredMenus, prefsOverride]);
+
+  const editSyncMountRef = useRef(true);
+  useEffect(() => {
+    if (editSyncMountRef.current) {
+      editSyncMountRef.current = false;
+      return;
+    }
+    clearSelectTimers();
+    setAnimating(false);
+    const next = prefsOverride
+      ? filterMenus({ ...quizAnswers, vibe: null, ...prefsOverride })
+      : defaultPoolRef.current;
+    if (next && next.length >= 2) {
+      setLeftOption(next[0]);
+      setRightOption(next[1]);
+      setUsedIds(new Set([next[0].id, next[1].id]));
+      setCurrentChoice(null);
+      setSelectedSide(null);
+      setReplacingSide(null);
+      setRound(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefsOverride]);
+
+  const applyOverride = (patch: Partial<EditPrefs>) => {
+    setPrefsOverride((prev) => {
+      const base: EditPrefs = prev ?? {
+        cuisines: quizAnswers.cuisines,
+        budget: quizAnswers.budget,
+        locations: quizAnswers.locations,
+        interests: quizAnswers.interests,
+      };
+      return { ...base, ...patch };
+    });
+  };
+  const resetEdit = () => setPrefsOverride(null);
+  const surpriseEdit = () => {
+    const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
+    const cr = pick(EDIT_CRAVINGS).value;
+    const cu = pick(EDIT_CUISINES);
+    const sc = pick(EDIT_SCENES).value;
+    setPrefsOverride({
+      interests: cr ? [cr] : [],
+      cuisines: cu === "Any" ? [] : [cu],
+      locations: sc ? [sc] : [],
+      budget: pick(EDIT_BUDGETS).value,
+    });
+  };
 
   const handleSwipeInvite = useCallback(async () => {
     const userId = userProfile?.userId;
@@ -603,6 +788,7 @@ export default function SoloResults() {
 
   const handleSelect = (side: "left" | "right") => {
     if (animating) return;
+    clearSelectTimers();
     setAnimating(true);
     setSelectedSide(side);
 
@@ -611,11 +797,11 @@ export default function SoloResults() {
 
     const otherSide = side === "left" ? "right" : "left";
 
-    setTimeout(() => {
+    const t1 = setTimeout(() => {
       setReplacingSide(otherSide);
     }, 500);
 
-    setTimeout(() => {
+    const t2 = setTimeout(() => {
       const nextMenu = getNextMenu();
       setUsedIds((prev) => new Set([...prev, nextMenu.id]));
 
@@ -625,13 +811,15 @@ export default function SoloResults() {
         setRightOption(nextMenu);
       }
 
-      setTimeout(() => {
+      const t3 = setTimeout(() => {
         setSelectedSide(null);
         setReplacingSide(null);
         setAnimating(false);
         setRound((r) => r + 1);
       }, 400);
+      selectTimersRef.current.push(t3);
     }, 800);
+    selectTimersRef.current.push(t1, t2);
   };
 
   const handleShuffle = () => {
@@ -964,6 +1152,16 @@ export default function SoloResults() {
           <div className="flex items-center gap-1.5 mb-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Your preferences</span>
             <span className="text-[10px] text-muted-foreground">({filteredMenus.length} matches)</span>
+            <button
+              type="button"
+              onClick={() => setEditorOpen((o) => !o)}
+              className="ml-auto flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold text-[#9A7400] bg-[#FFF6DA] active:scale-95 transition-transform"
+              data-testid="button-edit-prefs"
+            >
+              <SlidersHorizontal className="w-3 h-3" />
+              {editorOpen ? "Done" : "Edit"}
+              <ChevronDown className={`w-3 h-3 transition-transform ${editorOpen ? "rotate-180" : ""}`} />
+            </button>
           </div>
           <div className="flex flex-wrap gap-1.5" data-testid="filter-chips">
             {allFilterChips.map((chip) => (
@@ -983,6 +1181,92 @@ export default function SoloResults() {
               </span>
             ))}
           </div>
+
+          <AnimatePresence initial={false}>
+            {editorOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={EDIT_SPRING}
+                className="overflow-hidden"
+                data-testid="panel-edit-prefs"
+              >
+                <div className="mt-2.5 rounded-2xl bg-white border border-gray-100 shadow-sm p-3 space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-2 w-2 ml-0.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFCC02] opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FFCC02]" />
+                    </span>
+                    <p className="text-[12px] font-extrabold text-gray-900 whitespace-nowrap">Tune your picks</p>
+                    <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">Top 2 of {filteredMenus.length}</span>
+                    <div className="ml-auto flex items-center gap-1.5">
+                      <motion.button
+                        type="button"
+                        whileTap={{ scale: 0.9 }}
+                        onClick={surpriseEdit}
+                        className="w-8 h-8 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: "#FFF6DA", color: "#9A7400" }}
+                        data-testid="button-surprise-prefs"
+                        aria-label="Surprise me"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        whileTap={{ scale: 0.9 }}
+                        onClick={resetEdit}
+                        disabled={!isEdited}
+                        className={`w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 ${!isEdited ? "opacity-30" : ""}`}
+                        data-testid="button-reset-prefs"
+                        aria-label="Reset preferences"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </motion.button>
+                    </div>
+                  </div>
+
+                  <EditRow label="Craving" value={cravingEcho}>
+                    {EDIT_CRAVINGS.map((c) => (
+                      <EditChip
+                        key={c.label}
+                        pillId="sr-craving"
+                        active={cravingActive(c.value)}
+                        onClick={() => applyOverride({ interests: c.value ? [c.value] : [] })}
+                      >
+                        {c.label}
+                      </EditChip>
+                    ))}
+                  </EditRow>
+                  <EditRow label="Cuisine" value={cuisineEcho}>
+                    {EDIT_CUISINES.map((c) => (
+                      <EditChip
+                        key={c}
+                        pillId="sr-cuisine"
+                        active={cuisineActive(c)}
+                        onClick={() => applyOverride({ cuisines: c === "Any" ? [] : [c] })}
+                      >
+                        {c}
+                      </EditChip>
+                    ))}
+                  </EditRow>
+                  <EditRow label="Scene" value={sceneEcho}>
+                    {EDIT_SCENES.map((s) => (
+                      <EditChip
+                        key={s.label}
+                        pillId="sr-scene"
+                        active={sceneActive(s.value)}
+                        onClick={() => applyOverride({ locations: s.value ? [s.value] : [] })}
+                      >
+                        {s.label}
+                      </EditChip>
+                    ))}
+                  </EditRow>
+                  <EditBudget value={displayBudget} onChange={(b) => applyOverride({ budget: b })} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
 
