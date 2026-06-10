@@ -3411,6 +3411,25 @@ const PERSONA_NAMES: Record<string, string> = {
   distance: "Neighborhood Local",
 };
 
+const TRAIT_BLURB: Record<string, { tag: string; adj: string }> = {
+  comfort: { tag: "Cozy classics", adj: "comforting" },
+  exploration: { tag: "Loves to explore", adj: "adventurous" },
+  spicy: { tag: "Brings the heat", adj: "bold and spicy" },
+  healthy: { tag: "Fresh & light", adj: "wholesome" },
+  indulgent: { tag: "Treat-yourself", adj: "indulgent" },
+  budget: { tag: "Great value", adj: "value-smart" },
+  novelty: { tag: "Something new", adj: "novelty-loving" },
+  distance: { tag: "Worth the trip", adj: "worth a little wander" },
+};
+
+function tasteStrength(v: number): string {
+  if (v >= 78) return "Love it";
+  if (v >= 60) return "Often";
+  if (v >= 42) return "Sometimes";
+  if (v >= 25) return "Now & then";
+  return "Rarely";
+}
+
 function TasteDNASection() {
   const { payload: bootstrap } = useBootstrapSession();
   const dna = bootstrap?.tasteDnaSummary;
@@ -3430,18 +3449,27 @@ function TasteDNASection() {
     ];
     const sortedDims = [...dims].sort((a, b) => b.value - a.value);
     const dom = sortedDims[0];
+    const spread = sortedDims[0].value - sortedDims[sortedDims.length - 1].value;
+    const learning = spread < 8;
+    const adj1 = TRAIT_BLURB[sortedDims[0].key]?.adj ?? sortedDims[0].label.toLowerCase();
+    const adj2 = TRAIT_BLURB[sortedDims[1].key]?.adj ?? sortedDims[1].label.toLowerCase();
+    const story = learning
+      ? "Your taste is still taking shape — keep swiping and Toast learns exactly what you love."
+      : `You lean toward ${adj1} food, with a soft spot for ${adj2} picks.`;
     return {
       sorted: sortedDims,
       dominant: dom,
       top4: sortedDims.slice(0, 4),
-      persona: PERSONA_NAMES[dom.key] ?? `${dom.label} type`,
+      persona: learning ? "Getting to know you" : (PERSONA_NAMES[dom.key] ?? `${dom.label} type`),
+      story,
     };
   }, [dna]);
 
   if (!computed) return null;
 
-  const { sorted, dominant, top4, persona } = computed;
+  const { sorted, dominant, top4, persona, story } = computed;
   const DominantIcon = dominant.icon;
+  const accent = dominant.color;
 
   return (
     <div className="mb-7 -mt-2">
@@ -3455,73 +3483,61 @@ function TasteDNASection() {
         }}
         data-testid="profile-taste-dna"
       >
-        {/* Soft accent gradient tied to dominant trait */}
+        {/* Soft single-accent wash tied to the persona */}
         <div
-          className="absolute inset-x-0 top-0 h-[140px] pointer-events-none"
-          style={{ background: `linear-gradient(180deg, ${dominant.color}14 0%, ${dominant.color}00 100%)` }}
+          className="absolute inset-x-0 top-0 h-[130px] pointer-events-none"
+          style={{ background: `linear-gradient(180deg, ${accent}12 0%, ${accent}00 100%)` }}
         />
         <div
-          className="absolute -top-20 -right-20 w-56 h-56 rounded-full opacity-25 blur-3xl pointer-events-none"
-          style={{ background: dominant.color }}
+          className="absolute -top-24 -right-16 w-52 h-52 rounded-full opacity-20 blur-3xl pointer-events-none"
+          style={{ background: accent }}
         />
 
         <div className="relative px-6 pt-5 pb-5">
           {/* Eyebrow */}
-          <div className="flex items-center gap-1.5 mb-2">
-            <span
-              className="inline-block w-1.5 h-1.5 rounded-full"
-              style={{ background: dominant.color }}
-            />
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.22em]" style={{ color: dominant.color }}>
-              Your Taste DNA
+          <div className="flex items-center gap-1.5 mb-2.5">
+            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: accent }} />
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              Your taste DNA
             </p>
           </div>
 
-          {/* Persona headline */}
+          {/* Persona headline + warm taste story */}
           <div className="flex items-start justify-between gap-3 mb-4">
             <div className="flex-1 min-w-0">
-              <h3 className="text-[26px] font-extrabold tracking-[-0.01em] text-foreground leading-[1.1]" data-testid="text-taste-persona">
+              <h3 className="text-[23px] font-bold tracking-[-0.01em] text-foreground leading-[1.12]" data-testid="text-taste-persona">
                 {persona}
               </h3>
-              <p className="text-[12px] text-muted-foreground/90 mt-1.5 leading-snug">
-                Toast tunes every pick to your taste — refined with every swipe.
+              <p className="text-[13px] text-muted-foreground mt-1.5 leading-relaxed" data-testid="text-taste-story">
+                {story}
               </p>
             </div>
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
               style={{
-                background: `linear-gradient(135deg, ${dominant.color}26, ${dominant.color}10)`,
-                border: `1px solid ${dominant.color}30`,
+                background: `linear-gradient(135deg, ${accent}24, ${accent}0d)`,
+                border: `1px solid ${accent}2b`,
               }}
             >
-              <DominantIcon className="w-[22px] h-[22px]" style={{ color: dominant.color }} strokeWidth={2.4} />
+              <DominantIcon className="w-[22px] h-[22px]" style={{ color: accent }} strokeWidth={2.2} />
             </div>
           </div>
 
-          {/* Top-4 trait chips */}
-          <div className="grid grid-cols-4 gap-2 mb-4">
-            {top4.map(({ key, label, icon: Icon, color, value }, idx) => (
+          {/* Friendly taste tags — words, not numbers */}
+          <div className="flex flex-wrap gap-2" data-testid="taste-tags">
+            {top4.map(({ key, label, icon: Icon }, idx) => (
               <motion.div
                 key={key}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + idx * 0.05, duration: 0.35 }}
-                className="flex flex-col items-center justify-center gap-1 py-3 rounded-2xl bg-white/70 dark:bg-white/[0.06] border border-black/[0.04] dark:border-white/10"
-                style={{
-                  backdropFilter: "blur(8px)",
-                  WebkitBackdropFilter: "blur(8px)",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.02), inset 0 1px 0 rgba(255,255,255,0.6)",
-                }}
-                data-testid={`taste-chip-${key}`}
+                className="flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full bg-black/[0.025] dark:bg-white/[0.06] border border-black/[0.05] dark:border-white/10"
+                data-testid={`taste-tag-${key}`}
               >
-                <Icon className="w-[15px] h-[15px]" style={{ color }} strokeWidth={2.4} />
-                <p className="text-[15px] font-extrabold tracking-tight text-foreground leading-none">
-                  {value}
-                  <span className="text-[9px] font-bold text-muted-foreground/70 ml-px">%</span>
-                </p>
-                <p className="text-[9px] text-muted-foreground/80 font-semibold uppercase tracking-[0.04em] leading-none">
-                  {label}
-                </p>
+                <Icon className="w-[13px] h-[13px]" style={{ color: accent }} strokeWidth={2.4} />
+                <span className="text-[12px] font-semibold text-foreground/80 leading-none">
+                  {TRAIT_BLURB[key]?.tag ?? label}
+                </span>
               </motion.div>
             ))}
           </div>
@@ -3531,14 +3547,14 @@ function TasteDNASection() {
             onClick={() => setExpanded(v => !v)}
             aria-expanded={expanded}
             aria-controls="taste-dna-breakdown"
-            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-semibold text-foreground/60 hover:text-foreground active:scale-[0.98] transition-all"
+            className="w-full flex items-center justify-center gap-1.5 mt-4 py-2 rounded-xl text-[11.5px] font-semibold text-foreground/55 hover:text-foreground active:scale-[0.98] transition-all"
             data-testid="button-taste-expand"
           >
-            {expanded ? "Hide full breakdown" : "See full breakdown"}
+            {expanded ? "Hide the details" : "See your full taste"}
             <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${expanded ? "rotate-180" : ""}`} />
           </button>
 
-          {/* Full breakdown bars */}
+          {/* Full breakdown — soft bars + friendly strength */}
           <AnimatePresence initial={false}>
             {expanded && (
               <motion.div
@@ -3549,23 +3565,24 @@ function TasteDNASection() {
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 className="overflow-hidden"
               >
-                <div className="space-y-2.5 pt-3 pb-1">
-                  {sorted.map(({ key, label, color, value }) => (
-                    <div key={key} className="flex items-center gap-3">
-                      <span className="text-[10.5px] text-muted-foreground/90 w-[64px] flex-shrink-0 font-medium">
+                <div className="space-y-3 pt-3 pb-1">
+                  {sorted.map(({ key, label, icon: Icon, value }) => (
+                    <div key={key} className="flex items-center gap-3" data-testid={`taste-row-${key}`}>
+                      <Icon className="w-[15px] h-[15px] flex-shrink-0" style={{ color: accent }} strokeWidth={2.2} />
+                      <span className="text-[12.5px] text-foreground/80 w-[74px] flex-shrink-0 font-medium">
                         {label}
                       </span>
-                      <div className="flex-1 h-[5px] bg-black/[0.05] dark:bg-white/[0.06] rounded-full overflow-hidden">
+                      <div className="flex-1 h-[6px] bg-black/[0.05] dark:bg-white/[0.06] rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${value}%` }}
                           transition={{ delay: 0.05, duration: 0.6, ease: "easeOut" }}
                           className="h-full rounded-full"
-                          style={{ background: `linear-gradient(90deg, ${color}b3, ${color})` }}
+                          style={{ background: `linear-gradient(90deg, ${accent}99, ${accent})` }}
                         />
                       </div>
-                      <span className="text-[10.5px] font-bold text-foreground/75 w-[28px] text-right tabular-nums">
-                        {value}%
+                      <span className="text-[11px] font-semibold text-muted-foreground w-[76px] text-right leading-none">
+                        {tasteStrength(value)}
                       </span>
                     </div>
                   ))}

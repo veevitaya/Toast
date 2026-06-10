@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-These Restaurant Partner Terms ("Partner Terms") govern the relationship between Prodigy Dreamground Co., Ltd. ("ProDG," "Toast," "we," or "us") and restaurant owners, operators, or authorized representatives ("Partners," "you") who register and maintain a presence on the Toast platform.
+These Restaurant Partner Terms ("Partner Terms") govern the relationship between Cookiedough Co., Ltd. ("Cookiedough," "Toast," "we," or "us") and restaurant owners, operators, or authorized representatives ("Partners," "you") who register and maintain a presence on the Toast platform.
 
 ## 2. Partner Registration
 

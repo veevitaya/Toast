@@ -2,7 +2,7 @@
 
 ## 1. Acceptance of Terms
 
-By accessing or using Toast (the "Service"), operated by Prodigy Dreamground Co., Ltd. ("ProDG," "we," "us," or "our"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use the Service.
+By accessing or using Toast (the "Service"), operated by Cookiedough Co., Ltd. ("Cookiedough," "we," "us," or "our"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use the Service.
 
 ## 2. Description of Service
 
@@ -38,7 +38,7 @@ You agree not to:
 
 ### 5.1 Our Content
 
-The Service and its original content, features, and functionality are owned by ProDG and are protected by international copyright, trademark, and other intellectual property laws.
+The Service and its original content, features, and functionality are owned by Cookiedough and are protected by international copyright, trademark, and other intellectual property laws.
 
 ### 5.2 User Content
 
@@ -58,7 +58,7 @@ The Service is provided "as is" and "as available" without warranties of any kin
 
 ## 9. Limitation of Liability
 
-To the maximum extent permitted by law, ProDG shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the Service.
+To the maximum extent permitted by law, Cookiedough shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the Service.
 
 ## 10. Modifications to Terms
 

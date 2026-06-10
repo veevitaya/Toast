@@ -9,8 +9,8 @@ export interface LegalDocument {
 }
 
 export const LEGAL_EFFECTIVE_DATE = "March 14, 2026";
-export const LEGAL_OWNER = "Prodigy Dreamground Co., Ltd. (ProDG)";
-export const LEGAL_OWNER_SHORT = "ProDG";
+export const LEGAL_OWNER = "Cookiedough Co., Ltd.";
+export const LEGAL_OWNER_SHORT = "Cookiedough";
 export const LEGAL_CONTACT_PRIVACY = "privacy@toastapp.com";
 export const LEGAL_CONTACT_LEGAL = "legal@toastapp.com";
 

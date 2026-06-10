@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-Toast ("we," "us," or "our") is operated by Prodigy Dreamground Co., Ltd. ("ProDG"). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and related services (collectively, the "Service").
+Toast ("we," "us," or "our") is operated by Cookiedough Co., Ltd. ("Cookiedough"). This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application and related services (collectively, the "Service").
 
 By using Toast, you consent to the data practices described in this Privacy Policy. If you do not agree with the terms of this Privacy Policy, please do not access or use the Service.
 
