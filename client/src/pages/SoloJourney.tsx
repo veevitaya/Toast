@@ -322,21 +322,6 @@ export default function SoloJourney() {
                 })}
               </div>
 
-              {/* Compare — refined secondary */}
-              <button
-                onClick={() => navigate(moodToComparePath(mood))}
-                className="mt-3 w-full rounded-[20px] bg-white border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 flex items-center gap-3.5 active:scale-[0.98] transition-all text-left"
-                data-testid="button-compare-intent"
-              >
-                <div className="w-10 h-10 rounded-xl bg-[#FFF6DA] flex items-center justify-center flex-shrink-0">
-                  <GitCompare className="w-[18px] h-[18px] text-[#C79200]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-foreground leading-tight">{t("soloJourney.compare")}</p>
-                  <p className="text-[12px] text-muted-foreground leading-snug mt-0.5">{t("soloJourney.compare_desc")}</p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground/40 flex-shrink-0" />
-              </button>
             </motion.div>
           )}
 
