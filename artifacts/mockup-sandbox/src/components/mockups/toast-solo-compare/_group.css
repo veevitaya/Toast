@@ -1,0 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+.toast-quiz {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.toast-quiz h1,
+.toast-quiz h2,
+.toast-quiz h3,
+.toast-quiz .font-display {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+.toast-quiz .hide-scrollbar::-webkit-scrollbar { display: none; }
+.toast-quiz .hide-scrollbar { scrollbar-width: none; }
