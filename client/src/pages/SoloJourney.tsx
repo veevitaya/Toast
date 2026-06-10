@@ -282,7 +282,7 @@ export default function SoloJourney() {
             <motion.div
               key="intent"
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col justify-center pb-6"
             >
               {/* Header */}
               <div className="pt-2 pb-6">
