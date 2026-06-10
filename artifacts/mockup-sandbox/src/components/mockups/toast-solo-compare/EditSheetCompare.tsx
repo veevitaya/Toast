@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, SlidersHorizontal, Star, MapPin, Check, Crown, X, Shuffle } from 'lucide-react';
+import { motion, AnimatePresence, useDragControls, type PanInfo } from 'framer-motion';
+import { ArrowLeft, SlidersHorizontal, Star, MapPin, Check, Crown, X, Shuffle, Sparkles } from 'lucide-react';
 import './_group.css';
 import { MOODS, CUISINES, SCENES, BUDGETS, getTop2, type Prefs, type Mood, type ScoredSpot } from './_data';
 
@@ -49,22 +49,71 @@ function Card({ data, side }: { data: ScoredSpot; side: 'l' | 'r' }) {
   );
 }
 
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function Chip({
+  active, pillId, onClick, big, children,
+}: { active: boolean; pillId: string; onClick: () => void; big?: boolean; children: React.ReactNode }) {
   return (
-    <button
+    <motion.button
+      whileTap={{ scale: 0.93 }}
       onClick={onClick}
-      className={`px-3.5 py-2 rounded-full text-[12px] font-bold transition-colors ${
-        active ? 'bg-[#FFCC02] text-neutral-900 shadow-[0_4px_12px_-4px_rgba(255,204,2,0.6)]' : 'bg-neutral-100 text-neutral-600'
-      }`}
+      className={`relative rounded-full font-bold ${big ? 'px-4 py-2.5 text-[13px]' : 'px-3.5 py-2 text-[12px]'}`}
     >
-      {children}
-    </button>
+      <span className="absolute inset-0 rounded-full bg-neutral-100" />
+      {active && (
+        <motion.span
+          layoutId={pillId}
+          transition={spring}
+          className="absolute inset-0 rounded-full bg-[#FFCC02]"
+          style={{ boxShadow: '0 4px 12px -4px rgba(255,204,2,0.6)' }}
+        />
+      )}
+      <span className={`relative z-[1] ${active ? 'text-neutral-900' : 'text-neutral-600'}`}>{children}</span>
+    </motion.button>
+  );
+}
+
+function MiniPick({ data }: { data: ScoredSpot }) {
+  return (
+    <div className="flex-1 min-w-0 min-h-[44px] flex items-center">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={data.name}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.2 }}
+          className="flex items-center gap-2.5"
+        >
+          <div className="relative w-11 h-11 rounded-xl overflow-hidden flex-shrink-0" style={{ backgroundColor: '#FFF6DA' }}>
+            <img
+              src={data.img}
+              alt={data.name}
+              className="w-full h-full object-cover"
+              onError={(e) => { e.currentTarget.style.opacity = '0'; }}
+            />
+            {data.crown && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#FFCC02] flex items-center justify-center ring-2 ring-white">
+                <Crown size={8} className="text-neutral-900" />
+              </div>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-[12.5px] font-bold text-neutral-900 truncate leading-tight">{data.name}</p>
+            <div className="mt-1 h-1 w-16 rounded-full bg-neutral-100 overflow-hidden">
+              <motion.div className="h-full rounded-full bg-[#FFCC02]" animate={{ width: `${data.match}%` }} transition={spring} />
+            </div>
+            <p className="text-[9.5px] font-bold text-[#9A7400] mt-0.5">{data.match}% match</p>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }
 
 export default function EditSheetCompare() {
   const [prefs, setPrefs] = useState<Prefs>({ mood: 'comforting', cuisine: 'Any', scene: 'Any', budget: 'Any' });
   const [open, setOpen] = useState(false);
+  const dragControls = useDragControls();
 
   const [left, right] = useMemo(() => getTop2(prefs), [prefs]);
   const moodInfo = MOODS.find((m) => m.key === prefs.mood)!;
@@ -75,6 +124,16 @@ export default function EditSheetCompare() {
     ...(prefs.scene !== 'Any' ? [prefs.scene] : []),
     ...(prefs.budget !== 'Any' ? [prefs.budget] : []),
   ];
+
+  const surprise = () => {
+    const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
+    setPrefs({
+      mood: pick(MOODS).key as Mood,
+      cuisine: pick(CUISINES),
+      scene: pick(SCENES),
+      budget: pick(BUDGETS),
+    });
+  };
 
   return (
     <div className="toast-quiz w-[390px] h-[844px] overflow-hidden relative flex flex-col" style={{ backgroundColor: '#FCFCFC' }} data-testid="solo-editsheet">
@@ -100,16 +159,18 @@ export default function EditSheetCompare() {
         <div className="rounded-2xl bg-white border border-black/[0.06] p-2.5 pl-3.5 flex items-center gap-2 shadow-[0_4px_16px_-10px_rgba(0,0,0,0.12)]">
           <div className="flex-1 flex items-center gap-1.5 overflow-x-auto hide-scrollbar">
             {summary.map((s) => (
-              <span key={s} className="flex-shrink-0 px-2.5 py-1 rounded-full bg-[#FFF6DA] border border-[#FFCC02]/50 text-[11px] font-bold text-[#9A7400] whitespace-nowrap">{s}</span>
+              <span key={s} className="flex-shrink-0 px-2.5 py-1 rounded-full bg-[#FFF6DA] border border-[#FFCC02]/40 text-[11px] font-bold text-[#9A7400] whitespace-nowrap">{s}</span>
             ))}
           </div>
-          <button
+          <motion.button
+            whileTap={{ scale: 0.95 }}
             onClick={() => setOpen(true)}
-            className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-neutral-900 text-white text-[12px] font-bold"
+            className="flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white text-[12px] font-extrabold"
+            style={{ color: '#9A7400', border: '1.5px solid #FFCC02', boxShadow: '0 4px 12px -6px rgba(255,204,2,0.55)' }}
             data-testid="button-edit-prefs"
           >
             <SlidersHorizontal size={13} /> Edit
-          </button>
+          </motion.button>
         </div>
       </div>
 
@@ -130,12 +191,12 @@ export default function EditSheetCompare() {
 
       {/* pick bar */}
       <div className="px-5 pb-8 pt-3 flex gap-3">
-        <button className="w-13 px-4 h-13 py-3.5 rounded-2xl bg-white border border-neutral-200 text-neutral-600 flex items-center justify-center" data-testid="button-shuffle">
+        <motion.button whileTap={{ scale: 0.95 }} className="w-13 px-4 h-13 py-3.5 rounded-2xl bg-white border border-neutral-200 text-neutral-600 flex items-center justify-center" data-testid="button-shuffle">
           <Shuffle size={18} />
-        </button>
-        <button className="flex-1 h-13 py-3.5 rounded-2xl bg-[#FFCC02] text-neutral-900 text-[14px] font-extrabold flex items-center justify-center gap-1.5" style={{ boxShadow: '0 8px 22px -6px rgba(255,204,2,0.55)' }} data-testid="button-pick-left">
+        </motion.button>
+        <motion.button whileTap={{ scale: 0.97 }} className="flex-1 h-13 py-3.5 rounded-2xl bg-[#FFCC02] text-neutral-900 text-[14px] font-extrabold flex items-center justify-center gap-1.5" style={{ boxShadow: '0 8px 22px -6px rgba(255,204,2,0.55)' }} data-testid="button-pick-left">
           <Check size={16} strokeWidth={3} /> Pick {left.name}
-        </button>
+        </motion.button>
       </div>
 
       {/* ===== Edit preferences bottom sheet ===== */}
@@ -148,55 +209,104 @@ export default function EditSheetCompare() {
               onClick={() => setOpen(false)}
             />
             <motion.div
+              drag="y"
+              dragListener={false}
+              dragControls={dragControls}
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.6 }}
+              onDragEnd={(_, info: PanInfo) => { if (info.offset.y > 120 || info.velocity.y > 600) setOpen(false); }}
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={spring}
-              className="absolute left-0 right-0 bottom-0 z-20 rounded-t-3xl bg-white max-h-[78%] flex flex-col"
+              className="absolute left-0 right-0 bottom-0 top-[120px] z-20 rounded-t-3xl bg-white flex flex-col"
               style={{ boxShadow: '0 -10px 40px -12px rgba(0,0,0,0.25)' }}
               data-testid="sheet-edit-prefs"
             >
-              <div className="pt-2.5 flex justify-center">
-                <div className="w-10 h-1 rounded-full bg-neutral-200" />
-              </div>
-              <div className="px-5 pt-2 pb-3 flex items-center justify-between">
-                <h2 className="text-[18px] font-extrabold text-neutral-900">Edit preferences</h2>
-                <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center" data-testid="button-close-sheet">
-                  <X size={16} className="text-neutral-600" />
-                </button>
+              {/* drag handle */}
+              <div
+                onPointerDown={(e) => dragControls.start(e)}
+                className="pt-3.5 pb-3 flex justify-center cursor-grab active:cursor-grabbing touch-none"
+              >
+                <div className="w-10 h-1.5 rounded-full bg-neutral-200" />
               </div>
 
-              <div className="px-5 pb-2 overflow-y-auto hide-scrollbar">
+              {/* header row */}
+              <div className="px-5 pt-1 pb-3 flex items-center justify-between">
+                <h2 className="text-[18px] font-extrabold text-neutral-900">Edit preferences</h2>
+                <div className="flex items-center gap-2">
+                  <motion.button
+                    whileTap={{ scale: 0.93 }}
+                    onClick={surprise}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-bold"
+                    style={{ backgroundColor: '#FFF6DA', color: '#9A7400' }}
+                    data-testid="button-surprise"
+                  >
+                    <Sparkles size={12} /> Surprise me
+                  </motion.button>
+                  <button onClick={() => setOpen(false)} className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center" data-testid="button-close-sheet">
+                    <X size={16} className="text-neutral-600" />
+                  </button>
+                </div>
+              </div>
+
+              {/* live preview — the two picks update as you edit */}
+              <div className="px-5">
+                <div className="rounded-2xl bg-white border border-black/[0.06] p-3" style={{ boxShadow: '0 6px 20px -12px rgba(0,0,0,0.14)' }}>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFCC02] opacity-75" />
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#FFCC02]" />
+                      </span>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#C79200]">Updating live</p>
+                    </div>
+                    <span className="text-[10px] font-semibold text-neutral-400">your 2 picks</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MiniPick data={left} />
+                    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-neutral-900 flex items-center justify-center">
+                      <span className="text-[9px] font-extrabold text-white">VS</span>
+                    </div>
+                    <MiniPick data={right} />
+                  </div>
+                </div>
+              </div>
+
+              {/* editable sections */}
+              <div className="px-5 pt-4 pb-2 flex-1 min-h-0 overflow-y-auto hide-scrollbar">
                 <Section label="Mood">
                   {MOODS.map((m) => (
-                    <Chip key={m.key} active={prefs.mood === m.key} onClick={() => setPrefs((p) => ({ ...p, mood: m.key as Mood }))}>
+                    <Chip key={m.key} big pillId="pill-mood" active={prefs.mood === m.key} onClick={() => setPrefs((p) => ({ ...p, mood: m.key as Mood }))}>
                       {m.emoji} {m.label}
                     </Chip>
                   ))}
                 </Section>
                 <Section label="Cuisine">
                   {CUISINES.map((c) => (
-                    <Chip key={c} active={prefs.cuisine === c} onClick={() => setPrefs((p) => ({ ...p, cuisine: c }))}>{c}</Chip>
+                    <Chip key={c} pillId="pill-cuisine" active={prefs.cuisine === c} onClick={() => setPrefs((p) => ({ ...p, cuisine: c }))}>{c}</Chip>
                   ))}
                 </Section>
                 <Section label="Scene">
                   {SCENES.map((s) => (
-                    <Chip key={s} active={prefs.scene === s} onClick={() => setPrefs((p) => ({ ...p, scene: s }))}>{s}</Chip>
+                    <Chip key={s} pillId="pill-scene" active={prefs.scene === s} onClick={() => setPrefs((p) => ({ ...p, scene: s }))}>{s}</Chip>
                   ))}
                 </Section>
                 <Section label="Budget">
                   {BUDGETS.map((b) => (
-                    <Chip key={b} active={prefs.budget === b} onClick={() => setPrefs((p) => ({ ...p, budget: b }))}>{b}</Chip>
+                    <Chip key={b} pillId="pill-budget" active={prefs.budget === b} onClick={() => setPrefs((p) => ({ ...p, budget: b }))}>{b}</Chip>
                   ))}
                 </Section>
               </div>
 
+              {/* footer */}
               <div className="px-5 pt-2 pb-7 border-t border-neutral-100">
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => setOpen(false)}
-                  className="w-full h-13 py-3.5 rounded-2xl bg-[#FFCC02] text-neutral-900 text-[15px] font-extrabold"
+                  className="w-full h-13 py-3.5 rounded-2xl bg-[#FFCC02] text-neutral-900 text-[15px] font-extrabold flex items-center justify-center gap-1.5"
                   style={{ boxShadow: '0 8px 22px -6px rgba(255,204,2,0.55)' }}
                   data-testid="button-apply-prefs"
                 >
-                  Show my 2 picks
-                </button>
+                  <Check size={16} strokeWidth={3} /> See my updated picks
+                </motion.button>
               </div>
             </motion.div>
           </>
