@@ -12,7 +12,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { fetchWithTimeout } from "@/lib/queryClient";
 import { trackDecisionEvent } from "@/lib/decisionEvents";
 import mascotPath from "@assets/toast_mascot_nobg.png";
-import waffleThinkingPath from "@assets/waffle-thinking-nobg.png";
+import waffleThinkingPath from "@assets/waffle-thinking-cropped.png";
 
 interface SoloPick {
   id: number;
@@ -518,7 +518,7 @@ export default function SoloJourney() {
                       src={waffleThinkingPath}
                       alt=""
                       aria-hidden="true"
-                      className="w-[92px] h-[92px] object-contain flex-shrink-0 -my-4 -ml-2"
+                      className="h-[92px] w-auto object-contain flex-shrink-0 -my-4 -ml-1"
                       data-testid="img-compare-mascot"
                     />
                     <div className="min-w-0 flex-1">
