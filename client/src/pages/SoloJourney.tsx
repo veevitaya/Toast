@@ -518,7 +518,7 @@ export default function SoloJourney() {
                       src={waffleThinkingPath}
                       alt=""
                       aria-hidden="true"
-                      className="w-[68px] h-[68px] object-contain flex-shrink-0 -my-2.5 -ml-1"
+                      className="w-[92px] h-[92px] object-contain flex-shrink-0 -my-4 -ml-2"
                       data-testid="img-compare-mascot"
                     />
                     <div className="min-w-0 flex-1">
