@@ -13,6 +13,7 @@ import { fetchWithTimeout } from "@/lib/queryClient";
 import { trackDecisionEvent } from "@/lib/decisionEvents";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import waffleThinkingPath from "@assets/waffle-thinking-cropped.png";
+import duoFoodPath from "@assets/duo-food-cropped.png";
 
 interface SoloPick {
   id: number;
@@ -322,6 +323,15 @@ export default function SoloJourney() {
                   );
                 })}
               </div>
+
+              {/* Bottom mascot scene */}
+              <img
+                src={duoFoodPath}
+                alt=""
+                aria-hidden="true"
+                className="mt-auto w-full max-w-[260px] mx-auto object-contain pt-6 select-none pointer-events-none"
+                data-testid="img-intent-duo"
+              />
 
             </motion.div>
           )}
