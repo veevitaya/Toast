@@ -329,7 +329,7 @@ export default function SoloJourney() {
                 src={duoFoodPath}
                 alt=""
                 aria-hidden="true"
-                className="mt-auto w-full max-w-[260px] mx-auto object-contain pt-6 select-none pointer-events-none"
+                className="mt-auto w-full max-w-[150px] mx-auto object-contain pt-3 select-none pointer-events-none"
                 data-testid="img-intent-duo"
               />
 
