@@ -14,6 +14,7 @@ import { trackDecisionEvent } from "@/lib/decisionEvents";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import waffleThinkingPath from "@assets/waffle-thinking-cropped.png";
 import duoFoodPath from "@assets/duo-food-cropped.png";
+import toastWaitingPath from "@assets/toast-waiting-cropped.png";
 
 interface SoloPick {
   id: number;
@@ -344,8 +345,8 @@ export default function SoloJourney() {
               className="flex-1 flex flex-col items-center justify-center text-center"
             >
               <motion.img
-                src={mascotPath} alt="Toast"
-                className="w-24 h-24 object-contain mb-5"
+                src={toastWaitingPath} alt="Toast"
+                className="w-28 h-28 object-contain mb-5"
                 animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
               />

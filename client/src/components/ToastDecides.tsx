@@ -13,6 +13,7 @@ import { trackDecisionEvent } from "@/lib/decisionEvents";
 import { useToast } from "@/hooks/use-toast";
 import { useBootstrapSession, type BootstrapPayload } from "@/hooks/useBootstrapSession";
 import mascotPath from "@assets/toast_mascot_nobg.png";
+import toastWaitingPath from "@assets/toast-waiting-cropped.png";
 
 interface RecScores {
   taste: number;
@@ -1208,11 +1209,11 @@ function InlineDecideFlow({ step, selectedMood, selectedDistance, onMoodSelect, 
           {step === "thinking" && (
             <motion.div key="thinking" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-6 text-center">
               <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                className="w-12 h-12 mx-auto mb-3"
+                animate={{ y: [0, -6, 0] }}
+                transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                className="w-16 h-16 mx-auto mb-3"
               >
-                <img src={mascotPath} alt="Thinking" className="w-full h-full object-contain" />
+                <img src={toastWaitingPath} alt="Thinking" className="w-full h-full object-contain" />
               </motion.div>
               <p className="text-[13px] font-bold text-foreground mb-2">Toast is thinking...</p>
               <div className="flex justify-center gap-1.5">

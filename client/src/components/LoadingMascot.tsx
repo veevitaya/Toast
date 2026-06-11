@@ -1,4 +1,4 @@
-import mascotImg from "@assets/IMG_9683_1772911610867.jpeg";
+import mascotImg from "@assets/toast-waiting-cropped.png";
 
 export function LoadingMascot({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   const imgSize = size === "sm" ? "h-20 w-20" : size === "lg" ? "h-40 w-40" : "h-28 w-28";
@@ -9,7 +9,6 @@ export function LoadingMascot({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
         src={mascotImg}
         alt="Toast mascot waiting"
         className={`${imgSize} object-contain animate-soft-bob gpu-accelerated`}
-        style={{ mixBlendMode: "multiply" }}
         draggable={false}
       />
     </div>
