@@ -741,7 +741,7 @@ export default function Home() {
                       className="flex items-center rounded-2xl bg-white h-[72px] border border-gray-100 shadow-md overflow-hidden"
                       data-testid="button-group-collapsed"
                     >
-                      <img src={toastWafflePath} alt="" className="h-[40px] w-auto object-contain flex-shrink-0 ml-1" />
+                      <img src={toastWafflePath} alt="" className="h-[44px] w-auto object-contain flex-shrink-0 ml-1" />
                       <div className="min-w-0 pr-3">
                         <p className="text-[14px] font-bold text-foreground leading-tight">{t("home.group_mode")}</p>
                         <p className="text-[10px] text-muted-foreground whitespace-nowrap">{t("home.with_friends")}</p>
@@ -821,7 +821,7 @@ export default function Home() {
                 className="flex items-center gap-2 rounded-[20px] bg-white pl-2 pr-3 h-[100px] border border-gray-100 shadow-md overflow-hidden transition-transform duration-150 ease-out active:scale-[0.97] animate-page-in"
                 style={{ animationDelay: "40ms" }}
               >
-                <img src={toastWafflePath} alt="" className="h-[44px] w-auto object-contain flex-shrink-0" />
+                <img src={toastWafflePath} alt="" className="h-[50px] w-auto object-contain flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-[18px] font-bold text-foreground leading-tight truncate">{t("home.group_mode")}</p>
                   <p className="text-[12px] text-muted-foreground mt-0.5 truncate">{t("home.with_friends")}</p>
