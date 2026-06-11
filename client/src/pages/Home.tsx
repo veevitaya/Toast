@@ -20,8 +20,8 @@ import { ToastDecides } from "@/components/ToastDecides";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import toastLogoPath from "@assets/toast_logo_v2_nobg.png";
 import mascotPath from "@assets/toast_mascot_nobg.png";
-import toastCharPath from "@assets/IMG_9345_1772899599160.png";
-import toastWafflePath from "@assets/IMG_9677_1772904144672.jpeg";
+import toastCharPath from "@assets/toast-solo-cropped.png";
+import toastWafflePath from "@assets/duo-highfive-cropped.png";
 
 const InteractiveMap = lazy(() => import("@/components/InteractiveMap").then(m => ({ default: m.InteractiveMap })));
 
@@ -730,7 +730,7 @@ export default function Home() {
                       className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 h-[72px] border border-gray-100 shadow-md"
                       data-testid="button-solo-collapsed"
                     >
-                      <img src={toastCharPath} alt="" className="w-[52px] h-[52px] object-contain flex-shrink-0" />
+                      <img src={toastCharPath} alt="" className="h-[58px] w-auto object-contain flex-shrink-0" />
                       <div className="min-w-0">
                         <p className="text-[14px] font-bold text-foreground leading-tight">{t("home.solo_mode")}</p>
                         <p className="text-[10px] text-muted-foreground whitespace-nowrap">{t("home.just_for_you")}</p>
@@ -741,7 +741,7 @@ export default function Home() {
                       className="flex items-center rounded-2xl bg-white h-[72px] border border-gray-100 shadow-md overflow-hidden"
                       data-testid="button-group-collapsed"
                     >
-                      <img src={toastWafflePath} alt="" className="w-[62px] h-[56px] object-contain flex-shrink-0 ml-1" style={{ mixBlendMode: "multiply" }} />
+                      <img src={toastWafflePath} alt="" className="h-[56px] w-auto object-contain flex-shrink-0 ml-1" />
                       <div className="min-w-0 pr-3">
                         <p className="text-[14px] font-bold text-foreground leading-tight">{t("home.group_mode")}</p>
                         <p className="text-[10px] text-muted-foreground whitespace-nowrap">{t("home.with_friends")}</p>
@@ -808,7 +808,7 @@ export default function Home() {
                 data-testid="button-solo"
                 className="flex items-center gap-2 rounded-[20px] bg-white pl-2.5 pr-3 h-[100px] border border-gray-100 shadow-md overflow-hidden transition-transform duration-150 ease-out active:scale-[0.97] animate-page-in"
               >
-                <img src={toastCharPath} alt="" className="w-[80px] h-[80px] object-contain flex-shrink-0" />
+                <img src={toastCharPath} alt="" className="h-[84px] w-auto object-contain flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-[18px] font-bold text-foreground leading-tight truncate">{t("home.solo_mode")}</p>
                   <p className="text-[12px] text-muted-foreground mt-0.5 truncate">{t("home.just_for_you")}</p>
@@ -821,7 +821,7 @@ export default function Home() {
                 className="flex items-center gap-2 rounded-[20px] bg-white pl-2 pr-3 h-[100px] border border-gray-100 shadow-md overflow-hidden transition-transform duration-150 ease-out active:scale-[0.97] animate-page-in"
                 style={{ animationDelay: "40ms" }}
               >
-                <img src={toastWafflePath} alt="" className="w-[88px] h-[84px] object-contain flex-shrink-0" style={{ mixBlendMode: "multiply" }} />
+                <img src={toastWafflePath} alt="" className="h-[80px] w-auto object-contain flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-[18px] font-bold text-foreground leading-tight truncate">{t("home.group_mode")}</p>
                   <p className="text-[12px] text-muted-foreground mt-0.5 truncate">{t("home.with_friends")}</p>
