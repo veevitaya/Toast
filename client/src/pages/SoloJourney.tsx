@@ -283,7 +283,7 @@ export default function SoloJourney() {
             <motion.div
               key="intent"
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-              className="flex-1 flex flex-col justify-center pb-6"
+              className="flex-1 flex flex-col justify-start pt-2 pb-6"
             >
               {/* Header */}
               <div className="pt-2 pb-6">
@@ -518,7 +518,7 @@ export default function SoloJourney() {
                       src={waffleThinkingPath}
                       alt=""
                       aria-hidden="true"
-                      className="w-11 h-11 object-contain flex-shrink-0 -my-0.5"
+                      className="w-[68px] h-[68px] object-contain flex-shrink-0 -my-2.5 -ml-1"
                       data-testid="img-compare-mascot"
                     />
                     <div className="min-w-0 flex-1">
