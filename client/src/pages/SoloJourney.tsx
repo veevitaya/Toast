@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, Sparkles, MapPin, Star, Check, RotateCcw,
-  Navigation, Heart, Share2, Bike, GitCompare, ChevronRight,
+  Navigation, Heart, Share2, Bike, ChevronRight,
 } from "lucide-react";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
@@ -12,6 +12,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { fetchWithTimeout } from "@/lib/queryClient";
 import { trackDecisionEvent } from "@/lib/decisionEvents";
 import mascotPath from "@assets/toast_mascot_nobg.png";
+import waffleThinkingPath from "@assets/waffle-thinking-nobg.png";
 
 interface SoloPick {
   id: number;
@@ -513,9 +514,13 @@ export default function SoloJourney() {
                     className="mt-4 w-full rounded-[20px] bg-white border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-4 flex items-center gap-3.5 active:scale-[0.98] transition-all text-left"
                     data-testid="button-compare-options"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-[#F6F3EC] flex items-center justify-center flex-shrink-0">
-                      <GitCompare className="w-[18px] h-[18px] text-foreground/70" />
-                    </div>
+                    <img
+                      src={waffleThinkingPath}
+                      alt=""
+                      aria-hidden="true"
+                      className="w-11 h-11 object-contain flex-shrink-0 -my-0.5"
+                      data-testid="img-compare-mascot"
+                    />
                     <div className="min-w-0 flex-1">
                       <p className="text-[15px] font-semibold text-foreground leading-tight">{t("soloJourney.compare")}</p>
                       <p className="text-[12.5px] text-muted-foreground leading-snug mt-0.5">{t("soloJourney.compare_desc")}</p>
