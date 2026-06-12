@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Share2, ChefHat, Minus, Plus, Check, Clock, MapPin, Wallet, Leaf } from "lucide-react";
+import { ArrowLeft, Share2, ChefHat, Minus, Plus, Check, Clock, MapPin, Wallet, Leaf, Pencil } from "lucide-react";
 
 const GOLD = "#FFCC02";
 const CREAM = "#FAF6EF";
@@ -9,7 +9,7 @@ const LINE = "#06C755";
 
 type Ingredient = { id: string; icon: typeof Clock; label: string; value: string };
 
-const INGREDIENTS: Ingredient[] = [
+const INITIAL: Ingredient[] = [
   { id: "when", icon: Clock, label: "Timing", value: "Today, 7:00 PM" },
   { id: "where", icon: MapPin, label: "Neighborhood", value: "Near BTS Asok" },
   { id: "budget", icon: Wallet, label: "Budget", value: "฿฿ Mid range" },
@@ -19,9 +19,14 @@ const INGREDIENTS: Ingredient[] = [
 export default function RecipeCard() {
   const [servings, setServings] = useState(4);
   const [checked, setChecked] = useState<string[]>(["when", "where"]);
+  const [title, setTitle] = useState("Dinner with friends");
+  const [ingredients, setIngredients] = useState<Ingredient[]>(INITIAL);
 
   const toggle = (id: string) =>
     setChecked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const updateValue = (id: string, value: string) =>
+    setIngredients((prev) => prev.map((i) => (i.id === id ? { ...i, value } : i)));
 
   const ready = checked.length;
 
@@ -49,8 +54,8 @@ export default function RecipeCard() {
           <h1 className="font-['Plus_Jakarta_Sans'] text-[28px] font-bold tracking-tight leading-tight flex items-center gap-2">
             <ChefHat className="w-7 h-7" style={{ color: GOLD }} /> Tonight's recipe
           </h1>
-          <p className="text-[15px] mt-2 leading-relaxed" style={{ color: "rgba(26,26,26,0.6)" }}>
-            Everyone adds an ingredient, then we cook up the perfect spot.
+          <p className="text-[15px] mt-2 leading-relaxed flex items-center gap-1.5" style={{ color: "rgba(26,26,26,0.6)" }}>
+            <Pencil className="w-3.5 h-3.5" style={{ color: GOLD }} /> Tap any line to fill in tonight's plan.
           </p>
         </div>
 
@@ -74,8 +79,19 @@ export default function RecipeCard() {
 
           {/* Title block */}
           <div className="relative pl-8 mb-5">
-            <p className="font-['Plus_Jakarta_Sans'] text-[20px] font-bold leading-snug">Dinner with friends</p>
-            <p className="text-[13px] mt-1" style={{ color: MUTE }}>Recipe #842 · Serves a hungry crew</p>
+            <div className="flex items-center gap-1.5">
+              <input
+                data-testid="input-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                aria-label="Recipe title"
+                placeholder="Name this plan"
+                className="flex-1 min-w-0 bg-transparent font-['Plus_Jakarta_Sans'] text-[20px] font-bold leading-snug outline-none rounded-[6px] px-1.5 -ml-1.5 py-0.5 focus:bg-[rgba(255,204,2,0.14)] transition-colors"
+                style={{ borderBottom: "1px dashed rgba(26,26,26,0.18)" }}
+              />
+              <Pencil className="w-3.5 h-3.5 shrink-0 opacity-30" />
+            </div>
+            <p className="text-[13px] mt-1 px-1.5" style={{ color: MUTE }}>Recipe #842 · Serves a hungry crew</p>
           </div>
 
           {/* Servings stepper */}
@@ -112,33 +128,40 @@ export default function RecipeCard() {
             Ingredients
           </p>
           <div className="relative pl-8 space-y-1">
-            {INGREDIENTS.map((ing) => {
+            {ingredients.map((ing) => {
               const on = checked.includes(ing.id);
               const Icon = ing.icon;
               return (
-                <button
-                  key={ing.id}
-                  data-testid={`ingredient-${ing.id}`}
-                  onClick={() => toggle(ing.id)}
-                  className="w-full flex items-center gap-3 py-2.5 text-left active:scale-[0.99] transition-transform"
-                >
-                  <span
-                    className="w-6 h-6 shrink-0 rounded-full flex items-center justify-center transition-colors"
+                <div key={ing.id} className="flex items-center gap-3 py-2">
+                  <button
+                    aria-label={on ? `Mark ${ing.label} not ready` : `Mark ${ing.label} ready`}
+                    data-testid={`ingredient-${ing.id}`}
+                    onClick={() => toggle(ing.id)}
+                    className="w-6 h-6 shrink-0 rounded-full flex items-center justify-center transition-colors active:scale-90"
                     style={{
                       backgroundColor: on ? GOLD : "transparent",
                       border: on ? "none" : "1.5px solid rgba(26,26,26,0.2)",
                     }}
                   >
                     {on && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
-                  </span>
+                  </button>
                   <Icon className="w-4 h-4 shrink-0" style={{ color: MUTE }} />
-                  <span className="flex-1">
-                    <span className="block font-['Plus_Jakarta_Sans'] text-[15px] font-semibold leading-tight">
-                      {ing.value}
+                  <span className="flex-1 min-w-0">
+                    <span className="flex items-center gap-1.5">
+                      <input
+                        data-testid={`input-value-${ing.id}`}
+                        value={ing.value}
+                        onChange={(e) => updateValue(ing.id, e.target.value)}
+                        aria-label={`${ing.label} value`}
+                        placeholder={`Add ${ing.label.toLowerCase()}`}
+                        className="flex-1 min-w-0 bg-transparent font-['Plus_Jakarta_Sans'] text-[15px] font-semibold leading-tight outline-none rounded-[6px] px-1.5 -ml-1.5 py-0.5 focus:bg-[rgba(255,204,2,0.14)] transition-colors"
+                        style={{ borderBottom: "1px dashed rgba(26,26,26,0.18)" }}
+                      />
+                      <Pencil className="w-3 h-3 shrink-0 opacity-30" />
                     </span>
-                    <span className="block text-[12px]" style={{ color: MUTE }}>{ing.label}</span>
+                    <span className="block text-[12px] mt-0.5 px-1.5" style={{ color: MUTE }}>{ing.label}</span>
                   </span>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -146,7 +169,7 @@ export default function RecipeCard() {
 
         {/* prep note */}
         <p className="text-center text-[13px] mt-5" style={{ color: MUTE }}>
-          {ready} of {INGREDIENTS.length} ingredients prepped · ~2 min to decide
+          {ready} of {ingredients.length} ingredients prepped · ~2 min to decide
         </p>
       </main>
 
