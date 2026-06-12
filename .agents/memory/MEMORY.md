@@ -1,1 +1,2 @@
 - [Toast premium aesthetic](toast-premium-aesthetic.md) — what "friendly+premium, not childish" means for Toast UI, and the hard bg-background rule.
+- [Mockup preview screenshot cache](mockup-preview-screenshot-cache.md) — external_url screenshots of /__mockup previews cache by URL; add ?cb=N to force a fresh capture after edits.
