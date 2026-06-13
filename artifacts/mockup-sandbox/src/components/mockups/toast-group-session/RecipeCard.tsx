@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Share2, ChefHat, Minus, Plus, Check, Clock, MapPin, Wallet, Leaf, Pencil } from "lucide-react";
+import { ArrowLeft, Share2, ChefHat, Minus, Plus, Check, Clock, MapPin, Wallet, Leaf, Pencil, ChevronDown } from "lucide-react";
 
 const GOLD = "#FFCC02";
 const CREAM = "#FAF6EF";
@@ -7,26 +7,32 @@ const INK = "#1A1A1A";
 const MUTE = "#9A938A";
 const LINE = "#06C755";
 
-type Ingredient = { id: string; icon: typeof Clock; label: string; value: string };
+type Ingredient = { id: string; icon: typeof Clock; label: string; value: string; options: string[] };
 
 const INITIAL: Ingredient[] = [
-  { id: "when", icon: Clock, label: "Timing", value: "Today, 7:00 PM" },
-  { id: "where", icon: MapPin, label: "Neighborhood", value: "Near BTS Asok" },
-  { id: "budget", icon: Wallet, label: "Budget", value: "฿฿ Mid range" },
-  { id: "diet", icon: Leaf, label: "Dietary", value: "Vegetarian-friendly" },
+  { id: "when", icon: Clock, label: "Timing", value: "Today, 7:00 PM", options: ["Today, 7:00 PM", "Tonight, 8:30 PM", "Tomorrow noon", "This weekend"] },
+  { id: "where", icon: MapPin, label: "Neighborhood", value: "Near BTS Asok", options: ["Near BTS Asok", "Thonglor", "Ari", "Silom", "Old Town"] },
+  { id: "budget", icon: Wallet, label: "Budget", value: "฿฿ Mid range", options: ["฿ Easy", "฿฿ Mid range", "฿฿฿ Premium"] },
+  { id: "diet", icon: Leaf, label: "Dietary", value: "Vegetarian-friendly", options: ["No restrictions", "Vegetarian-friendly", "Halal", "Gluten-free"] },
 ];
+
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
 export default function RecipeCard() {
   const [servings, setServings] = useState(4);
   const [checked, setChecked] = useState<string[]>(["when", "where"]);
   const [title, setTitle] = useState("Dinner with friends");
   const [ingredients, setIngredients] = useState<Ingredient[]>(INITIAL);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const toggle = (id: string) =>
     setChecked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
-  const updateValue = (id: string, value: string) =>
+  const choose = (id: string, value: string) => {
     setIngredients((prev) => prev.map((i) => (i.id === id ? { ...i, value } : i)));
+    setChecked((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    setOpenId(null);
+  };
 
   const ready = checked.length;
 
@@ -55,7 +61,7 @@ export default function RecipeCard() {
             <ChefHat className="w-7 h-7" style={{ color: GOLD }} /> Tonight's recipe
           </h1>
           <p className="text-[15px] mt-2 leading-relaxed flex items-center gap-1.5" style={{ color: "rgba(26,26,26,0.6)" }}>
-            <Pencil className="w-3.5 h-3.5" style={{ color: GOLD }} /> Tap any line to fill in tonight's plan.
+            <Pencil className="w-3.5 h-3.5" style={{ color: GOLD }} /> Name it, then tap each line to pick.
           </p>
         </div>
 
@@ -130,37 +136,68 @@ export default function RecipeCard() {
           <div className="relative pl-8 space-y-1">
             {ingredients.map((ing) => {
               const on = checked.includes(ing.id);
+              const isOpen = openId === ing.id;
               const Icon = ing.icon;
               return (
-                <div key={ing.id} className="flex items-center gap-3 py-2">
-                  <button
-                    aria-label={on ? `Mark ${ing.label} not ready` : `Mark ${ing.label} ready`}
-                    data-testid={`ingredient-${ing.id}`}
-                    onClick={() => toggle(ing.id)}
-                    className="w-6 h-6 shrink-0 rounded-full flex items-center justify-center transition-colors active:scale-90"
-                    style={{
-                      backgroundColor: on ? GOLD : "transparent",
-                      border: on ? "none" : "1.5px solid rgba(26,26,26,0.2)",
-                    }}
-                  >
-                    {on && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
-                  </button>
-                  <Icon className="w-4 h-4 shrink-0" style={{ color: MUTE }} />
-                  <span className="flex-1 min-w-0">
-                    <span className="flex items-center gap-1.5">
-                      <input
-                        data-testid={`input-value-${ing.id}`}
-                        value={ing.value}
-                        onChange={(e) => updateValue(ing.id, e.target.value)}
-                        aria-label={`${ing.label} value`}
-                        placeholder={`Add ${ing.label.toLowerCase()}`}
-                        className="flex-1 min-w-0 bg-transparent font-['Plus_Jakarta_Sans'] text-[15px] font-semibold leading-tight outline-none rounded-[6px] px-1.5 -ml-1.5 py-0.5 focus:bg-[rgba(255,204,2,0.14)] transition-colors"
-                        style={{ borderBottom: "1px dashed rgba(26,26,26,0.18)" }}
+                <div key={ing.id} className="py-1">
+                  <div className="flex items-center gap-3">
+                    <button
+                      aria-label={on ? `Mark ${ing.label} not ready` : `Mark ${ing.label} ready`}
+                      data-testid={`ingredient-${ing.id}`}
+                      onClick={() => toggle(ing.id)}
+                      className="w-6 h-6 shrink-0 rounded-full flex items-center justify-center transition-colors active:scale-90"
+                      style={{
+                        backgroundColor: on ? GOLD : "transparent",
+                        border: on ? "none" : "1.5px solid rgba(26,26,26,0.2)",
+                      }}
+                    >
+                      {on && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+                    </button>
+                    <Icon className="w-4 h-4 shrink-0" style={{ color: MUTE }} />
+                    <button
+                      data-testid={`button-choose-${ing.id}`}
+                      onClick={() => setOpenId((cur) => (cur === ing.id ? null : ing.id))}
+                      aria-expanded={isOpen}
+                      aria-label={`Choose ${ing.label}`}
+                      className="flex-1 min-w-0 flex items-center gap-2 text-left py-1.5 rounded-[8px] px-2 -ml-2 active:bg-black/[0.03] transition-colors"
+                    >
+                      <span className="flex-1 min-w-0">
+                        <span className="block font-['Plus_Jakarta_Sans'] text-[15px] font-semibold leading-tight truncate">
+                          {ing.value}
+                        </span>
+                        <span className="block text-[12px]" style={{ color: MUTE }}>{ing.label}</span>
+                      </span>
+                      <ChevronDown
+                        className="w-4 h-4 shrink-0 transition-transform"
+                        style={{ color: MUTE, transform: isOpen ? "rotate(180deg)" : "none" }}
                       />
-                      <Pencil className="w-3 h-3 shrink-0 opacity-30" />
-                    </span>
-                    <span className="block text-[12px] mt-0.5 px-1.5" style={{ color: MUTE }}>{ing.label}</span>
-                  </span>
+                    </button>
+                  </div>
+
+                  {isOpen && (
+                    <div className="pl-9 pr-1 mt-1.5 mb-1 flex flex-wrap gap-2" data-testid={`options-${ing.id}`}>
+                      {ing.options.map((opt) => {
+                        const selected = opt === ing.value;
+                        return (
+                          <button
+                            key={opt}
+                            data-testid={`chip-${ing.id}-${slug(opt)}`}
+                            onClick={() => choose(ing.id, opt)}
+                            aria-pressed={selected}
+                            className="px-3 py-1.5 rounded-full text-[13px] font-medium flex items-center gap-1.5 active:scale-95 transition-all"
+                            style={
+                              selected
+                                ? { backgroundColor: GOLD, color: INK }
+                                : { backgroundColor: "#F3F1EC", color: "rgba(26,26,26,0.7)" }
+                            }
+                          >
+                            {selected && <Check className="w-3 h-3" strokeWidth={3} />}
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}
