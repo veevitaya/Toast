@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,6 +23,11 @@ import {
   Navigation,
   RotateCcw,
   PartyPopper,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  LocateFixed,
 } from "lucide-react";
 
 const GOLD = "#FFCC02";
@@ -38,9 +43,30 @@ const STAGES = ["Plan", "Taste", "Swipe", "Match", "Eat"];
 const stageOf = (s: Step): number =>
   s === "host" ? 0 : s === "prefs" || s === "filter" ? 1 : s === "swipe" ? 2 : s === "match" ? 3 : 4;
 
-const DATES = ["Fri, Jun 19", "Sat, Jun 20", "Sun, Jun 21"];
-const TIMES = ["7:00 PM", "8:30 PM", "Lunch, 12:30"];
-const AREAS = ["Thonglor", "Near BTS Asok", "Riverside"];
+const MONTH_LABEL = "June 2026";
+const TODAY_DAY = 13; // Jun 13, 2026
+const DAYS_IN_MONTH = 30;
+const FIRST_WEEKDAY = 1; // Jun 1, 2026 falls on Monday (0 = Sun)
+const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const dateLabelFor = (d: number) => `${WEEKDAY_SHORT[d % 7]}, Jun ${d}`;
+
+const TIMES = [
+  "11:30 AM",
+  "12:00 PM",
+  "12:30 PM",
+  "1:00 PM",
+  "5:30 PM",
+  "6:00 PM",
+  "6:30 PM",
+  "7:00 PM",
+  "7:30 PM",
+  "8:00 PM",
+  "8:30 PM",
+  "9:00 PM",
+  "9:30 PM",
+];
+const AREAS = ["Thonglor", "Ekkamai", "Asok", "Sukhumvit", "Ari", "Siam", "Sathorn", "Riverside"];
 
 const MOODS = ["Comfort", "Adventurous", "Light", "Indulgent"];
 const CUISINE_OPTS = ["Thai", "Japanese", "Italian", "Korean", "Street food", "Café"];
@@ -125,9 +151,12 @@ const PLACES: Place[] = [
 export default function GroupTasteFlow() {
   const [step, setStep] = useState<Step>("host");
 
-  const [dateIdx, setDateIdx] = useState(0);
-  const [timeIdx, setTimeIdx] = useState(0);
-  const [areaIdx, setAreaIdx] = useState(0);
+  const [openPicker, setOpenPicker] = useState<"date" | "time" | "area" | null>(null);
+  const [selDay, setSelDay] = useState(19);
+  const [timeIdx, setTimeIdx] = useState(7);
+  const [area, setArea] = useState("Thonglor");
+  const [areaQuery, setAreaQuery] = useState("");
+  const [usedLocation, setUsedLocation] = useState(false);
 
   const [mood, setMood] = useState("Comfort");
   const [cuisines, setCuisines] = useState<string[]>(["Thai", "Japanese"]);
@@ -141,6 +170,29 @@ export default function GroupTasteFlow() {
     const i = ORDER.indexOf(step);
     if (i > 0) setStep(ORDER[i - 1]);
   };
+
+  const togglePicker = (p: "date" | "time" | "area") =>
+    setOpenPicker((cur) => (cur === p ? null : p));
+  const pickDay = (d: number) => {
+    setSelDay(d);
+    setOpenPicker(null);
+  };
+  const pickTime = (i: number) => {
+    setTimeIdx(i);
+    setOpenPicker(null);
+  };
+  const pickArea = (a: string) => {
+    setArea(a);
+    setUsedLocation(false);
+    setOpenPicker(null);
+  };
+  const useMyLocation = () => {
+    setArea("Thonglor");
+    setUsedLocation(true);
+    setAreaQuery("");
+    setOpenPicker(null);
+  };
+  const dateLabel = dateLabelFor(selDay);
 
   const toggle = (val: string, arr: string[], set: (v: string[]) => void) =>
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
@@ -163,6 +215,7 @@ export default function GroupTasteFlow() {
   const restart = () => {
     setCardIdx(0);
     setLastResult(null);
+    setOpenPicker(null);
     setStep("host");
   };
 
@@ -223,36 +276,49 @@ export default function GroupTasteFlow() {
             </p>
 
             <div
-              className="mt-6 rounded-[24px] bg-white p-6"
+              className="mt-6 rounded-[24px] bg-white p-2.5"
               style={{ boxShadow: "0 18px 40px -18px rgba(0,0,0,0.16)", border: "1px solid rgba(0,0,0,0.05)" }}
             >
-              {[
-                { id: "date", label: "Date", Icon: Calendar, value: DATES[dateIdx], onTap: () => setDateIdx((i) => (i + 1) % DATES.length) },
-                { id: "time", label: "Time", Icon: Clock, value: TIMES[timeIdx], onTap: () => setTimeIdx((i) => (i + 1) % TIMES.length) },
-                { id: "area", label: "Area", Icon: MapPin, value: AREAS[areaIdx], onTap: () => setAreaIdx((i) => (i + 1) % AREAS.length) },
-              ].map((row, i) => (
-                <div key={row.id}>
-                  {i > 0 && <div className="h-px" style={{ backgroundColor: "rgba(26,26,26,0.06)" }} />}
-                  <button
-                    data-testid={`button-${row.id}`}
-                    onClick={row.onTap}
-                    className="w-full flex items-center gap-3.5 py-3.5 text-left active:scale-[0.99] transition-transform"
-                  >
-                    <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: CREAM }}>
-                      <row.Icon className="w-5 h-5" style={{ color: INK }} />
-                    </span>
-                    <span className="flex-1">
-                      <span className="block text-[11px] uppercase tracking-wider font-semibold" style={{ color: MUTE }}>
-                        {row.label}
-                      </span>
-                      <span className="block font-['Plus_Jakarta_Sans'] text-[16px] font-bold">{row.value}</span>
-                    </span>
-                    <span className="text-[12px] font-semibold" style={{ color: MUTE }}>
-                      tap
-                    </span>
-                  </button>
-                </div>
-              ))}
+              <PlanRow
+                id="date"
+                Icon={Calendar}
+                label="Date"
+                value={dateLabel}
+                open={openPicker === "date"}
+                onToggle={() => togglePicker("date")}
+              />
+              {openPicker === "date" && <CalendarPicker selDay={selDay} onSelect={pickDay} />}
+
+              <Divider />
+              <PlanRow
+                id="time"
+                Icon={Clock}
+                label="Time"
+                value={TIMES[timeIdx]}
+                open={openPicker === "time"}
+                onToggle={() => togglePicker("time")}
+              />
+              {openPicker === "time" && <TimeScroller idx={timeIdx} onSelect={pickTime} />}
+
+              <Divider />
+              <PlanRow
+                id="area"
+                Icon={MapPin}
+                label="Area"
+                value={area}
+                open={openPicker === "area"}
+                onToggle={() => togglePicker("area")}
+              />
+              {openPicker === "area" && (
+                <AreaPicker
+                  value={area}
+                  query={areaQuery}
+                  setQuery={setAreaQuery}
+                  usedLocation={usedLocation}
+                  onSelect={pickArea}
+                  onUseLocation={useMyLocation}
+                />
+              )}
             </div>
 
             <div className="mt-5 flex items-center gap-3">
@@ -596,7 +662,7 @@ export default function GroupTasteFlow() {
               Where to eat it
             </h1>
             <p className="text-[15px] mt-1.5 leading-relaxed" style={{ color: "rgba(26,26,26,0.6)" }}>
-              Serving your match near {AREAS[areaIdx]} · {DATES[dateIdx]}, {TIMES[timeIdx]}
+              Serving your match near {area} · {dateLabel}, {TIMES[timeIdx]}
             </p>
 
             <div className="mt-5 space-y-3">
@@ -722,5 +788,222 @@ function Chip({ children, active, onClick, testid }: { children: React.ReactNode
     >
       {children}
     </button>
+  );
+}
+
+/* ---------- plan pickers ---------- */
+
+function Divider() {
+  return <div className="h-px mx-3.5 my-0.5" style={{ backgroundColor: "rgba(26,26,26,0.06)" }} />;
+}
+
+function PlanRow({
+  id,
+  Icon,
+  label,
+  value,
+  open,
+  onToggle,
+}: {
+  id: string;
+  Icon: typeof Calendar;
+  label: string;
+  value: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      data-testid={`button-${id}`}
+      onClick={onToggle}
+      aria-expanded={open}
+      className="w-full flex items-center gap-3.5 px-3.5 py-3.5 text-left active:scale-[0.99] transition-transform"
+    >
+      <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: CREAM }}>
+        <Icon className="w-5 h-5" style={{ color: INK }} />
+      </span>
+      <span className="flex-1">
+        <span className="block text-[11px] uppercase tracking-wider font-semibold" style={{ color: MUTE }}>
+          {label}
+        </span>
+        <span className="block font-['Plus_Jakarta_Sans'] text-[16px] font-bold">{value}</span>
+      </span>
+      <ChevronDown
+        className="w-5 h-5 shrink-0 transition-transform"
+        style={{ color: MUTE, transform: open ? "rotate(180deg)" : "none" }}
+      />
+    </button>
+  );
+}
+
+function CalendarPicker({ selDay, onSelect }: { selDay: number; onSelect: (d: number) => void }) {
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < FIRST_WEEKDAY; i++) cells.push(null);
+  for (let d = 1; d <= DAYS_IN_MONTH; d++) cells.push(d);
+  return (
+    <div className="px-3.5 pb-3 pt-1" data-testid="picker-date">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <span className="font-['Plus_Jakarta_Sans'] text-[14px] font-bold">{MONTH_LABEL}</span>
+        <div className="flex gap-1.5" style={{ opacity: 0.3 }} aria-hidden="true">
+          <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ backgroundColor: CREAM }}>
+            <ChevronLeft className="w-4 h-4" />
+          </span>
+          <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ backgroundColor: CREAM }}>
+            <ChevronRight className="w-4 h-4" />
+          </span>
+        </div>
+      </div>
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {WEEKDAY_LABELS.map((w, i) => (
+          <span key={i} className="text-center text-[11px] font-semibold" style={{ color: MUTE }}>
+            {w}
+          </span>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((d, i) => {
+          if (d === null) return <span key={`pad-${i}`} />;
+          const past = d < TODAY_DAY;
+          const sel = d === selDay;
+          return (
+            <button
+              key={d}
+              data-testid={`day-${d}`}
+              disabled={past}
+              onClick={() => onSelect(d)}
+              className="h-9 rounded-full text-[13px] font-semibold flex items-center justify-center transition-all active:scale-90 disabled:opacity-25"
+              style={sel ? { backgroundColor: GOLD, color: INK } : { color: INK }}
+            >
+              {d}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function TimeScroller({ idx, onSelect }: { idx: number; onSelect: (i: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.scrollTop = idx * 44;
+    // run once when the picker opens to center the current selection
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <div className="px-3.5 pb-3 pt-1" data-testid="picker-time">
+      <div className="relative">
+        <div
+          className="pointer-events-none absolute left-2 right-2 top-1/2 -translate-y-1/2 h-11 rounded-xl"
+          style={{ backgroundColor: CREAM }}
+        />
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-14 z-10"
+          style={{ background: "linear-gradient(#fff, rgba(255,255,255,0))" }}
+        />
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-14 z-10"
+          style={{ background: "linear-gradient(rgba(255,255,255,0), #fff)" }}
+        />
+        <div
+          ref={ref}
+          className="relative h-[176px] overflow-y-auto snap-y snap-mandatory [&::-webkit-scrollbar]:hidden"
+          style={{ paddingTop: 66, paddingBottom: 66 }}
+        >
+          {TIMES.map((t, i) => (
+            <button
+              key={t}
+              data-testid={`time-${i}`}
+              onClick={() => onSelect(i)}
+              className="snap-center w-full h-11 flex items-center justify-center transition-all"
+              style={i === idx ? { color: INK, fontWeight: 700, fontSize: 16 } : { color: MUTE, fontWeight: 500, fontSize: 15 }}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AreaPicker({
+  value,
+  query,
+  setQuery,
+  usedLocation,
+  onSelect,
+  onUseLocation,
+}: {
+  value: string;
+  query: string;
+  setQuery: (v: string) => void;
+  usedLocation: boolean;
+  onSelect: (a: string) => void;
+  onUseLocation: () => void;
+}) {
+  const filtered = AREAS.filter((a) => a.toLowerCase().includes(query.toLowerCase()));
+  return (
+    <div className="px-3.5 pb-3 pt-1" data-testid="picker-area">
+      <button
+        data-testid="button-use-location"
+        onClick={onUseLocation}
+        className="w-full flex items-center gap-3 rounded-2xl px-3 py-3 mb-3 active:scale-[0.99] transition-transform"
+        style={{ backgroundColor: usedLocation ? "rgba(6,199,85,0.10)" : CREAM }}
+      >
+        <span
+          className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shrink-0"
+          style={{ border: "1px solid rgba(0,0,0,0.06)" }}
+        >
+          <LocateFixed className="w-[18px] h-[18px]" style={{ color: usedLocation ? LINE : INK }} />
+        </span>
+        <span className="flex-1 text-left">
+          <span className="block font-['Plus_Jakarta_Sans'] text-[14px] font-bold">Use my current location</span>
+          <span className="block text-[12px]" style={{ color: MUTE }}>
+            {usedLocation ? "Detected · Thonglor" : "We'll center on where you are"}
+          </span>
+        </span>
+        {usedLocation && <Check className="w-5 h-5 shrink-0" style={{ color: LINE }} />}
+      </button>
+
+      <div
+        className="flex items-center gap-2 rounded-2xl px-3.5 h-12 mb-1.5"
+        style={{ backgroundColor: "#fff", border: "1px solid rgba(26,26,26,0.12)" }}
+      >
+        <Search className="w-4 h-4 shrink-0" style={{ color: MUTE }} />
+        <input
+          data-testid="input-area"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search or type an area"
+          className="flex-1 bg-transparent outline-none text-[14px] font-medium"
+          style={{ color: INK }}
+        />
+      </div>
+
+      <div className="max-h-44 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+        {filtered.length === 0 ? (
+          <p className="text-[13px] py-4 text-center" style={{ color: MUTE }}>
+            No areas match that search
+          </p>
+        ) : (
+          filtered.map((a) => {
+            const sel = a === value;
+            return (
+              <button
+                key={a}
+                data-testid={`area-${a}`}
+                onClick={() => onSelect(a)}
+                className="w-full flex items-center gap-3 py-2.5 px-1.5 text-left rounded-xl active:opacity-70"
+              >
+                <MapPin className="w-4 h-4 shrink-0" style={{ color: sel ? GOLD : MUTE }} />
+                <span className="flex-1 text-[14px] font-medium">{a}</span>
+                {sel && <Check className="w-4 h-4 shrink-0" style={{ color: INK }} />}
+              </button>
+            );
+          })
+        )}
+      </div>
+    </div>
   );
 }
