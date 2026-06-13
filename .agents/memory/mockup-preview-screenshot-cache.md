@@ -12,3 +12,5 @@ The `screenshot` tool (external_url / Firecrawl) caches results by exact URL. Wh
 **Why:** identical-URL caching makes screenshots after edits unreliable; concurrent subagent edits / workflow restarts can poison the first capture.
 
 **Also note:** `app_preview` screenshots hit the main app on port 5000, which does NOT proxy `/__mockup` (returns the app's 404). Use `external_url` against the public replit.dev domain for mockup previews.
+
+**Lazy-compile blank race (related):** the preview server compiles each component on first request, so the FIRST capture right after editing a file is often blank because it lands before Vite finishes the on-demand compile/HMR. Workaround: from `code_execution`, warm the route by `fetch`-ing the preview URL ~3x with ~800ms gaps before screenshotting, then capture with a fresh `?cb=N`. A single blank frame == retry once (the second attempt almost always renders); only investigate the component if repeated retries stay blank.
