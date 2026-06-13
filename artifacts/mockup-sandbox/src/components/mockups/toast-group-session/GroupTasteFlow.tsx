@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 
 const GOLD = "#FFCC02";
+const BG = "hsl(30, 20%, 97%)"; // matches the main app's --background
+const BG_FADE = "hsla(30, 20%, 97%, 0)";
 const CREAM = "#FAF6EF";
 const INK = "#1A1A1A";
 const MUTE = "#9A938A";
@@ -222,7 +224,7 @@ export default function GroupTasteFlow() {
   return (
     <div
       className="max-w-[430px] mx-auto min-h-[100dvh] relative flex flex-col font-['Inter']"
-      style={{ backgroundColor: CREAM, color: INK }}
+      style={{ backgroundColor: BG, color: INK }}
     >
       {/* Header + stepper */}
       <header className="px-6 pt-14 pb-2">
@@ -728,7 +730,7 @@ function Footer({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto p-6 pb-10"
-      style={{ background: `linear-gradient(to top, ${CREAM} 78%, rgba(250,246,239,0))` }}
+      style={{ background: `linear-gradient(to top, ${BG} 78%, ${BG_FADE})` }}
     >
       {children}
     </div>
