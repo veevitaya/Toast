@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
-import { TrendingUp, Copy, Check, X, Share2, MapPin, Navigation, Search, ArrowLeft, Lock, Plus } from "lucide-react";
+import { TrendingUp, Copy, Check, X, Share2, MapPin, Navigation, Search, ArrowLeft, Sparkles, Plus } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import mascotImg from "@assets/toast_mascot_nobg.png";
 import { sendGroupInviteNoRedirect, getAccessToken, getGroupInviteUrl } from "@/lib/liff";
@@ -246,8 +246,8 @@ export default function WaitingRoom() {
     if (pendingInvite === sessionId) {
       sessionStorage.removeItem("toast_group_pending_invite");
       setTimeout(() => {
-        setShowShareModal(true);
-      }, 300);
+        sendGroupInviteNoRedirect(sessionId);
+      }, 400);
     }
   }, [sessionCreated, sessionId]);
 
@@ -618,7 +618,7 @@ export default function WaitingRoom() {
   }
 
   return (
-    <div className="max-w-[430px] mx-auto min-h-[100dvh] flex flex-col font-['Inter'] bg-[#FAF6EF]" style={{ color: "#1A1A1A" }} data-testid="waiting-room-page">
+    <div className="max-w-[430px] mx-auto min-h-[100dvh] flex flex-col font-['Inter'] bg-background" style={{ color: "#1A1A1A" }} data-testid="waiting-room-page">
       <header className="flex items-center justify-between px-6 pt-14 pb-2">
         <button
           aria-label="Go back"
@@ -639,7 +639,7 @@ export default function WaitingRoom() {
             {memberCount < 2 ? "Who's in?" : "Everyone's here"}
           </h1>
           <p className="text-[15px] mt-2 leading-relaxed text-[#1A1A1A]/60">
-            Your crew's joining from the LINE invite. Lock it in once everyone's here.
+            Your crew's joining from the LINE invite. Hit start once everyone's here.
           </p>
         </div>
 
@@ -820,7 +820,7 @@ export default function WaitingRoom() {
                 {memberCount} joined
               </p>
               <p className="text-[13.5px] mt-1 leading-snug text-[#9A938A]">
-                {canStart ? "Everyone's here — lock it in." : "Waiting for friends to join…"}
+                {canStart ? "Everyone's here — let's start!" : "Waiting for friends to join…"}
               </p>
               {members.length > 0 && (
                 <div className="flex -space-x-2 mt-3">
@@ -914,7 +914,7 @@ export default function WaitingRoom() {
 
       <div
         className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto px-6 pt-4 pb-[88px]"
-        style={{ background: "linear-gradient(to top, #FAF6EF 70%, rgba(250,246,239,0))" }}
+        style={{ background: "linear-gradient(to top, hsl(var(--background)) 70%, hsla(30,20%,97%,0))" }}
       >
         {hostOfSession ? (
           <button
@@ -924,7 +924,7 @@ export default function WaitingRoom() {
             className="w-full h-14 rounded-full font-bold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-60"
             style={{ backgroundColor: "#FFCC02", color: "#1A1A1A", boxShadow: "0 8px 20px -8px rgba(255,204,2,0.55)" }}
           >
-            <Lock className="w-[18px] h-[18px]" /> Lock it in
+            <Sparkles className="w-[18px] h-[18px]" /> Let's start!
           </button>
         ) : (
           <div

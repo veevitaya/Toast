@@ -168,8 +168,8 @@ export default function GroupSetup() {
 
   return (
     <div
-      className="max-w-[430px] mx-auto min-h-[100dvh] relative flex flex-col font-['Inter']"
-      style={{ backgroundColor: BG, color: INK }}
+      className="max-w-[430px] mx-auto min-h-[100dvh] relative flex flex-col font-['Inter'] bg-background"
+      style={{ color: INK }}
       data-testid="group-setup-page"
     >
       <header className="px-6 pt-14 pb-2">
