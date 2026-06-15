@@ -65,3 +65,7 @@ waitForPort = 5000
 VITE_LIFF_ID = "2009293021-mFgkOhqd"
 VITE_LINE_OA_LIFF_ID = "2009335625-Pyd3rjhr"
 VITE_LINE_OA_CHANNEL_ID = "2009335625"
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
