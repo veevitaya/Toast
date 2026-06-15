@@ -1,3 +1,4 @@
 - [Toast premium aesthetic](toast-premium-aesthetic.md) — what "friendly+premium, not childish" means for Toast UI, and the hard bg-background rule.
 - [Mockup preview screenshot cache](mockup-preview-screenshot-cache.md) — /__mockup preview screenshots cache by URL + blank lazy-compile race; warm route, add ?cb=N, retry once.
 - [Group session host identity](group-session-host-identity.md) — host-only actions 403 unless session host id == browser guest id; don't block waiting-room member load on geolocation.
+- [Canvas callback gotchas](canvas-callback-gotchas.md) — update uses `updates`+`shapeType`; presentArtifact needs an existing `artifactId` (e.g. "artifacts/mockup-sandbox"); getCanvasState is viewport-scoped.

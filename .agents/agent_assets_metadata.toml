@@ -30,6 +30,30 @@ uri = "file://client/src/assets/mascots/mascot-group-hero.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "6yXoKGdufJg1N9k0R6QR6"
+uri = "file://artifacts/mockup-sandbox/public/images/recapstory-homduan.png"
+type = "image"
+title = "northern thai food khao soi"
+
+[[generated]]
+id = "hEO9zgpbaNTAbdrcU8sa_"
+uri = "file://artifacts/mockup-sandbox/public/images/podium-hom-duan.png"
+type = "image"
+title = "Hom Duan restaurant interior and food"
+
+[[generated]]
+id = "rvHJRyPm-loYJ_-qwn8N2"
+uri = "file://artifacts/mockup-sandbox/public/images/HeroWinner-hom-duan.png"
+type = "image"
+title = "Cinematic khao soi food photography"
+
+[[generated]]
+id = "-mrgmeiObcK9R0PrKW1vo"
+uri = "file://artifacts/mockup-sandbox/public/images/Winner-khaosoi.png"
+type = "image"
+title = "Khao Soi noodle soup"
+
 [[outputs]]
 id = "md0oykLl7-WWG9LQl0m3e"
 uri = "file://artifacts/mockup-sandbox/public/images/gaggan.jpg"
