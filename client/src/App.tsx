@@ -16,6 +16,7 @@ const SoloQuiz = lazy(() => import("@/pages/SoloQuiz"));
 const SoloResults = lazy(() => import("@/pages/SoloResults"));
 const RestaurantList = lazy(() => import("@/pages/RestaurantList"));
 const GroupSetup = lazy(() => import("@/pages/GroupSetup"));
+const GroupTaste = lazy(() => import("@/pages/GroupTaste"));
 const WaitingRoom = lazy(() => import("@/pages/WaitingRoom"));
 const GroupSwipe = lazy(() => import("@/pages/GroupSwipe"));
 const SwipePage = lazy(() => import("@/pages/SwipePage"));
@@ -83,7 +84,7 @@ function PageLoader() {
   );
 }
 
-const SESSION_BAR_HIDDEN_PREFIXES = ["/admin", "/onboarding", "/group/waiting", "/group/swipe", "/group/setup"];
+const SESSION_BAR_HIDDEN_PREFIXES = ["/admin", "/onboarding", "/group/waiting", "/group/swipe", "/group/setup", "/group/taste"];
 
 function GlobalSessionBar() {
   const [location] = useLocation();
@@ -125,6 +126,9 @@ function Router() {
           </Route>
           <Route path="/group/setup">
             <AnimatedPage><GroupSetup /></AnimatedPage>
+          </Route>
+          <Route path="/group/taste">
+            <AnimatedPage><GroupTaste /></AnimatedPage>
           </Route>
           <Route path="/group/waiting">
             <AnimatedPage><WaitingRoom /></AnimatedPage>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
-import { TrendingUp, Copy, Check, X, Share2, MapPin, Navigation, Search } from "lucide-react";
+import { TrendingUp, Copy, Check, X, Share2, MapPin, Navigation, Search, ArrowLeft, Lock, Plus } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import mascotImg from "@assets/toast_mascot_nobg.png";
 import { sendGroupInviteNoRedirect, getAccessToken, getGroupInviteUrl } from "@/lib/liff";
@@ -113,7 +113,6 @@ export default function WaitingRoom() {
     if (!profile || !sessionId || joiningRef.current) return;
     joiningRef.current = true;
 
-    const loc = await getUserLocation();
     const accessToken = getAccessToken();
 
     try {
@@ -134,6 +133,8 @@ export default function WaitingRoom() {
           return;
         }
       }
+
+      const loc = await getUserLocation();
 
       const joinRes = await fetchWithTimeout(`/api/group/sessions/${sessionId}/join`, {
         method: "POST",
@@ -617,178 +618,71 @@ export default function WaitingRoom() {
   }
 
   return (
-    <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6 pb-20 relative overflow-hidden" data-testid="waiting-room-page">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[15%] left-[10%] w-32 h-32 bg-amber-50/40 rounded-full blur-3xl" />
-        <div className="absolute bottom-[20%] right-[15%] w-40 h-40 bg-amber-50/40 rounded-full blur-3xl" />
-      </div>
-
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", damping: 18, stiffness: 200 }}
-        className="mb-5"
-      >
-        <div
-          className="w-28 h-28 rounded-full bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center"
-          style={{ boxShadow: "0 8px 30px -6px rgba(234,179,8,0.15)" }}
+    <div className="max-w-[430px] mx-auto min-h-[100dvh] flex flex-col font-['Inter'] bg-[#FAF6EF]" style={{ color: "#1A1A1A" }} data-testid="waiting-room-page">
+      <header className="flex items-center justify-between px-6 pt-14 pb-2">
+        <button
+          aria-label="Go back"
+          data-testid="button-back"
+          onClick={() => navigate("/")}
+          className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.04)] active:scale-95 transition-transform"
         >
-          <img src={mascotImg} alt="Toast mascot" className="h-20 w-20 object-contain animate-soft-bob gpu-accelerated" draggable={false} />
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <span className="text-[12px] font-semibold tracking-[0.18em] uppercase text-[#9A938A]">
+          Waiting room
+        </span>
+      </header>
+
+      <main className="flex-1 px-6 pb-44 pt-3">
+        <div className="mb-5">
+          <h1 className="font-['Plus_Jakarta_Sans'] text-[28px] font-bold tracking-tight leading-tight" data-testid="text-waiting-title">
+            {memberCount < 2 ? "Who's in?" : "Everyone's here"}
+          </h1>
+          <p className="text-[15px] mt-2 leading-relaxed text-[#1A1A1A]/60">
+            Your crew's joining from the LINE invite. Lock it in once everyone's here.
+          </p>
         </div>
-      </motion.div>
 
-      {isLineUser && profile && (
-        <motion.div
-          initial={{ y: 16, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.05, duration: 0.3 }}
-          className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1.5 rounded-full mb-3"
-          data-testid="badge-line-connected"
-        >
-          <div className="w-4 h-4 rounded-full overflow-hidden">
-            {profile.pictureUrl ? (
-              <img src={profile.pictureUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-green-200 flex items-center justify-center">
-                <span className="text-[8px] font-bold text-green-700">{profile.displayName.charAt(0)}</span>
-              </div>
+        {isLineUser && profile && (
+          <div className="inline-flex items-center gap-2 bg-[#06C755]/10 text-[#06C755] px-3 py-1.5 rounded-full mb-4" data-testid="badge-line-connected">
+            <Check className="w-3.5 h-3.5" strokeWidth={3} />
+            <span className="text-[12px] font-semibold">Connected as {profile.displayName}</span>
+          </div>
+        )}
+
+        <div className="rounded-[28px] bg-white p-5" style={{ boxShadow: "0 18px 40px -18px rgba(0,0,0,0.16)", border: "1px solid rgba(0,0,0,0.05)" }}>
+          <div className="flex items-center gap-2.5 mb-5 flex-wrap">
+            {sessionInfo?.sessionType === "trending" && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold bg-[#FAF6EF]" data-testid="badge-trending-session">
+                <TrendingUp className="w-3.5 h-3.5 text-[#9A938A]" /> Trending
+              </span>
+            )}
+            {hostOfSession && sessionCreated ? (
+              <button
+                data-testid="button-set-location"
+                onClick={() => setShowLocationPicker(!showLocationPicker)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold bg-[#FAF6EF] active:scale-95 transition-transform"
+              >
+                <MapPin className="w-3.5 h-3.5 text-[#9A938A]" /> {sessionLocationName || "Set location"}
+              </button>
+            ) : sessionInfo?.locationName ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold bg-[#FAF6EF]" data-testid="text-session-location">
+                <MapPin className="w-3.5 h-3.5 text-[#9A938A]" /> {sessionInfo.locationName}
+              </span>
+            ) : null}
+            {hostOfSession && sessionCreated && (
+              <button
+                data-testid="button-invite-chip"
+                onClick={handleInviteMore}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] font-semibold bg-[#06C755]/10 text-[#06C755] active:scale-95 transition-transform"
+              >
+                <Share2 className="w-3.5 h-3.5" /> Invite
+              </button>
             )}
           </div>
-          <span className="text-[12px] font-semibold">Connected as {profile.displayName}</span>
-        </motion.div>
-      )}
 
-      {sessionInfo?.sessionType === "trending" && (
-        <motion.div
-          initial={{ y: 16, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1, duration: 0.3 }}
-          className="flex items-center gap-1.5 bg-amber-50 text-amber-800 px-3 py-1.5 rounded-full mb-3"
-          data-testid="badge-trending-session"
-        >
-          <TrendingUp className="w-3.5 h-3.5" />
-          <span className="text-[12px] font-semibold">Trending Swipe Session</span>
-        </motion.div>
-      )}
-
-      <motion.h1
-        initial={{ y: 16, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.15, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-        className="text-[26px] font-semibold mb-2 text-center"
-        data-testid="text-waiting-title"
-      >
-        {memberCount < 2 ? t("waiting.waiting_for_friends_short") : t("waiting.ready_to_go")}
-      </motion.h1>
-      <motion.div
-        initial={{ y: 16, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-        className="flex items-center gap-2 mb-6"
-      >
-        <div className="flex gap-1">
-          {members.map((m) => (
-            <div
-              key={m.lineUserId}
-              className="w-2 h-2 rounded-full bg-[hsl(160,60%,45%)] transition-all duration-500"
-            />
-          ))}
-          {memberCount < 2 && <div className="w-2 h-2 rounded-full bg-gray-200" />}
-        </div>
-        <span className="text-muted-foreground text-sm font-medium" data-testid="text-member-count">
-          {memberCount} joined
-        </span>
-      </motion.div>
-
-      <div className="flex flex-wrap justify-center gap-6 mb-8 max-w-sm">
-        {members.map((m, idx) => {
-          const isMe = m.lineUserId === profile?.userId;
-          const isMemberHost = sessionInfo ? m.lineUserId === sessionInfo.hostLineUserId : idx === 0;
-          const displayLabel = isMe ? "You" : m.displayName;
-          return (
-            <motion.div
-              key={m.lineUserId}
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3 + idx * 0.08, type: "spring", damping: 18, stiffness: 200 }}
-              className="flex flex-col items-center gap-2"
-              data-testid={`member-${m.lineUserId}`}
-            >
-              <div className="relative">
-                <div
-                  className={`w-[72px] h-[72px] rounded-full overflow-hidden border-[3px] transition-all duration-500 ${
-                    isMemberHost ? "border-[#FFCC02]" : "border-[hsl(160,60%,45%)]"
-                  }`}
-                  style={{ boxShadow: isMemberHost ? "0 6px 20px -4px rgba(255,204,2,0.25)" : "0 6px 20px -4px rgba(0,200,100,0.15)" }}
-                >
-                  {m.pictureUrl ? (
-                    <img src={m.pictureUrl} alt={m.displayName} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
-                      <span className="text-xl font-bold text-amber-600">{m.displayName.charAt(0)}</span>
-                    </div>
-                  )}
-                </div>
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", damping: 12, stiffness: 300, delay: 0.15 }}
-                  className={`absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white ${
-                    isMemberHost ? "bg-[#FFCC02]" : "bg-[hsl(160,60%,45%)]"
-                  }`}
-                >
-                  <span className={`text-[10px] font-bold ${isMemberHost ? "text-[#2d2000]" : "text-white"}`}>
-                    {isMemberHost ? "\u2605" : "\u2713"}
-                  </span>
-                </motion.div>
-              </div>
-              <span className="text-sm font-bold" data-testid={`text-member-name-${m.lineUserId}`}>{displayLabel}</span>
-              <span className={`text-[11px] font-semibold ${isMemberHost ? "text-[#FFCC02]" : "text-[hsl(160,60%,45%)]"}`}>
-                {isMemberHost ? "Host" : "Ready"}
-              </span>
-            </motion.div>
-          );
-        })}
-
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.4, type: "spring", damping: 18, stiffness: 200 }}
-          className="flex flex-col items-center gap-2"
-        >
-          <button
-            onClick={handleInviteMore}
-            className="w-[72px] h-[72px] rounded-full border-[3px] border-dashed border-gray-200 flex items-center justify-center active:scale-[0.95] transition-transform"
-            data-testid="button-invite-more"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-          <span className="text-sm font-bold text-muted-foreground">Invite</span>
-          <span className="text-[11px] font-semibold text-muted-foreground">via LINE</span>
-        </motion.div>
-      </div>
-
-      {hostOfSession && sessionCreated && (
-        <motion.div
-          initial={{ y: 16, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.45 }}
-          className="mb-6 w-full max-w-xs"
-        >
-          <button
-            onClick={() => setShowLocationPicker(!showLocationPicker)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200/80 text-sm font-medium active:scale-[0.97] transition-transform"
-            style={{ boxShadow: "0 2px 8px -2px rgba(0,0,0,0.08)" }}
-            data-testid="button-set-location"
-          >
-            <MapPin className="w-4 h-4 text-muted-foreground" />
-            <span>{sessionLocationName || "Set group location"}</span>
-          </button>
           <AnimatePresence>
-            {showLocationPicker && (
+            {hostOfSession && sessionCreated && showLocationPicker && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
@@ -796,7 +690,7 @@ export default function WaitingRoom() {
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="mt-2 space-y-2">
+                <div className="mb-5 space-y-2">
                   <button
                     onClick={async () => {
                       setDetectingLocation(true);
@@ -826,7 +720,7 @@ export default function WaitingRoom() {
                       }
                       setDetectingLocation(false);
                     }}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-[13px] font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 active:scale-[0.97] transition-all"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-[13px] font-semibold bg-[#FAF6EF] text-[#1A1A1A] active:scale-[0.97] transition-all"
                     disabled={detectingLocation}
                     data-testid="button-use-current-location"
                   >
@@ -834,13 +728,13 @@ export default function WaitingRoom() {
                     {detectingLocation ? "Detecting location..." : "Use my current location"}
                   </button>
                   <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9A938A]" />
                     <input
                       type="text"
                       placeholder="Search area..."
                       value={locationSearch}
                       onChange={(e) => setLocationSearch(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 rounded-lg border border-gray-200 text-[13px] bg-white focus:outline-none focus:ring-1 focus:ring-[#FFCC02]"
+                      className="w-full pl-8 pr-3 py-2 rounded-xl border border-black/[0.08] text-[13px] bg-white focus:outline-none focus:ring-1 focus:ring-[#FFCC02]"
                       data-testid="input-location-search"
                     />
                   </div>
@@ -867,10 +761,10 @@ export default function WaitingRoom() {
                             });
                           } catch {}
                         }}
-                        className={`px-3 py-2 rounded-lg text-[13px] font-medium transition-all active:scale-[0.96] ${
+                        className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-all active:scale-[0.96] ${
                           sessionLocationName === loc.name
-                            ? "bg-[#FFCC02] text-[#2d2000]"
-                            : "bg-gray-50 text-foreground hover:bg-gray-100"
+                            ? "bg-[#FFCC02] text-[#1A1A1A]"
+                            : "bg-[#FAF6EF] text-[#1A1A1A]"
                         }`}
                         data-testid={`location-option-${loc.name.toLowerCase().replace(/\s+/g, "-")}`}
                       >
@@ -882,74 +776,172 @@ export default function WaitingRoom() {
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
-      )}
 
-      {!hostOfSession && sessionInfo?.locationName && (
-        <motion.div
-          initial={{ y: 16, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.45 }}
-          className="mb-6 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200/80 text-sm font-medium"
-          style={{ boxShadow: "0 2px 8px -2px rgba(0,0,0,0.08)" }}
-          data-testid="text-session-location"
-        >
-          <MapPin className="w-4 h-4 text-muted-foreground" />
-          <span>{sessionInfo.locationName}</span>
-        </motion.div>
-      )}
-
-      {error && (
-        <div className="flex flex-col items-center gap-2 mb-4">
-          <p className="text-red-500 text-sm" data-testid="text-error">{error}</p>
-          <button
-            onClick={() => { setError(null); createOrJoinSession(); }}
-            className="px-4 py-2 rounded-full bg-gray-100 text-sm font-semibold text-foreground active:scale-95 transition-transform"
-            data-testid="button-retry-join"
-          >
-            Try Again
-          </button>
+          <div className="flex items-center gap-4">
+            {(() => {
+              const r = 34;
+              const c = 2 * Math.PI * r;
+              const total = Math.max(memberCount, 2);
+              const pct = total ? memberCount / total : 0;
+              const dash = c * pct;
+              return (
+                <div
+                  className="relative shrink-0"
+                  style={{ width: 84, height: 84 }}
+                  role="progressbar"
+                  aria-valuenow={memberCount}
+                  aria-valuemin={0}
+                  aria-valuemax={total}
+                  aria-label={`${memberCount} joined`}
+                >
+                  <svg width="84" height="84" viewBox="0 0 84 84" className="-rotate-90" aria-hidden="true">
+                    <circle cx="42" cy="42" r={r} fill="none" stroke="#F3F1EC" strokeWidth="8" />
+                    <circle
+                      cx="42"
+                      cy="42"
+                      r={r}
+                      fill="none"
+                      stroke="#06C755"
+                      strokeWidth="8"
+                      strokeLinecap="round"
+                      strokeDasharray={dash + " " + (c - dash)}
+                      style={{ transition: "stroke-dasharray 0.5s ease" }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="font-['Plus_Jakarta_Sans'] text-[24px] font-bold leading-none">{memberCount}</span>
+                    <span className="text-[10px] font-semibold mt-0.5 text-[#9A938A]">joined</span>
+                  </div>
+                </div>
+              );
+            })()}
+            <div className="flex-1 min-w-0">
+              <p className="font-['Plus_Jakarta_Sans'] text-[19px] font-bold leading-tight" data-testid="text-member-count">
+                {memberCount} joined
+              </p>
+              <p className="text-[13.5px] mt-1 leading-snug text-[#9A938A]">
+                {canStart ? "Everyone's here — lock it in." : "Waiting for friends to join…"}
+              </p>
+              {members.length > 0 && (
+                <div className="flex -space-x-2 mt-3">
+                  {members.slice(0, 6).map((m) => (
+                    <span
+                      key={m.lineUserId}
+                      className="w-7 h-7 rounded-full flex items-center justify-center font-['Plus_Jakarta_Sans'] text-[11px] font-bold border-2 border-white overflow-hidden bg-[#F3F1EC] text-[#1A1A1A]"
+                    >
+                      {m.pictureUrl ? <img src={m.pictureUrl} alt="" className="w-full h-full object-cover" /> : m.displayName.charAt(0)}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      )}
 
-      <div className="flex flex-col items-center gap-3 w-full max-w-xs">
-        {hostOfSession ? (
-          <motion.button
-            onClick={handleStartSwiping}
-            data-testid="button-start-swiping"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className={`w-full py-4 rounded-full font-bold text-[15px] transition-all duration-500 active:scale-[0.96] gpu-accelerated ${
-              canStart
-                ? "bg-[#FFCC02] text-[#2d2000]"
-                : "bg-gray-100 text-muted-foreground"
-            }`}
-            style={canStart ? { boxShadow: "var(--shadow-glow-primary)" } : {}}
-            disabled={!canStart}
-          >
-            {canStart ? t("waiting.start_swiping") : t("waiting.waiting_for_more")}
-          </motion.button>
-        ) : (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className="w-full py-4 rounded-full bg-gray-100 text-muted-foreground font-bold text-[15px] text-center"
-            data-testid="text-waiting-for-host"
-          >
-            {canStart ? t("waiting.waiting_for_host") : t("waiting.waiting_for_more")}
-          </motion.div>
+        <div className="rounded-[28px] bg-white p-5 mt-4" style={{ boxShadow: "0 18px 40px -18px rgba(0,0,0,0.16)", border: "1px solid rgba(0,0,0,0.05)" }}>
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] uppercase tracking-wider font-semibold text-[#9A938A]">
+              The crew · {memberCount}
+            </p>
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#06C755]">
+              <span className="relative flex w-2 h-2">
+                <span className="animate-ping absolute inline-flex w-full h-full rounded-full opacity-60 bg-[#06C755]" />
+                <span className="relative inline-flex rounded-full w-2 h-2 bg-[#06C755]" />
+              </span>
+              Live
+            </span>
+          </div>
+          <p className="text-[12px] mt-1 mb-3 text-[#9A938A]">Updates live as your crew joins</p>
+
+          <div className="space-y-1">
+            {members.map((m, idx) => {
+              const isMe = m.lineUserId === profile?.userId;
+              const isMemberHost = sessionInfo ? m.lineUserId === sessionInfo.hostLineUserId : idx === 0;
+              const label = isMe ? "You" : m.displayName;
+              const ringColor = isMemberHost ? "#FFCC02" : "#06C755";
+              return (
+                <div key={m.lineUserId} data-testid={`member-${m.lineUserId}`} className="w-full flex items-center gap-3 py-1.5">
+                  <span
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-['Plus_Jakarta_Sans'] text-[14px] font-bold shrink-0 overflow-hidden bg-[#F3F1EC] text-[#1A1A1A]"
+                    style={{ boxShadow: `0 0 0 2px #fff, 0 0 0 3.5px ${ringColor}` }}
+                  >
+                    {m.pictureUrl ? <img src={m.pictureUrl} alt={m.displayName} className="w-full h-full object-cover" /> : m.displayName.charAt(0)}
+                  </span>
+                  <span className="flex-1 font-['Plus_Jakarta_Sans'] text-[15px] font-semibold truncate" data-testid={`text-member-name-${m.lineUserId}`}>
+                    {label}
+                  </span>
+                  {isMemberHost ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12.5px] font-bold shrink-0" style={{ backgroundColor: "rgba(255,204,2,0.2)", color: "#1A1A1A" }}>
+                      Host
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full text-[12.5px] font-bold shrink-0" style={{ backgroundColor: "rgba(6,199,85,0.12)", color: "#06C755" }}>
+                      <Check className="w-3.5 h-3.5" strokeWidth={2.5} /> Joined
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+
+            {hostOfSession && sessionCreated && (
+              <button
+                onClick={handleInviteMore}
+                data-testid="button-invite-more"
+                className="w-full flex items-center gap-3 py-2 mt-1 text-left active:scale-[0.99] transition-transform"
+              >
+                <span className="w-10 h-10 rounded-full border-2 border-dashed border-[#E3DED3] flex items-center justify-center shrink-0">
+                  <Plus className="w-4 h-4 text-[#9A938A]" />
+                </span>
+                <span className="flex-1 font-['Plus_Jakarta_Sans'] text-[14px] font-semibold text-[#9A938A]">Invite more friends</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {error && (
+          <div className="flex flex-col items-center gap-2 mt-4">
+            <p className="text-red-500 text-sm" data-testid="text-error">{error}</p>
+            <button
+              onClick={() => { setError(null); createOrJoinSession(); }}
+              className="px-4 py-2 rounded-full bg-white border border-black/[0.06] text-sm font-semibold text-[#1A1A1A] active:scale-95 transition-transform"
+              data-testid="button-retry-join"
+            >
+              Try Again
+            </button>
+          </div>
         )}
+      </main>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="text-[11px] text-muted-foreground text-center"
-        >
-          {t("waiting.session_code")} <span className="font-mono font-bold">{sessionId}</span>
-        </motion.p>
+      <div
+        className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto px-6 pt-4 pb-[88px]"
+        style={{ background: "linear-gradient(to top, #FAF6EF 70%, rgba(250,246,239,0))" }}
+      >
+        {hostOfSession ? (
+          <button
+            onClick={handleStartSwiping}
+            disabled={!canStart}
+            data-testid="button-start-swiping"
+            className="w-full h-14 rounded-full font-bold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-60"
+            style={{ backgroundColor: "#FFCC02", color: "#1A1A1A", boxShadow: "0 8px 20px -8px rgba(255,204,2,0.55)" }}
+          >
+            <Lock className="w-[18px] h-[18px]" /> Lock it in
+          </button>
+        ) : (
+          <div
+            data-testid="text-waiting-for-host"
+            className="w-full h-14 rounded-full bg-white text-[#9A938A] font-bold text-[15px] flex items-center justify-center border border-black/[0.06]"
+          >
+            Waiting for the host to start…
+          </div>
+        )}
+        {hostOfSession && !canStart && (
+          <p className="text-center text-[12.5px] font-medium mt-3 text-[#9A938A]">
+            Invite at least 1 more friend to start
+          </p>
+        )}
+        <p className="text-center text-[11px] text-[#9A938A] mt-3">
+          Session code <span className="font-mono font-bold">{sessionId}</span>
+        </p>
       </div>
 
       <AnimatePresence>

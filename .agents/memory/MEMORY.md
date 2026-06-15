@@ -1,2 +1,3 @@
 - [Toast premium aesthetic](toast-premium-aesthetic.md) — what "friendly+premium, not childish" means for Toast UI, and the hard bg-background rule.
-- [Mockup preview screenshot cache](mockup-preview-screenshot-cache.md) — /__mockup preview screenshots cache by URL + blank lazy-compile race; warm route, add ?cb=N, retry once. Also: canvas iframes pin a ?v= URL — bump ?v= to reflect edits.
+- [Mockup preview screenshot cache](mockup-preview-screenshot-cache.md) — /__mockup preview screenshots cache by URL + blank lazy-compile race; warm route, add ?cb=N, retry once.
+- [Group session host identity](group-session-host-identity.md) — host-only actions 403 unless session host id == browser guest id; don't block waiting-room member load on geolocation.

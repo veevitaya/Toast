@@ -1,182 +1,91 @@
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import {
-  ArrowLeft, Users, MapPin, Calendar as CalendarIcon,
-  Clock, Utensils, Heart, Baby, Briefcase,
-  ChevronDown, Sparkles, UserPlus, Check, Share2,
+  ArrowLeft, Calendar, Clock, MapPin, Share2, Zap,
+  ChevronDown, ChevronLeft, ChevronRight, Search, LocateFixed, Check,
+  type LucideIcon,
 } from "lucide-react";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { fetchWithTimeout } from "@/lib/queryClient";
 import { isOnboardingComplete } from "@/hooks/use-onboarding";
 import { InlineOnboarding } from "@/pages/Onboarding";
-import { useLanguage } from "@/i18n/LanguageProvider";
 
-const LOCATIONS = [
-  { id: "bts", icon: "\u{1F687}", label: "Near BTS", sub: "Easy access" },
-  { id: "mall", icon: "\u{1F3EC}", label: "At the mall", sub: "Indoor vibes" },
-  { id: "street", icon: "\u{1F362}", label: "Street food", sub: "Local flavor" },
-  { id: "rooftop", icon: "\u{1F3D9}\u{FE0F}", label: "Rooftop", sub: "Sky high" },
-  { id: "riverside", icon: "\u{1F30A}", label: "Riverside", sub: "Scenic views" },
-  { id: "latenight", icon: "\u{1F319}", label: "Late night", sub: "After hours" },
+const GOLD = "#FFCC02";
+const BG = "hsl(30, 20%, 97%)";
+const BG_FADE = "hsla(30, 20%, 97%, 0)";
+const CREAM = "#FAF6EF";
+const INK = "#1A1A1A";
+const MUTE = "#9A938A";
+const LINE = "#06C755";
+
+const STAGES = ["Plan", "Taste", "Swipe", "Match", "Eat"];
+
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const NOW = new Date();
+const TODAY_DAY = NOW.getDate();
+const CUR_MONTH = NOW.getMonth();
+const CUR_YEAR = NOW.getFullYear();
+const MONTH_LABEL = `${MONTH_NAMES[CUR_MONTH]} ${CUR_YEAR}`;
+const DAYS_IN_MONTH = new Date(CUR_YEAR, CUR_MONTH + 1, 0).getDate();
+const FIRST_WEEKDAY = new Date(CUR_YEAR, CUR_MONTH, 1).getDay();
+const dateLabelFor = (d: number) => {
+  const dt = new Date(CUR_YEAR, CUR_MONTH, d);
+  return `${WEEKDAY_SHORT[dt.getDay()]}, ${MONTH_SHORT[CUR_MONTH]} ${d}`;
+};
+
+const TIMES = [
+  "11:30 AM", "12:00 PM", "12:30 PM", "1:00 PM", "5:30 PM", "6:00 PM", "6:30 PM",
+  "7:00 PM", "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM",
 ];
+const AREAS = ["Thonglor", "Ekkamai", "Asok", "Sukhumvit", "Ari", "Siam", "Sathorn", "Riverside"];
 
-const BUDGETS = [
-  { id: "1", icon: "\u{0E3F}", label: "Cheap eats", color: "#00B14F" },
-  { id: "2", icon: "\u{0E3F}\u{0E3F}", label: "Mid range", color: "#FFCC02" },
-  { id: "3", icon: "\u{0E3F}\u{0E3F}\u{0E3F}", label: "Fancy", color: "#6C2BD9" },
-  { id: "4", icon: "\u{0E3F}\u{0E3F}\u{0E3F}\u{0E3F}", label: "Splurge", color: "#E11D48" },
-];
-
-const GROUP_TYPES = [
-  { id: "friends", icon: Users, label: "Friends", color: "#00B14F" },
-  { id: "partner", icon: Heart, label: "Partner", color: "#E11D48" },
-  { id: "family", icon: Baby, label: "Family", color: "#FFCC02" },
-  { id: "coworkers", icon: Briefcase, label: "Coworkers", color: "#6C2BD9" },
-];
-
-const RESTRICTIONS = [
-  { id: "halal", icon: "\u{1F54C}", label: "Halal" },
-  { id: "vegan", icon: "\u{1F96C}", label: "Vegan" },
-  { id: "vegetarian", icon: "\u{1F957}", label: "Vegetarian" },
-  { id: "gluten-free", icon: "\u{1F33E}", label: "Gluten-Free" },
-  { id: "no-pork", icon: "\u{1F437}", label: "No Pork" },
-  { id: "keto", icon: "\u{1F953}", label: "Keto" },
-  { id: "dairy-free", icon: "\u{1F95B}", label: "Dairy-Free" },
-  { id: "nut-free", icon: "\u{1F95C}", label: "Nut-Free" },
-];
-
-const MONTH_NAMES_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-const MINUTES = [0, 15, 30, 45];
-
-function formatDisplayTime(hour: number, minute: number) {
-  const period = hour >= 12 ? "PM" : "AM";
-  const h = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${h}:${minute.toString().padStart(2, "0")} ${period}`;
-}
-
-function roundToNearest15(date: Date) {
-  const m = date.getMinutes();
-  const rounded = Math.ceil(m / 15) * 15;
-  if (rounded === 60) return { hour: (date.getHours() + 1) % 24, minute: 0 };
-  return { hour: date.getHours(), minute: rounded };
-}
-
-function getNext14Days() {
-  const days: Date[] = [];
-  const now = new Date();
-  for (let i = 0; i < 14; i++) {
-    const d = new Date(now);
-    d.setDate(now.getDate() + i);
-    d.setHours(0, 0, 0, 0);
-    days.push(d);
-  }
-  return days;
-}
-
-function isSameDay(a: Date | null, b: Date) {
-  if (!a) return false;
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
-function SectionCard({ title, icon: Icon, iconColor, summary, expanded, onToggle, children, testId }: {
-  title: string;
-  icon: any;
-  iconColor: string;
-  summary: string;
-  expanded: boolean;
-  onToggle: () => void;
-  children: React.ReactNode;
-  testId: string;
-}) {
-  return (
-    <motion.div
-      layout
-      className="bg-white rounded-[20px] overflow-hidden border border-gray-100/80"
-      style={{ boxShadow: expanded ? "0 6px 24px rgba(0,0,0,0.06)" : "0 2px 8px rgba(0,0,0,0.03)" }}
-      data-testid={testId}
-    >
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-gray-50/50 transition-colors"
-        data-testid={`${testId}-toggle`}
-      >
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: `${iconColor}15` }}
-        >
-          <Icon className="w-4.5 h-4.5" style={{ color: iconColor }} />
-        </div>
-        <div className="flex-1 text-left min-w-0">
-          <p className="text-[14px] font-bold text-foreground">{title}</p>
-          {!expanded && summary && (
-            <p className="text-[11px] text-muted-foreground truncate mt-0.5">{summary}</p>
-          )}
-        </div>
-        <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronDown className="w-4 h-4 text-muted-foreground/40" />
-        </motion.div>
-      </button>
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-4 pt-0.5">
-              {children}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
+const toMinutes = (s: string): number => {
+  const [hm, ap] = s.split(" ");
+  const [hRaw, m] = hm.split(":").map(Number);
+  let h = hRaw;
+  if (ap === "PM" && h !== 12) h += 12;
+  if (ap === "AM" && h === 12) h = 0;
+  return h * 60 + m;
+};
+const TIME_MINUTES = TIMES.map(toMinutes);
+const nearestTimeIdx = (d: Date = new Date()): number => {
+  const mins = d.getHours() * 60 + d.getMinutes();
+  let best = 0;
+  let bestDiff = Infinity;
+  TIME_MINUTES.forEach((m, i) => {
+    const diff = Math.abs(m - mins);
+    if (diff < bestDiff) { bestDiff = diff; best = i; }
+  });
+  return best;
+};
 
 export default function GroupSetup() {
   const [, navigate] = useLocation();
-  const { t } = useLanguage();
-  const { profile, refreshProfile } = useLineProfile();
+  const { profile, refreshProfile, loading: profileLoading } = useLineProfile();
   const [onboarded, setOnboarded] = useState(() => isOnboardingComplete());
-  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
-  const [selectedBudget, setSelectedBudget] = useState<string>("");
-  const [selectedGroupType, setSelectedGroupType] = useState<string>("");
-  const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
-  });
-  const now = new Date();
-  const defaultTime = roundToNearest15(now);
-  const [selectedHour, setSelectedHour] = useState<number>(defaultTime.hour);
-  const [selectedMinute, setSelectedMinute] = useState<number>(defaultTime.minute);
-  const [hourPickerOpen, setHourPickerOpen] = useState(false);
+
+  const [openPicker, setOpenPicker] = useState<"date" | "time" | "area" | null>(null);
+  const [selDay, setSelDay] = useState(TODAY_DAY);
+  const [timeIdx, setTimeIdx] = useState(() => nearestTimeIdx());
+  const [area, setArea] = useState("Thonglor");
+  const [areaQuery, setAreaQuery] = useState("");
+  const [usedLocation, setUsedLocation] = useState(false);
+
   const [inviteStatus, setInviteStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
-  const dateScrollRef = useRef<HTMLDivElement>(null);
-  const hourPickerRef = useRef<HTMLDivElement>(null);
-  const upcomingDays = getNext14Days();
-
-  const [expandedSection, setExpandedSection] = useState<string>("when");
   const [listInviteData, setListInviteData] = useState<{ listId: number; restaurantIds: number[] } | null>(null);
-
-  const toggleSection = (key: string) => {
-    setExpandedSection(prev => prev === key ? "" : key);
-  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const inviteToken = params.get("listInvite");
     if (inviteToken) {
       fetch(`/api/saved-lists/invite/${encodeURIComponent(inviteToken)}`)
-        .then(r => r.ok ? r.json() : null)
-        .then(data => {
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
           if (data?.restaurantIds) {
             setListInviteData({ listId: data.listId, restaurantIds: data.restaurantIds });
           }
@@ -185,20 +94,21 @@ export default function GroupSetup() {
     }
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (hourPickerRef.current && !hourPickerRef.current.contains(e.target as Node)) {
-        setHourPickerOpen(false);
-      }
-    };
-    if (hourPickerOpen) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [hourPickerOpen]);
-
-  const toggleList = (list: string[], item: string, setter: (v: string[]) => void) => {
-    if (list.includes(item)) setter(list.filter((i) => i !== item));
-    else setter([...list, item]);
+  const togglePicker = (p: "date" | "time" | "area") =>
+    setOpenPicker((cur) => (cur === p ? null : p));
+  const pickDay = (d: number) => { setSelDay(d); setOpenPicker(null); };
+  const pickTime = (i: number) => { setTimeIdx(i); setOpenPicker(null); };
+  const pickArea = (a: string) => { setArea(a); setUsedLocation(false); setOpenPicker(null); };
+  const useMyLocation = () => { setArea("Thonglor"); setUsedLocation(true); setAreaQuery(""); setOpenPicker(null); };
+  const setNow = () => {
+    setSelDay(TODAY_DAY);
+    setTimeIdx(nearestTimeIdx());
+    setArea("Thonglor");
+    setUsedLocation(true);
+    setAreaQuery("");
+    setOpenPicker(null);
   };
+  const dateLabel = dateLabelFor(selDay);
 
   const getOrCreateSessionId = async () => {
     if (pendingSessionId) return pendingSessionId;
@@ -224,12 +134,15 @@ export default function GroupSetup() {
         }
       } catch {}
     }
-    const fallbackId = Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b => b.toString(16).padStart(2, "0")).join("");
+    const fallbackId = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+      .map((b) => b.toString(16).padStart(2, "0")).join("");
     setPendingSessionId(fallbackId);
     return fallbackId;
   };
 
-  const handleInvite = async () => {
+  const handleSend = async () => {
+    if (inviteStatus === "sending") return;
+    if (profileLoading || !profile) return;
     setInviteStatus("sending");
     const sessionId = await getOrCreateSessionId();
 
@@ -239,400 +152,278 @@ export default function GroupSetup() {
     }
     sessionStorage.setItem("toast_group_host_session", sessionId);
     sessionStorage.setItem("toast_group_pending_invite", sessionId);
+    try {
+      sessionStorage.setItem("toast_group_plan", JSON.stringify({ date: dateLabel, time: TIMES[timeIdx], area }));
+    } catch {}
 
     setInviteStatus("sent");
-    navigate(`/group/waiting?session=${sessionId}`);
+    navigate(`/group/taste?session=${sessionId}`);
   };
 
-  const whenSummary = selectedDate
-    ? `${DAY_NAMES_SHORT[selectedDate.getDay()]}, ${MONTH_NAMES_SHORT[selectedDate.getMonth()]} ${selectedDate.getDate()} at ${formatDisplayTime(selectedHour, selectedMinute)}`
-    : "Anytime";
-
-  const whereSummary = selectedLocations.length > 0
-    ? selectedLocations.map(id => LOCATIONS.find(l => l.id === id)?.label).filter(Boolean).join(", ")
-    : "Anywhere";
-
-  const prefsSummary = [
-    selectedBudget ? BUDGETS.find(b => b.id === selectedBudget)?.label : null,
-    selectedRestrictions.length > 0 ? `${selectedRestrictions.length} dietary` : null,
-  ].filter(Boolean).join(" \u00B7 ") || "No preferences set";
-
-  const groupSummary = selectedGroupType ? GROUP_TYPES.find(g => g.id === selectedGroupType)?.label || "Any group" : "Any group";
+  const hostInitial = (profile?.displayName || "You").charAt(0).toUpperCase();
 
   if (!onboarded) {
-    return (
-      <InlineOnboarding onComplete={() => { setOnboarded(true); refreshProfile(); }} />
-    );
+    return <InlineOnboarding onComplete={() => { setOnboarded(true); refreshProfile(); }} />;
   }
 
   return (
-    <div className="w-full h-[100dvh] bg-[#F8F8F7] flex flex-col overflow-hidden" data-testid="group-setup-page">
-      <div className="flex-shrink-0 bg-white/80 backdrop-blur-md border-b border-gray-100/60 z-40">
-        <div className="flex items-center gap-3 px-5 pt-12 pb-3">
+    <div
+      className="max-w-[430px] mx-auto min-h-[100dvh] relative flex flex-col font-['Inter']"
+      style={{ backgroundColor: BG, color: INK }}
+      data-testid="group-setup-page"
+    >
+      <header className="px-6 pt-14 pb-2">
+        <div className="flex items-center justify-between">
           <button
-            onClick={() => navigate("/")}
-            className="w-9 h-9 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center active:scale-90 transition-all duration-200 flex-shrink-0"
+            aria-label="Go back"
             data-testid="button-back"
+            onClick={() => navigate("/")}
+            className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.04)] active:scale-95 transition-transform"
           >
-            <ArrowLeft className="w-4.5 h-4.5 text-foreground" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          <div className="flex-1">
-            <h1 className="text-[17px] font-bold text-foreground" data-testid="text-page-title">{t("group.new_session")}</h1>
-            <p className="text-[11px] text-muted-foreground">{t("group.customize_group")}</p>
-          </div>
+          <span className="text-[12px] font-semibold tracking-[0.18em] uppercase" style={{ color: MUTE }}>
+            Group session
+          </span>
         </div>
-      </div>
 
-      <div className="flex-1 overflow-y-auto pb-6 hide-scrollbar">
+        <div className="flex items-center gap-1.5 mt-4" data-testid="stepper">
+          {STAGES.map((label, i) => {
+            const active = i === 0;
+            return (
+              <div key={label} className="flex-1 flex flex-col items-center gap-1">
+                <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: active ? GOLD : "rgba(26,26,26,0.1)" }} />
+                <span className="text-[10px] font-semibold tracking-wide" style={{ color: active ? INK : MUTE, opacity: active ? 1 : 0.7 }}>
+                  {label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </header>
+
+      <main className="flex-1 px-6 pb-44 pt-4">
+        <h1 className="font-['Plus_Jakarta_Sans'] text-[27px] font-bold tracking-tight leading-tight">
+          Set the plan
+        </h1>
+        <p className="text-[15px] mt-2 leading-relaxed" style={{ color: "rgba(26,26,26,0.6)" }}>
+          You lock the when &amp; where. Everyone picks their own taste next — Toast finds what works for all.
+        </p>
+
         {listInviteData && (
-          <div className="mx-4 mt-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl">
-            <p className="text-sm font-semibold text-amber-900" data-testid="text-list-invite-banner">
-              {t("group.swiping_from_list")}
-            </p>
-            <p className="text-xs text-amber-700 mt-0.5">
-              {t("group.restaurants_preloaded", { count: listInviteData.restaurantIds.length })}
-            </p>
+          <div className="mt-5 rounded-2xl px-4 py-3" style={{ backgroundColor: "rgba(255,204,2,0.12)", border: "1px solid rgba(255,204,2,0.3)" }} data-testid="text-list-invite-banner">
+            <p className="text-[13px] font-bold" style={{ color: INK }}>Swiping from a saved list</p>
+            <p className="text-[12px] mt-0.5" style={{ color: MUTE }}>{listInviteData.restaurantIds.length} restaurants preloaded</p>
           </div>
         )}
-        <div className="px-4 pt-4 space-y-3">
 
-          <SectionCard
-            title={t("group.when")}
-            icon={CalendarIcon}
-            iconColor="#FFCC02"
-            summary={whenSummary}
-            expanded={expandedSection === "when"}
-            onToggle={() => toggleSection("when")}
-            testId="section-when"
+        <div className="mt-6 flex items-center justify-between">
+          <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: MUTE }}>
+            When &amp; where
+          </span>
+          <button
+            data-testid="button-now"
+            onClick={setNow}
+            className="inline-flex items-center gap-1.5 rounded-full pl-2.5 pr-3 py-1.5 text-[12.5px] font-bold font-['Plus_Jakarta_Sans'] bg-white active:scale-95 transition-transform"
+            style={{ color: INK, border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
           >
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-[11px] text-muted-foreground font-medium">{t("group.pick_date")}</span>
-              {selectedDate && (
-                <button
-                  onClick={() => { setSelectedDate(null); const t = roundToNearest15(new Date()); setSelectedHour(t.hour); setSelectedMinute(t.minute); }}
-                  className="text-[10px] text-muted-foreground font-semibold hover:text-foreground transition-colors"
-                  data-testid="button-clear-datetime"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
+            <Zap className="w-3.5 h-3.5" style={{ color: GOLD }} />
+            Set to now
+          </button>
+        </div>
 
-            <div
-              ref={dateScrollRef}
-              className="flex gap-2 overflow-x-auto hide-scrollbar pb-1 -mx-1 px-1"
-            >
-              {upcomingDays.map((day, idx) => {
-                const isSelected = isSameDay(selectedDate, day);
-                const isToday = idx === 0;
-                return (
-                  <motion.button
-                    key={day.toISOString()}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => setSelectedDate(isSelected ? null : day)}
-                    data-testid={`calendar-day-${day.getDate()}`}
-                    className={`flex flex-col items-center flex-shrink-0 w-[48px] py-2 rounded-xl transition-all duration-200 ${
-                      isSelected
-                        ? "bg-foreground text-white"
-                        : "bg-gray-50 border border-gray-100/60"
-                    }`}
-                    style={{
-                      boxShadow: isSelected ? "0 4px 12px rgba(0,0,0,0.12)" : "none",
-                    }}
-                  >
-                    <span className={`text-[9px] font-semibold uppercase tracking-wider ${
-                      isSelected ? "text-white/60" : "text-muted-foreground"
-                    }`}>
-                      {isToday ? "Today" : DAY_NAMES_SHORT[day.getDay()]}
-                    </span>
-                    <span className={`text-[17px] font-bold leading-tight mt-0.5 ${
-                      isSelected ? "text-white" : "text-foreground"
-                    }`}>
-                      {day.getDate()}
-                    </span>
-                    <span className={`text-[8px] font-medium ${
-                      isSelected ? "text-white/50" : "text-muted-foreground/60"
-                    }`}>
-                      {MONTH_NAMES_SHORT[day.getMonth()]}
-                    </span>
-                  </motion.button>
-                );
-              })}
-            </div>
+        <div className="mt-3 rounded-[24px] bg-white p-2.5" style={{ boxShadow: "0 18px 40px -18px rgba(0,0,0,0.16)", border: "1px solid rgba(0,0,0,0.05)" }}>
+          <PlanRow id="date" Icon={Calendar} label="Date" value={dateLabel} open={openPicker === "date"} onToggle={() => togglePicker("date")} />
+          {openPicker === "date" && <CalendarPicker selDay={selDay} onSelect={pickDay} />}
 
-            <div className="mt-3">
-              <div className="flex items-center gap-1.5 mb-2">
-                <Clock className="w-3 h-3 text-muted-foreground/40" />
-                <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Time</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div ref={hourPickerRef} className="relative flex-1">
-                  <button
-                    onClick={() => setHourPickerOpen(prev => !prev)}
-                    data-testid="button-hour-picker"
-                    className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-100/60 cursor-pointer transition-all duration-200"
-                    style={{ boxShadow: hourPickerOpen ? "0 2px 10px rgba(0,0,0,0.08)" : "none" }}
-                  >
-                    <span className="text-[13px] font-semibold text-foreground">
-                      {(() => { const h = selectedHour === 0 ? 12 : selectedHour > 12 ? selectedHour - 12 : selectedHour; return `${h} ${selectedHour >= 12 ? "PM" : "AM"}`; })()}
-                    </span>
-                    <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground/40 transition-transform duration-200 ${hourPickerOpen ? "rotate-180" : ""}`} />
-                  </button>
-                  <AnimatePresence>
-                    {hourPickerOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                        transition={{ type: "spring", damping: 26, stiffness: 300 }}
-                        className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-2xl overflow-hidden border border-gray-100 z-[120]"
-                        style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.06)" }}
-                        data-testid="hour-picker-dropdown"
-                      >
-                        <div className="py-1.5 max-h-[200px] overflow-y-auto">
-                          {Array.from({ length: 24 }, (_, i) => {
-                            const label = i === 0 ? "12" : i > 12 ? String(i - 12) : String(i);
-                            const period = i >= 12 ? "PM" : "AM";
-                            const isActive = selectedHour === i;
-                            return (
-                              <button
-                                key={i}
-                                onClick={() => { setSelectedHour(i); setHourPickerOpen(false); }}
-                                data-testid={`hour-option-${i}`}
-                                className={`w-full flex items-center gap-2.5 px-4 py-2 text-left transition-colors ${
-                                  isActive ? "bg-gray-50" : "hover:bg-gray-50/50"
-                                }`}
-                              >
-                                <span className={`text-[13px] font-semibold flex-1 ${isActive ? "text-foreground" : "text-foreground/70"}`}>
-                                  {label} {period}
-                                </span>
-                                {isActive && (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-[#FFCC02]" />
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                <span className="text-[18px] font-bold text-muted-foreground/30">:</span>
-                <div className="flex gap-1.5">
-                  {MINUTES.map((m) => {
-                    const active = selectedMinute === m;
-                    return (
-                      <motion.button
-                        key={m}
-                        whileTap={{ scale: 0.92 }}
-                        onClick={() => setSelectedMinute(m)}
-                        data-testid={`minute-${m}`}
-                        className={`w-[40px] py-2 rounded-lg text-[12px] font-semibold transition-all duration-150 ${
-                          active
-                            ? "bg-foreground text-white"
-                            : "bg-gray-50 border border-gray-100/60 text-muted-foreground"
-                        }`}
-                        style={{
-                          boxShadow: active ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
-                        }}
-                      >
-                        :{m.toString().padStart(2, "0")}
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+          <Divider />
+          <PlanRow id="time" Icon={Clock} label="Time" value={TIMES[timeIdx]} open={openPicker === "time"} onToggle={() => togglePicker("time")} />
+          {openPicker === "time" && <TimeScroller idx={timeIdx} onSelect={pickTime} />}
 
-            {selectedDate && (
-              <div className="mt-3 flex items-center gap-2 bg-[#FFCC02]/8 rounded-xl px-3 py-2.5 border border-[#FFCC02]/15">
-                <CalendarIcon className="w-3.5 h-3.5 text-[#FFCC02] flex-shrink-0" />
-                <span className="text-[12px] font-semibold text-foreground" data-testid="text-datetime-summary">
-                  {whenSummary}
-                </span>
-                <Check className="w-3.5 h-3.5 text-[#00B14F] ml-auto flex-shrink-0" />
-              </div>
-            )}
-          </SectionCard>
+          <Divider />
+          <PlanRow id="area" Icon={MapPin} label="Area" value={area} open={openPicker === "area"} onToggle={() => togglePicker("area")} />
+          {openPicker === "area" && (
+            <AreaPicker value={area} query={areaQuery} setQuery={setAreaQuery} usedLocation={usedLocation} onSelect={pickArea} onUseLocation={useMyLocation} />
+          )}
+        </div>
 
-          <SectionCard
-            title={t("group.where")}
-            icon={MapPin}
-            iconColor="#E11D48"
-            summary={whereSummary}
-            expanded={expandedSection === "where"}
-            onToggle={() => toggleSection("where")}
-            testId="section-where"
+        <div className="mt-5 flex items-center gap-3">
+          <span
+            className="w-9 h-9 rounded-full flex items-center justify-center font-['Plus_Jakarta_Sans'] text-[13px] font-bold border-2 border-white overflow-hidden shrink-0"
+            style={{ backgroundColor: "#F3F1EC", color: INK }}
           >
-            <div className="grid grid-cols-3 gap-2">
-              {LOCATIONS.map((l) => {
-                const active = selectedLocations.includes(l.id);
-                return (
-                  <motion.button
-                    key={l.id}
-                    whileTap={{ scale: 0.93 }}
-                    onClick={() => toggleList(selectedLocations, l.id, setSelectedLocations)}
-                    data-testid={`chip-group-location-${l.id}`}
-                    className={`flex items-center gap-1.5 py-2.5 px-2.5 rounded-xl text-left transition-all duration-200 ${
-                      active
-                        ? "bg-foreground text-white"
-                        : "bg-gray-50 border border-gray-100/60"
-                    }`}
-                    style={{
-                      boxShadow: active ? "0 3px 12px rgba(0,0,0,0.12)" : "none",
-                    }}
-                  >
-                    <span className="text-base flex-shrink-0">{l.icon}</span>
-                    <div className="min-w-0">
-                      <p className={`text-[10px] font-semibold truncate ${active ? "text-white" : "text-foreground"}`}>{l.label}</p>
-                    </div>
-                  </motion.button>
-                );
-              })}
-            </div>
-          </SectionCard>
+            {profile?.pictureUrl ? (
+              <img src={profile.pictureUrl} alt="" className="w-full h-full object-cover" />
+            ) : hostInitial}
+          </span>
+          <span className="text-[13px]" style={{ color: MUTE }}>
+            You&apos;re hosting — invite your crew next
+          </span>
+        </div>
+      </main>
 
-          <SectionCard
-            title={t("group.preferences")}
-            icon={Sparkles}
-            iconColor="#6C2BD9"
-            summary={prefsSummary}
-            expanded={expandedSection === "prefs"}
-            onToggle={() => toggleSection("prefs")}
-            testId="section-prefs"
-          >
-            <div className="mb-4">
-              <p className="text-[11px] font-semibold text-muted-foreground mb-2">{t("group.budget")}</p>
-              <div className="grid grid-cols-4 gap-1.5">
-                {BUDGETS.map((b) => {
-                  const active = selectedBudget === b.id;
-                  return (
-                    <motion.button
-                      key={b.id}
-                      whileTap={{ scale: 0.93 }}
-                      onClick={() => setSelectedBudget(active ? "" : b.id)}
-                      data-testid={`chip-group-budget-${b.id}`}
-                      className={`flex flex-col items-center gap-0.5 py-2.5 px-1.5 rounded-xl transition-all duration-200 ${
-                        active
-                          ? "bg-white border-2 border-foreground"
-                          : "bg-gray-50 border border-gray-100/60"
-                      }`}
-                      style={{
-                        boxShadow: active ? "0 3px 12px rgba(0,0,0,0.08)" : "none",
-                      }}
-                    >
-                      <span
-                        className="text-[13px] font-bold"
-                        style={{ color: active ? b.color : "#999" }}
-                      >
-                        {b.icon}
-                      </span>
-                      <span className={`text-[9px] font-semibold ${active ? "text-foreground" : "text-muted-foreground"}`}>{b.label}</span>
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </div>
+      <div className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto p-6 pb-10" style={{ background: `linear-gradient(to top, ${BG} 78%, ${BG_FADE})` }}>
+        <button
+          data-testid="button-send"
+          onClick={handleSend}
+          disabled={inviteStatus === "sending" || profileLoading || !profile}
+          className="w-full h-14 rounded-full font-bold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-70"
+          style={{ backgroundColor: LINE, color: "#fff", boxShadow: "0 8px 20px -8px rgba(6,199,85,0.5)" }}
+        >
+          <Share2 className="w-5 h-5" />
+          {inviteStatus === "sending" ? "Creating session…" : profileLoading ? "Getting ready…" : "Send to the group"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
-            <div>
-              <p className="text-[11px] font-semibold text-muted-foreground mb-2">{t("group.dietary_needs")} <span className="font-normal text-muted-foreground/60">{t("group.dietary_optional")}</span></p>
-              <div className="flex flex-wrap gap-1.5">
-                {RESTRICTIONS.map((r) => {
-                  const active = selectedRestrictions.includes(r.id);
-                  return (
-                    <motion.button
-                      key={r.id}
-                      whileTap={{ scale: 0.93 }}
-                      onClick={() => toggleList(selectedRestrictions, r.id, setSelectedRestrictions)}
-                      data-testid={`chip-group-diet-${r.id}`}
-                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 ${
-                        active
-                          ? "bg-foreground text-white"
-                          : "bg-gray-50 border border-gray-100/60"
-                      }`}
-                      style={{
-                        boxShadow: active ? "0 3px 10px rgba(0,0,0,0.1)" : "none",
-                      }}
-                    >
-                      <span className="text-xs">{r.icon}</span>
-                      <span>{r.label}</span>
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </div>
-          </SectionCard>
+function Divider() {
+  return <div className="h-px mx-3.5 my-0.5" style={{ backgroundColor: "rgba(26,26,26,0.06)" }} />;
+}
 
-          <SectionCard
-            title={t("group.who")}
-            icon={Users}
-            iconColor="#00B14F"
-            summary={groupSummary}
-            expanded={expandedSection === "group"}
-            onToggle={() => toggleSection("group")}
-            testId="section-group"
-          >
-            <div>
-              <p className="text-[11px] font-semibold text-muted-foreground mb-2">{t("group.whos_with_you")}</p>
-              <div className="grid grid-cols-4 gap-1.5">
-                {GROUP_TYPES.map((g) => {
-                  const Icon = g.icon;
-                  const active = selectedGroupType === g.id;
-                  return (
-                    <motion.button
-                      key={g.id}
-                      whileTap={{ scale: 0.93 }}
-                      onClick={() => setSelectedGroupType(active ? "" : g.id)}
-                      data-testid={`chip-group-type-${g.id}`}
-                      className={`flex flex-col items-center gap-1 py-2.5 px-1.5 rounded-xl transition-all duration-200 ${
-                        active
-                          ? "bg-white border-2 border-foreground"
-                          : "bg-gray-50 border border-gray-100/60"
-                      }`}
-                      style={{
-                        boxShadow: active ? "0 3px 12px rgba(0,0,0,0.08)" : "none",
-                      }}
-                    >
-                      <Icon className="w-4.5 h-4.5 transition-colors" style={{ color: active ? g.color : "#999" }} />
-                      <span className={`text-[10px] font-semibold ${active ? "text-foreground" : "text-muted-foreground"}`}>{g.label}</span>
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </div>
-          </SectionCard>
+function PlanRow({ id, Icon, label, value, open, onToggle }: {
+  id: string; Icon: LucideIcon; label: string; value: string; open: boolean; onToggle: () => void;
+}) {
+  return (
+    <button
+      data-testid={`button-${id}`}
+      onClick={onToggle}
+      aria-expanded={open}
+      className="w-full flex items-center gap-3.5 px-3.5 py-3.5 text-left active:scale-[0.99] transition-transform"
+    >
+      <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: CREAM }}>
+        <Icon className="w-5 h-5" style={{ color: INK }} />
+      </span>
+      <span className="flex-1">
+        <span className="block text-[11px] uppercase tracking-wider font-semibold" style={{ color: MUTE }}>{label}</span>
+        <span className="block font-['Plus_Jakarta_Sans'] text-[16px] font-bold">{value}</span>
+      </span>
+      <ChevronDown className="w-5 h-5 shrink-0 transition-transform" style={{ color: MUTE, transform: open ? "rotate(180deg)" : "none" }} />
+    </button>
+  );
+}
+
+function CalendarPicker({ selDay, onSelect }: { selDay: number; onSelect: (d: number) => void }) {
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < FIRST_WEEKDAY; i++) cells.push(null);
+  for (let d = 1; d <= DAYS_IN_MONTH; d++) cells.push(d);
+  return (
+    <div className="px-3.5 pb-3 pt-1" data-testid="picker-date">
+      <div className="flex items-center justify-between mb-3 px-1">
+        <span className="font-['Plus_Jakarta_Sans'] text-[14px] font-bold">{MONTH_LABEL}</span>
+        <div className="flex gap-1.5" style={{ opacity: 0.3 }} aria-hidden="true">
+          <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ backgroundColor: CREAM }}><ChevronLeft className="w-4 h-4" /></span>
+          <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ backgroundColor: CREAM }}><ChevronRight className="w-4 h-4" /></span>
         </div>
       </div>
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {WEEKDAY_LABELS.map((w, i) => (
+          <span key={i} className="text-center text-[11px] font-semibold" style={{ color: MUTE }}>{w}</span>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((d, i) => {
+          if (d === null) return <span key={`pad-${i}`} />;
+          const past = d < TODAY_DAY;
+          const sel = d === selDay;
+          return (
+            <button
+              key={d}
+              data-testid={`day-${d}`}
+              disabled={past}
+              onClick={() => onSelect(d)}
+              className="h-9 rounded-full text-[13px] font-semibold flex items-center justify-center transition-all active:scale-90 disabled:opacity-25"
+              style={sel ? { backgroundColor: GOLD, color: INK } : { color: INK }}
+            >
+              {d}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
-      <div className="flex-shrink-0 bg-white/90 backdrop-blur-md border-t border-gray-100/60 px-5 py-3 pb-5 safe-bottom">
-        <div className="flex gap-2.5">
-          <button
-            onClick={handleInvite}
-            data-testid="button-invite-line"
-            className="flex-1 py-3.5 rounded-2xl font-bold text-[14px] text-white bg-[#00C300] active:scale-[0.97] transition-transform duration-200 flex items-center justify-center gap-2"
-            style={{ boxShadow: "0 6px 20px -4px rgba(0,195,0,0.35)" }}
-          >
-            <Share2 className="w-4 h-4" />
-            {inviteStatus === "sending" ? "..." : inviteStatus === "sent" ? "✓" : t("group.invite_via_line")}
-          </button>
-          <button
-            onClick={async () => {
-              const sessionId = await getOrCreateSessionId();
-              if (profile) {
-                sessionStorage.setItem("toast_group_host_profile", JSON.stringify(profile));
-                localStorage.setItem("toast_guest_profile", JSON.stringify(profile));
-              }
-              sessionStorage.setItem("toast_group_host_session", sessionId);
-              navigate(`/group/waiting?session=${sessionId}`);
-            }}
-            data-testid="button-start-session"
-            className="flex-1 py-3.5 rounded-2xl bg-[#FFCC02] text-[#2d2000] font-bold text-[14px] active:scale-[0.97] transition-transform duration-200 flex items-center justify-center gap-2"
-            style={{ boxShadow: "0 6px 20px -4px rgba(255,204,2,0.4)" }}
-          >
-            <Sparkles className="w-4 h-4" />
-            {t("group.start_session")}
-          </button>
+function TimeScroller({ idx, onSelect }: { idx: number; onSelect: (i: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.scrollTop = idx * 44;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <div className="px-3.5 pb-3 pt-1" data-testid="picker-time">
+      <div className="relative">
+        <div className="pointer-events-none absolute left-2 right-2 top-1/2 -translate-y-1/2 h-11 rounded-xl" style={{ backgroundColor: CREAM }} />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-14 z-10" style={{ background: "linear-gradient(#fff, rgba(255,255,255,0))" }} />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 z-10" style={{ background: "linear-gradient(rgba(255,255,255,0), #fff)" }} />
+        <div ref={ref} className="relative h-[176px] overflow-y-auto snap-y snap-mandatory [&::-webkit-scrollbar]:hidden" style={{ paddingTop: 66, paddingBottom: 66 }}>
+          {TIMES.map((tm, i) => (
+            <button
+              key={tm}
+              data-testid={`time-${i}`}
+              onClick={() => onSelect(i)}
+              className="snap-center w-full h-11 flex items-center justify-center transition-all"
+              style={i === idx ? { color: INK, fontWeight: 700, fontSize: 16 } : { color: MUTE, fontWeight: 500, fontSize: 15 }}
+            >
+              {tm}
+            </button>
+          ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function AreaPicker({ value, query, setQuery, usedLocation, onSelect, onUseLocation }: {
+  value: string; query: string; setQuery: (v: string) => void; usedLocation: boolean; onSelect: (a: string) => void; onUseLocation: () => void;
+}) {
+  const filtered = AREAS.filter((a) => a.toLowerCase().includes(query.toLowerCase()));
+  return (
+    <div className="px-3.5 pb-3 pt-1" data-testid="picker-area">
+      <button
+        data-testid="button-use-location"
+        onClick={onUseLocation}
+        className="w-full flex items-center gap-3 rounded-2xl px-3 py-3 mb-3 active:scale-[0.99] transition-transform"
+        style={{ backgroundColor: usedLocation ? "rgba(6,199,85,0.10)" : CREAM }}
+      >
+        <span className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shrink-0" style={{ border: "1px solid rgba(0,0,0,0.06)" }}>
+          <LocateFixed className="w-[18px] h-[18px]" style={{ color: usedLocation ? LINE : INK }} />
+        </span>
+        <span className="flex-1 text-left">
+          <span className="block font-['Plus_Jakarta_Sans'] text-[14px] font-bold">Use my current location</span>
+          <span className="block text-[12px]" style={{ color: MUTE }}>{usedLocation ? "Detected · Thonglor" : "We'll center on where you are"}</span>
+        </span>
+        {usedLocation && <Check className="w-5 h-5 shrink-0" style={{ color: LINE }} />}
+      </button>
+
+      <div className="flex items-center gap-2 rounded-2xl px-3.5 h-12 mb-1.5" style={{ backgroundColor: "#fff", border: "1px solid rgba(26,26,26,0.12)" }}>
+        <Search className="w-4 h-4 shrink-0" style={{ color: MUTE }} />
+        <input
+          data-testid="input-area"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search or type an area"
+          className="flex-1 bg-transparent outline-none text-[14px] font-medium"
+          style={{ color: INK }}
+        />
+      </div>
+
+      <div className="max-h-44 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+        {filtered.length === 0 ? (
+          <p className="text-[13px] py-4 text-center" style={{ color: MUTE }}>No areas match that search</p>
+        ) : (
+          filtered.map((a) => {
+            const sel = a === value;
+            return (
+              <button key={a} data-testid={`area-${a}`} onClick={() => onSelect(a)} className="w-full flex items-center gap-3 py-2.5 px-1.5 text-left rounded-xl active:opacity-70">
+                <MapPin className="w-4 h-4 shrink-0" style={{ color: sel ? GOLD : MUTE }} />
+                <span className="flex-1 text-[14px] font-medium">{a}</span>
+                {sel && <Check className="w-4 h-4 shrink-0" style={{ color: INK }} />}
+              </button>
+            );
+          })
+        )}
       </div>
     </div>
   );
