@@ -1,6 +1,7 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, Sparkles, Utensils, Wallet, Leaf, ArrowRight, Share2 } from "lucide-react";
+import { ArrowLeft, Sparkles, Utensils, Wallet, Leaf, ArrowRight, Share2, Flame } from "lucide-react";
+import { sendGroupInviteNoRedirect } from "@/lib/liff";
 
 const GOLD = "#FFCC02";
 const BG = "hsl(30, 20%, 97%)";
@@ -11,9 +12,42 @@ const LINE = "#06C755";
 
 const STAGES = ["Plan", "Taste", "Swipe", "Match", "Eat"];
 
-const MOODS = ["Comfort", "Adventurous", "Light", "Indulgent"];
-const CUISINE_OPTS = ["Thai", "Japanese", "Italian", "Korean", "Street food", "Café"];
-const DIET_OPTS = ["Veg option", "Halal", "No pork", "No nuts"];
+const MOODS = [
+  { label: "Comfort", emoji: "🍲" },
+  { label: "Adventurous", emoji: "🌏" },
+  { label: "Light", emoji: "🥗" },
+  { label: "Indulgent", emoji: "🤤" },
+  { label: "Cozy", emoji: "🫕" },
+  { label: "Fresh", emoji: "🥬" },
+];
+const CUISINE_OPTS = [
+  { label: "Thai", emoji: "🇹🇭" },
+  { label: "Japanese", emoji: "🍣" },
+  { label: "Korean", emoji: "🍜" },
+  { label: "Italian", emoji: "🍕" },
+  { label: "Chinese", emoji: "🥡" },
+  { label: "Indian", emoji: "🍛" },
+  { label: "Mexican", emoji: "🌮" },
+  { label: "Seafood", emoji: "🦐" },
+  { label: "BBQ", emoji: "🍖" },
+  { label: "Desserts", emoji: "🍰" },
+  { label: "Café", emoji: "☕" },
+  { label: "Street food", emoji: "🍢" },
+];
+const DIET_OPTS = [
+  { label: "Veg option", emoji: "🥗" },
+  { label: "Vegan", emoji: "🌱" },
+  { label: "Halal", emoji: "☪️" },
+  { label: "No pork", emoji: "🐷" },
+  { label: "No beef", emoji: "🐄" },
+  { label: "No nuts", emoji: "🥜" },
+  { label: "Gluten-free", emoji: "🌾" },
+];
+const SPICE_OPTS = [
+  { label: "Mild", emoji: "🌱" },
+  { label: "Medium", emoji: "🌶️" },
+  { label: "Hot", emoji: "🔥" },
+];
 
 export default function GroupTaste() {
   const [, navigate] = useLocation();
@@ -31,6 +65,7 @@ export default function GroupTaste() {
   const [cuisines, setCuisines] = useState<string[]>([]);
   const [budget, setBudget] = useState<number>(1);
   const [diet, setDiet] = useState<string[]>([]);
+  const [spice, setSpice] = useState<string>("Medium");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -45,13 +80,26 @@ export default function GroupTaste() {
   const toggle = (val: string, list: string[], setter: (v: string[]) => void) =>
     setter(list.includes(val) ? list.filter((x) => x !== val) : [...list, val]);
 
-  const handleReady = () => {
-    if (!sessionId) return;
+  const persistTaste = () => {
     try {
       sessionStorage.setItem(
         "toast_group_taste",
-        JSON.stringify({ mood, cuisines, budget, diet }),
+        JSON.stringify({ mood, cuisines, budget, diet, spice }),
       );
+    } catch {}
+  };
+
+  const handleReady = () => {
+    if (!sessionId) return;
+    persistTaste();
+    navigate(`/group/waiting?session=${sessionId}`);
+  };
+
+  const handleHostInvite = async () => {
+    if (!sessionId) return;
+    persistTaste();
+    try {
+      await sendGroupInviteNoRedirect(sessionId);
     } catch {}
     navigate(`/group/waiting?session=${sessionId}`);
   };
@@ -60,8 +108,8 @@ export default function GroupTaste() {
 
   return (
     <div
-      className="max-w-[430px] mx-auto min-h-[100dvh] relative flex flex-col font-['Inter']"
-      style={{ backgroundColor: BG, color: INK }}
+      className="max-w-[430px] mx-auto min-h-[100dvh] relative flex flex-col font-['Inter'] bg-background"
+      style={{ color: INK }}
       data-testid="group-taste-page"
     >
       <header className="px-6 pt-14 pb-2">
@@ -115,8 +163,8 @@ export default function GroupTaste() {
         <Section icon={<Sparkles className="w-4 h-4" />} title="Mood">
           <div className="flex flex-wrap gap-2">
             {MOODS.map((m) => (
-              <Chip key={m} testid={`mood-${m}`} active={mood === m} onClick={() => setMood(m)}>
-                {m}
+              <Chip key={m.label} testid={`mood-${m.label}`} active={mood === m.label} onClick={() => setMood(m.label)}>
+                <span className="text-[16px] leading-none mr-1.5">{m.emoji}</span>{m.label}
               </Chip>
             ))}
           </div>
@@ -125,8 +173,8 @@ export default function GroupTaste() {
         <Section icon={<Utensils className="w-4 h-4" />} title="Cuisines" hint="pick any">
           <div className="flex flex-wrap gap-2">
             {CUISINE_OPTS.map((c) => (
-              <Chip key={c} testid={`cuisine-${c}`} active={cuisines.includes(c)} onClick={() => toggle(c, cuisines, setCuisines)}>
-                {c}
+              <Chip key={c.label} testid={`cuisine-${c.label}`} active={cuisines.includes(c.label)} onClick={() => toggle(c.label, cuisines, setCuisines)}>
+                <span className="text-[16px] leading-none mr-1.5">{c.emoji}</span>{c.label}
               </Chip>
             ))}
           </div>
@@ -149,11 +197,28 @@ export default function GroupTaste() {
           </div>
         </Section>
 
+        <Section icon={<Flame className="w-4 h-4" />} title="Spice level">
+          <div className="flex gap-2">
+            {SPICE_OPTS.map((s) => (
+              <button
+                key={s.label}
+                data-testid={`spice-${s.label}`}
+                onClick={() => setSpice(s.label)}
+                aria-pressed={spice === s.label}
+                className="flex-1 h-12 rounded-2xl font-['Plus_Jakarta_Sans'] text-[14px] font-bold border transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
+                style={spice === s.label ? { backgroundColor: GOLD, color: INK, borderColor: GOLD } : { backgroundColor: "#fff", color: MUTE, borderColor: "rgba(26,26,26,0.12)" }}
+              >
+                <span className="text-[16px] leading-none">{s.emoji}</span>{s.label}
+              </button>
+            ))}
+          </div>
+        </Section>
+
         <Section icon={<Leaf className="w-4 h-4" />} title="Restrictions" hint="optional">
           <div className="flex flex-wrap gap-2">
             {DIET_OPTS.map((d) => (
-              <Chip key={d} testid={`diet-${d}`} active={diet.includes(d)} onClick={() => toggle(d, diet, setDiet)}>
-                {d}
+              <Chip key={d.label} testid={`diet-${d.label}`} active={diet.includes(d.label)} onClick={() => toggle(d.label, diet, setDiet)}>
+                <span className="text-[16px] leading-none mr-1.5">{d.emoji}</span>{d.label}
               </Chip>
             ))}
           </div>
@@ -164,7 +229,7 @@ export default function GroupTaste() {
         {hostOfSession ? (
           <button
             data-testid="button-invite"
-            onClick={handleReady}
+            onClick={handleHostInvite}
             className="w-full h-14 rounded-full font-bold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
             style={{ backgroundColor: LINE, color: "#fff", boxShadow: "0 8px 20px -8px rgba(6,199,85,0.5)" }}
           >

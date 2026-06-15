@@ -13,6 +13,8 @@ Toast's brand is #FFCC02 golden yellow, Plus Jakarta Sans headings + Inter body,
 
 **Why:** the user's taste is mature/editorial; bright fills and playful motion read as "kids app." Consistency with the existing white-card system beats novel per-card coloring.
 
+**Exception (explicitly requested):** on the group taste screen (`client/src/pages/GroupTaste.tsx`, route `/group/taste`) the user explicitly chose colorful food emoji on the mood/cuisine/restriction chips to match the onboarding cuisine screen (`client/src/pages/Onboarding.tsx`). Keep these emoji; do not strip them. This overrides the general "avoid emoji in chips" guidance for this one screen.
+
 **Hard rule — never violate:** the Solo screens (`client/src/pages/SoloJourney.tsx`, route `/solo`) must keep `bg-background`. Never hardcode a cream/custom page background. The user has restated this many times.
 
 **How to apply:** any redesign of SoloJourney intent/result screens — match the white-card language, keep gold as accent only, leave the page background as `bg-background`.

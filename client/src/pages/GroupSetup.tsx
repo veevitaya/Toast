@@ -151,7 +151,6 @@ export default function GroupSetup() {
       localStorage.setItem("toast_guest_profile", JSON.stringify(profile));
     }
     sessionStorage.setItem("toast_group_host_session", sessionId);
-    sessionStorage.setItem("toast_group_pending_invite", sessionId);
     try {
       sessionStorage.setItem("toast_group_plan", JSON.stringify({ date: dateLabel, time: TIMES[timeIdx], area }));
     } catch {}

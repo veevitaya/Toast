@@ -239,18 +239,6 @@ export default function WaitingRoom() {
     }
   }, [profileLoading, profile, sessionId, hostOfSession, sessionCreated]);
 
-  useEffect(() => {
-    if (!sessionCreated || !sessionId) return;
-
-    const pendingInvite = sessionStorage.getItem("toast_group_pending_invite");
-    if (pendingInvite === sessionId) {
-      sessionStorage.removeItem("toast_group_pending_invite");
-      setTimeout(() => {
-        sendGroupInviteNoRedirect(sessionId);
-      }, 400);
-    }
-  }, [sessionCreated, sessionId]);
-
   const [sessionExpired, setSessionExpired] = useState(false);
   const [sessionCompleted, setSessionCompleted] = useState(false);
   const [sessionDeleted, setSessionDeleted] = useState(false);
