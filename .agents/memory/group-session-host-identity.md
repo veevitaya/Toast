@@ -20,3 +20,19 @@ The waiting room's host fetch must not `await getUserLocation()` before the sess
 **Why:** caused a permanent "0 joined" even though the server had the members.
 
 **How to apply:** fetch location lazily, only on the code path that actually sends lat/lng.
+
+# GroupSwipe identity is async — gate per-member fetches on useLineProfile loading
+
+In GroupSwipe the member identity used for per-member API calls (e.g. fetching group taste) is NOT reliably available on first render. Only the **guest-join** path writes the session-scoped `localStorage.toast_guest_<sessionCode>` synchronously; LINE users (including the host) get their id from `useLineProfile`, which resolves **asynchronously**. An effect keyed only on `[sessionCode]` fires before `lineProfile` resolves, so any call needing identity gets the empty/anonymous id.
+
+**Why:** a member-auth'd GET (taste endpoint requires `lineUserId` query or verified `X-Line-Access-Token` and rejects non-members with 403) silently 403s on the first run, the result is swallowed, and the deck is never re-ranked because the effect doesn't re-run.
+
+**How to apply:** destructure `loading` from `useLineProfile` and `return` early while it's true; add `loading` (and `profile?.userId`) to the effect deps. `useLineProfile` always flips `loading` to false (LINE profile or stable guest fallback), so gating never deadlocks. This yields a single load with identity known.
+
+# Group endpoints trust client-supplied lineUserId (app-wide pattern)
+
+All group-session endpoints (join, swipe, finalize-stats, complete, location, taste) identify the caller by the `lineUserId` in the request body/query plus a membership check — there is no signed per-member token for guests. LINE users can additionally pass `X-Line-Access-Token`, which the server verifies and uses to override the claimed id.
+
+**Why:** guests have no auth credential by design; introducing a signed member token for one endpoint would diverge from every other group endpoint.
+
+**How to apply:** for new group endpoints, follow the same pattern (verify LINE token when present, else trust client id + membership check). Don't single out one endpoint for stronger guest auth unless the whole group surface is migrated together.

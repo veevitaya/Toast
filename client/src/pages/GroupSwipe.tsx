@@ -5,10 +5,12 @@ import { addSession, updateSession, removeSession } from "@/lib/sessionStore";
 import { BottomNav } from "@/components/BottomNav";
 import { trackEvent } from "@/lib/analytics";
 import { useLineProfile } from "@/lib/useLineProfile";
+import { getAccessToken } from "@/lib/liff";
 import { handleImageError } from "@/lib/imageUtils";
 import { throttleTap } from "@/lib/requestLock";
 import { fetchWithTimeout } from "@/lib/queryClient";
 import { isMenuFirstVibe } from "@shared/vibeConfig";
+import { rankByGroupTaste, type MemberTaste } from "@/lib/groupTasteRanking";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { Square, X, Trophy, ChevronRight, Crown, Medal, Award, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils, MapPin, UtensilsCrossed } from "lucide-react";
 
@@ -432,7 +434,7 @@ function buildTagsFromCategory(category: string): string[] {
 export default function GroupSwipe() {
   const [, navigate] = useLocation();
   const { t } = useLanguage();
-  const { profile: lineProfile } = useLineProfile();
+  const { profile: lineProfile, loading: lineLoading } = useLineProfile();
   const sessionCode = new URLSearchParams(window.location.search).get("session") || "";
   const profile = useMemo(() => {
     if (sessionCode) {
@@ -444,6 +446,7 @@ export default function GroupSwipe() {
     return lineProfile;
   }, [sessionCode, lineProfile]);
   const [members, setMembers] = useState<SessionMember[]>([]);
+  const memberTastesRef = useRef<MemberTaste[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [dishItems, setDishItems] = useState<DishItem[]>([]);
   const [swipePhase, setSwipePhase] = useState<SwipePhase>("menu");
@@ -488,6 +491,7 @@ export default function GroupSwipe() {
   } | null>(null);
 
   useEffect(() => {
+    if (lineLoading) return;
     let cancelled = false;
     const controller = new AbortController();
     const loadCards = async () => {
@@ -497,6 +501,21 @@ export default function GroupSwipe() {
         let vibeForSession: string | null = null;
 
         if (sessionCode) {
+          try {
+            const callerId = profile?.userId || "";
+            const lineToken = getAccessToken();
+            const tasteRes = await fetchWithTimeout(
+              `/api/group/sessions/${sessionCode}/taste${callerId ? `?lineUserId=${encodeURIComponent(callerId)}` : ""}`,
+              {
+                signal: controller.signal,
+                headers: lineToken ? { "X-Line-Access-Token": lineToken } : {},
+              },
+            );
+            if (!cancelled && tasteRes.ok) {
+              const tasteData = await tasteRes.json();
+              memberTastesRef.current = Array.isArray(tasteData.tastes) ? tasteData.tastes : [];
+            }
+          } catch {}
           const sessionRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}`, { signal: controller.signal });
           if (cancelled) return;
           if (sessionRes.ok) {
@@ -603,8 +622,10 @@ export default function GroupSwipe() {
             const dishes: DishItem[] = await dishRes.json();
             if (vibeForSession !== "trending_dishes") {
               dishes.sort(() => Math.random() - 0.5);
+              setDishItems(rankByGroupTaste(dishes, memberTastesRef.current));
+            } else {
+              setDishItems(dishes);
             }
-            setDishItems(dishes);
             setSwipePhase("menu");
           }
         } else {
@@ -622,7 +643,7 @@ export default function GroupSwipe() {
             isNew: r.isNew || r.is_new || false,
           }));
           items.sort(() => Math.random() - 0.5);
-          setMenuItems(items);
+          setMenuItems(rankByGroupTaste(items, memberTastesRef.current));
         }
       } catch (err) {
         console.error("Failed to load cards:", err);
@@ -632,7 +653,7 @@ export default function GroupSwipe() {
     };
     loadCards();
     return () => { cancelled = true; controller.abort(); };
-  }, [sessionCode]);
+  }, [sessionCode, lineLoading, profile?.userId]);
 
   const menuItemsRef = useRef<MenuItem[]>([]);
   menuItemsRef.current = menuItems;
@@ -847,7 +868,7 @@ export default function GroupSwipe() {
           isNew: r.isNew || r.is_new || false,
         }));
         items.sort(() => Math.random() - 0.5);
-        setMenuItems(items);
+        setMenuItems(rankByGroupTaste(items, memberTastesRef.current));
         setCurrentIndex(0);
         setSwipePhase("restaurant");
         setLiked(new Set());

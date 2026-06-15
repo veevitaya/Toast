@@ -239,6 +239,40 @@ export default function WaitingRoom() {
     }
   }, [profileLoading, profile, sessionId, hostOfSession, sessionCreated]);
 
+  const tasteSyncedRef = useRef(false);
+  useEffect(() => {
+    if (!sessionCreated || !sessionId || !profile?.userId) return;
+    if (tasteSyncedRef.current) return;
+    let raw: string | null = null;
+    try { raw = sessionStorage.getItem("toast_group_taste"); } catch {}
+    if (!raw) return;
+    let taste: { mood?: string; cuisines?: string[]; budget?: number; diet?: string[] };
+    try { taste = JSON.parse(raw); } catch { return; }
+    tasteSyncedRef.current = true;
+    const lineToken = getAccessToken();
+    fetchWithTimeout(`/api/group/sessions/${sessionId}/taste`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(lineToken ? { "X-Line-Access-Token": lineToken } : {}),
+      },
+      body: JSON.stringify({
+        lineUserId: profile.userId,
+        mood: taste.mood ?? null,
+        cuisines: Array.isArray(taste.cuisines) ? taste.cuisines : [],
+        budget: typeof taste.budget === "number" ? taste.budget : null,
+        diet: Array.isArray(taste.diet) ? taste.diet : [],
+      }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          tasteSyncedRef.current = false;
+          console.warn("[WaitingRoom] taste sync failed", res.status);
+        }
+      })
+      .catch(() => { tasteSyncedRef.current = false; });
+  }, [sessionCreated, sessionId, profile?.userId]);
+
   const [sessionExpired, setSessionExpired] = useState(false);
   const [sessionCompleted, setSessionCompleted] = useState(false);
   const [sessionDeleted, setSessionDeleted] = useState(false);

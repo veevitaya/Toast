@@ -302,6 +302,24 @@ export const insertGroupSessionMemberSchema = createInsertSchema(groupSessionMem
 export type GroupSessionMember = typeof groupSessionMembers.$inferSelect;
 export type InsertGroupSessionMember = z.infer<typeof insertGroupSessionMemberSchema>;
 
+export const groupMemberTastes = pgTable("group_member_tastes", {
+  id: serial("id").primaryKey(),
+  sessionCode: text("session_code").notNull(),
+  lineUserId: text("line_user_id").notNull(),
+  mood: text("mood"),
+  cuisines: text("cuisines").array().default([]),
+  budget: integer("budget"),
+  diet: text("diet").array().default([]),
+  updatedAt: text("updated_at").notNull(),
+}, (table) => ({
+  sessionCodeIdx: index("group_member_tastes_session_code_idx").on(table.sessionCode),
+  sessionUserUnique: uniqueIndex("group_member_tastes_session_user_unique").on(table.sessionCode, table.lineUserId),
+}));
+
+export const insertGroupMemberTasteSchema = createInsertSchema(groupMemberTastes).omit({ id: true });
+export type GroupMemberTaste = typeof groupMemberTastes.$inferSelect;
+export type InsertGroupMemberTaste = z.infer<typeof insertGroupMemberTasteSchema>;
+
 export const tasteDna = pgTable("taste_dna", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull().unique(),

@@ -11,6 +11,7 @@ import {
   restaurantClaims,
   groupSessions,
   groupSessionMembers,
+  groupMemberTastes,
   groupSwipes,
   tasteDna,
   decisionSessions,
@@ -36,6 +37,8 @@ import {
   type InsertGroupSession,
   type GroupSessionMember,
   type InsertGroupSessionMember,
+  type GroupMemberTaste,
+  type InsertGroupMemberTaste,
   type GroupSwipe,
   type InsertGroupSwipe,
   type TasteDna,
@@ -173,6 +176,8 @@ export interface IStorage {
   getGroupMembers(sessionCode: string): Promise<GroupSessionMember[]>;
   isGroupMember(sessionCode: string, lineUserId: string): Promise<boolean>;
   updateMemberLocation(sessionCode: string, lineUserId: string, latitude: string, longitude: string): Promise<void>;
+  setGroupMemberTaste(taste: InsertGroupMemberTaste): Promise<GroupMemberTaste>;
+  getGroupMemberTastes(sessionCode: string): Promise<GroupMemberTaste[]>;
   recordGroupSwipe(swipe: InsertGroupSwipe): Promise<GroupSwipe>;
   getGroupSwipes(sessionCode: string): Promise<GroupSwipe[]>;
   getGroupMatches(sessionCode: string, swipeType?: string): Promise<{ menuItemId: number; voters: string[] }[]>;
@@ -657,6 +662,33 @@ export class DatabaseStorage implements IStorage {
     await db.update(groupSessionMembers)
       .set({ latitude, longitude })
       .where(and(eq(groupSessionMembers.sessionCode, sessionCode), eq(groupSessionMembers.lineUserId, lineUserId)));
+  }
+
+  async setGroupMemberTaste(taste: InsertGroupMemberTaste): Promise<GroupMemberTaste> {
+    const [existing] = await db.select().from(groupMemberTastes)
+      .where(and(eq(groupMemberTastes.sessionCode, taste.sessionCode), eq(groupMemberTastes.lineUserId, taste.lineUserId)))
+      .limit(1);
+
+    if (existing) {
+      const [updated] = await db.update(groupMemberTastes)
+        .set({
+          mood: taste.mood ?? null,
+          cuisines: taste.cuisines ?? [],
+          budget: taste.budget ?? null,
+          diet: taste.diet ?? [],
+          updatedAt: taste.updatedAt,
+        })
+        .where(eq(groupMemberTastes.id, existing.id))
+        .returning();
+      return updated;
+    }
+
+    const [created] = await db.insert(groupMemberTastes).values(taste).returning();
+    return created;
+  }
+
+  async getGroupMemberTastes(sessionCode: string): Promise<GroupMemberTaste[]> {
+    return await db.select().from(groupMemberTastes).where(eq(groupMemberTastes.sessionCode, sessionCode)).orderBy(groupMemberTastes.id);
   }
 
   async recordGroupSwipe(swipe: InsertGroupSwipe): Promise<GroupSwipe> {

@@ -4197,6 +4197,81 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/group/sessions/:code/taste", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const schema = z.object({
+        lineUserId: z.string().min(1).max(100),
+        mood: z.string().max(50).nullable().optional(),
+        cuisines: z.array(z.string().max(50)).max(20).optional(),
+        budget: z.number().int().min(0).max(2).nullable().optional(),
+        diet: z.array(z.string().max(50)).max(20).optional(),
+      });
+      const input = schema.parse(req.body);
+
+      const session = await storage.getGroupSession(code);
+      if (!session) return res.status(404).json({ message: "Session not found" });
+
+      let userId = input.lineUserId;
+      const lineToken = req.headers["x-line-access-token"] as string | undefined;
+      if (lineToken) {
+        const verified = await verifyLineAccessToken(lineToken);
+        if (verified) {
+          userId = verified.userId;
+        }
+      }
+
+      const isMember = await storage.isGroupMember(code, userId);
+      if (!isMember) {
+        return res.status(403).json({ message: "Not a member of this session" });
+      }
+
+      const taste = await storage.setGroupMemberTaste({
+        sessionCode: code,
+        lineUserId: userId,
+        mood: input.mood ?? null,
+        cuisines: input.cuisines ?? [],
+        budget: input.budget ?? null,
+        diet: input.diet ?? [],
+        updatedAt: new Date().toISOString(),
+      });
+
+      res.json({ success: true, taste });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/group/sessions/:code/taste", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const session = await storage.getGroupSession(code);
+      if (!session) return res.status(404).json({ message: "Session not found" });
+
+      let callerId = (req.query.lineUserId as string | undefined) || "";
+      const lineToken = req.headers["x-line-access-token"] as string | undefined;
+      if (lineToken) {
+        const verified = await verifyLineAccessToken(lineToken);
+        if (verified) {
+          callerId = verified.userId;
+        }
+      }
+
+      if (!callerId || !(await storage.isGroupMember(code, callerId))) {
+        return res.status(403).json({ message: "Not a member of this session" });
+      }
+
+      const tastes = await storage.getGroupMemberTastes(code);
+      const members = await storage.getGroupMembers(code);
+      res.json({ tastes, memberCount: members.length });
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get("/api/sessions/active/:userId", async (req, res) => {
     try {
       const ip = req.ip || "unknown";
