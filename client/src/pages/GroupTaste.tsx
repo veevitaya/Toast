@@ -108,7 +108,7 @@ export default function GroupTaste() {
 
   return (
     <div
-      className="max-w-[430px] mx-auto min-h-[100dvh] relative flex flex-col font-['Inter'] bg-background"
+      className="max-w-[430px] mx-auto min-h-[100dvh] relative flex flex-col bg-background"
       style={{ color: INK }}
       data-testid="group-taste-page"
     >
@@ -151,7 +151,7 @@ export default function GroupTaste() {
       </header>
 
       <main className="flex-1 px-6 pb-44 pt-4">
-        <h1 className="font-['Plus_Jakarta_Sans'] text-[27px] font-bold tracking-tight leading-tight">
+        <h1 className="text-[27px] font-bold tracking-tight leading-tight">
           Your taste, your call
         </h1>
         <p className="text-[15px] mt-2 leading-relaxed" style={{ color: "rgba(26,26,26,0.6)" }}>
@@ -188,7 +188,7 @@ export default function GroupTaste() {
                 data-testid={`budget-${i}`}
                 onClick={() => setBudget(i)}
                 aria-pressed={budget === i}
-                className="flex-1 h-12 rounded-2xl font-['Plus_Jakarta_Sans'] text-[16px] font-bold border transition-all active:scale-[0.98]"
+                className="flex-1 h-12 rounded-2xl text-[16px] font-bold border transition-all active:scale-[0.98]"
                 style={budget === i ? { backgroundColor: GOLD, color: INK, borderColor: GOLD } : { backgroundColor: "#fff", color: MUTE, borderColor: "rgba(26,26,26,0.12)" }}
               >
                 {b}
@@ -205,7 +205,7 @@ export default function GroupTaste() {
                 data-testid={`spice-${s.label}`}
                 onClick={() => setSpice(s.label)}
                 aria-pressed={spice === s.label}
-                className="flex-1 h-12 rounded-2xl font-['Plus_Jakarta_Sans'] text-[14px] font-bold border transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
+                className="flex-1 h-12 rounded-2xl text-[14px] font-bold border transition-all active:scale-[0.98] flex items-center justify-center gap-1.5"
                 style={spice === s.label ? { backgroundColor: GOLD, color: INK, borderColor: GOLD } : { backgroundColor: "#fff", color: MUTE, borderColor: "rgba(26,26,26,0.12)" }}
               >
                 <span className="text-[16px] leading-none">{s.emoji}</span>{s.label}
@@ -255,7 +255,7 @@ function Section({ icon, title, hint, children }: { icon: ReactNode; title: stri
     <div className="mt-6">
       <div className="flex items-center gap-2 mb-2.5">
         <span style={{ color: GOLD }}>{icon}</span>
-        <span className="font-['Plus_Jakarta_Sans'] text-[15px] font-bold">{title}</span>
+        <span className="text-[15px] font-bold">{title}</span>
         {hint && <span className="text-[12px]" style={{ color: MUTE }}>· {hint}</span>}
       </div>
       {children}

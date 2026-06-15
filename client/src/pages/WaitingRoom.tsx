@@ -408,9 +408,12 @@ export default function WaitingRoom() {
 
   const memberCount = members.length;
   const canStart = memberCount >= 2;
+  const isActuallyHost =
+    hostOfSession ||
+    (!!sessionInfo && !!profile && profile.userId === sessionInfo.hostLineUserId);
 
   const handleStartSwiping = async () => {
-    if (!hostOfSession || !profile) return;
+    if (!isActuallyHost || !profile) return;
     try {
       const res = await fetchWithTimeout(`/api/group/sessions/${sessionId}/status`, {
         method: "POST",
@@ -606,7 +609,7 @@ export default function WaitingRoom() {
   }
 
   return (
-    <div className="max-w-[430px] mx-auto min-h-[100dvh] flex flex-col font-['Inter'] bg-background" style={{ color: "#1A1A1A" }} data-testid="waiting-room-page">
+    <div className="max-w-[430px] mx-auto min-h-[100dvh] flex flex-col bg-background" style={{ color: "#1A1A1A" }} data-testid="waiting-room-page">
       <header className="flex items-center justify-between px-6 pt-14 pb-2">
         <button
           aria-label="Go back"
@@ -623,7 +626,7 @@ export default function WaitingRoom() {
 
       <main className="flex-1 px-6 pb-44 pt-3">
         <div className="mb-5">
-          <h1 className="font-['Plus_Jakarta_Sans'] text-[28px] font-bold tracking-tight leading-tight" data-testid="text-waiting-title">
+          <h1 className="text-[28px] font-bold tracking-tight leading-tight" data-testid="text-waiting-title">
             {memberCount < 2 ? "Who's in?" : "Everyone's here"}
           </h1>
           <p className="text-[15px] mt-2 leading-relaxed text-[#1A1A1A]/60">
@@ -645,7 +648,7 @@ export default function WaitingRoom() {
                 <TrendingUp className="w-3.5 h-3.5 text-[#9A938A]" /> Trending
               </span>
             )}
-            {hostOfSession && sessionCreated ? (
+            {isActuallyHost && sessionCreated ? (
               <button
                 data-testid="button-set-location"
                 onClick={() => setShowLocationPicker(!showLocationPicker)}
@@ -658,7 +661,7 @@ export default function WaitingRoom() {
                 <MapPin className="w-3.5 h-3.5 text-[#9A938A]" /> {sessionInfo.locationName}
               </span>
             ) : null}
-            {hostOfSession && sessionCreated && (
+            {isActuallyHost && sessionCreated && (
               <button
                 data-testid="button-invite-chip"
                 onClick={handleInviteMore}
@@ -670,7 +673,7 @@ export default function WaitingRoom() {
           </div>
 
           <AnimatePresence>
-            {hostOfSession && sessionCreated && showLocationPicker && (
+            {isActuallyHost && sessionCreated && showLocationPicker && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
@@ -797,14 +800,14 @@ export default function WaitingRoom() {
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="font-['Plus_Jakarta_Sans'] text-[24px] font-bold leading-none">{memberCount}</span>
+                    <span className="text-[24px] font-bold leading-none">{memberCount}</span>
                     <span className="text-[10px] font-semibold mt-0.5 text-[#9A938A]">joined</span>
                   </div>
                 </div>
               );
             })()}
             <div className="flex-1 min-w-0">
-              <p className="font-['Plus_Jakarta_Sans'] text-[19px] font-bold leading-tight" data-testid="text-member-count">
+              <p className="text-[19px] font-bold leading-tight" data-testid="text-member-count">
                 {memberCount} joined
               </p>
               <p className="text-[13.5px] mt-1 leading-snug text-[#9A938A]">
@@ -815,7 +818,7 @@ export default function WaitingRoom() {
                   {members.slice(0, 6).map((m) => (
                     <span
                       key={m.lineUserId}
-                      className="w-7 h-7 rounded-full flex items-center justify-center font-['Plus_Jakarta_Sans'] text-[11px] font-bold border-2 border-white overflow-hidden bg-[#F3F1EC] text-[#1A1A1A]"
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold border-2 border-white overflow-hidden bg-[#F3F1EC] text-[#1A1A1A]"
                     >
                       {m.pictureUrl ? <img src={m.pictureUrl} alt="" className="w-full h-full object-cover" /> : m.displayName.charAt(0)}
                     </span>
@@ -850,12 +853,12 @@ export default function WaitingRoom() {
               return (
                 <div key={m.lineUserId} data-testid={`member-${m.lineUserId}`} className="w-full flex items-center gap-3 py-1.5">
                   <span
-                    className="w-10 h-10 rounded-full flex items-center justify-center font-['Plus_Jakarta_Sans'] text-[14px] font-bold shrink-0 overflow-hidden bg-[#F3F1EC] text-[#1A1A1A]"
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-[14px] font-bold shrink-0 overflow-hidden bg-[#F3F1EC] text-[#1A1A1A]"
                     style={{ boxShadow: `0 0 0 2px #fff, 0 0 0 3.5px ${ringColor}` }}
                   >
                     {m.pictureUrl ? <img src={m.pictureUrl} alt={m.displayName} className="w-full h-full object-cover" /> : m.displayName.charAt(0)}
                   </span>
-                  <span className="flex-1 font-['Plus_Jakarta_Sans'] text-[15px] font-semibold truncate" data-testid={`text-member-name-${m.lineUserId}`}>
+                  <span className="flex-1 text-[15px] font-semibold truncate" data-testid={`text-member-name-${m.lineUserId}`}>
                     {label}
                   </span>
                   {isMemberHost ? (
@@ -871,7 +874,7 @@ export default function WaitingRoom() {
               );
             })}
 
-            {hostOfSession && sessionCreated && (
+            {isActuallyHost && sessionCreated && (
               <button
                 onClick={handleInviteMore}
                 data-testid="button-invite-more"
@@ -880,7 +883,7 @@ export default function WaitingRoom() {
                 <span className="w-10 h-10 rounded-full border-2 border-dashed border-[#E3DED3] flex items-center justify-center shrink-0">
                   <Plus className="w-4 h-4 text-[#9A938A]" />
                 </span>
-                <span className="flex-1 font-['Plus_Jakarta_Sans'] text-[14px] font-semibold text-[#9A938A]">Invite more friends</span>
+                <span className="flex-1 text-[14px] font-semibold text-[#9A938A]">Invite more friends</span>
               </button>
             )}
           </div>
@@ -904,7 +907,7 @@ export default function WaitingRoom() {
         className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto px-6 pt-4 pb-[88px]"
         style={{ background: "linear-gradient(to top, hsl(var(--background)) 70%, hsla(30,20%,97%,0))" }}
       >
-        {hostOfSession ? (
+        {isActuallyHost ? (
           <button
             onClick={handleStartSwiping}
             disabled={!canStart}
@@ -922,7 +925,7 @@ export default function WaitingRoom() {
             Waiting for the host to start…
           </div>
         )}
-        {hostOfSession && !canStart && (
+        {isActuallyHost && !canStart && (
           <p className="text-center text-[12.5px] font-medium mt-3 text-[#9A938A]">
             Invite at least 1 more friend to start
           </p>

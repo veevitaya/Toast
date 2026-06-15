@@ -5,7 +5,7 @@ description: What "friendly + premium, not childish" means for Toast UI, plus th
 
 # Toast premium ≠ childish
 
-Toast's brand is #FFCC02 golden yellow, Plus Jakarta Sans headings + Inter body, mobile-first. When asked for "friendly and premium that appeals to all ages," the user repeatedly rejected childish treatments.
+Toast's brand is #FFCC02 golden yellow, **Figtree** is the one and only app font (index.css loads only Figtree + Prompt; `--font-sans`/`--font-display` are both Figtree, body→font-sans, h1-h6→font-display), mobile-first. Do NOT use `font-['Inter']`/`font-['Plus_Jakarta_Sans']` — those families aren't loaded and silently fall back to system fonts, so screens that hardcode them look off-brand (this caused a visible font mismatch on the group screens). To match the app, just inherit (drop the font class); never hardcode a font family. When asked for "friendly and premium that appeals to all ages," the user repeatedly rejected childish treatments.
 
 **Avoid:** candy/pastel filled tiles, oversized emoji, emoji inside colored background chips, bouncing/rotated/spring mascot "stamps", default-selected-looking accents (a gold ring on one card reads as pre-selected — they did not want that).
 

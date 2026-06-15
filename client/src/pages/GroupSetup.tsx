@@ -167,7 +167,7 @@ export default function GroupSetup() {
 
   return (
     <div
-      className="max-w-[430px] mx-auto min-h-[100dvh] relative flex flex-col font-['Inter'] bg-background"
+      className="max-w-[430px] mx-auto min-h-[100dvh] relative flex flex-col bg-background"
       style={{ color: INK }}
       data-testid="group-setup-page"
     >
@@ -202,7 +202,7 @@ export default function GroupSetup() {
       </header>
 
       <main className="flex-1 px-6 pb-44 pt-4">
-        <h1 className="font-['Plus_Jakarta_Sans'] text-[27px] font-bold tracking-tight leading-tight">
+        <h1 className="text-[27px] font-bold tracking-tight leading-tight">
           Set the plan
         </h1>
         <p className="text-[15px] mt-2 leading-relaxed" style={{ color: "rgba(26,26,26,0.6)" }}>
@@ -223,7 +223,7 @@ export default function GroupSetup() {
           <button
             data-testid="button-now"
             onClick={setNow}
-            className="inline-flex items-center gap-1.5 rounded-full pl-2.5 pr-3 py-1.5 text-[12.5px] font-bold font-['Plus_Jakarta_Sans'] bg-white active:scale-95 transition-transform"
+            className="inline-flex items-center gap-1.5 rounded-full pl-2.5 pr-3 py-1.5 text-[12.5px] font-bold bg-white active:scale-95 transition-transform"
             style={{ color: INK, border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
           >
             <Zap className="w-3.5 h-3.5" style={{ color: GOLD }} />
@@ -248,7 +248,7 @@ export default function GroupSetup() {
 
         <div className="mt-5 flex items-center gap-3">
           <span
-            className="w-9 h-9 rounded-full flex items-center justify-center font-['Plus_Jakarta_Sans'] text-[13px] font-bold border-2 border-white overflow-hidden shrink-0"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold border-2 border-white overflow-hidden shrink-0"
             style={{ backgroundColor: "#F3F1EC", color: INK }}
           >
             {profile?.pictureUrl ? (
@@ -296,7 +296,7 @@ function PlanRow({ id, Icon, label, value, open, onToggle }: {
       </span>
       <span className="flex-1">
         <span className="block text-[11px] uppercase tracking-wider font-semibold" style={{ color: MUTE }}>{label}</span>
-        <span className="block font-['Plus_Jakarta_Sans'] text-[16px] font-bold">{value}</span>
+        <span className="block text-[16px] font-bold">{value}</span>
       </span>
       <ChevronDown className="w-5 h-5 shrink-0 transition-transform" style={{ color: MUTE, transform: open ? "rotate(180deg)" : "none" }} />
     </button>
@@ -310,7 +310,7 @@ function CalendarPicker({ selDay, onSelect }: { selDay: number; onSelect: (d: nu
   return (
     <div className="px-3.5 pb-3 pt-1" data-testid="picker-date">
       <div className="flex items-center justify-between mb-3 px-1">
-        <span className="font-['Plus_Jakarta_Sans'] text-[14px] font-bold">{MONTH_LABEL}</span>
+        <span className="text-[14px] font-bold">{MONTH_LABEL}</span>
         <div className="flex gap-1.5" style={{ opacity: 0.3 }} aria-hidden="true">
           <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ backgroundColor: CREAM }}><ChevronLeft className="w-4 h-4" /></span>
           <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ backgroundColor: CREAM }}><ChevronRight className="w-4 h-4" /></span>
@@ -390,7 +390,7 @@ function AreaPicker({ value, query, setQuery, usedLocation, onSelect, onUseLocat
           <LocateFixed className="w-[18px] h-[18px]" style={{ color: usedLocation ? LINE : INK }} />
         </span>
         <span className="flex-1 text-left">
-          <span className="block font-['Plus_Jakarta_Sans'] text-[14px] font-bold">Use my current location</span>
+          <span className="block text-[14px] font-bold">Use my current location</span>
           <span className="block text-[12px]" style={{ color: MUTE }}>{usedLocation ? "Detected · Thonglor" : "We'll center on where you are"}</span>
         </span>
         {usedLocation && <Check className="w-5 h-5 shrink-0" style={{ color: LINE }} />}
