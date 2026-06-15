@@ -1,12 +1,13 @@
 import { useState, useEffect, type ReactNode } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, Sparkles, Utensils, Wallet, Leaf, ArrowRight } from "lucide-react";
+import { ArrowLeft, Sparkles, Utensils, Wallet, Leaf, ArrowRight, Share2 } from "lucide-react";
 
 const GOLD = "#FFCC02";
 const BG = "hsl(30, 20%, 97%)";
 const BG_FADE = "hsla(30, 20%, 97%, 0)";
 const INK = "#1A1A1A";
 const MUTE = "#9A938A";
+const LINE = "#06C755";
 
 const STAGES = ["Plan", "Taste", "Swipe", "Match", "Eat"];
 
@@ -17,6 +18,14 @@ const DIET_OPTS = ["Veg option", "Halal", "No pork", "No nuts"];
 export default function GroupTaste() {
   const [, navigate] = useLocation();
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [hostOfSession, setHostOfSession] = useState(() => {
+    try {
+      const sid = new URLSearchParams(window.location.search).get("session");
+      return !!sid && sessionStorage.getItem("toast_group_host_session") === sid;
+    } catch {
+      return false;
+    }
+  });
 
   const [mood, setMood] = useState<string>("Comfort");
   const [cuisines, setCuisines] = useState<string[]>([]);
@@ -57,14 +66,18 @@ export default function GroupTaste() {
     >
       <header className="px-6 pt-14 pb-2">
         <div className="flex items-center justify-between">
-          <button
-            aria-label="Go back"
-            data-testid="button-back"
-            onClick={() => navigate("/group/setup")}
-            className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.04)] active:scale-95 transition-transform"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+          {hostOfSession ? (
+            <button
+              aria-label="Go back"
+              data-testid="button-back"
+              onClick={() => navigate("/group/setup")}
+              className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.04)] active:scale-95 transition-transform"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          ) : (
+            <span className="w-10 h-10" aria-hidden="true" />
+          )}
           <span className="text-[12px] font-semibold tracking-[0.18em] uppercase" style={{ color: MUTE }}>
             Group session
           </span>
@@ -94,7 +107,9 @@ export default function GroupTaste() {
           Your taste, your call
         </h1>
         <p className="text-[15px] mt-2 leading-relaxed" style={{ color: "rgba(26,26,26,0.6)" }}>
-          Each person sets their own. Toast overlaps everyone to find dishes that fit the whole table.
+          {hostOfSession
+            ? "Set yours first, then invite your crew. Toast overlaps everyone to find dishes that fit the whole table."
+            : "Each person sets their own. Toast overlaps everyone to find dishes that fit the whole table."}
         </p>
 
         <Section icon={<Sparkles className="w-4 h-4" />} title="Mood">
@@ -146,14 +161,25 @@ export default function GroupTaste() {
       </main>
 
       <div className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto p-6 pb-10" style={{ background: `linear-gradient(to top, ${BG} 78%, ${BG_FADE})` }}>
-        <button
-          data-testid="button-ready"
-          onClick={handleReady}
-          className="w-full h-14 rounded-full font-bold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-          style={{ backgroundColor: GOLD, color: INK, boxShadow: "0 8px 20px -8px rgba(255,204,2,0.55)" }}
-        >
-          I&apos;m ready <ArrowRight className="w-5 h-5" />
-        </button>
+        {hostOfSession ? (
+          <button
+            data-testid="button-invite"
+            onClick={handleReady}
+            className="w-full h-14 rounded-full font-bold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            style={{ backgroundColor: LINE, color: "#fff", boxShadow: "0 8px 20px -8px rgba(6,199,85,0.5)" }}
+          >
+            <Share2 className="w-5 h-5" /> Invite your crew
+          </button>
+        ) : (
+          <button
+            data-testid="button-ready"
+            onClick={handleReady}
+            className="w-full h-14 rounded-full font-bold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            style={{ backgroundColor: GOLD, color: INK, boxShadow: "0 8px 20px -8px rgba(255,204,2,0.55)" }}
+          >
+            I&apos;m ready <ArrowRight className="w-5 h-5" />
+          </button>
+        )}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import {
-  ArrowLeft, Calendar, Clock, MapPin, Share2, Zap,
+  ArrowLeft, Calendar, Clock, MapPin, ArrowRight, Zap,
   ChevronDown, ChevronLeft, ChevronRight, Search, LocateFixed, Check,
   type LucideIcon,
 } from "lucide-react";
@@ -257,21 +257,21 @@ export default function GroupSetup() {
             ) : hostInitial}
           </span>
           <span className="text-[13px]" style={{ color: MUTE }}>
-            You&apos;re hosting — invite your crew next
+            You&apos;re hosting — set your taste, then invite your crew
           </span>
         </div>
       </main>
 
       <div className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto p-6 pb-10" style={{ background: `linear-gradient(to top, ${BG} 78%, ${BG_FADE})` }}>
         <button
-          data-testid="button-send"
+          data-testid="button-set-taste"
           onClick={handleSend}
           disabled={inviteStatus === "sending" || profileLoading || !profile}
           className="w-full h-14 rounded-full font-bold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-70"
-          style={{ backgroundColor: LINE, color: "#fff", boxShadow: "0 8px 20px -8px rgba(6,199,85,0.5)" }}
+          style={{ backgroundColor: GOLD, color: INK, boxShadow: "0 8px 20px -8px rgba(255,204,2,0.55)" }}
         >
-          <Share2 className="w-5 h-5" />
-          {inviteStatus === "sending" ? "Creating session…" : profileLoading ? "Getting ready…" : "Send to the group"}
+          {inviteStatus === "sending" ? "Creating session…" : profileLoading ? "Getting ready…" : "Set your taste first"}
+          <ArrowRight className="w-5 h-5" />
         </button>
       </div>
     </div>

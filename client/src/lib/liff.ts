@@ -106,7 +106,7 @@ function getAppBaseUrl(): string {
 }
 
 export function getGroupInviteUrl(sessionId: string): string {
-  return `${getAppBaseUrl()}/group/waiting?session=${sessionId}`;
+  return `${getAppBaseUrl()}/group/taste?session=${sessionId}`;
 }
 
 function getRedirectUri(): string {
