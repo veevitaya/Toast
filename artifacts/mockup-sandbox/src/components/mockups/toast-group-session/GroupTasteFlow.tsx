@@ -28,6 +28,7 @@ import {
   ChevronRight,
   Search,
   LocateFixed,
+  Zap,
 } from "lucide-react";
 
 const GOLD = "#FFCC02";
@@ -69,6 +70,29 @@ const TIMES = [
   "9:30 PM",
 ];
 const AREAS = ["Thonglor", "Ekkamai", "Asok", "Sukhumvit", "Ari", "Siam", "Sathorn", "Riverside"];
+
+const toMinutes = (t: string): number => {
+  const [hm, ap] = t.split(" ");
+  const [hRaw, m] = hm.split(":").map(Number);
+  let h = hRaw;
+  if (ap === "PM" && h !== 12) h += 12;
+  if (ap === "AM" && h === 12) h = 0;
+  return h * 60 + m;
+};
+const TIME_MINUTES = TIMES.map(toMinutes);
+const nearestTimeIdx = (d: Date = new Date()): number => {
+  const mins = d.getHours() * 60 + d.getMinutes();
+  let best = 0;
+  let bestDiff = Infinity;
+  TIME_MINUTES.forEach((m, i) => {
+    const diff = Math.abs(m - mins);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = i;
+    }
+  });
+  return best;
+};
 
 const MOODS = ["Comfort", "Adventurous", "Light", "Indulgent"];
 const CUISINE_OPTS = ["Thai", "Japanese", "Italian", "Korean", "Street food", "Café"];
@@ -194,6 +218,14 @@ export default function GroupTasteFlow() {
     setAreaQuery("");
     setOpenPicker(null);
   };
+  const setNow = () => {
+    setSelDay(TODAY_DAY);
+    setTimeIdx(nearestTimeIdx());
+    setArea("Thonglor");
+    setUsedLocation(true);
+    setAreaQuery("");
+    setOpenPicker(null);
+  };
   const dateLabel = dateLabelFor(selDay);
 
   const toggle = (val: string, arr: string[], set: (v: string[]) => void) =>
@@ -277,8 +309,23 @@ export default function GroupTasteFlow() {
               You lock the when &amp; where. Everyone picks their own taste next — Toast finds what works for all.
             </p>
 
+            <div className="mt-6 flex items-center justify-between">
+              <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: MUTE }}>
+                When &amp; where
+              </span>
+              <button
+                data-testid="button-now"
+                onClick={setNow}
+                className="inline-flex items-center gap-1.5 rounded-full pl-2.5 pr-3 py-1.5 text-[12.5px] font-bold font-['Plus_Jakarta_Sans'] bg-white active:scale-95 transition-transform"
+                style={{ color: INK, border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
+              >
+                <Zap className="w-3.5 h-3.5" style={{ color: GOLD }} />
+                Set to now
+              </button>
+            </div>
+
             <div
-              className="mt-6 rounded-[24px] bg-white p-2.5"
+              className="mt-3 rounded-[24px] bg-white p-2.5"
               style={{ boxShadow: "0 18px 40px -18px rgba(0,0,0,0.16)", border: "1px solid rgba(0,0,0,0.05)" }}
             >
               <PlanRow
