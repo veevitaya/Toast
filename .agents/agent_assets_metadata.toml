@@ -83,3 +83,9 @@ id = "vqcFDQwQVVCwLt5aih6a5"
 uri = "file://attached_assets/screenshots/92ec004f-3b01-4d87-9e5c-b6c40fd566ac-00-omhxo1bzmnio_spock_replit_dev_mockup_preview_toast-more-options_CompareTray.png"
 type = "image"
 title = "Flow A — Compare Tray (preview)"
+
+[[outputs]]
+id = "10bjCCSdrVYKkceqTAipK"
+uri = "file://.local/state/captures/group-match-screen.jpeg"
+type = "image"
+title = "Group match result screen — full view with buttons"
