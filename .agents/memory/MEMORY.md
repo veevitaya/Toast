@@ -1,2 +1,2 @@
 - [Toast premium aesthetic](toast-premium-aesthetic.md) — what "friendly+premium, not childish" means for Toast UI, and the hard bg-background rule.
-- [Mockup preview screenshot cache](mockup-preview-screenshot-cache.md) — /__mockup preview screenshots cache by URL + blank lazy-compile race; warm route, add ?cb=N, retry once.
+- [Mockup preview screenshot cache](mockup-preview-screenshot-cache.md) — /__mockup preview screenshots cache by URL + blank lazy-compile race; warm route, add ?cb=N, retry once. Also: canvas iframes pin a ?v= URL — bump ?v= to reflect edits.
