@@ -125,3 +125,27 @@ id = "10bjCCSdrVYKkceqTAipK"
 uri = "file://.local/state/captures/group-match-screen.jpeg"
 type = "image"
 title = "Group match result screen — full view with buttons"
+
+[[outputs]]
+id = "tNEfKbaGj3vFBeH7MwmXN"
+uri = "file://attached_assets/screenshots/92ec004f-3b01-4d87-9e5c-b6c40fd566ac-00-omhxo1bzmnio_spock_replit_dev_mockup_preview_toast-quiz-redesign_BeforeAfterFlow.png"
+type = "image"
+title = "Flow framing: Before (redundant quiz) vs After (Compare + Edit preferences)"
+
+[[outputs]]
+id = "RhIkp-K6DvTB1v2v6SHZx"
+uri = "file://attached_assets/screenshots/92ec004f-3b01-4d87-9e5c-b6c40fd566ac-00-omhxo1bzmnio_spock_replit_dev_mockup_preview_toast-quiz-redesign_SimplifiedCompare.png"
+type = "image"
+title = "Variant A — Edit as inline expandable panel"
+
+[[outputs]]
+id = "wd9QLlMBqpYaE93sI_QP1"
+uri = "file://attached_assets/screenshots/92ec004f-3b01-4d87-9e5c-b6c40fd566ac-00-omhxo1bzmnio_spock_replit_dev_mockup_preview_toast-quiz-redesign_CompareEditSheet.png"
+type = "image"
+title = "Variant B — Edit preferences as bottom sheet"
+
+[[outputs]]
+id = "59dF6KFEb_PXIcvl6iqe3"
+uri = "file://attached_assets/screenshots/92ec004f-3b01-4d87-9e5c-b6c40fd566ac-00-omhxo1bzmnio_spock_replit_dev_mockup_preview_toast-quiz-redesign_AlwaysVisibleFilters.png"
+type = "image"
+title = "Variant C — Always-visible filter bar"
