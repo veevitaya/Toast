@@ -54,6 +54,18 @@ uri = "file://artifacts/mockup-sandbox/public/images/Winner-khaosoi.png"
 type = "image"
 title = "Khao Soi noodle soup"
 
+[[generated]]
+id = "PTh8NDXkSPKvmD4UFtKCY"
+uri = "file://artifacts/mockup-sandbox/public/images/Winner-greencurry.png"
+type = "image"
+title = "thai green curry bowl"
+
+[[generated]]
+id = "lpZDpTM4PTFf7qQIzlzrI"
+uri = "file://artifacts/mockup-sandbox/public/images/Winner-somtam.png"
+type = "image"
+title = "thai papaya salad plate"
+
 [[outputs]]
 id = "md0oykLl7-WWG9LQl0m3e"
 uri = "file://artifacts/mockup-sandbox/public/images/gaggan.jpg"
