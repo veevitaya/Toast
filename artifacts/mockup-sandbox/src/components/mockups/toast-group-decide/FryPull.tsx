@@ -52,7 +52,7 @@ const PLAYERS: Player[] = [
   },
 ];
 
-const FRY_COUNT = 13;
+const FRY_COUNT = 22;
 
 type Fry = {
   id: string;
@@ -282,8 +282,8 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
       <div className="relative" style={{ width: 304, height: 336 }}>
         {/* Fries (clickable) poking out of the carton */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 flex items-end justify-center gap-[2.5px] z-10"
-          style={{ bottom: RIM - INSIDE, width: BOX_W - 30 }}
+          className="absolute left-1/2 -translate-x-1/2 flex items-end justify-center gap-[1px] z-10"
+          style={{ bottom: RIM - INSIDE, width: BOX_W - 26 }}
         >
           {fries.map((f) => {
             const total = INSIDE + 36 + f.poke * 104; // bottom (hidden) + visible poke
@@ -294,7 +294,7 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
                 onClick={() => onPick(f.id)}
                 aria-label="Pull this fry"
                 className="group relative outline-none"
-                style={{ width: 13, height: total, transformOrigin: "bottom center", transform: `rotate(${f.lean}deg)` }}
+                style={{ width: 9, height: total, transformOrigin: "bottom center", transform: `rotate(${f.lean}deg)` }}
               >
                 <span
                   className="absolute inset-0 block transition-transform duration-200 group-hover:-translate-y-2 group-active:-translate-y-1"
