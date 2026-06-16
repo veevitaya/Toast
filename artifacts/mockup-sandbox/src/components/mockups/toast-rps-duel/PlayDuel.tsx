@@ -55,6 +55,7 @@ const DISHES = [
 ];
 
 const MINT_DISH = 1; // Mint's secret champion = Green Curry
+const WINS_NEEDED = 2; // best of 3
 
 const MOVES: Move[] = ["rock", "paper", "scissors"];
 const HAND: Record<Move, string> = { rock: "✊", paper: "✋", scissors: "✌️" };
@@ -67,63 +68,96 @@ function decide(me: Move, mint: Move): Result {
   return BEATS[me] === mint ? "win" : "lose";
 }
 
+function ScorePips({ score, gold }: { score: number; gold?: boolean }) {
+  return (
+    <div className="flex gap-1">
+      {Array.from({ length: WINS_NEEDED }).map((_, i) => (
+        <div
+          key={i}
+          className={`w-2.5 h-2.5 rounded-full ${
+            i < score ? (gold ? "bg-[#FFCC02]" : "bg-[#0F172A]") : "bg-black/10"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function PlayDuel() {
   const [stage, setStage] = useState<Stage>("pick");
   const [myDish, setMyDish] = useState<number | null>(0);
-  const [count, setCount] = useState(3); // 3,2,1 then 0 => SHOOT
-  const [canThrow, setCanThrow] = useState(false);
   const [myThrow, setMyThrow] = useState<Move | null>(null);
   const [mintThrow, setMintThrow] = useState<Move | null>(null);
   const [result, setResult] = useState<Result | null>(null);
-  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [shaking, setShaking] = useState(false);
+  const [chant, setChant] = useState("");
+  const [myScore, setMyScore] = useState(0);
+  const [mintScore, setMintScore] = useState(0);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // Clear any pending reveal timeout on unmount
-  useEffect(() => () => {
-    if (revealTimer.current) clearTimeout(revealTimer.current);
-  }, []);
+  const clearTimers = () => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  };
 
-  // Countdown whenever we (re)enter the throw stage
+  // Clear pending timers on unmount
+  useEffect(() => () => clearTimers(), []);
+
+  // Reset per-round state whenever we (re)enter the throw stage
   useEffect(() => {
     if (stage !== "throw") return;
-    setCount(3);
-    setCanThrow(false);
+    clearTimers();
     setMyThrow(null);
     setMintThrow(null);
     setResult(null);
-    const timers = [
-      setTimeout(() => setCount(2), 650),
-      setTimeout(() => setCount(1), 1300),
-      setTimeout(() => {
-        setCount(0);
-        setCanThrow(true);
-      }, 1950),
-    ];
-    return () => timers.forEach(clearTimeout);
+    setShaking(false);
+    setChant("");
   }, [stage]);
 
-  const handleThrow = (move: Move) => {
-    if (!canThrow || myThrow) return;
+  const throwMove = (move: Move) => {
+    if (shaking || myThrow) return;
     setMyThrow(move);
-    if (revealTimer.current) clearTimeout(revealTimer.current);
-    revealTimer.current = setTimeout(() => {
-      const mint = MOVES[Math.floor(Math.random() * 3)];
-      const r = decide(move, mint);
-      setMintThrow(mint);
-      setResult(r);
-      setStage("reveal");
-    }, 1000);
+    setShaking(true);
+    setChant("Rock");
+    clearTimers();
+    timers.current = [
+      setTimeout(() => setChant("Paper"), 450),
+      setTimeout(() => setChant("Scissors"), 900),
+      setTimeout(() => setChant("Shoot!"), 1350),
+      setTimeout(() => {
+        const mint = MOVES[Math.floor(Math.random() * 3)];
+        const r = decide(move, mint);
+        setMintThrow(mint);
+        setResult(r);
+        if (r === "win") setMyScore((s) => s + 1);
+        else if (r === "lose") setMintScore((s) => s + 1);
+        setShaking(false);
+        setStage("reveal");
+      }, 1700),
+    ];
   };
 
   const reset = () => {
-    if (revealTimer.current) clearTimeout(revealTimer.current);
-    setStage("pick");
+    clearTimers();
+    setMyScore(0);
+    setMintScore(0);
     setMyThrow(null);
     setMintThrow(null);
     setResult(null);
+    setShaking(false);
+    setChant("");
+    setStage("pick");
   };
 
-  const winningDishIndex = result === "lose" ? MINT_DISH : (myDish ?? 0);
-  const dish = DISHES[winningDishIndex];
+  const matchOver = myScore >= WINS_NEEDED || mintScore >= WINS_NEEDED;
+  const roundNum = myScore + mintScore + 1;
+  const iWon = myScore >= WINS_NEEDED;
+  const dish = DISHES[iWon ? (myDish ?? 0) : MINT_DISH];
+
+  const continueFromReveal = () => {
+    if (matchOver) setStage("winner");
+    else setStage("throw"); // ties & next rounds both restart the throw
+  };
 
   return (
     <div
@@ -152,7 +186,7 @@ export function PlayDuel() {
                 Pick your champion.
               </h1>
               <p className="toast-muted text-[15px] leading-relaxed">
-                You and Mint both swiped right on these. Secretly pick the one you want most. Winner of RPS gets their choice!
+                You and Mint both swiped right on these. Secretly pick the one you want most — best of 3 wins gets their choice!
               </p>
             </div>
 
@@ -213,74 +247,81 @@ export function PlayDuel() {
       {/* ============ STAGE: THROW ============ */}
       {stage === "throw" && (
         <>
-          <div className="pt-14 pb-4 px-6 flex justify-between items-center z-10">
-            <div className="flex -space-x-3">
-              <div className="toast-avatar z-10 border-2 border-[#FFCC02]">😎</div>
-              <div className="toast-avatar z-0 border-2 border-white">👩🏻</div>
+          {/* Scoreboard header */}
+          <div className="pt-14 pb-4 px-6 z-10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="toast-avatar w-9 h-9 text-lg border-2 border-[#FFCC02]">😎</div>
+                <ScorePips score={myScore} gold />
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-[11px] font-bold tracking-[0.2em] text-[#FFCC02] uppercase">Round {roundNum}</span>
+                <span className="toast-ink font-extrabold text-lg leading-tight">{myScore} – {mintScore}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ScorePips score={mintScore} />
+                <div className="toast-avatar w-9 h-9 text-lg border-2 border-white">👩🏻</div>
+              </div>
             </div>
-            <div className="flex flex-col items-end">
-              <span className="text-[13px] font-bold tracking-widest text-red-500 uppercase animate-pulse">Live</span>
-              <span className="toast-ink font-bold text-lg leading-tight">Duel in progress</span>
-            </div>
+            <p className="text-center text-[12px] font-medium toast-muted mt-2">First to {WINS_NEEDED} wins</p>
           </div>
 
-          <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-6">
-            {/* Opponent */}
-            <div className="flex flex-col items-center mb-10">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center text-4xl shadow-sm mb-4 border border-[rgba(16,24,40,.06)] animate-float">
-                👩🏻
-              </div>
-              <div className="bg-white/80 backdrop-blur px-4 py-2 rounded-full border border-[rgba(16,24,40,.06)] shadow-sm flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${myThrow ? "bg-[#FFCC02]" : "bg-green-500"} animate-pulse`} />
-                <span className="toast-ink font-bold text-sm">{myThrow ? "Mint is choosing..." : "Mint is ready"}</span>
-              </div>
-            </div>
-
-            {/* Countdown / status */}
-            <div className="my-6 text-center h-[88px] flex flex-col items-center justify-center">
-              {!myThrow ? (
-                <>
-                  <div className="text-[13px] font-bold text-[#FFCC02] tracking-[0.3em] uppercase mb-1">Shoot on 3</div>
-                  <div key={count} className="text-6xl font-black toast-ink animate-scale-pop">
-                    {count > 0 ? count : "SHOOT!"}
+          <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-6 -mt-6">
+            {shaking ? (
+              /* ---- Animated shake ---- */
+              <div className="flex flex-col items-center justify-center gap-10 w-full">
+                <div className="flex items-end justify-center gap-12 h-[150px]">
+                  <div className="flex flex-col items-center gap-3">
+                    <div style={{ transform: "rotate(18deg)" }}>
+                      <span className="text-[76px] animate-pump inline-block filter drop-shadow-[0_8px_20px_rgba(255,204,2,0.35)]">✊</span>
+                    </div>
+                    <span className="bg-[#FFCC02] text-[#0F172A] px-3 py-1 rounded-full font-bold text-xs shadow-sm">You</span>
                   </div>
-                </>
-              ) : (
-                <>
-                  <div className="text-[13px] font-bold text-[#FFCC02] tracking-[0.3em] uppercase mb-1">You threw</div>
-                  <div key={myThrow} className="text-6xl animate-scale-pop">{HAND[myThrow]}</div>
-                </>
-              )}
-            </div>
+                  <div className="flex flex-col items-center gap-3">
+                    <div style={{ transform: "rotate(-18deg) scaleX(-1)" }}>
+                      <span className="text-[76px] animate-pump inline-block filter drop-shadow-xl">✊</span>
+                    </div>
+                    <span className="bg-white text-slate-500 px-3 py-1 rounded-full font-bold text-xs shadow-sm">Mint</span>
+                  </div>
+                </div>
+                <div
+                  key={chant}
+                  className={`font-black toast-ink animate-pop-in ${chant === "Shoot!" ? "text-6xl text-[#FFCC02]" : "text-5xl"}`}
+                >
+                  {chant}
+                </div>
+              </div>
+            ) : (
+              /* ---- Choose your move ---- */
+              <div className="w-full flex flex-col items-center">
+                <div className="flex flex-col items-center mb-8">
+                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center text-4xl shadow-sm mb-4 border border-[rgba(16,24,40,.06)] animate-float">
+                    👩🏻
+                  </div>
+                  <div className="bg-white/80 backdrop-blur px-4 py-2 rounded-full border border-[rgba(16,24,40,.06)] shadow-sm flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="toast-ink font-bold text-sm">Mint is ready</span>
+                  </div>
+                </div>
 
-            {/* Move buttons */}
-            <div className="w-full mt-6">
-              <div className="grid grid-cols-3 gap-3">
-                {MOVES.map((m) => {
-                  const chosen = myThrow === m;
-                  const dim = (myThrow && !chosen) || (!canThrow && !myThrow);
-                  return (
+                <h2 className="text-2xl font-extrabold toast-ink mb-1">Make your move</h2>
+                <p className="toast-muted text-sm mb-7">Tap to throw — winner of the round scores a point.</p>
+
+                <div className="grid grid-cols-3 gap-3 w-full">
+                  {MOVES.map((m) => (
                     <button
                       key={m}
-                      onClick={() => handleThrow(m)}
-                      disabled={!canThrow || !!myThrow}
+                      onClick={() => throwMove(m)}
                       data-testid={`button-move-${m}`}
-                      className={`toast-card aspect-square flex flex-col items-center justify-center gap-2 transition-all ${
-                        chosen
-                          ? "border-2 border-[#FFCC02] bg-[#FFCC02]/10 shadow-[0_8px_30px_-6px_rgba(255,204,2,0.4)] scale-105"
-                          : "active:scale-95"
-                      } ${dim ? "opacity-50" : ""}`}
+                      className="toast-card aspect-square flex flex-col items-center justify-center gap-2 active:scale-95 hover:border-[#FFCC02] hover:-translate-y-1 transition-all"
                     >
-                      <span className="text-4xl">{HAND[m]}</span>
-                      <span className={`font-bold text-[13px] ${chosen ? "toast-ink" : "text-slate-400"}`}>{m.toUpperCase()}</span>
+                      <span className="text-5xl">{HAND[m]}</span>
+                      <span className="font-bold text-[13px] toast-ink">{m.toUpperCase()}</span>
                     </button>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-              <div className="mt-7 text-center text-sm font-medium toast-muted h-5">
-                {myThrow ? `You locked in ${cap(myThrow)}. Waiting...` : canThrow ? "Tap your move!" : "Get ready..."}
-              </div>
-            </div>
+            )}
           </div>
         </>
       )}
@@ -290,10 +331,10 @@ export function PlayDuel() {
         <>
           <div className="absolute inset-0 bg-[#FFCC02]/10 animate-pulse" />
           <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-6">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[300px] flex items-center justify-center">
+            <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-full h-[300px] flex items-center justify-center">
               {/* Mint */}
               <div className="absolute top-0 right-10 flex flex-col items-center animate-clash-right">
-                <span className={`text-[120px] filter drop-shadow-xl transform -rotate-12 ${result === "win" ? "opacity-50 grayscale" : ""}`}>
+                <span className={`text-[110px] filter drop-shadow-xl transform -rotate-12 ${result === "win" ? "opacity-50 grayscale" : ""}`}>
                   {HAND[mintThrow]}
                 </span>
                 <div className="mt-2 bg-white px-4 py-1.5 rounded-full shadow-sm font-bold text-sm text-slate-500">Mint</div>
@@ -301,7 +342,7 @@ export function PlayDuel() {
               {/* You */}
               <div className="absolute bottom-0 left-10 flex flex-col items-center animate-clash-left">
                 <div className="mb-2 bg-[#FFCC02] px-4 py-1.5 rounded-full shadow-sm font-bold text-sm text-[#0F172A]">You</div>
-                <span className={`text-[140px] filter drop-shadow-[0_10px_40px_rgba(255,204,2,0.4)] transform rotate-12 ${result === "lose" ? "opacity-50 grayscale" : ""}`}>
+                <span className={`text-[130px] filter drop-shadow-[0_10px_40px_rgba(255,204,2,0.4)] transform rotate-12 ${result === "lose" ? "opacity-50 grayscale" : ""}`}>
                   {HAND[myThrow]}
                 </span>
               </div>
@@ -310,15 +351,29 @@ export function PlayDuel() {
               </div>
             </div>
 
-            <div className="absolute bottom-16 left-0 w-full text-center px-6 animate-slide-up animate-delay-300">
+            <div className="absolute bottom-14 left-0 w-full text-center px-6 animate-slide-up animate-delay-300">
               <div
-                className={`inline-block font-black text-4xl px-8 py-4 rounded-3xl shadow-2xl transform -rotate-2 ${
-                  result === "win" ? "bg-[#0F172A] text-white" : result === "lose" ? "bg-white toast-ink" : "bg-[#FFCC02] text-[#0F172A]"
+                className={`inline-block font-black px-8 py-4 rounded-3xl shadow-2xl transform -rotate-2 ${
+                  result === "tie"
+                    ? "bg-[#FFCC02] text-[#0F172A] text-3xl"
+                    : matchOver && result === "win"
+                    ? "bg-[#0F172A] text-white text-4xl"
+                    : matchOver && result === "lose"
+                    ? "bg-white toast-ink text-4xl"
+                    : "bg-[#0F172A] text-white text-3xl"
                 }`}
               >
-                {result === "win" ? "YOU WIN!" : result === "lose" ? "MINT WINS!" : "TIE!"}
+                {result === "tie"
+                  ? "TIE!"
+                  : matchOver
+                  ? result === "win"
+                    ? "YOU WIN! 🎉"
+                    : "MINT WINS!"
+                  : result === "win"
+                  ? "ROUND WON"
+                  : "ROUND LOST"}
               </div>
-              <p className="mt-4 text-lg font-bold text-slate-600">
+              <p className="mt-3 text-base font-bold text-slate-600">
                 {result === "tie"
                   ? "Same move — throw again!"
                   : `${cap(result === "win" ? myThrow : mintThrow)} ${VERB[result === "win" ? myThrow : mintThrow]} ${cap(
@@ -326,12 +381,19 @@ export function PlayDuel() {
                     )}`}
               </p>
 
+              {/* running score */}
+              <div className="mt-3 inline-flex items-center gap-3 bg-white/70 px-4 py-1.5 rounded-full border border-[rgba(16,24,40,.05)]">
+                <span className="text-sm font-bold toast-ink">You {myScore}</span>
+                <span className="text-xs text-slate-400">–</span>
+                <span className="text-sm font-bold toast-ink">{mintScore} Mint</span>
+              </div>
+
               <button
-                onClick={() => setStage(result === "tie" ? "throw" : "winner")}
+                onClick={continueFromReveal}
                 data-testid="button-reveal-continue"
-                className="mt-7 w-full toast-gold py-4 rounded-2xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,204,2,0.4)] transform active:scale-95 transition-all"
+                className="mt-6 w-full toast-gold py-4 rounded-2xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,204,2,0.4)] transform active:scale-95 transition-all"
               >
-                {result === "tie" ? "Throw again" : "See what's for dinner →"}
+                {result === "tie" ? "Throw again" : matchOver ? "See what's for dinner →" : "Next round →"}
               </button>
             </div>
           </div>
@@ -344,9 +406,12 @@ export function PlayDuel() {
           <div className="absolute top-0 left-0 w-full h-[400px] bg-gradient-to-b from-[#FFCC02]/30 to-transparent pointer-events-none" />
           <div className="pt-14 pb-4 px-6 flex justify-between items-center z-10 relative">
             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
-              <span className="text-xl">{result === "lose" ? "👩🏻" : "😎"}</span>
+              <span className="text-xl">{iWon ? "😎" : "👩🏻"}</span>
             </div>
-            <span className="text-[13px] font-bold tracking-widest text-[#FFCC02] uppercase">Winner's Choice</span>
+            <div className="flex flex-col items-center">
+              <span className="text-[13px] font-bold tracking-widest text-[#FFCC02] uppercase">Winner's Choice</span>
+              <span className="text-[12px] font-bold toast-ink">{myScore} – {mintScore}</span>
+            </div>
             <div className="w-10 h-10" />
           </div>
 
@@ -354,7 +419,7 @@ export function PlayDuel() {
             <div className="text-center mb-6">
               <h1 className="text-4xl font-extrabold toast-ink mb-2">{dish.name}!</h1>
               <p className="text-slate-500 font-medium text-[16px]">
-                {result === "lose" ? "Mint's champion takes the crown." : "Your champion takes the crown."}
+                {iWon ? "Your champion takes the crown." : "Mint's champion takes the crown."}
               </p>
             </div>
 
