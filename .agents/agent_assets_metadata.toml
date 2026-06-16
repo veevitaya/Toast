@@ -149,3 +149,15 @@ id = "59dF6KFEb_PXIcvl6iqe3"
 uri = "file://attached_assets/screenshots/92ec004f-3b01-4d87-9e5c-b6c40fd566ac-00-omhxo1bzmnio_spock_replit_dev_mockup_preview_toast-quiz-redesign_AlwaysVisibleFilters.png"
 type = "image"
 title = "Variant C — Always-visible filter bar"
+
+[[outputs]]
+id = "HpIE5oSTnqm-qVCn9V9wQ"
+uri = "file://attached_assets/screenshots/92ec004f-3b01-4d87-9e5c-b6c40fd566ac-00-omhxo1bzmnio_spock_replit_dev_mockup_preview_toast-group-decide_ToasterPop.png"
+type = "image"
+title = "Toaster Pop — tap-fastest-to-pop tie-breaker"
+
+[[outputs]]
+id = "vPcp-1DNWYaVs-AgrusfM"
+uri = "file://attached_assets/screenshots/92ec004f-3b01-4d87-9e5c-b6c40fd566ac-00-omhxo1bzmnio_spock_replit_dev_mockup_preview_toast-group-decide_FryPull.png"
+type = "image"
+title = "Longest Fry — pull-from-the-box tie-breaker"
