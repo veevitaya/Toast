@@ -272,7 +272,7 @@ export default function FryPull() {
 }
 
 function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => void }) {
-  const BOX_W = 256;
+  const BOX_W = 236;
   const BOX_H = 156;
   const RIM = 156; // px from container bottom where the carton mouth sits
   const INSIDE = 46; // how far fry bottoms sit below the rim (masked by carton)
@@ -294,7 +294,7 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
                 onClick={() => onPick(f.id)}
                 aria-label="Pull this fry"
                 className="group relative outline-none"
-                style={{ width: 9, height: total, transformOrigin: "bottom center", transform: `rotate(${f.lean}deg)` }}
+                style={{ width: 8, height: total, transformOrigin: "bottom center", transform: `rotate(${f.lean}deg)` }}
               >
                 <span
                   className="absolute inset-0 block transition-transform duration-200 group-hover:-translate-y-2 group-active:-translate-y-1"
