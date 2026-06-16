@@ -270,14 +270,16 @@ export function PlayDuel() {
             {shaking ? (
               /* ---- Animated shake ---- */
               <div className="flex flex-col items-center justify-center gap-10 w-full">
-                <div className="flex items-center justify-center gap-20 h-[200px]">
+                <div className="flex items-center justify-center gap-14 h-[200px]">
                   <div className="flex flex-col items-center gap-6">
-                    <span className="text-[76px] animate-windup filter drop-shadow-[0_8px_20px_rgba(255,204,2,0.35)]">👊</span>
+                    <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center text-5xl border-2 border-[#FFCC02] shadow-[0_10px_28px_-6px_rgba(255,204,2,0.5)] animate-windup">
+                      😎
+                    </div>
                     <span className="bg-[#FFCC02] text-[#0F172A] px-3 py-1 rounded-full font-bold text-xs shadow-sm">You</span>
                   </div>
                   <div className="flex flex-col items-center gap-6">
-                    <div style={{ transform: "scaleX(-1)" }}>
-                      <span className="text-[76px] animate-windup filter drop-shadow-xl">👊</span>
+                    <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center text-5xl border-2 border-white shadow-[0_10px_28px_-6px_rgba(15,23,42,0.25)] animate-windup">
+                      👩🏻
                     </div>
                     <span className="bg-white text-slate-500 px-3 py-1 rounded-full font-bold text-xs shadow-sm">Mint</span>
                   </div>
