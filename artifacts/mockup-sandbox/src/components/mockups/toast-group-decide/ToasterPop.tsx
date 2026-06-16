@@ -108,7 +108,7 @@ export default function ToasterPop() {
     if (phase !== "racing") return;
     const iv = setInterval(() => {
       PLAYERS.filter((p) => p.auto).forEach((p) => {
-        applyBump(p.id, 2 + Math.random() * 3.4);
+        applyBump(p.id, 1.4 + Math.random() * 2.2);
       });
     }, 150);
     return () => clearInterval(iv);
@@ -137,7 +137,7 @@ export default function ToasterPop() {
   const onTapYou = () => {
     if (phase !== "racing" || wonRef.current) return;
     setTapKick((k) => k + 1);
-    applyBump("you", 6.5 + Math.random() * 2.5);
+    applyBump("you", 3.4 + Math.random() * 1.6);
   };
 
   const winnerPlayer = winner ? PLAYERS.find((p) => p.id === winner)! : null;
