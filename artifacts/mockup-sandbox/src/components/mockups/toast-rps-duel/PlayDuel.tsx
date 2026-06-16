@@ -121,9 +121,9 @@ export function PlayDuel() {
     setChant("Rock");
     clearTimers();
     timers.current = [
-      setTimeout(() => setChant("Paper"), 450),
-      setTimeout(() => setChant("Scissors"), 900),
-      setTimeout(() => setChant("Shoot!"), 1350),
+      setTimeout(() => setChant("Paper"), 430),
+      setTimeout(() => setChant("Scissors"), 860),
+      setTimeout(() => setChant("Shoot!"), 1150),
       setTimeout(() => {
         const mint = MOVES[Math.floor(Math.random() * 3)];
         const r = decide(move, mint);
@@ -133,7 +133,7 @@ export function PlayDuel() {
         else if (r === "lose") setMintScore((s) => s + 1);
         setShaking(false);
         setStage("reveal");
-      }, 1700),
+      }, 1650),
     ];
   };
 
@@ -270,16 +270,14 @@ export function PlayDuel() {
             {shaking ? (
               /* ---- Animated shake ---- */
               <div className="flex flex-col items-center justify-center gap-10 w-full">
-                <div className="flex items-end justify-center gap-12 h-[150px]">
-                  <div className="flex flex-col items-center gap-3">
-                    <div style={{ transform: "rotate(18deg)" }}>
-                      <span className="text-[76px] animate-pump inline-block filter drop-shadow-[0_8px_20px_rgba(255,204,2,0.35)]">✊</span>
-                    </div>
+                <div className="flex items-center justify-center gap-14 h-[170px]">
+                  <div className="flex flex-col items-center gap-6">
+                    <span className="text-[76px] animate-windup filter drop-shadow-[0_8px_20px_rgba(255,204,2,0.35)]">✊</span>
                     <span className="bg-[#FFCC02] text-[#0F172A] px-3 py-1 rounded-full font-bold text-xs shadow-sm">You</span>
                   </div>
-                  <div className="flex flex-col items-center gap-3">
-                    <div style={{ transform: "rotate(-18deg) scaleX(-1)" }}>
-                      <span className="text-[76px] animate-pump inline-block filter drop-shadow-xl">✊</span>
+                  <div className="flex flex-col items-center gap-6">
+                    <div style={{ transform: "scaleX(-1)" }}>
+                      <span className="text-[76px] animate-windup filter drop-shadow-xl">✊</span>
                     </div>
                     <span className="bg-white text-slate-500 px-3 py-1 rounded-full font-bold text-xs shadow-sm">Mint</span>
                   </div>

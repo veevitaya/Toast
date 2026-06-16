@@ -96,20 +96,25 @@
 .animate-delay-200 { animation-delay: 200ms; }
 .animate-delay-300 { animation-delay: 300ms; }
 
-/* Rock-paper-scissors fist "shake" — 3 down-beats then settle */
-@keyframes rpsPump {
-  0%     { transform: translateY(-22px); }
-  16.66% { transform: translateY(10px); }
-  33.33% { transform: translateY(-22px); }
-  50%    { transform: translateY(10px); }
-  66.66% { transform: translateY(-22px); }
-  83.33% { transform: translateY(10px); }
-  100%   { transform: translateY(-18px); }
+/* Rock-paper-scissors throw: tense quiver held up top, then ONE swing down */
+@keyframes rpsWindup {
+  0%   { transform: translateY(-26px) rotate(-16deg); }
+  10%  { transform: translateY(-27px) rotate(-22deg); }
+  20%  { transform: translateY(-25px) rotate(-12deg); }
+  30%  { transform: translateY(-27px) rotate(-21deg); }
+  40%  { transform: translateY(-25px) rotate(-13deg); }
+  50%  { transform: translateY(-27px) rotate(-20deg); }
+  60%  { transform: translateY(-25px) rotate(-14deg); }
+  70%  { transform: translateY(-27px) rotate(-19deg); }
+  78%  { transform: translateY(-36px) rotate(-30deg); }  /* cock back */
+  92%  { transform: translateY(16px) rotate(28deg); }    /* swing down + overshoot */
+  100% { transform: translateY(10px) rotate(22deg); }    /* settle */
 }
 
-.animate-pump {
-  animation: rpsPump 1.35s cubic-bezier(0.45, 0, 0.55, 1) both;
+.animate-windup {
+  animation: rpsWindup 1.5s cubic-bezier(0.5, 0.05, 0.6, 1) both;
   display: inline-block;
+  transform-origin: bottom center;
 }
 
 @keyframes popIn {
