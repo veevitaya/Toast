@@ -8,6 +8,8 @@ const MUTE = "#9A938A";
 const LINE = "#06C755";
 const FRY = "#F2B340";
 const FRY_DEEP = "#D9942A";
+const MC_RED = "#DA291C";
+const MC_YELLOW = "#FFC72C";
 
 type Dish = {
   id: string;
@@ -50,27 +52,40 @@ const PLAYERS: Player[] = [
   },
 ];
 
-type Phase = "ready" | "pulling" | "done";
+const FRY_COUNT = 6;
 
-// length 0..1 scaled; returns cm-ish label
-function rollLengths(): Record<string, number> {
-  const out: Record<string, number> = {};
-  let vals: number[];
+type Fry = {
+  id: string;
+  poke: number; // 0..1 — how far it sticks out of the box (cosmetic only)
+  trueLen: number; // 0..1 — actual hidden length, revealed when pulled
+  lean: number; // px tilt for a natural look
+};
+
+// cm shown to the user for a given true length (single source of truth).
+const lenToCm = (v: number) => 7 + v * 9;
+
+// Build fries whose visible height is independent of true length, with
+// all DISPLAYED cm labels distinct so any pick produces a clear, unambiguous winner.
+function makeFries(): Fry[] {
+  let trueLens: number[];
   do {
-    vals = PLAYERS.map(() => 0.32 + Math.random() * 0.68);
-  } while (hasTie(vals));
-  PLAYERS.forEach((p, i) => (out[p.id] = vals[i]));
-  return out;
+    trueLens = Array.from({ length: FRY_COUNT }, () => 0.28 + Math.random() * 0.72);
+  } while (new Set(trueLens.map((v) => Math.round(lenToCm(v) * 10))).size !== FRY_COUNT);
+
+  return Array.from({ length: FRY_COUNT }, (_, i) => ({
+    id: `f${i}`,
+    poke: 0.3 + Math.random() * 0.7,
+    trueLen: trueLens[i],
+    lean: Math.round((Math.random() - 0.5) * 10),
+  }));
 }
 
-function hasTie(vals: number[]) {
-  const rounded = vals.map((v) => Math.round(v * 100) / 100);
-  return new Set(rounded).size !== rounded.length;
-}
+type Phase = "choosing" | "revealing" | "done";
 
 export default function FryPull() {
-  const [phase, setPhase] = useState<Phase>("ready");
-  const [lengths, setLengths] = useState<Record<string, number>>({});
+  const [phase, setPhase] = useState<Phase>("choosing");
+  const [fries, setFries] = useState<Fry[]>(() => makeFries());
+  const [assign, setAssign] = useState<Record<string, string>>({}); // playerId -> fryId
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
   const [winner, setWinner] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
@@ -80,51 +95,66 @@ export default function FryPull() {
     timers.current.forEach(clearTimeout);
     timers.current = [];
   };
-
   useEffect(() => () => clearTimers(), []);
 
-  const grab = () => {
+  const fryById = (id: string) => fries.find((f) => f.id === id);
+  const cm = (v: number) => lenToCm(v).toFixed(1);
+
+  const pickFry = (fryId: string) => {
+    if (phase !== "choosing") return;
     clearTimers();
-    const rolled = rollLengths();
-    setLengths(rolled);
+
+    // You take the tapped fry; opponents grab from what's left.
+    const remaining = fries.filter((f) => f.id !== fryId).map((f) => f.id);
+    for (let i = remaining.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+    }
+    const nextAssign: Record<string, string> = {
+      you: fryId,
+      mint: remaining[0],
+      boss: remaining[1],
+    };
+    setAssign(nextAssign);
     setRevealed({});
     setWinner(null);
     setLocked(false);
-    setPhase("pulling");
+    setPhase("revealing");
 
-    // You pull first, then opponents stagger in.
+    // Staggered "pull" of each fry to its true length.
     const order = ["you", "mint", "boss"];
-    order.forEach((id, i) => {
-      const t = setTimeout(() => {
-        setRevealed((prev) => ({ ...prev, [id]: true }));
-      }, 380 + i * 620);
-      timers.current.push(t);
+    order.forEach((pid, i) => {
+      timers.current.push(
+        setTimeout(() => setRevealed((prev) => ({ ...prev, [pid]: true })), 280 + i * 700),
+      );
     });
 
-    // After all revealed, crown the longest fry.
-    const decide = setTimeout(() => {
-      let bestId = order[0];
-      order.forEach((id) => {
-        if (rolled[id] > rolled[bestId]) bestId = id;
-      });
-      setWinner(bestId);
-      const finish = setTimeout(() => setPhase("done"), 900);
-      timers.current.push(finish);
-    }, 380 + order.length * 620 + 350);
-    timers.current.push(decide);
+    // Crown the longest, hold the beat, then show the pick.
+    const afterReveal = 280 + order.length * 700;
+    timers.current.push(
+      setTimeout(() => {
+        let best = order[0];
+        order.forEach((pid) => {
+          if ((fryById(nextAssign[pid])?.trueLen ?? 0) > (fryById(nextAssign[best])?.trueLen ?? 0)) best = pid;
+        });
+        setWinner(best);
+      }, afterReveal),
+    );
+    timers.current.push(setTimeout(() => setPhase("done"), afterReveal + 1050));
   };
 
   const reset = () => {
     clearTimers();
-    setPhase("ready");
-    setLengths({});
+    setFries(makeFries());
+    setAssign({});
     setRevealed({});
     setWinner(null);
     setLocked(false);
+    setPhase("choosing");
   };
 
   const winnerPlayer = winner ? PLAYERS.find((p) => p.id === winner)! : null;
-  const cm = (v: number) => (5 + v * 8).toFixed(1);
+  const winnerFry = winner ? fryById(assign[winner]) : undefined;
 
   return (
     <div
@@ -141,7 +171,7 @@ export default function FryPull() {
         <span className="text-[12px] font-semibold tracking-[0.18em] uppercase" style={{ color: MUTE }}>
           Longest Fry
         </span>
-        {phase !== "ready" ? (
+        {phase !== "choosing" ? (
           <button
             data-testid="button-reset"
             onClick={reset}
@@ -154,11 +184,11 @@ export default function FryPull() {
         )}
       </header>
 
-      {phase === "done" && winnerPlayer ? (
-        <WinnerView winnerPlayer={winnerPlayer} cm={cm(lengths[winnerPlayer.id] || 0)} />
+      {phase === "done" && winnerPlayer && winnerFry ? (
+        <WinnerView winnerPlayer={winnerPlayer} cm={cm(winnerFry.trueLen)} />
       ) : (
         <main className="flex-1 px-6 pb-36 pt-2 flex flex-col">
-          <div className="text-center mb-5">
+          <div className="text-center mb-4">
             <div
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-3"
               style={{ backgroundColor: "rgba(26,26,26,0.04)" }}
@@ -167,51 +197,44 @@ export default function FryPull() {
               <span className="text-[12px] font-bold uppercase tracking-wider">Longest Fry Wins</span>
             </div>
             <h1 className="font-['Plus_Jakarta_Sans'] text-[26px] font-bold tracking-tight leading-tight">
-              {phase === "ready" ? "One box, one fry each" : "Pulling fries…"}
+              {phase === "choosing" ? "Pick your fry" : "Pulling fries…"}
             </h1>
             <p className="text-[14px] mt-2 leading-relaxed max-w-[300px] mx-auto" style={{ color: MUTE }}>
-              {phase === "ready"
-                ? "Everyone grabs a single fry from the same box. The longest fry decides the table's pick."
-                : "Laying them side by side — longest one takes it."}
+              {phase === "choosing"
+                ? "Tap any fry to pull it. The one poking out highest isn't always the longest — it's a gamble."
+                : "Held at the top, longest one hangs lowest and takes it."}
             </p>
           </div>
 
-          {phase === "ready" ? (
-            <FriesBox />
+          {phase === "choosing" ? (
+            <FriesCarton fries={fries} onPick={pickFry} />
           ) : (
-            <div className="space-y-3.5 mt-1">
-              {PLAYERS.map((p) => (
-                <FryRow
-                  key={p.id}
-                  player={p}
-                  value={lengths[p.id] || 0}
-                  shown={!!revealed[p.id]}
-                  isWinner={winner === p.id}
-                  cm={cm(lengths[p.id] || 0)}
-                />
-              ))}
-            </div>
+            <RevealLane
+              fries={fries}
+              assign={assign}
+              revealed={revealed}
+              winner={winner}
+              cm={cm}
+            />
           )}
         </main>
       )}
 
-      {/* Sticky footer CTA */}
+      {/* Sticky footer */}
       <div
         className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto p-6 pb-10 pointer-events-none"
         style={{ background: `linear-gradient(to top, ${CREAM} 78%, rgba(250,246,239,0))` }}
       >
-        {phase === "ready" && (
-          <button
-            data-testid="button-grab"
-            onClick={grab}
-            className="w-full h-14 rounded-full font-bold text-[16px] flex items-center justify-center gap-2 pointer-events-auto active:scale-[0.98] transition-transform"
-            style={{ backgroundColor: GOLD, color: INK, boxShadow: "0 8px 20px -8px rgba(255,204,2,0.55)" }}
+        {phase === "choosing" && (
+          <div
+            className="w-full h-14 rounded-full font-bold text-[15px] flex items-center justify-center gap-2 pointer-events-none"
+            style={{ backgroundColor: "#fff", color: INK, border: "1px solid rgba(0,0,0,0.06)", boxShadow: "0 8px 20px -12px rgba(0,0,0,0.2)" }}
           >
-            <Hand className="w-[18px] h-[18px]" /> Grab a fry
-          </button>
+            <Hand className="w-[18px] h-[18px]" /> Tap a fry to pull it
+          </div>
         )}
 
-        {phase === "pulling" && (
+        {phase === "revealing" && (
           <div
             className="w-full h-14 rounded-full font-bold text-[15px] flex items-center justify-center gap-2 pointer-events-none"
             style={{ backgroundColor: "#E3DED3", color: MUTE }}
@@ -248,142 +271,207 @@ export default function FryPull() {
   );
 }
 
-function FriesBox() {
-  const heights = [86, 120, 70, 138, 96, 112, 78, 128, 92];
+function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => void }) {
+  const BOX_W = 232;
+  const BOX_H = 150;
+  const RIM = 150; // px from container bottom where the carton mouth sits
+  const INSIDE = 46; // how far fry bottoms sit below the rim (masked by carton)
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center pb-6">
-      <div className="relative" style={{ width: 220, height: 220 }}>
-        {/* fries poking out */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-end gap-[5px]" style={{ bottom: 96 }}>
-          {heights.map((h, i) => (
-            <div
-              key={i}
-              style={{
-                width: 13,
-                height: h,
-                borderRadius: 6,
-                background: `linear-gradient(180deg, #F8C766 0%, ${FRY} 45%, ${FRY_DEEP} 100%)`,
-                boxShadow: "inset -2px 0 3px rgba(150,90,15,0.25)",
-              }}
-            />
-          ))}
+    <div className="flex-1 flex flex-col items-center justify-center pb-4">
+      <div className="relative" style={{ width: 280, height: 330 }}>
+        {/* Fries (clickable) poking out of the carton */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 flex items-end justify-center gap-[6px] z-10"
+          style={{ bottom: RIM - INSIDE, width: BOX_W - 28 }}
+        >
+          {fries.map((f) => {
+            const total = INSIDE + 36 + f.poke * 104; // bottom (hidden) + visible poke
+            return (
+              <button
+                key={f.id}
+                data-testid={`fry-choice-${f.id}`}
+                onClick={() => onPick(f.id)}
+                aria-label="Pull this fry"
+                className="group relative outline-none"
+                style={{ width: 17, height: total, transformOrigin: "bottom center", transform: `rotate(${f.lean}deg)` }}
+              >
+                <span
+                  className="absolute inset-0 block transition-transform duration-200 group-hover:-translate-y-2 group-active:-translate-y-1"
+                  style={{
+                    borderRadius: 9,
+                    background: `linear-gradient(180deg, #FAD27A 0%, ${FRY} 42%, ${FRY_DEEP} 100%)`,
+                    boxShadow: "inset -2px 0 3px rgba(150,90,15,0.28), inset 2px 0 4px rgba(255,240,200,0.5)",
+                  }}
+                >
+                  {/* highlight + crisp top */}
+                  <span
+                    className="absolute left-[3px] top-2 bottom-3 w-[3px] rounded-full"
+                    style={{ background: "rgba(255,247,224,0.6)" }}
+                  />
+                  <span
+                    className="absolute inset-x-0 top-0 h-[6px]"
+                    style={{ borderRadius: "9px 9px 3px 3px", background: "#FBDD96" }}
+                  />
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* carton */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2" style={{ width: 200, height: 120 }}>
-          <div
-            className="absolute bottom-0 left-1/2 -translate-x-1/2"
-            style={{
-              width: 0,
-              height: 0,
-              borderLeft: "26px solid transparent",
-              borderRight: "26px solid transparent",
-              borderTop: "120px solid #E23B2E",
-              filter: "drop-shadow(0 14px 22px rgba(226,59,46,0.32))",
-              borderTopLeftRadius: 8,
-              borderTopRightRadius: 8,
-            }}
-          />
-          {/* white band */}
+        {/* McDonald's carton (drawn above fry bottoms to mask them) */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20" style={{ width: BOX_W, height: BOX_H }}>
+          {/* back lip of the carton mouth */}
           <div
             className="absolute left-1/2 -translate-x-1/2"
             style={{
-              bottom: 30,
-              width: 168,
-              height: 26,
-              background: "#fff",
-              transform: "perspective(120px) rotateX(6deg)",
+              top: -9,
+              width: BOX_W - 6,
+              height: 18,
+              borderRadius: 4,
+              background: "#B81910",
+              clipPath: "polygon(2% 0, 98% 0, 94% 100%, 6% 100%)",
             }}
           />
+          {/* body */}
           <div
-            className="absolute left-1/2 -translate-x-1/2 font-['Plus_Jakarta_Sans'] font-extrabold tracking-tight"
-            style={{ bottom: 34, color: "#E23B2E", fontSize: 14 }}
+            className="absolute inset-0"
+            style={{
+              clipPath: "polygon(0 0, 100% 0, 88% 100%, 12% 100%)",
+              background: `linear-gradient(180deg, #E2231A 0%, ${MC_RED} 55%, #B81910 100%)`,
+              boxShadow: "0 18px 30px -14px rgba(176,25,15,0.55)",
+            }}
           >
-            TOAST
+            {/* soft side shading */}
+            <div
+              className="absolute inset-y-0 right-0 w-1/3"
+              style={{ background: "linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,0.16))" }}
+            />
+            <div
+              className="absolute inset-y-0 left-0 w-1/4"
+              style={{ background: "linear-gradient(90deg, rgba(255,255,255,0.12), rgba(255,255,255,0))" }}
+            />
+            {/* golden arches */}
+            <div className="absolute left-1/2 -translate-x-1/2" style={{ top: "32%", width: 96 }}>
+              <GoldenArches />
+            </div>
           </div>
         </div>
       </div>
-      <p className="text-[13px] font-semibold mt-2" style={{ color: MUTE }}>
-        You · Mint · Boss are all reaching in
+      <p className="text-[13px] font-semibold mt-3 text-center" style={{ color: MUTE }}>
+        6 fries in the box · You pick one, Mint &amp; Boss grab the rest
       </p>
     </div>
   );
 }
 
-function FryRow({
-  player,
-  value,
-  shown,
-  isWinner,
+function GoldenArches() {
+  return (
+    <svg viewBox="0 0 120 90" className="w-full h-auto" style={{ filter: "drop-shadow(0 2px 1px rgba(120,10,5,0.35))" }}>
+      <path
+        d="M8,88 L8,34 C8,16 21,4 36,4 C49,4 58,13 60,27 C62,13 71,4 84,4 C99,4 112,16 112,34 L112,88 L92,88 L92,36 C92,26 88.5,20 80.5,20 C72.5,20 70,28 70,40 L70,88 L50,88 L50,40 C50,28 47.5,20 39.5,20 C31.5,20 28,26 28,36 L28,88 Z"
+        fill={MC_YELLOW}
+      />
+    </svg>
+  );
+}
+
+function RevealLane({
+  fries,
+  assign,
+  revealed,
+  winner,
   cm,
 }: {
-  player: Player;
-  value: number;
-  shown: boolean;
-  isWinner: boolean;
-  cm: string;
+  fries: Fry[];
+  assign: Record<string, string>;
+  revealed: Record<string, boolean>;
+  winner: string | null;
+  cm: (v: number) => string;
 }) {
-  const isYou = player.id === "you";
+  const fryById = (id: string) => fries.find((f) => f.id === id);
   return (
-    <div
-      data-testid={`fry-row-${player.id}`}
-      className="rounded-[20px] bg-white p-3.5 transition-all duration-500"
-      style={{
-        border: isWinner ? `2px solid ${GOLD}` : "1px solid rgba(0,0,0,0.05)",
-        boxShadow: isWinner
-          ? "0 14px 30px -14px rgba(255,204,2,0.5)"
-          : "0 8px 22px -16px rgba(0,0,0,0.18)",
-        transform: isWinner ? "scale(1.015)" : "scale(1)",
-      }}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span
-            className="w-6 h-6 rounded-full flex items-center justify-center font-['Plus_Jakarta_Sans'] text-[11px] font-bold"
-            style={{ backgroundColor: isYou || isWinner ? GOLD : "#F3F1EC", color: INK }}
-          >
-            {player.initial}
-          </span>
-          <span className="text-[13px] font-bold" style={{ color: INK }}>
-            {player.name}
-          </span>
-          {isWinner && (
-            <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold"
-              style={{ backgroundColor: GOLD, color: INK }}
-            >
-              <Crown className="w-3 h-3" /> LONGEST
-            </span>
-          )}
-        </div>
-        <span
-          className="font-['Plus_Jakarta_Sans'] text-[13px] font-bold tabular-nums"
-          style={{ color: shown ? "#C97A12" : MUTE, opacity: shown ? 1 : 0.4 }}
-        >
-          {shown ? `${cm} cm` : "—"}
-        </span>
+    <div className="flex-1 flex flex-col">
+      {/* the "grip" — fries held pinched at the top */}
+      <div className="relative mx-1 mb-1">
+        <div
+          className="h-2.5 rounded-full"
+          style={{ background: "linear-gradient(180deg, #2A2A2A, #111)", boxShadow: "0 3px 8px rgba(0,0,0,0.25)" }}
+        />
       </div>
 
-      {/* the fry */}
-      <div className="h-[18px] w-full rounded-full overflow-hidden" style={{ backgroundColor: "rgba(0,0,0,0.04)" }}>
-        <div
-          className="h-full rounded-full relative"
-          style={{
-            width: shown ? `${value * 100}%` : "0%",
-            background: `linear-gradient(180deg, #F8C766 0%, ${FRY} 50%, ${FRY_DEEP} 100%)`,
-            boxShadow: "inset 0 -3px 4px rgba(150,90,15,0.3)",
-            transition: "width 0.7s cubic-bezier(0.22,1,0.36,1)",
-          }}
-        >
-          {/* salt flecks */}
-          {shown && (
-            <div className="absolute inset-0 flex items-center justify-around px-2 opacity-70">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <span key={i} className="w-[2px] h-[2px] rounded-full" style={{ background: "rgba(255,255,255,0.85)" }} />
-              ))}
+      <div className="grid grid-cols-3 gap-2 items-start">
+        {PLAYERS.map((p) => {
+          const fry = fryById(assign[p.id]);
+          const isShown = !!revealed[p.id];
+          const isWin = winner === p.id;
+          const hang = fry ? 96 + fry.trueLen * 188 : 0;
+          return (
+            <div key={p.id} data-testid={`fry-reveal-${p.id}`} className="flex flex-col items-center">
+              {/* owner */}
+              <div className="flex flex-col items-center gap-1 mb-2 h-[52px] justify-start">
+                <span
+                  className="w-7 h-7 rounded-full flex items-center justify-center font-['Plus_Jakarta_Sans'] text-[12px] font-bold relative"
+                  style={{ backgroundColor: isWin ? GOLD : p.id === "you" ? GOLD : "#F0EDE6", color: INK }}
+                >
+                  {p.initial}
+                  {isWin && (
+                    <Crown
+                      className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-4"
+                      style={{ color: GOLD, fill: GOLD }}
+                    />
+                  )}
+                </span>
+                <span className="text-[12px] font-bold" style={{ color: INK }}>
+                  {p.name}
+                </span>
+              </div>
+
+              {/* hanging fry */}
+              <div className="relative flex justify-center" style={{ height: 300 }}>
+                <div
+                  style={{
+                    width: 20,
+                    height: isShown ? hang : 0,
+                    transformOrigin: "top center",
+                    transition: "height 0.7s cubic-bezier(0.22,1,0.36,1)",
+                    borderRadius: 10,
+                    background: isWin
+                      ? `linear-gradient(180deg, #FFE08A 0%, ${GOLD} 45%, #E0A800 100%)`
+                      : `linear-gradient(180deg, #FAD27A 0%, ${FRY} 45%, ${FRY_DEEP} 100%)`,
+                    boxShadow: isWin
+                      ? "0 10px 22px -8px rgba(255,204,2,0.6), inset -2px 0 3px rgba(150,90,15,0.25)"
+                      : "inset -2px 0 3px rgba(150,90,15,0.28), inset 2px 0 4px rgba(255,240,200,0.5)",
+                  }}
+                  className="relative"
+                >
+                  <span className="absolute left-[4px] top-2 bottom-3 w-[3px] rounded-full" style={{ background: "rgba(255,247,224,0.55)" }} />
+                  {/* salt flecks */}
+                  {isShown &&
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <span
+                        key={i}
+                        className="absolute w-[2px] h-[2px] rounded-full"
+                        style={{
+                          background: "rgba(255,255,255,0.85)",
+                          left: i % 2 ? "7px" : "11px",
+                          top: `${22 + i * 22}%`,
+                        }}
+                      />
+                    ))}
+                </div>
+              </div>
+
+              {/* length */}
+              <span
+                className="font-['Plus_Jakarta_Sans'] text-[13px] font-bold tabular-nums mt-1 transition-opacity duration-300"
+                style={{ color: isWin ? "#C97A12" : isShown ? INK : MUTE, opacity: isShown ? 1 : 0.35 }}
+              >
+                {isShown && fry ? `${cm(fry.trueLen)} cm` : "—"}
+              </span>
             </div>
-          )}
-        </div>
+          );
+        })}
       </div>
     </div>
   );
