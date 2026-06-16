@@ -52,7 +52,7 @@ const PLAYERS: Player[] = [
   },
 ];
 
-const FRY_COUNT = 6;
+const FRY_COUNT = 13;
 
 type Fry = {
   id: string;
@@ -272,18 +272,18 @@ export default function FryPull() {
 }
 
 function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => void }) {
-  const BOX_W = 232;
-  const BOX_H = 150;
-  const RIM = 150; // px from container bottom where the carton mouth sits
+  const BOX_W = 256;
+  const BOX_H = 156;
+  const RIM = 156; // px from container bottom where the carton mouth sits
   const INSIDE = 46; // how far fry bottoms sit below the rim (masked by carton)
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center pb-4">
-      <div className="relative" style={{ width: 280, height: 330 }}>
+      <div className="relative" style={{ width: 304, height: 336 }}>
         {/* Fries (clickable) poking out of the carton */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 flex items-end justify-center gap-[6px] z-10"
-          style={{ bottom: RIM - INSIDE, width: BOX_W - 28 }}
+          className="absolute left-1/2 -translate-x-1/2 flex items-end justify-center gap-[2.5px] z-10"
+          style={{ bottom: RIM - INSIDE, width: BOX_W - 30 }}
         >
           {fries.map((f) => {
             const total = INSIDE + 36 + f.poke * 104; // bottom (hidden) + visible poke
@@ -294,7 +294,7 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
                 onClick={() => onPick(f.id)}
                 aria-label="Pull this fry"
                 className="group relative outline-none"
-                style={{ width: 17, height: total, transformOrigin: "bottom center", transform: `rotate(${f.lean}deg)` }}
+                style={{ width: 13, height: total, transformOrigin: "bottom center", transform: `rotate(${f.lean}deg)` }}
               >
                 <span
                   className="absolute inset-0 block transition-transform duration-200 group-hover:-translate-y-2 group-active:-translate-y-1"
@@ -351,27 +351,27 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
               className="absolute inset-y-0 left-0 w-1/4"
               style={{ background: "linear-gradient(90deg, rgba(255,255,255,0.12), rgba(255,255,255,0))" }}
             />
-            {/* golden arches */}
-            <div className="absolute left-1/2 -translate-x-1/2" style={{ top: "32%", width: 96 }}>
-              <GoldenArches />
+            {/* Toast "T" mark */}
+            <div className="absolute left-1/2 -translate-x-1/2" style={{ top: "33%", width: 78 }}>
+              <ToastMark />
             </div>
           </div>
         </div>
       </div>
       <p className="text-[13px] font-semibold mt-3 text-center" style={{ color: MUTE }}>
-        6 fries in the box · You pick one, Mint &amp; Boss grab the rest
+        {fries.length} fries in the box · You pick one, Mint &amp; Boss grab the rest
       </p>
     </div>
   );
 }
 
-function GoldenArches() {
+function ToastMark() {
   return (
-    <svg viewBox="0 0 120 90" className="w-full h-auto" style={{ filter: "drop-shadow(0 2px 1px rgba(120,10,5,0.35))" }}>
-      <path
-        d="M8,88 L8,34 C8,16 21,4 36,4 C49,4 58,13 60,27 C62,13 71,4 84,4 C99,4 112,16 112,34 L112,88 L92,88 L92,36 C92,26 88.5,20 80.5,20 C72.5,20 70,28 70,40 L70,88 L50,88 L50,40 C50,28 47.5,20 39.5,20 C31.5,20 28,26 28,36 L28,88 Z"
-        fill={MC_YELLOW}
-      />
+    <svg viewBox="0 0 100 96" className="w-full h-auto" style={{ filter: "drop-shadow(0 2px 1px rgba(120,10,5,0.35))" }}>
+      <g fill={MC_YELLOW}>
+        <rect x="8" y="8" width="84" height="25" rx="10" />
+        <rect x="37.5" y="27" width="25" height="61" rx="10" />
+      </g>
     </svg>
   );
 }
