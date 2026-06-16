@@ -270,7 +270,7 @@ export function PlayDuel() {
             {shaking ? (
               /* ---- Animated shake ---- */
               <div className="flex flex-col items-center justify-center gap-10 w-full">
-                <div className="flex items-center justify-center gap-14 h-[170px]">
+                <div className="flex items-center justify-center gap-20 h-[200px]">
                   <div className="flex flex-col items-center gap-6">
                     <span className="text-[76px] animate-windup filter drop-shadow-[0_8px_20px_rgba(255,204,2,0.35)]">✊</span>
                     <span className="bg-[#FFCC02] text-[#0F172A] px-3 py-1 rounded-full font-bold text-xs shadow-sm">You</span>
@@ -284,7 +284,7 @@ export function PlayDuel() {
                 </div>
                 <div
                   key={chant}
-                  className={`font-black toast-ink animate-pop-in ${chant === "Shoot!" ? "text-6xl text-[#FFCC02]" : "text-5xl"}`}
+                  className={`font-black animate-pop-in ${chant === "Shoot!" ? "text-7xl text-[#FFCC02] drop-shadow-[0_4px_16px_rgba(255,204,2,0.5)]" : "text-5xl toast-ink"}`}
                 >
                   {chant}
                 </div>
