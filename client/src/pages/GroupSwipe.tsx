@@ -660,6 +660,12 @@ export default function GroupSwipe() {
   menuItemsRef.current = menuItems;
   const sessionEndedRef = useRef(false);
   sessionEndedRef.current = sessionEnded;
+  const fullMatchRef = useRef(false);
+  fullMatchRef.current = fullMatch;
+  const showDishRestaurantsRef = useRef(false);
+  showDishRestaurantsRef.current = showDishRestaurants;
+  const tieBreakerActiveRef = useRef(false);
+  tieBreakerActiveRef.current = tieBreakerActive;
   const loadRestaurantsForDishRef = useRef<((dish: DishItem) => void) | null>(null);
 
   useEffect(() => {
@@ -667,19 +673,113 @@ export default function GroupSwipe() {
     let cancelled = false;
 
     const pollController = new AbortController();
-    const fetchSession = async () => {
-      if (cancelled) return;
+
+    // Real-time match + tie-breaker detection. Runs every tick against the
+    // UNLIMITED /matches and /tiebreaker endpoints, and reads its member count
+    // from the matches payload — so it never depends on (and is never starved
+    // by) the rate-limited session lookup. This is what surfaces a match to a
+    // user who is waiting on the results screen.
+    const fetchMatches = async () => {
+      if (cancelled || tieBreakerActiveRef.current) return;
+      try {
+        const matchRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/matches?swipeType=${swipePhase === 'menu' ? 'menu' : 'restaurant'}`, { signal: pollController.signal });
+        if (!cancelled && matchRes.ok) {
+          const matchData = await matchRes.json();
+          const memberCount = matchData.members?.length ?? 0;
+          if (matchData.matches && memberCount > 0) {
+            if (swipePhase === "menu") {
+              if (!fullMatchRef.current && !showDishRestaurantsRef.current) {
+                for (const m of matchData.matches) {
+                  if (m.voters.length >= memberCount && m.menuItem) {
+                    const dish = m.menuItem;
+                    setConfetti(true);
+                    setMatchIsDish(true);
+                    setMatchedDish({
+                      id: dish.id,
+                      name: dish.name,
+                      nameLocal: dish.nameLocal || "",
+                      category: dish.category || "",
+                      tags: dish.tags || [],
+                      description: dish.description || "",
+                      imageUrl: dish.imageUrl || "",
+                      swipeRightCount: dish.swipeRightCount || 0,
+                    });
+                    setMatchedItem({
+                      id: dish.id,
+                      name: dish.name || dish.nameLocal || "",
+                      category: dish.category || "",
+                      tags: dish.tags || [],
+                      description: dish.description || "",
+                      priceLevel: 0,
+                      rating: "",
+                      address: "",
+                      imageUrl: dish.imageUrl || "",
+                      isNew: false,
+                    });
+                    setFullMatch(true);
+                    break;
+                  }
+                }
+              }
+            } else {
+              const fullMatches = matchData.matches
+                .filter((m: any) => m.voters.length >= memberCount && m.restaurant)
+                .map((m: any) => {
+                  const r = m.restaurant;
+                  return {
+                    id: r.id,
+                    name: r.name,
+                    category: r.category || "",
+                    tags: buildTagsFromCategory(r.category || ""),
+                    description: r.description || "",
+                    priceLevel: r.priceLevel || 2,
+                    rating: r.rating || "4.0",
+                    address: r.address || "Bangkok",
+                    imageUrl: r.imageUrl || "",
+                    isNew: r.isNew || false,
+                  } as MenuItem;
+                });
+
+              setAllMatches(prev => {
+                const existing = new Set(prev.map(p => p.id));
+                const newItems = fullMatches.filter((i: MenuItem) => !existing.has(i.id));
+                if (newItems.length > 0) return [...prev, ...newItems];
+                return prev;
+              });
+            }
+          }
+        }
+      } catch {}
+
+      // Detect an active tie-breaker game (host may have started one instead of ending).
+      if (!cancelled && !sessionEndedRef.current) {
+        try {
+          const tbRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/tiebreaker`, { signal: pollController.signal });
+          if (!cancelled && tbRes.ok) {
+            const tbData = await tbRes.json();
+            if (tbData?.tieBreaker && tbData.tieBreaker.status !== "finished") {
+              queryClient.setQueryData(["/api/group/sessions", sessionCode, "tiebreaker"], tbData);
+              setTieBreakerActive(true);
+            }
+          }
+        } catch {}
+      }
+    };
+
+    // Session metadata: availability, membership, host, completion. Hits the
+    // RATE-LIMITED session lookup (20/min/IP), so it runs on a slower cadence to
+    // stay comfortably under the limit. A 429 here is harmless — match polling
+    // above keeps running independently.
+    const fetchSessionMeta = async () => {
+      if (cancelled || tieBreakerActiveRef.current) return;
       try {
         const res = await fetchWithTimeout(`/api/group/sessions/${sessionCode}`, { signal: pollController.signal });
         if (cancelled) return;
-        if (res.status === 410 || res.status === 404) {
+        if (res.status === 410 || res.status === 404 || res.status === 403) {
           setSessionUnavailable(true);
           return;
         }
-        if (res.status === 403) {
-          setSessionUnavailable(true);
-          return;
-        }
+        if (res.status === 429) return;
         if (!res.ok) {
           pollFailCount.current += 1;
           if (pollFailCount.current >= 5) setPollError(true);
@@ -698,92 +798,6 @@ export default function GroupSwipe() {
         if (profile && data.session?.hostLineUserId === profile.userId) {
           setIsHost(true);
         }
-
-        if (!cancelled) {
-          try {
-            const matchRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/matches?swipeType=${swipePhase === 'menu' ? 'menu' : 'restaurant'}`, { signal: pollController.signal });
-            if (!cancelled && matchRes.ok) {
-              const matchData = await matchRes.json();
-              if (matchData.matches) {
-                if (swipePhase === "menu") {
-                  if (!fullMatch && !showDishRestaurants) {
-                    for (const m of matchData.matches) {
-                      if (m.voters.length >= data.members.length && m.menuItem) {
-                        const dish = m.menuItem;
-                        setConfetti(true);
-                        setMatchIsDish(true);
-                        setMatchedDish({
-                          id: dish.id,
-                          name: dish.name,
-                          nameLocal: dish.nameLocal || "",
-                          category: dish.category || "",
-                          tags: dish.tags || [],
-                          description: dish.description || "",
-                          imageUrl: dish.imageUrl || "",
-                          swipeRightCount: dish.swipeRightCount || 0,
-                        });
-                        setMatchedItem({
-                          id: dish.id,
-                          name: dish.name || dish.nameLocal || "",
-                          category: dish.category || "",
-                          tags: dish.tags || [],
-                          description: dish.description || "",
-                          priceLevel: 0,
-                          rating: "",
-                          address: "",
-                          imageUrl: dish.imageUrl || "",
-                          isNew: false,
-                        });
-                        setFullMatch(true);
-                        break;
-                      }
-                    }
-                  }
-                } else {
-                  const fullMatches = matchData.matches
-                    .filter((m: any) => m.voters.length >= data.members.length && m.restaurant)
-                    .map((m: any) => {
-                      const r = m.restaurant;
-                      return {
-                        id: r.id,
-                        name: r.name,
-                        category: r.category || "",
-                        tags: buildTagsFromCategory(r.category || ""),
-                        description: r.description || "",
-                        priceLevel: r.priceLevel || 2,
-                        rating: r.rating || "4.0",
-                        address: r.address || "Bangkok",
-                        imageUrl: r.imageUrl || "",
-                        isNew: r.isNew || false,
-                      } as MenuItem;
-                    });
-
-                  setAllMatches(prev => {
-                    const existing = new Set(prev.map(p => p.id));
-                    const newItems = fullMatches.filter((i: MenuItem) => !existing.has(i.id));
-                    if (newItems.length > 0) return [...prev, ...newItems];
-                    return prev;
-                  });
-                }
-              }
-            }
-          } catch {}
-        }
-
-        // Detect an active tie-breaker game (host may have started one instead of ending).
-        if (!cancelled && !sessionEndedRef.current) {
-          try {
-            const tbRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/tiebreaker`, { signal: pollController.signal });
-            if (!cancelled && tbRes.ok) {
-              const tbData = await tbRes.json();
-              if (tbData?.tieBreaker && tbData.tieBreaker.status !== "finished") {
-                queryClient.setQueryData(["/api/group/sessions", sessionCode, "tiebreaker"], tbData);
-                setTieBreakerActive(true);
-              }
-            }
-          } catch {}
-        }
-
         if (!cancelled && data.session?.status === "completed" && !sessionEndedRef.current) {
           setSessionEnded(true);
         }
@@ -796,8 +810,18 @@ export default function GroupSwipe() {
         }
       }
     };
-    fetchSession();
-    const interval = setInterval(fetchSession, 2000);
+
+    let tick = 0;
+    const poll = () => {
+      if (cancelled) return;
+      // Session meta every 3rd tick (~6s, ~10/min — safely under the 20/min
+      // limit); match detection every tick (~2s) for real-time matches.
+      if (tick % 3 === 0) fetchSessionMeta();
+      tick++;
+      fetchMatches();
+    };
+    poll();
+    const interval = setInterval(poll, 2000);
     return () => { cancelled = true; clearInterval(interval); pollController.abort(); };
   }, [sessionCode, profile, swipePhase]);
 
@@ -1152,6 +1176,40 @@ export default function GroupSwipe() {
     navigate(`/restaurant/${item.id}`);
   };
 
+  // Open the "restaurants serving this dish" list for a given dish. Shared by the
+  // menu-match overlay and the tie-breaker completion flow so both land on the
+  // same screen.
+  const showRestaurantsForDish = useCallback(async (dish: DishItem) => {
+    setMatchedDish(dish);
+    setDishRestaurants([]);
+    setLoadingDishRestaurants(true);
+    setFullMatch(false);
+    setShowDishRestaurants(true);
+    try {
+      const res = await fetchWithTimeout(`/api/menu-items/${dish.id}/restaurants`);
+      if (res.ok) {
+        const data = await res.json();
+        const items: MenuItem[] = data.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          category: r.category || "Restaurant",
+          tags: buildTagsFromCategory(r.category || ""),
+          description: r.description || "",
+          priceLevel: r.priceLevel || r.price_level || 2,
+          rating: r.rating || "4.0",
+          address: r.address || "Bangkok",
+          imageUrl: r.imageUrl || r.image_url || "",
+          isNew: r.isNew || r.is_new || false,
+        }));
+        setDishRestaurants(items);
+      }
+    } catch (err) {
+      console.error("Failed to load restaurants:", err);
+    } finally {
+      setLoadingDishRestaurants(false);
+    }
+  }, []);
+
   const handleEndSession = async () => {
     if (!sessionCode || !profile) return;
     try {
@@ -1202,8 +1260,48 @@ export default function GroupSwipe() {
         body: JSON.stringify({ status: "completed", lineUserId: profile.userId }),
       }).catch(() => {});
     }
-    setSessionEnded(true);
-  }, [isHost, sessionCode, profile]);
+
+    // After the mini-game settles, take everyone straight to the spot:
+    // restaurant mode → that restaurant's detail screen;
+    // menu mode → the list of restaurants serving the winning dish.
+    if (swipeType === "restaurant") {
+      if (sessionCode) sessionStorage.setItem("group_results_return", `/group/swipe?session=${sessionCode}`);
+      navigate(`/restaurant/${finalItemId}`);
+      return;
+    }
+
+    const winningDish = dishItems.find((d) => d.id === finalItemId);
+    if (winningDish) {
+      showRestaurantsForDish(winningDish);
+      return;
+    }
+
+    // dishItems may not be loaded yet (deep-link / refresh straight into a
+    // finished tie-breaker). Fetch the winning dish by id, then show its
+    // restaurants; only fall back to the results banner if that fails too.
+    (async () => {
+      try {
+        const res = await fetchWithTimeout(`/api/menu-items/${finalItemId}`);
+        if (res.ok) {
+          const d = await res.json();
+          showRestaurantsForDish({
+            id: d.id,
+            name: d.name,
+            nameLocal: d.nameLocal || "",
+            category: d.category || "",
+            tags: d.tags || [],
+            description: d.description || "",
+            imageUrl: d.imageUrl || "",
+            swipeRightCount: d.swipeRightCount || 0,
+          });
+          return;
+        }
+      } catch (err) {
+        console.error("Failed to load winning dish:", err);
+      }
+      setSessionEnded(true);
+    })();
+  }, [isHost, sessionCode, profile, navigate, dishItems, showRestaurantsForDish]);
 
   const handleContinueSwiping = () => {
     setFullMatch(false);
@@ -1281,7 +1379,9 @@ export default function GroupSwipe() {
     );
   }
 
-  if (showResults || sessionEnded) {
+  const showMatchOverlay = fullMatch && !!matchedItem && !sessionEnded;
+  const showDishList = showDishRestaurants && !!matchedDish;
+  if ((showResults || sessionEnded) && !showMatchOverlay && !showDishList) {
     const top3 = rankedResults.slice(0, 3);
     const rest = rankedResults.slice(3);
     const hero = top3[0] || null;
@@ -1668,33 +1768,7 @@ export default function GroupSwipe() {
   if (fullMatch && matchedItem) {
     const handleViewRestaurants = async () => {
       if (!matchedDish) return;
-      setDishRestaurants([]);
-      setLoadingDishRestaurants(true);
-      setFullMatch(false);
-      setShowDishRestaurants(true);
-      try {
-        const res = await fetchWithTimeout(`/api/menu-items/${matchedDish.id}/restaurants`);
-        if (res.ok) {
-          const data = await res.json();
-          const items: MenuItem[] = data.map((r: any) => ({
-            id: r.id,
-            name: r.name,
-            category: r.category || "Restaurant",
-            tags: buildTagsFromCategory(r.category || ""),
-            description: r.description || "",
-            priceLevel: r.priceLevel || r.price_level || 2,
-            rating: r.rating || "4.0",
-            address: r.address || "Bangkok",
-            imageUrl: r.imageUrl || r.image_url || "",
-            isNew: r.isNew || r.is_new || false,
-          }));
-          setDishRestaurants(items);
-        }
-      } catch (err) {
-        console.error("Failed to load restaurants:", err);
-      } finally {
-        setLoadingDishRestaurants(false);
-      }
+      await showRestaurantsForDish(matchedDish);
     };
 
     return (
