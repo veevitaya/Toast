@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./_group.css";
-import { Star, MapPin, Navigation, RotateCcw } from "lucide-react";
+import { Star, MapPin, Navigation, RotateCcw, Crown, Swords } from "lucide-react";
 
 type Stage = "pick" | "throw" | "reveal" | "winner";
 type Move = "rock" | "paper" | "scissors";
@@ -80,6 +80,55 @@ function ScorePips({ score, gold }: { score: number; gold?: boolean }) {
         />
       ))}
     </div>
+  );
+}
+
+function Confetti() {
+  const pieces = React.useMemo(
+    () =>
+      Array.from({ length: 18 }).map((_, i) => ({
+        left: Math.random() * 100,
+        delay: Math.random() * 0.35,
+        dur: 1.7 + Math.random() * 1.3,
+        rot: 240 + Math.random() * 360,
+        color: ["#FFCC02", "#0F172A", "#FFE08A", "#FFFFFF"][i % 4],
+        w: 6 + Math.random() * 6,
+        h: 9 + Math.random() * 9,
+      })),
+    []
+  );
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          className="absolute top-[-16px] rounded-[2px] animate-confetti"
+          style={{
+            left: `${p.left}%`,
+            width: p.w,
+            height: p.h,
+            background: p.color,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.dur}s`,
+            ["--rot" as string]: `${p.rot}deg`,
+          } as React.CSSProperties}
+        />
+      ))}
+    </div>
+  );
+}
+
+function TypingDots() {
+  return (
+    <span aria-hidden="true" className="flex items-end gap-1">
+      {[0, 0.2, 0.4].map((d) => (
+        <span
+          key={d}
+          className="rps-dot w-1.5 h-1.5 rounded-full bg-[#FFCC02]"
+          style={{ animationDelay: `${d}s` }}
+        />
+      ))}
+    </span>
   );
 }
 
@@ -165,6 +214,12 @@ export function PlayDuel() {
       style={{ fontFamily: "'Figtree', system-ui, sans-serif" }}
       data-testid="rps-duel-root"
     >
+      {/* ============ AMBIENT WARMTH (all stages) ============ */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <div className="absolute -top-24 -right-20 w-72 h-72 rounded-full bg-[#FFCC02]/20 blur-3xl" />
+        <div className="absolute bottom-0 -left-24 w-72 h-72 rounded-full bg-[#FFE08A]/25 blur-3xl" />
+      </div>
+
       {/* ============ STAGE: SECRET PICK ============ */}
       {stage === "pick" && (
         <>
@@ -174,7 +229,10 @@ export function PlayDuel() {
               <div className="toast-avatar z-0">👩🏻</div>
             </div>
             <div className="flex flex-col items-end">
-              <span className="text-[13px] font-bold tracking-widest text-[#FFCC02] uppercase">Duel Time</span>
+              <span className="flex items-center gap-1.5 text-[13px] font-bold tracking-widest text-[#FFCC02] uppercase">
+                <Swords className="w-3.5 h-3.5" strokeWidth={2.5} />
+                Duel Time
+              </span>
               <span className="toast-ink font-bold text-lg leading-tight">You vs Mint</span>
             </div>
           </div>
@@ -198,24 +256,38 @@ export function PlayDuel() {
                     key={d.name}
                     onClick={() => setMyDish(i)}
                     data-testid={`button-dish-${i}`}
-                    className={`w-full text-left toast-card p-5 relative overflow-hidden flex items-center justify-between transition-all active:scale-[0.98] ${
-                      selected ? "border-2 border-[#FFCC02]" : "border-2 border-transparent opacity-70"
+                    className={`w-full text-left toast-card p-4 relative overflow-hidden flex items-center justify-between transition-all duration-200 active:scale-[0.98] ${
+                      selected
+                        ? "ring-2 ring-[#FFCC02] shadow-[0_16px_34px_-14px_rgba(255,204,2,0.6)]"
+                        : "ring-1 ring-black/[0.04] hover:-translate-y-0.5 hover:shadow-[0_18px_34px_-20px_rgba(16,24,40,0.3)]"
                     }`}
+                    style={selected ? { background: "linear-gradient(180deg,#FFFFFF 0%,#FFFBEC 100%)" } : undefined}
                   >
                     {selected && (
-                      <div className="absolute top-0 right-0 bg-[#FFCC02] text-[#0F172A] text-[11px] font-bold px-3 py-1 rounded-bl-xl z-10">
+                      <div className="absolute top-0 right-0 bg-[#FFCC02] text-[#0F172A] text-[10px] font-extrabold tracking-wide px-2.5 py-1 rounded-bl-2xl z-10">
                         YOUR PICK
                       </div>
                     )}
-                    <div className="flex items-center gap-4 relative z-10">
-                      <div className={`w-14 h-14 rounded-full ${d.bg} flex items-center justify-center text-3xl`}>{d.emoji}</div>
-                      <div>
-                        <h3 className="toast-ink font-bold text-lg">{d.name}</h3>
-                        <p className="toast-muted text-sm">{d.sub}</p>
+                    <div className="flex items-center gap-4 relative z-10 min-w-0">
+                      <div className="relative w-16 h-16 shrink-0">
+                        <img src={d.restaurant.img} alt={d.name} loading="lazy" className="w-full h-full object-cover rounded-2xl ring-1 ring-black/[0.06]" />
+                        <span aria-hidden="true" className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-white shadow-[0_2px_6px_rgba(16,24,40,0.18)] flex items-center justify-center text-base">
+                          {d.emoji}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="toast-ink font-bold text-[17px] leading-tight truncate">{d.name}</h3>
+                        <p className="toast-muted text-[13px] mb-1.5">{d.sub}</p>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                          <Star className="w-3 h-3 fill-current" />
+                          {d.restaurant.rating}
+                          <span className="text-amber-300">·</span>
+                          <span className="text-amber-700/80">{d.restaurant.area}</span>
+                        </span>
                       </div>
                     </div>
                     <div
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
                         selected ? "border-[#FFCC02] bg-[#FFCC02]" : "border-gray-200"
                       }`}
                     >
@@ -227,9 +299,9 @@ export function PlayDuel() {
             </div>
 
             <div className="mt-7 flex flex-col items-center">
-              <div className="flex items-center gap-2 mb-5 bg-white/60 px-4 py-2 rounded-full border border-[rgba(16,24,40,.04)]">
-                <div className="w-2 h-2 rounded-full bg-[#FFCC02] animate-pulse" />
-                <span className="text-sm font-medium toast-muted">Mint is picking...</span>
+              <div className="flex items-center gap-2.5 mb-5 bg-white/70 backdrop-blur px-4 py-2 rounded-full border border-[rgba(16,24,40,.05)] shadow-sm">
+                <span className="text-sm font-medium toast-muted">Mint is picking</span>
+                <TypingDots />
               </div>
               <button
                 onClick={() => myDish !== null && setStage("throw")}
@@ -313,9 +385,9 @@ export function PlayDuel() {
                       key={m}
                       onClick={() => throwMove(m)}
                       data-testid={`button-move-${m}`}
-                      className="toast-card aspect-square flex flex-col items-center justify-center gap-2 active:scale-95 hover:border-[#FFCC02] hover:-translate-y-1 transition-all"
+                      className="group toast-card aspect-square flex flex-col items-center justify-center gap-2 active:scale-95 hover:border-[#FFCC02] hover:-translate-y-1 hover:shadow-[0_16px_30px_-16px_rgba(255,204,2,0.6)] transition-all"
                     >
-                      <span className="text-5xl">{HAND[m]}</span>
+                      <span className="text-5xl transition-transform duration-200 group-hover:scale-110 group-hover:-rotate-6">{HAND[m]}</span>
                       <span className="font-bold text-[13px] toast-ink">{m.toUpperCase()}</span>
                     </button>
                   ))}
@@ -329,6 +401,7 @@ export function PlayDuel() {
       {/* ============ STAGE: REVEAL ============ */}
       {stage === "reveal" && myThrow && mintThrow && result && (
         <>
+          {result === "win" && <Confetti />}
           <div className="absolute inset-0 bg-[#FFCC02]/10 animate-pulse" />
           <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-6">
             <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-full h-[300px] flex items-center justify-center">
@@ -347,7 +420,10 @@ export function PlayDuel() {
                 </span>
               </div>
               <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-                <div className="w-32 h-32 bg-white/40 rounded-full blur-2xl animate-scale-pop" />
+                <div aria-hidden="true" className="w-32 h-32 bg-white/40 rounded-full blur-2xl animate-scale-pop" />
+                {result !== "tie" && (
+                  <div className="absolute w-44 h-44 rounded-full border-4 border-[#FFCC02]/50 animate-ring-pop" />
+                )}
               </div>
             </div>
 
@@ -403,6 +479,7 @@ export function PlayDuel() {
       {/* ============ STAGE: WINNER ============ */}
       {stage === "winner" && (
         <>
+          <Confetti />
           <div className="absolute top-0 left-0 w-full h-[400px] bg-gradient-to-b from-[#FFCC02]/30 to-transparent pointer-events-none" />
           <div className="pt-14 pb-4 px-6 flex justify-between items-center z-10 relative">
             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
@@ -416,9 +493,15 @@ export function PlayDuel() {
           </div>
 
           <div className="px-6 flex-1 flex flex-col z-10 relative pb-10 mt-4 animate-slide-up">
-            <div className="text-center mb-6">
-              <h1 className="text-4xl font-extrabold toast-ink mb-2">{dish.name}!</h1>
-              <p className="text-slate-500 font-medium text-[16px]">
+            <div className="text-center mb-6 relative">
+              <div aria-hidden="true" className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-8 w-56 h-56 rounded-full bg-[#FFCC02]/25 blur-3xl" />
+              <div className="relative flex justify-center mb-3">
+                <div className="w-12 h-12 rounded-2xl bg-[#FFCC02] flex items-center justify-center shadow-[0_12px_26px_-8px_rgba(255,204,2,0.75)] animate-scale-pop">
+                  <Crown className="w-6 h-6 text-[#0F172A]" strokeWidth={2.5} />
+                </div>
+              </div>
+              <h1 className="relative text-4xl font-extrabold toast-ink mb-2">{dish.name}!</h1>
+              <p className="relative text-slate-500 font-medium text-[16px]">
                 {iWon ? "Your champion takes the crown." : "Mint's champion takes the crown."}
               </p>
             </div>

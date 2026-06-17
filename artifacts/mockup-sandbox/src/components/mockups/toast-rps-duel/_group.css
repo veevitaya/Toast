@@ -125,3 +125,49 @@
 .animate-pop-in {
   animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
+
+/* "Mint is picking" live typing dots */
+@keyframes rpsDot {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
+}
+.rps-dot { animation: rpsDot 1.2s infinite; }
+
+/* Celebratory confetti for round/match wins */
+@keyframes confettiFall {
+  0%   { transform: translateY(-12px) rotate(0deg); opacity: 0; }
+  12%  { opacity: 1; }
+  100% { transform: translateY(880px) rotate(var(--rot, 360deg)); opacity: 0; }
+}
+.animate-confetti { animation: confettiFall linear forwards; }
+
+/* Soft pop ring behind the winning hand on reveal */
+@keyframes ringPop {
+  0%   { transform: scale(0.3); opacity: 0.55; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.animate-ring-pop { animation: ringPop 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+/* Respect reduced-motion: drop the celebratory/looping motion, keep content
+   instantly visible in its resting state. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-up,
+  .animate-scale-pop,
+  .animate-clash-left,
+  .animate-clash-right,
+  .animate-windup,
+  .animate-pop-in {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+  }
+  .animate-pulse-ring,
+  .animate-float,
+  .rps-dot {
+    animation: none !important;
+  }
+  .animate-confetti,
+  .animate-ring-pop {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
