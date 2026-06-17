@@ -25,14 +25,14 @@ function rnd(seed: number, n: number) {
   const x = Math.sin(seed * 127.1 + n * 311.7) * 43758.5453;
   return x - Math.floor(x);
 }
-// irregular "cut potato" silhouette — squared sides with small bumps, slightly narrower crispy tip
+// rectangular cut-potato stick — straight vertical sides, flat squared ends, only faint edge irregularity
 function fryClip(seed: number) {
   const v = (n: number, base: number, amt: number) =>
     Math.max(0, Math.min(100, base + (rnd(seed, n) - 0.5) * amt)).toFixed(1);
   return (
-    `polygon(${v(1, 18, 10)}% 0%, ${v(2, 82, 10)}% 0%, ` +
-    `${v(3, 96, 5)}% 12%, ${v(4, 91, 7)}% 30%, ${v(5, 97, 5)}% 49%, ${v(6, 90, 7)}% 68%, ${v(7, 96, 5)}% 86%, ${v(8, 84, 9)}% 100%, ` +
-    `${v(9, 16, 9)}% 100%, ${v(10, 4, 5)}% 86%, ${v(11, 10, 7)}% 68%, ${v(12, 3, 5)}% 49%, ${v(13, 9, 7)}% 30%, ${v(14, 4, 5)}% 12%)`
+    `polygon(${v(1, 6, 5)}% 0%, ${v(2, 94, 5)}% 0%, ` +
+    `${v(3, 97, 3)}% 33%, ${v(4, 96, 3)}% 67%, ${v(5, 95, 4)}% 100%, ` +
+    `${v(6, 5, 4)}% 100%, ${v(7, 4, 3)}% 67%, ${v(8, 3, 3)}% 33%)`
   );
 }
 
@@ -177,7 +177,7 @@ function makeFries(): Fry[] {
     trueLen: trueLens[i],
     // outer fries splay outward (bouquet fan), with a touch of jitter
     lean: Math.round(((i - center) / center) * 15 + (Math.random() - 0.5) * 7),
-    w: 9 + Math.round(Math.random() * 3), // 9..12px
+    w: 11 + Math.round(Math.random() * 3), // 11..14px — chunky rectangular sticks
     tone: Math.random(), // pale → deep golden
     seed: Math.floor(Math.random() * 100000),
   }));
@@ -387,7 +387,7 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
       id: `bf${i}`,
       poke: 0.08 + Math.random() * 0.62,
       lean: Math.round(((i - c) / c) * 17 + (Math.random() - 0.5) * 9),
-      w: 9 + Math.round(Math.random() * 3),
+      w: 11 + Math.round(Math.random() * 3),
       tone: 0.25 + Math.random() * 0.55,
       seed: Math.floor(Math.random() * 100000),
     }));
@@ -450,7 +450,7 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
                 style={{
                   width: f.w,
                   height: total,
-                  marginLeft: i === 0 ? 0 : -2,
+                  marginLeft: i === 0 ? 0 : -4,
                   transformOrigin: "bottom center",
                   transform: `rotate(${f.lean}deg)`,
                   zIndex: i % 2 === 0 ? 11 : 10,
