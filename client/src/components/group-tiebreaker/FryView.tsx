@@ -147,7 +147,7 @@ function Carton({
       {/* carton back wall — same rounded silhouette as the front so the interior reads as a carton, not a flat rectangle */}
       <div
         className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
-        style={{ bottom: 0, width: "86%", height: 221, zIndex: 1 }}
+        style={{ bottom: 0, width: "86%", height: 242, zIndex: 1 }}
       >
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
           <defs>
@@ -168,7 +168,7 @@ function Carton({
       {/* the bunch of fries — clipped to the carton walls so they only emerge from the top opening, never the sides */}
       <div
         className="absolute left-1/2 -translate-x-1/2"
-        style={{ bottom: 98, width: "80%", zIndex: 10, overflowX: "clip", overflowY: "visible" }}
+        style={{ bottom: 108, width: "80%", zIndex: 10, overflowX: "clip", overflowY: "visible" }}
       >
         <div className="flex justify-center items-end">
           {carton.map((f, i) => (
@@ -193,7 +193,7 @@ function Carton({
         style={{
           bottom: 0,
           width: "86%",
-          height: 215,
+          height: 236,
           zIndex: 30,
           filter: "drop-shadow(0 14px 18px rgba(214,60,44,0.3))",
         }}
@@ -222,12 +222,6 @@ function Carton({
           {/* center fold crease */}
           <line x1="50" y1="30" x2="50" y2="99" stroke="rgba(110,18,8,0.16)" strokeWidth="0.7" />
         </svg>
-        {/* subtle brand wordmark */}
-        <div className="absolute inset-x-0 flex justify-center" style={{ bottom: "32%" }}>
-          <span className="font-black tracking-[0.3em] text-[15px]" style={{ color: "rgba(255,255,255,0.26)" }}>
-            TOAST
-          </span>
-        </div>
       </div>
     </div>
   );
