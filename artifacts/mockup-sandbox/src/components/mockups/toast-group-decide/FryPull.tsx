@@ -6,8 +6,6 @@ const CREAM = "#FAF6EF";
 const INK = "#1A1A1A";
 const MUTE = "#9A938A";
 const LINE = "#06C755";
-const FRY = "#F2B340";
-const FRY_DEEP = "#D9942A";
 
 // Coral fry-carton palette (matches the classic takeaway box look)
 const BOX_HI = "#F4633C";
@@ -22,12 +20,71 @@ function mix(a: string, b: string, t: number) {
   const c = pa.map((v, i) => Math.round(v + (pb[i] - v) * t));
   return `rgb(${c[0]},${c[1]},${c[2]})`;
 }
-// fry body gradient by browning tone (0 = pale, 1 = deep golden)
-function fryFill(tone: number) {
-  const top = mix("#FCE9B0", "#EBC069", tone);
-  const mid = mix("#F4CB6E", "#D89B37", tone);
-  const bot = mix("#DDA546", "#A86A1B", tone);
-  return `linear-gradient(180deg, ${top} 0%, ${mid} 46%, ${bot} 100%)`;
+// deterministic pseudo-random in [0,1) — keeps each fry's shape/texture stable across renders
+function rnd(seed: number, n: number) {
+  const x = Math.sin(seed * 127.1 + n * 311.7) * 43758.5453;
+  return x - Math.floor(x);
+}
+// irregular "cut potato" silhouette — squared sides with small bumps, slightly narrower crispy tip
+function fryClip(seed: number) {
+  const v = (n: number, base: number, amt: number) =>
+    Math.max(0, Math.min(100, base + (rnd(seed, n) - 0.5) * amt)).toFixed(1);
+  return (
+    `polygon(${v(1, 18, 10)}% 0%, ${v(2, 82, 10)}% 0%, ` +
+    `${v(3, 96, 5)}% 12%, ${v(4, 91, 7)}% 30%, ${v(5, 97, 5)}% 49%, ${v(6, 90, 7)}% 68%, ${v(7, 96, 5)}% 86%, ${v(8, 84, 9)}% 100%, ` +
+    `${v(9, 16, 9)}% 100%, ${v(10, 4, 5)}% 86%, ${v(11, 10, 7)}% 68%, ${v(12, 3, 5)}% 49%, ${v(13, 9, 7)}% 30%, ${v(14, 4, 5)}% 12%)`
+  );
+}
+
+// A single fry rendered as a cut potato stick: golden body, browned edges + tip, mottled texture.
+function FryBody({
+  tone,
+  seed,
+  className = "",
+  win = false,
+}: {
+  tone: number;
+  seed: number;
+  className?: string;
+  win?: boolean;
+}) {
+  const top = win ? "#FFE39A" : mix("#FBE6A6", "#E7BB60", tone);
+  const mid = win ? "#FFCC02" : mix("#F1C65C", "#D08F2C", tone);
+  const bot = win ? "#E0A800" : mix("#D6973A", "#9C5F18", tone);
+  const tip = win ? "#C98A12" : mix("#C2812E", "#76450F", tone);
+  const speckles = [0, 1, 2, 3].map((k) => ({
+    x: 16 + rnd(seed, 20 + k) * 66,
+    y: 14 + rnd(seed, 33 + k) * 68,
+    s: 1 + rnd(seed, 45 + k) * 1.8,
+  }));
+  return (
+    <span
+      className={"absolute inset-0 block " + className}
+      style={{
+        clipPath: fryClip(seed),
+        background:
+          // browned crispy long edges (semi-transparent so the gold shows through) over the body gradient
+          `linear-gradient(90deg, rgba(116,66,16,0.55) 0%, rgba(116,66,16,0) 22%, rgba(116,66,16,0) 78%, rgba(116,66,16,0.55) 100%),` +
+          `linear-gradient(180deg, ${top} 0%, ${mid} 42%, ${bot} 100%)`,
+      }}
+    >
+      {/* crispy browned tip (cut end) */}
+      <span className="absolute inset-x-0 top-0" style={{ height: "15%", background: tip, opacity: 0.85 }} />
+      {/* oil sheen highlight down one face */}
+      <span
+        className="absolute"
+        style={{ left: "30%", top: "10%", bottom: "16%", width: 2, borderRadius: 2, background: "rgba(255,250,232,0.5)" }}
+      />
+      {/* mottled potato texture */}
+      {speckles.map((sp, k) => (
+        <span
+          key={k}
+          className="absolute rounded-full"
+          style={{ left: `${sp.x}%`, top: `${sp.y}%`, width: sp.s, height: sp.s, background: "rgba(108,64,18,0.42)" }}
+        />
+      ))}
+    </span>
+  );
 }
 
 type Dish = {
@@ -80,6 +137,7 @@ type Fry = {
   lean: number; // deg tilt for a natural fanned look
   w: number; // px width — varied for realism
   tone: number; // 0..1 browning — varied golden colour
+  seed: number; // stable per-fry seed for shape + texture
 };
 
 // cm shown to the user for a given true length (single source of truth).
@@ -100,8 +158,9 @@ function makeFries(): Fry[] {
     trueLen: trueLens[i],
     // outer fries splay outward (bouquet fan), with a touch of jitter
     lean: Math.round(((i - center) / center) * 15 + (Math.random() - 0.5) * 7),
-    w: 8 + Math.round(Math.random() * 3), // 8..11px
+    w: 9 + Math.round(Math.random() * 3), // 9..12px
     tone: Math.random(), // pale → deep golden
+    seed: Math.floor(Math.random() * 100000),
   }));
 }
 
@@ -309,8 +368,9 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
       id: `bf${i}`,
       poke: 0.08 + Math.random() * 0.62,
       lean: Math.round(((i - c) / c) * 17 + (Math.random() - 0.5) * 9),
-      w: 8 + Math.round(Math.random() * 3),
+      w: 9 + Math.round(Math.random() * 3),
       tone: 0.25 + Math.random() * 0.55,
+      seed: Math.floor(Math.random() * 100000),
     }));
   }, []);
 
@@ -339,17 +399,17 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
             return (
               <div
                 key={f.id}
+                className="relative"
                 style={{
                   width: f.w,
                   height: total,
                   marginLeft: i === 0 ? 0 : -3,
                   transformOrigin: "bottom center",
                   transform: `rotate(${f.lean}deg)`,
-                  borderRadius: f.w,
-                  background: fryFill(f.tone),
-                  boxShadow: "inset -2px 0 3px rgba(120,70,10,0.30)",
                 }}
-              />
+              >
+                <FryBody tone={f.tone} seed={f.seed} />
+              </div>
             );
           })}
         </div>
@@ -361,7 +421,6 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
         >
           {fries.map((f, i) => {
             const total = INSIDE + 30 + f.poke * 120; // bottom (hidden) + visible poke
-            const browned = f.tone > 0.55;
             return (
               <button
                 key={f.id}
@@ -378,30 +437,11 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
                   zIndex: i % 2 === 0 ? 11 : 10,
                 }}
               >
-                <span
-                  className="absolute inset-0 block transition-transform duration-200 group-hover:-translate-y-2.5 group-active:-translate-y-1"
-                  style={{
-                    borderRadius: f.w,
-                    background: fryFill(f.tone),
-                    boxShadow:
-                      "inset -2px 0 3px rgba(150,90,15,0.30), inset 2px 0 4px rgba(255,243,205,0.55), 0 1px 2px rgba(120,70,10,0.20)",
-                  }}
-                >
-                  {/* highlight stripe */}
-                  <span
-                    className="absolute top-2 bottom-3 rounded-full"
-                    style={{ left: 2.5, width: 2.5, background: "rgba(255,248,225,0.6)" }}
-                  />
-                  {/* crisp / browned tip */}
-                  <span
-                    className="absolute inset-x-0 top-0"
-                    style={{
-                      height: 7,
-                      borderRadius: `${f.w}px ${f.w}px 3px 3px`,
-                      background: browned ? mix("#E7B45A", "#A4661A", f.tone) : "#FBDD96",
-                    }}
-                  />
-                </span>
+                <FryBody
+                  tone={f.tone}
+                  seed={f.seed}
+                  className="transition-transform duration-200 group-hover:-translate-y-2.5 group-active:-translate-y-1"
+                />
               </button>
             );
           })}
@@ -510,31 +550,27 @@ function RevealLane({
               {/* hanging fry */}
               <div className="relative flex justify-center" style={{ height: 300 }}>
                 <div
+                  className="relative"
                   style={{
-                    width: 20,
+                    width: 22,
                     height: isShown ? hang : 0,
                     transformOrigin: "top center",
                     transition: "height 0.7s cubic-bezier(0.22,1,0.36,1)",
-                    borderRadius: 10,
-                    background: isWin
-                      ? `linear-gradient(180deg, #FFE08A 0%, ${GOLD} 45%, #E0A800 100%)`
-                      : `linear-gradient(180deg, #FAD27A 0%, ${FRY} 45%, ${FRY_DEEP} 100%)`,
-                    boxShadow: isWin
-                      ? "0 10px 22px -8px rgba(255,204,2,0.6), inset -2px 0 3px rgba(150,90,15,0.25)"
-                      : "inset -2px 0 3px rgba(150,90,15,0.28), inset 2px 0 4px rgba(255,240,200,0.5)",
+                    filter: isWin
+                      ? "drop-shadow(0 10px 18px rgba(255,204,2,0.55))"
+                      : "drop-shadow(0 6px 12px rgba(120,70,10,0.28))",
                   }}
-                  className="relative"
                 >
-                  <span className="absolute left-[4px] top-2 bottom-3 w-[3px] rounded-full" style={{ background: "rgba(255,247,224,0.55)" }} />
-                  {/* salt flecks */}
+                  {fry && <FryBody tone={fry.tone} seed={fry.seed} win={isWin} />}
+                  {/* salt flecks (sit above the fry body) */}
                   {isShown &&
                     Array.from({ length: 4 }).map((_, i) => (
                       <span
                         key={i}
-                        className="absolute w-[2px] h-[2px] rounded-full"
+                        className="absolute w-[2px] h-[2px] rounded-full z-10"
                         style={{
                           background: "rgba(255,255,255,0.85)",
-                          left: i % 2 ? "7px" : "11px",
+                          left: i % 2 ? "8px" : "12px",
                           top: `${22 + i * 22}%`,
                         }}
                       />
