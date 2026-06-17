@@ -36,7 +36,7 @@ function fryClip(seed: number) {
   );
 }
 
-// A single fry rendered as a cut potato stick: golden body, browned edges + tip, mottled texture.
+// A single fry rendered as a glossy golden potato stick: bright yellow body, soft tip, sheen + mottled texture.
 function FryBody({
   tone,
   seed,
@@ -48,14 +48,16 @@ function FryBody({
   className?: string;
   win?: boolean;
 }) {
-  const top = win ? "#FFE39A" : mix("#FBE6A6", "#E7BB60", tone);
-  const mid = win ? "#FFCC02" : mix("#F1C65C", "#D08F2C", tone);
-  const bot = win ? "#E0A800" : mix("#D6973A", "#9C5F18", tone);
-  const tip = win ? "#C98A12" : mix("#C2812E", "#76450F", tone);
-  const speckles = [0, 1, 2, 3].map((k) => ({
-    x: 16 + rnd(seed, 20 + k) * 66,
-    y: 14 + rnd(seed, 33 + k) * 68,
-    s: 1 + rnd(seed, 45 + k) * 1.8,
+  // Bright, vivid golden-yellow (matches a fresh-fried fry — not heavily browned)
+  const top = win ? "#FFE9A0" : mix("#FCE583", "#F4CB35", tone);
+  const mid = win ? "#FFCC02" : mix("#F8D03F", "#EFBC23", tone);
+  const bot = win ? "#EAB100" : mix("#EEBE2E", "#D49E1A", tone);
+  const tip = win ? "#C98A12" : mix("#D7A235", "#B27D1C", tone);
+  const speckles = [0, 1, 2, 3, 4].map((k) => ({
+    x: 14 + rnd(seed, 20 + k) * 68,
+    y: 12 + rnd(seed, 33 + k) * 72,
+    s: 1 + rnd(seed, 45 + k) * 2,
+    light: rnd(seed, 60 + k) > 0.5,
   }));
   return (
     <span
@@ -63,24 +65,41 @@ function FryBody({
       style={{
         clipPath: fryClip(seed),
         background:
-          // browned crispy long edges (semi-transparent so the gold shows through) over the body gradient
-          `linear-gradient(90deg, rgba(116,66,16,0.55) 0%, rgba(116,66,16,0) 22%, rgba(116,66,16,0) 78%, rgba(116,66,16,0.55) 100%),` +
-          `linear-gradient(180deg, ${top} 0%, ${mid} 42%, ${bot} 100%)`,
+          // soft warm golden edges (subtle — not heavily browned) over the bright body gradient
+          `linear-gradient(90deg, rgba(196,146,42,0.30) 0%, rgba(196,146,42,0) 26%, rgba(196,146,42,0) 74%, rgba(196,146,42,0.30) 100%),` +
+          `linear-gradient(180deg, ${top} 0%, ${mid} 45%, ${bot} 100%)`,
       }}
     >
-      {/* crispy browned tip (cut end) */}
-      <span className="absolute inset-x-0 top-0" style={{ height: "15%", background: tip, opacity: 0.85 }} />
-      {/* oil sheen highlight down one face */}
+      {/* soft browned tip (cut end) */}
+      <span className="absolute inset-x-0 top-0" style={{ height: "10%", background: tip, opacity: 0.5 }} />
+      {/* glossy oil sheen — soft band + bright hairline */}
       <span
         className="absolute"
-        style={{ left: "30%", top: "10%", bottom: "16%", width: 2, borderRadius: 2, background: "rgba(255,250,232,0.5)" }}
+        style={{
+          left: "24%",
+          top: "8%",
+          bottom: "14%",
+          width: "26%",
+          borderRadius: 4,
+          background: "linear-gradient(90deg, rgba(255,250,222,0) 0%, rgba(255,250,222,0.5) 50%, rgba(255,250,222,0) 100%)",
+        }}
       />
-      {/* mottled potato texture */}
+      <span
+        className="absolute"
+        style={{ left: "32%", top: "10%", bottom: "16%", width: 1.5, borderRadius: 2, background: "rgba(255,255,245,0.7)" }}
+      />
+      {/* mottled texture: light highlights + subtle darker flecks */}
       {speckles.map((sp, k) => (
         <span
           key={k}
           className="absolute rounded-full"
-          style={{ left: `${sp.x}%`, top: `${sp.y}%`, width: sp.s, height: sp.s, background: "rgba(108,64,18,0.42)" }}
+          style={{
+            left: `${sp.x}%`,
+            top: `${sp.y}%`,
+            width: sp.s,
+            height: sp.s,
+            background: sp.light ? "rgba(255,247,205,0.55)" : "rgba(150,102,28,0.30)",
+          }}
         />
       ))}
     </span>
