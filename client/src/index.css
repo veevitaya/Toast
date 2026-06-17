@@ -590,3 +590,97 @@ input:focus {
   border-bottom: none;
 }
 
+/* ============================================================
+   GROUP TIE-BREAKER MINI-GAMES (RPS Duel + Longest Fry)
+   Helper classes scoped under .toast-tiebreaker so the generic
+   names never collide with the rest of the app.
+   ============================================================ */
+.toast-tiebreaker .toast-rps-bg { background-color: #FAF6EF; }
+.toast-tiebreaker .toast-ink { color: #0F172A; }
+.toast-tiebreaker .toast-muted { color: #6B7280; }
+.toast-tiebreaker .toast-gold { background-color: #FFCC02; color: #0F172A; }
+.toast-tiebreaker .toast-card {
+  background-color: #FFFFFF;
+  border-radius: 24px;
+  box-shadow: 0 1px 2px rgba(16,24,40,.05), 0 10px 30px rgba(16,24,40,.08);
+  border: 1px solid rgba(16,24,40,.06);
+}
+.toast-tiebreaker .toast-avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; background-color: #FFFFFF;
+  border: 1px solid rgba(16,24,40,.06);
+  box-shadow: 0 1px 2px rgba(16,24,40,.05);
+  overflow: hidden;
+}
+
+@keyframes tbSlideUpFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.animate-slide-up { animation: tbSlideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes tbScaleInPop { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+.animate-scale-pop { animation: tbScaleInPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+@keyframes tbPulseRing {
+  0% { box-shadow: 0 0 0 0 rgba(255, 204, 2, 0.4); }
+  70% { box-shadow: 0 0 0 20px rgba(255, 204, 2, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 204, 2, 0); }
+}
+.animate-pulse-ring { animation: tbPulseRing 2s infinite; }
+
+@keyframes tbFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.animate-float { animation: tbFloat 3s ease-in-out infinite; }
+
+@keyframes tbClashLeft {
+  0% { transform: translateX(-50px) rotate(-20deg); opacity: 0; }
+  60% { transform: translateX(10px) rotate(5deg); opacity: 1; }
+  100% { transform: translateX(0) rotate(0); opacity: 1; }
+}
+@keyframes tbClashRight {
+  0% { transform: translateX(50px) rotate(20deg); opacity: 0; }
+  60% { transform: translateX(-10px) rotate(-5deg); opacity: 1; }
+  100% { transform: translateX(0) rotate(0); opacity: 1; }
+}
+.animate-clash-left { animation: tbClashLeft 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.animate-clash-right { animation: tbClashRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+
+@keyframes tbWindup {
+  0%   { transform: translateY(0)     rotate(0deg)   scale(1); }
+  20%  { transform: translateY(-12px) rotate(-7deg)  scale(1.04); }
+  40%  { transform: translateY(-24px) rotate(-14deg) scale(1.07); }
+  60%  { transform: translateY(-36px) rotate(-21deg) scale(1.10); }
+  76%  { transform: translateY(-48px) rotate(-30deg) scale(1.13); }
+  90%  { transform: translateY(22px)  rotate(32deg)  scale(1); }
+  100% { transform: translateY(10px)  rotate(20deg)  scale(1); }
+}
+.animate-windup { animation: tbWindup 1.4s cubic-bezier(0.4, 0, 0.85, 0.35) both; display: inline-block; transform-origin: bottom center; }
+
+@keyframes tbPopIn {
+  0%   { opacity: 0; transform: scale(0.4); }
+  60%  { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.animate-pop-in { animation: tbPopIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+
+@keyframes tbDot {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
+}
+.rps-dot { animation: tbDot 1.2s infinite; }
+
+@keyframes tbRingPop { 0% { transform: scale(0.3); opacity: 0.55; } 100% { transform: scale(1.6); opacity: 0; } }
+.animate-ring-pop { animation: tbRingPop 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-up, .animate-scale-pop, .animate-clash-left, .animate-clash-right,
+  .animate-windup, .animate-pop-in {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+  }
+  .animate-pulse-ring, .animate-float, .rps-dot { animation: none !important; }
+  .animate-ring-pop { animation: none !important; opacity: 0 !important; }
+}
+

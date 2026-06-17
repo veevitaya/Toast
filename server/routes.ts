@@ -2,7 +2,7 @@ import type { Express } from "express";
 import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
-import type { GroupSessionMember } from "@shared/schema";
+import type { GroupSessionMember, GroupTieBreaker } from "@shared/schema";
 import { z } from "zod";
 import { createHash, randomBytes } from "crypto";
 import { classifyRestaurant, VERIFICATION_CHECKLIST_TEMPLATE } from "./classifier";
@@ -4144,6 +4144,343 @@ export async function registerRoutes(
       }));
       res.json({ matches: enrichedMatches, members: sanitizeMembers(members) });
     } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // ===================== TIE-BREAKER MINI-GAMES =====================
+  type RpsMove = "rock" | "paper" | "scissors";
+  const RPS_BEATS: Record<RpsMove, RpsMove> = { rock: "scissors", paper: "rock", scissors: "paper" };
+  const TB_WINS_NEEDED = 2;
+  const FRY_COUNT = 22;
+
+  function rpsRoundWinner(moves: Record<string, RpsMove>, participants: string[]): string | "tie" {
+    const [a, b] = participants;
+    const ma = moves[a];
+    const mb = moves[b];
+    if (ma === mb) return "tie";
+    return RPS_BEATS[ma] === mb ? a : b;
+  }
+
+  function makeFryCarton() {
+    const lenToCm = (v: number) => 7 + v * 9;
+    let trueLens: number[];
+    do {
+      trueLens = Array.from({ length: FRY_COUNT }, () => 0.28 + Math.random() * 0.72);
+    } while (new Set(trueLens.map((v) => Math.round(lenToCm(v) * 10))).size !== FRY_COUNT);
+    const center = (FRY_COUNT - 1) / 2;
+    return Array.from({ length: FRY_COUNT }, (_, i) => ({
+      id: `f${i}`,
+      poke: 0.18 + Math.random() * 0.82,
+      trueLen: trueLens[i],
+      lean: Math.round(((i - center) / center) * 15 + (Math.random() - 0.5) * 7),
+      w: 11 + Math.round(Math.random() * 3),
+      tone: Math.random(),
+      seed: Math.floor(Math.random() * 100000),
+    }));
+  }
+
+  // Idempotent state machine — safe to call after every submit and on every poll.
+  async function resolveTieBreaker(code: string): Promise<GroupTieBreaker | undefined> {
+    let tb = await storage.getTieBreaker(code);
+    if (!tb) return undefined;
+    const participants = tb.participantIds || [];
+    const champions = (tb.champions || {}) as Record<string, number>;
+    const gameState = (tb.gameState || {}) as any;
+
+    if (tb.status === "choosing") {
+      const allChosen = participants.length > 0 && participants.every((p) => champions[p] != null);
+      if (allChosen) {
+        const newGameState = tb.gameType === "rps"
+          ? { scores: {}, rounds: [], pendingMoves: {} }
+          : { carton: makeFryCarton(), picks: {} };
+        const updated = await storage.advanceTieBreaker(tb.id, { status: "choosing" }, { status: "playing", gameState: newGameState });
+        tb = updated || (await storage.getTieBreaker(code)) || tb;
+      }
+      return tb;
+    }
+
+    if (tb.status === "playing" && tb.gameType === "rps") {
+      const pending = (gameState.pendingMoves || {}) as Record<string, RpsMove>;
+      const allMoved = participants.length > 0 && participants.every((p) => !!pending[p]);
+      if (allMoved) {
+        const winner = rpsRoundWinner(pending, participants);
+        const scores = { ...((gameState.scores || {}) as Record<string, number>) };
+        if (winner !== "tie") scores[winner] = (scores[winner] || 0) + 1;
+        const rounds = Array.isArray(gameState.rounds) ? gameState.rounds : [];
+        const newRounds = [...rounds, { moves: pending, winner }];
+        const matchWinner = participants.find((p) => (scores[p] || 0) >= TB_WINS_NEEDED);
+        const nextGameState = { ...gameState, scores, rounds: newRounds, pendingMoves: {} };
+        if (matchWinner) {
+          const updated = await storage.advanceTieBreaker(
+            tb.id,
+            { status: "playing", roundCount: rounds.length },
+            { status: "resolved", gameState: nextGameState, winnerLineUserId: matchWinner, finalItemId: champions[matchWinner] },
+          );
+          tb = updated || (await storage.getTieBreaker(code)) || tb;
+        } else {
+          const updated = await storage.advanceTieBreaker(tb.id, { status: "playing", roundCount: rounds.length }, { gameState: nextGameState });
+          tb = updated || (await storage.getTieBreaker(code)) || tb;
+        }
+      }
+      return tb;
+    }
+
+    if (tb.status === "playing" && tb.gameType === "fry") {
+      const picks = (gameState.picks || {}) as Record<string, string>;
+      const allPicked = participants.length > 0 && participants.every((p) => !!picks[p]);
+      if (allPicked) {
+        const carton = (gameState.carton || []) as Array<{ id: string; trueLen: number }>;
+        const lenOf = (fid: string) => carton.find((f) => f.id === fid)?.trueLen ?? 0;
+        let winner = participants[0];
+        for (const p of participants) if (lenOf(picks[p]) > lenOf(picks[winner])) winner = p;
+        const updated = await storage.advanceTieBreaker(tb.id, { status: "playing" }, {
+          status: "resolved", winnerLineUserId: winner, finalItemId: champions[winner],
+        });
+        tb = updated || (await storage.getTieBreaker(code)) || tb;
+      }
+      return tb;
+    }
+
+    return tb;
+  }
+
+  // Host "just decide it" fallback: fill any missing submissions and resolve to a winner.
+  async function forceResolveTieBreaker(code: string): Promise<GroupTieBreaker | undefined> {
+    let tb = await storage.getTieBreaker(code);
+    if (!tb) return undefined;
+    const participants = tb.participantIds || [];
+
+    if (tb.status === "choosing") {
+      const champions = (tb.champions || {}) as Record<string, number>;
+      for (const p of participants) {
+        if (champions[p] == null && tb.matchItemIds.length > 0) {
+          const itemId = tb.matchItemIds[Math.floor(Math.random() * tb.matchItemIds.length)];
+          await storage.setTieBreakerChampion(tb.id, p, itemId);
+        }
+      }
+      await resolveTieBreaker(code);
+      tb = (await storage.getTieBreaker(code)) || tb;
+    }
+
+    let guard = 0;
+    while (tb && tb.status === "playing" && guard < 12) {
+      guard++;
+      const gs = (tb.gameState || {}) as any;
+      if (tb.gameType === "rps") {
+        const pending = (gs.pendingMoves || {}) as Record<string, string>;
+        for (const p of participants) {
+          if (!pending[p]) {
+            const mv = (["rock", "paper", "scissors"] as const)[Math.floor(Math.random() * 3)];
+            await storage.setTieBreakerPendingMove(tb.id, p, mv);
+          }
+        }
+      } else {
+        const picks = (gs.picks || {}) as Record<string, string>;
+        const carton = (gs.carton || []) as Array<{ id: string }>;
+        const taken = new Set(Object.values(picks));
+        for (const p of participants) {
+          if (!picks[p]) {
+            const avail = carton.filter((f) => !taken.has(f.id));
+            if (avail.length === 0) break;
+            const choice = avail[Math.floor(Math.random() * avail.length)];
+            taken.add(choice.id);
+            await storage.setTieBreakerPick(tb.id, p, choice.id);
+          }
+        }
+      }
+      await resolveTieBreaker(code);
+      tb = (await storage.getTieBreaker(code)) || tb;
+    }
+    return tb;
+  }
+
+  async function enrichTieBreaker(tb: GroupTieBreaker) {
+    const restaurantMap = await buildRestaurantMap(tb.sessionCode);
+    let menuItemMap = new Map<number, any>();
+    if (tb.swipeType === "menu") {
+      const allMenuItems = await storage.getMenuItems();
+      menuItemMap = new Map(allMenuItems.map((mi) => [mi.id, mi]));
+    }
+    const items = (tb.matchItemIds || []).map((id) => {
+      if (tb.swipeType === "menu") {
+        const mi = menuItemMap.get(id) || null;
+        const restId = mi ? (mi.restaurantId ?? mi.restaurantIds?.[0]) : undefined;
+        const rest = restId != null ? (restaurantMap.get(restId) || null) : null;
+        return { id, menuItem: mi, restaurant: rest };
+      }
+      return { id, menuItem: null, restaurant: restaurantMap.get(id) || null };
+    });
+    const members = await storage.getGroupMembers(tb.sessionCode);
+    return { tieBreaker: tb, items, members: sanitizeMembers(members) };
+  }
+
+  app.post("/api/group/sessions/:code/tiebreaker/start", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const schema = z.object({
+        lineUserId: z.string().min(1),
+        swipeType: z.enum(["menu", "restaurant"]),
+      });
+      const input = schema.parse(req.body);
+
+      const session = await storage.getGroupSession(code);
+      if (!session) return res.status(404).json({ message: "Session not found" });
+      if (session.hostLineUserId !== input.lineUserId) {
+        return res.status(403).json({ message: "Only the host can start the tie-breaker" });
+      }
+
+      const existing = await storage.getTieBreaker(code);
+      if (existing && existing.status !== "finished") {
+        return res.json(await enrichTieBreaker(existing));
+      }
+
+      const matches = await storage.getGroupMatches(code, input.swipeType);
+      if (matches.length <= 1) {
+        return res.status(400).json({ message: "Need more than one match to start a tie-breaker", matchCount: matches.length });
+      }
+      const members = await storage.getGroupMembers(code);
+      const participantIds = members.map((m) => m.lineUserId);
+      if (participantIds.length < 2) {
+        return res.status(400).json({ message: "Need at least two members for a tie-breaker" });
+      }
+
+      const now = new Date().toISOString();
+      const created = await storage.createTieBreaker({
+        sessionCode: code,
+        gameType: participantIds.length === 2 ? "rps" : "fry",
+        swipeType: input.swipeType,
+        status: "choosing",
+        participantIds,
+        matchItemIds: matches.map((m) => m.menuItemId),
+        champions: {},
+        gameState: {},
+        winnerLineUserId: null,
+        finalItemId: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+      logSessionEvent(code, "TIEBREAKER_STARTED", input.lineUserId, { gameType: created.gameType, matchCount: matches.length });
+      res.json(await enrichTieBreaker(created));
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/group/sessions/:code/tiebreaker", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const resolved = await resolveTieBreaker(code);
+      if (!resolved) return res.json({ tieBreaker: null, items: [], members: [] });
+      res.json(await enrichTieBreaker(resolved));
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/group/sessions/:code/tiebreaker/champion", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const schema = z.object({ lineUserId: z.string().min(1), itemId: z.number().int().positive() });
+      const input = schema.parse(req.body);
+      const tb = await storage.getTieBreaker(code);
+      if (!tb || tb.status === "finished") return res.status(404).json({ message: "No active tie-breaker" });
+      if (!(tb.participantIds || []).includes(input.lineUserId)) {
+        return res.status(403).json({ message: "Not a participant" });
+      }
+      if (tb.status !== "choosing") return res.status(400).json({ message: "Champions are locked" });
+      if (!(tb.matchItemIds || []).includes(input.itemId)) {
+        return res.status(400).json({ message: "Item is not a match" });
+      }
+      await storage.setTieBreakerChampion(tb.id, input.lineUserId, input.itemId);
+      const resolved = await resolveTieBreaker(code);
+      res.json(await enrichTieBreaker(resolved!));
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/group/sessions/:code/tiebreaker/move", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const schema = z.object({ lineUserId: z.string().min(1), move: z.enum(["rock", "paper", "scissors"]), round: z.number().int().min(0).optional() });
+      const input = schema.parse(req.body);
+      const tb = await storage.getTieBreaker(code);
+      if (!tb || tb.status === "finished") return res.status(404).json({ message: "No active tie-breaker" });
+      if (tb.gameType !== "rps") return res.status(400).json({ message: "Not a duel" });
+      if (!(tb.participantIds || []).includes(input.lineUserId)) return res.status(403).json({ message: "Not a participant" });
+      if (tb.status !== "playing") return res.status(400).json({ message: "Duel is not in progress" });
+      const pending = ((tb.gameState as any)?.pendingMoves || {}) as Record<string, string>;
+      if (pending[input.lineUserId]) return res.status(400).json({ message: "Move already locked for this round" });
+      // A no-op (round-mismatched stale duplicate or concurrent lock) is harmless: return current state.
+      await storage.setTieBreakerPendingMove(tb.id, input.lineUserId, input.move, input.round);
+      const resolved = await resolveTieBreaker(code);
+      res.json(await enrichTieBreaker(resolved!));
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/group/sessions/:code/tiebreaker/fry", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const schema = z.object({ lineUserId: z.string().min(1), fryId: z.string().min(1) });
+      const input = schema.parse(req.body);
+      const tb = await storage.getTieBreaker(code);
+      if (!tb || tb.status === "finished") return res.status(404).json({ message: "No active tie-breaker" });
+      if (tb.gameType !== "fry") return res.status(400).json({ message: "Not a fry pull" });
+      if (!(tb.participantIds || []).includes(input.lineUserId)) return res.status(403).json({ message: "Not a participant" });
+      if (tb.status !== "playing") return res.status(400).json({ message: "Fry pull is not in progress" });
+      const gs = (tb.gameState as any) || {};
+      const picks = (gs.picks || {}) as Record<string, string>;
+      const carton = (gs.carton || []) as Array<{ id: string }>;
+      if (picks[input.lineUserId]) return res.status(400).json({ message: "You already pulled a fry" });
+      if (!carton.some((f) => f.id === input.fryId)) return res.status(400).json({ message: "Fry not in carton" });
+      if (Object.values(picks).includes(input.fryId)) return res.status(400).json({ message: "Fry already taken" });
+      const applied = await storage.setTieBreakerPick(tb.id, input.lineUserId, input.fryId);
+      if (!applied) {
+        // Atomic guard failed — either the fry was taken in a concurrent request, or the round
+        // already advanced. Surface a conflict only if the game is still mid-pick.
+        const current = await storage.getTieBreaker(code);
+        if (current && current.status === "playing") {
+          return res.status(409).json({ message: "Fry already taken" });
+        }
+        return res.json(await enrichTieBreaker(current!));
+      }
+      const resolved = await resolveTieBreaker(code);
+      res.json(await enrichTieBreaker(resolved!));
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/group/sessions/:code/tiebreaker/finish", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const schema = z.object({ lineUserId: z.string().min(1), force: z.boolean().optional() });
+      const input = schema.parse(req.body);
+      const session = await storage.getGroupSession(code);
+      if (!session) return res.status(404).json({ message: "Session not found" });
+      if (session.hostLineUserId !== input.lineUserId) {
+        return res.status(403).json({ message: "Only the host can finish the tie-breaker" });
+      }
+      let tb = await storage.getTieBreaker(code);
+      if (!tb) return res.status(404).json({ message: "No active tie-breaker" });
+      if (input.force && tb.status !== "resolved" && tb.status !== "finished") {
+        tb = (await forceResolveTieBreaker(code)) || tb;
+      }
+      if (tb.status === "resolved") {
+        const updated = await storage.updateTieBreaker(tb.id, { status: "finished" });
+        tb = updated || tb;
+        logSessionEvent(code, "TIEBREAKER_FINISHED", input.lineUserId, { winner: tb.winnerLineUserId, finalItemId: tb.finalItemId });
+      }
+      res.json(await enrichTieBreaker(tb));
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
       res.status(500).json({ message: "Internal server error" });
     }
   });

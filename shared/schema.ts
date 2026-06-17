@@ -450,6 +450,28 @@ export const insertGroupSwipeSchema = createInsertSchema(groupSwipes).omit({ id:
 export type GroupSwipe = typeof groupSwipes.$inferSelect;
 export type InsertGroupSwipe = z.infer<typeof insertGroupSwipeSchema>;
 
+export const groupTieBreakers = pgTable("group_tie_breakers", {
+  id: serial("id").primaryKey(),
+  sessionCode: text("session_code").notNull(),
+  gameType: text("game_type").notNull(),
+  swipeType: text("swipe_type").notNull(),
+  status: text("status").notNull().default("choosing"),
+  participantIds: text("participant_ids").array().notNull().default([]),
+  matchItemIds: integer("match_item_ids").array().notNull().default([]),
+  champions: jsonb("champions").default({}),
+  gameState: jsonb("game_state").default({}),
+  winnerLineUserId: text("winner_line_user_id"),
+  finalItemId: integer("final_item_id"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+}, (table) => ({
+  sessionCodeIdx: index("group_tie_breakers_session_code_idx").on(table.sessionCode),
+}));
+
+export const insertGroupTieBreakerSchema = createInsertSchema(groupTieBreakers).omit({ id: true });
+export type GroupTieBreaker = typeof groupTieBreakers.$inferSelect;
+export type InsertGroupTieBreaker = z.infer<typeof insertGroupTieBreakerSchema>;
+
 export const userSwipeStats = pgTable("user_swipe_stats", {
   id: serial("id").primaryKey(),
   lineUserId: text("line_user_id").notNull().unique(),

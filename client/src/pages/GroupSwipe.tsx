@@ -8,8 +8,9 @@ import { useLineProfile } from "@/lib/useLineProfile";
 import { getAccessToken } from "@/lib/liff";
 import { handleImageError } from "@/lib/imageUtils";
 import { throttleTap } from "@/lib/requestLock";
-import { fetchWithTimeout } from "@/lib/queryClient";
+import { fetchWithTimeout, apiRequest, queryClient } from "@/lib/queryClient";
 import { isMenuFirstVibe } from "@shared/vibeConfig";
+import { GroupTieBreakerGame } from "@/components/group-tiebreaker/GroupTieBreakerGame";
 import { rankByGroupTaste, type MemberTaste } from "@/lib/groupTasteRanking";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { Square, X, Trophy, ChevronRight, Crown, Medal, Award, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils, MapPin, UtensilsCrossed } from "lucide-react";
@@ -59,6 +60,7 @@ interface RankedResult {
   voters: SessionMember[];
   voteCount: number;
   isFullMatch: boolean;
+  swipeType: string;
 }
 
 function ConfettiExplosion() {
@@ -480,6 +482,8 @@ export default function GroupSwipe() {
   const [rankedResults, setRankedResults] = useState<RankedResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [loadingResults, setLoadingResults] = useState(false);
+  const [tieBreakerActive, setTieBreakerActive] = useState(false);
+  const [finalPick, setFinalPick] = useState<{ id: number; swipeType: string } | null>(null);
   const [groupAggregateStats, setGroupAggregateStats] = useState<{
     totalSwipes: number; totalLikes: number; totalDislikes: number; totalSuperLikes: number;
   }>({ totalSwipes: 0, totalLikes: 0, totalDislikes: 0, totalSuperLikes: 0 });
@@ -764,6 +768,20 @@ export default function GroupSwipe() {
                     return prev;
                   });
                 }
+              }
+            }
+          } catch {}
+        }
+
+        // Detect an active tie-breaker game (host may have started one instead of ending).
+        if (!cancelled && !sessionEndedRef.current) {
+          try {
+            const tbRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/tiebreaker`, { signal: pollController.signal });
+            if (!cancelled && tbRes.ok) {
+              const tbData = await tbRes.json();
+              if (tbData?.tieBreaker && tbData.tieBreaker.status !== "finished") {
+                queryClient.setQueryData(["/api/group/sessions", sessionCode, "tiebreaker"], tbData);
+                setTieBreakerActive(true);
               }
             }
           } catch {}
@@ -1054,24 +1072,22 @@ export default function GroupSwipe() {
         }
       }
 
-      const voteMap = new Map<number, { voters: Set<string>; swipeType: string }>();
+      // Key by composite `${swipeType}:${id}` — menu_items and restaurants are separate tables
+      // with overlapping serial ids, so a dish and a restaurant sharing an id must NOT merge votes.
+      const voteMap = new Map<string, { id: number; voters: Set<string>; swipeType: string }>();
       for (const s of swipes) {
         if (s.direction === "right" || s.direction === "super") {
-          if (!voteMap.has(s.menuItemId)) voteMap.set(s.menuItemId, { voters: new Set(), swipeType: s.swipeType || "restaurant" });
-          voteMap.get(s.menuItemId)!.voters.add(s.lineUserId);
+          const st = s.swipeType || "restaurant";
+          const key = `${st}:${s.menuItemId}`;
+          if (!voteMap.has(key)) voteMap.set(key, { id: s.menuItemId, voters: new Set(), swipeType: st });
+          voteMap.get(key)!.voters.add(s.lineUserId);
         }
       }
 
       const ranked: RankedResult[] = [];
-      for (const [menuItemId, { voters: voterIds, swipeType }] of voteMap) {
+      for (const [, { id: menuItemId, voters: voterIds, swipeType }] of voteMap) {
         if (voterIds.size < 2) continue;
-        let itemData: any = null;
-        if (swipeType === "menu") {
-          itemData = menuItemMap.get(menuItemId);
-        }
-        if (!itemData) {
-          itemData = restaurantMap.get(menuItemId);
-        }
+        const itemData = swipeType === "menu" ? menuItemMap.get(menuItemId) : restaurantMap.get(menuItemId);
         if (!itemData) continue;
         const item: MenuItem = {
           id: itemData.id,
@@ -1091,6 +1107,7 @@ export default function GroupSwipe() {
           voters,
           voteCount: voterIds.size,
           isFullMatch: voterIds.size >= memberList.length,
+          swipeType,
         });
       }
 
@@ -1149,6 +1166,25 @@ export default function GroupSwipe() {
   const handleEndSession = async () => {
     if (!sessionCode || !profile) return;
     try {
+      // If the group has more than one full match, launch a tie-breaker mini-game
+      // instead of ending immediately. The server gates on match count (>1) and
+      // member count, returning 400 when a game isn't warranted — we fall through.
+      try {
+        const swipeType = swipePhase === "menu" ? "menu" : "restaurant";
+        const tbRes = await apiRequest("POST", `/api/group/sessions/${sessionCode}/tiebreaker/start`, {
+          lineUserId: profile.userId,
+          swipeType,
+        });
+        const tbData = await tbRes.json();
+        if (tbData?.tieBreaker) {
+          queryClient.setQueryData(["/api/group/sessions", sessionCode, "tiebreaker"], tbData);
+          setTieBreakerActive(true);
+          setShowEndConfirm(false);
+          return;
+        }
+      } catch {
+        // Single match (400) or other error — proceed with a normal session end.
+      }
       await fetchWithTimeout(`/api/group/sessions/${sessionCode}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1160,6 +1196,19 @@ export default function GroupSwipe() {
       console.error("Failed to end session:", err);
     }
   };
+
+  const handleTieBreakerComplete = useCallback((finalItemId: number, swipeType: string) => {
+    setFinalPick({ id: finalItemId, swipeType });
+    setTieBreakerActive(false);
+    if (isHost && sessionCode && profile) {
+      fetchWithTimeout(`/api/group/sessions/${sessionCode}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "completed", lineUserId: profile.userId }),
+      }).catch(() => {});
+    }
+    setSessionEnded(true);
+  }, [isHost, sessionCode, profile]);
 
   const handleContinueSwiping = () => {
     setFullMatch(false);
@@ -1226,6 +1275,17 @@ export default function GroupSwipe() {
     );
   }
 
+  if (tieBreakerActive && profile) {
+    return (
+      <GroupTieBreakerGame
+        sessionCode={sessionCode}
+        meId={profile.userId}
+        isHost={isHost}
+        onComplete={handleTieBreakerComplete}
+      />
+    );
+  }
+
   if (showResults || sessionEnded) {
     const RANK_ICONS = [Crown, Medal, Award];
     const RANK_COLORS = ["#FFCC02", "#94A3B8", "#CD7F32"];
@@ -1265,6 +1325,27 @@ export default function GroupSwipe() {
               </p>
             </div>
           </div>
+          {finalPick != null && (() => {
+            const pick = rankedResults.find(r => r.item.id === finalPick.id && r.swipeType === finalPick.swipeType)?.item;
+            if (!pick) return null;
+            return (
+              <div className="flex items-center gap-3 mb-3 rounded-2xl p-3 bg-[#FFCC02]/15 border border-[#FFCC02]/40" data-testid="final-pick-banner">
+                <div className="w-14 h-14 rounded-xl overflow-hidden bg-white flex-shrink-0 flex items-center justify-center">
+                  {pick.imageUrl ? (
+                    <img src={pick.imageUrl} alt={pick.name} className="w-full h-full object-cover" onError={handleImageError} />
+                  ) : (
+                    <Crown className="w-6 h-6 text-[#FFCC02]" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-[#a37a00] flex items-center gap-1">
+                    <Crown className="w-3 h-3" /> The group decided
+                  </p>
+                  <p className="text-[16px] font-bold truncate" data-testid="text-final-pick">{pick.name}</p>
+                </div>
+              </div>
+            );
+          })()}
           <div className="flex items-center gap-1.5 flex-wrap">
             {members.map((m) => (
               <div key={m.lineUserId} className="flex items-center gap-1.5 bg-white rounded-full pl-1 pr-3 py-1 border border-gray-100" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>

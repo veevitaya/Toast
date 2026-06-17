@@ -13,6 +13,7 @@ import {
   groupSessionMembers,
   groupMemberTastes,
   groupSwipes,
+  groupTieBreakers,
   tasteDna,
   decisionSessions,
   type Restaurant,
@@ -41,6 +42,8 @@ import {
   type InsertGroupMemberTaste,
   type GroupSwipe,
   type InsertGroupSwipe,
+  type GroupTieBreaker,
+  type InsertGroupTieBreaker,
   type TasteDna,
   type InsertTasteDna,
   type DecisionSession,
@@ -181,6 +184,13 @@ export interface IStorage {
   recordGroupSwipe(swipe: InsertGroupSwipe): Promise<GroupSwipe>;
   getGroupSwipes(sessionCode: string): Promise<GroupSwipe[]>;
   getGroupMatches(sessionCode: string, swipeType?: string): Promise<{ menuItemId: number; voters: string[] }[]>;
+  getTieBreaker(sessionCode: string): Promise<GroupTieBreaker | undefined>;
+  createTieBreaker(data: InsertGroupTieBreaker): Promise<GroupTieBreaker>;
+  updateTieBreaker(id: number, updates: Partial<GroupTieBreaker>): Promise<GroupTieBreaker | undefined>;
+  advanceTieBreaker(id: number, guard: { status?: string; roundCount?: number }, updates: Partial<GroupTieBreaker>): Promise<GroupTieBreaker | undefined>;
+  setTieBreakerChampion(id: number, userId: string, itemId: number): Promise<GroupTieBreaker | undefined>;
+  setTieBreakerPendingMove(id: number, userId: string, move: string, expectedRound?: number): Promise<GroupTieBreaker | undefined>;
+  setTieBreakerPick(id: number, userId: string, fryId: string): Promise<GroupTieBreaker | undefined>;
   getPopularRestaurants(days: number, limit: number): Promise<{ restaurantId: number; score: number }[]>;
   getRestaurantsByVibe(vibe: string): Promise<Restaurant[]>;
   getRestaurantByGooglePlaceId(placeId: string): Promise<Restaurant | undefined>;
@@ -745,6 +755,104 @@ export class DatabaseStorage implements IStorage {
       menuItemId: r.menuItemId,
       voters: Array.isArray(r.voters) ? r.voters : String(r.voters).replace(/[{}]/g, '').split(',').filter(Boolean),
     }));
+  }
+
+  async getTieBreaker(sessionCode: string): Promise<GroupTieBreaker | undefined> {
+    const [row] = await db.select().from(groupTieBreakers)
+      .where(eq(groupTieBreakers.sessionCode, sessionCode))
+      .orderBy(desc(groupTieBreakers.id))
+      .limit(1);
+    return row;
+  }
+
+  async createTieBreaker(data: InsertGroupTieBreaker): Promise<GroupTieBreaker> {
+    const [created] = await db.insert(groupTieBreakers).values(data).returning();
+    return created;
+  }
+
+  async updateTieBreaker(id: number, updates: Partial<GroupTieBreaker>): Promise<GroupTieBreaker | undefined> {
+    const [updated] = await db.update(groupTieBreakers)
+      .set({ ...updates, updatedAt: new Date().toISOString() })
+      .where(eq(groupTieBreakers.id, id))
+      .returning();
+    return updated;
+  }
+
+  async advanceTieBreaker(
+    id: number,
+    guard: { status?: string; roundCount?: number },
+    updates: Partial<GroupTieBreaker>,
+  ): Promise<GroupTieBreaker | undefined> {
+    const conditions = [eq(groupTieBreakers.id, id)];
+    if (guard.status !== undefined) {
+      conditions.push(eq(groupTieBreakers.status, guard.status));
+    }
+    if (guard.roundCount !== undefined) {
+      conditions.push(sql`jsonb_array_length(coalesce(${groupTieBreakers.gameState}->'rounds', '[]'::jsonb)) = ${guard.roundCount}`);
+    }
+    const [updated] = await db.update(groupTieBreakers)
+      .set({ ...updates, updatedAt: new Date().toISOString() })
+      .where(and(...conditions))
+      .returning();
+    return updated;
+  }
+
+  async setTieBreakerChampion(id: number, userId: string, itemId: number): Promise<GroupTieBreaker | undefined> {
+    // Guarded by status='choosing' so a champion can't be written after the game advances.
+    const [updated] = await db.update(groupTieBreakers)
+      .set({
+        champions: sql`jsonb_set(coalesce(${groupTieBreakers.champions}, '{}'::jsonb), ARRAY[${userId}]::text[], ${JSON.stringify(itemId)}::jsonb, true)`,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(and(
+        eq(groupTieBreakers.id, id),
+        eq(groupTieBreakers.status, "choosing"),
+      ))
+      .returning();
+    return updated;
+  }
+
+  async setTieBreakerPendingMove(id: number, userId: string, move: string, expectedRound?: number): Promise<GroupTieBreaker | undefined> {
+    // Atomic single-statement guard: only while playing AND this user has no pending move for the
+    // current round. Postgres re-evaluates the qual against the latest row on contention, so a
+    // concurrent double-submit from the same user updates 0 rows (returns undefined).
+    // When expectedRound is supplied, also require the completed-round count to match, so a delayed
+    // duplicate from a prior round (pendingMoves was reset to {}) can't leak into the next round.
+    const conditions = [
+      eq(groupTieBreakers.id, id),
+      eq(groupTieBreakers.status, "playing"),
+      sql`(${groupTieBreakers.gameState}->'pendingMoves'->${userId}) IS NULL`,
+    ];
+    if (expectedRound !== undefined) {
+      conditions.push(sql`jsonb_array_length(coalesce(${groupTieBreakers.gameState}->'rounds', '[]'::jsonb)) = ${expectedRound}`);
+    }
+    const [updated] = await db.update(groupTieBreakers)
+      .set({
+        gameState: sql`jsonb_set(coalesce(${groupTieBreakers.gameState}, '{}'::jsonb), ARRAY['pendingMoves', ${userId}]::text[], ${JSON.stringify(move)}::jsonb, true)`,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(and(...conditions))
+      .returning();
+    return updated;
+  }
+
+  async setTieBreakerPick(id: number, userId: string, fryId: string): Promise<GroupTieBreaker | undefined> {
+    // Atomic single-statement guard: only while playing, this user hasn't picked, AND no other
+    // participant already took this fry. The NOT EXISTS qual is re-checked against the latest row
+    // on contention, so two players grabbing the same fry can't both succeed (loser gets undefined).
+    const [updated] = await db.update(groupTieBreakers)
+      .set({
+        gameState: sql`jsonb_set(coalesce(${groupTieBreakers.gameState}, '{}'::jsonb), ARRAY['picks', ${userId}]::text[], ${JSON.stringify(fryId)}::jsonb, true)`,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(and(
+        eq(groupTieBreakers.id, id),
+        eq(groupTieBreakers.status, "playing"),
+        sql`(${groupTieBreakers.gameState}->'picks'->${userId}) IS NULL`,
+        sql`NOT EXISTS (SELECT 1 FROM jsonb_each_text(coalesce(${groupTieBreakers.gameState}->'picks', '{}'::jsonb)) AS e WHERE e.value = ${fryId})`,
+      ))
+      .returning();
+    return updated;
   }
 
   async getPopularRestaurants(days: number, limit: number): Promise<{ restaurantId: number; score: number }[]> {
