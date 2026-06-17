@@ -161,3 +161,21 @@ id = "vPcp-1DNWYaVs-AgrusfM"
 uri = "file://attached_assets/screenshots/92ec004f-3b01-4d87-9e5c-b6c40fd566ac-00-omhxo1bzmnio_spock_replit_dev_mockup_preview_toast-group-decide_FryPull.png"
 type = "image"
 title = "Longest Fry — pull-from-the-box tie-breaker"
+
+[[outputs]]
+id = "YXu0zhoiw6qLfWUjSmRmC"
+uri = "file://screenshots/group-match.jpg"
+type = "image"
+title = "Match screen — \"It's a match!\""
+
+[[outputs]]
+id = "R1O81TzSPJsgF3vsVfSH4"
+uri = "file://screenshots/group-toppicks.jpg"
+type = "image"
+title = "Top Picks screen — with \"Can't decide?\" game button"
+
+[[outputs]]
+id = "Eb4r6MV3cbwubsfyWf-Q0"
+uri = "file://screenshots/group-tiebreaker.jpg"
+type = "image"
+title = "Bonus — RPS tie-breaker game"

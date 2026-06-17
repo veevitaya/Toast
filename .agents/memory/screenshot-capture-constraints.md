@@ -15,3 +15,11 @@ When asked to capture image files of screens that require an in-app identity (LI
 **Why:** the preview browser's identity is opaque/unsettable from the agent side, and the test harness treats screenshots as failure diagnostics rather than deliverables.
 
 **How to apply:** for "show me a screenshot of <member-gated screen>" requests, don't burn cycles on app_preview/runTest screenshot harvesting. Verify the flow with runTest, then ask the user before adding a headless-browser dependency to capture real images.
+
+## Working recipe (proven)
+After user approval, this reliably produces real image files:
+1. `installSystemDependencies(["chromium"])` (Nix) → resolve binary with `which chromium`; `installLanguagePackages("nodejs", ["playwright-core"])`.
+2. Node ESM script: `chromium.launch({ executablePath: <nix chromium path>, headless: true, args: ['--no-sandbox','--disable-dev-shm-usage'] })`.
+3. Auth as a member WITHOUT LIFF: `goto('http://localhost:5000/')` to set origin, then `localStorage['toast_guest_<sessionCode>'] = JSON.stringify({ userId, displayName, pictureUrl })` — GroupSwipe reads that session-scoped key before falling back to lineProfile.
+4. Seed the session server-side so the loaded member already has matches; the poll auto-pops the match modal on load (no live swiping needed). Then click `button-view-summary` → `group-summary-page`, and `button-cant-decide` → tie-breaker.
+LIFF init errors and open-meteo/CSP console errors are harmless in this headless context. Emoji glyphs render as □ boxes (headless chromium lacks a color-emoji font) — cosmetic only, fine on real devices.
