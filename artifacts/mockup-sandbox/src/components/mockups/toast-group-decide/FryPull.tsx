@@ -396,15 +396,15 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
   return (
     <div className="flex-1 flex flex-col items-center justify-center pb-4">
       <div className="relative" style={{ width: 304, height: 336 }}>
-        {/* dark interior peeking up behind the fries */}
+        {/* dark interior cavity visible behind the fries — sells the "inside the box" depth */}
         <div
           className="absolute left-1/2 -translate-x-1/2 z-0"
           style={{
-            bottom: 122,
-            width: BOX_W - 44,
-            height: 66,
-            borderRadius: "44% 44% 0 0 / 34px 34px 0 0",
-            background: `linear-gradient(180deg, ${BOX_BACK} 0%, ${BOX_LO} 100%)`,
+            bottom: 126,
+            width: BOX_W - 26,
+            height: 74,
+            borderRadius: "46% 46% 0 0 / 42px 42px 0 0",
+            background: `linear-gradient(180deg, #5E1E11 0%, #87291A 58%, ${BOX_LO} 100%)`,
           }}
         />
 
@@ -466,6 +466,19 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
           })}
         </div>
 
+        {/* Shadow where the fries dip down into the opening (above fries, below carton front) */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 z-[15] pointer-events-none"
+          style={{
+            bottom: 128,
+            width: BOX_W - 30,
+            height: 58,
+            background:
+              "linear-gradient(to top, rgba(74,20,11,0.55) 0%, rgba(74,20,11,0.30) 32%, rgba(74,20,11,0) 74%)",
+            borderRadius: "0 0 16px 16px",
+          }}
+        />
+
         {/* Coral fry carton (drawn above fry bottoms to mask them) */}
         <div
           className="absolute left-1/2 -translate-x-1/2 z-20"
@@ -491,6 +504,14 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
             <path
               d="M40 172 L16 22 Q16 14 26 14 C74 44 162 44 210 14 Q220 14 220 22 L196 172 Q118 180 40 172 Z"
               fill="url(#fpBoxBody)"
+            />
+            {/* top lip edge highlight — gives the opening a raised 3D rim instead of a flat cutout */}
+            <path
+              d="M16 22 Q16 14 26 14 C74 44 162 44 210 14 Q220 14 220 22"
+              fill="none"
+              stroke="rgba(255,206,180,0.6)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
             />
             <g clipPath="url(#fpBoxClip)">
               {/* left highlight */}
