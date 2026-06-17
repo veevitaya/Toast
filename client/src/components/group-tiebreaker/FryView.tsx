@@ -48,11 +48,11 @@ function FryBody({
   const width = Math.round(Math.max(w + 5, 17));
   const depth = Math.max(4, Math.min(7, Math.round(width * 0.34)));
   // Appetizing golden palette; tone 0 = pale golden, tone 1 = deep crispy.
-  const faceTop = `hsl(${mix(47, 37, tone).toFixed(0)} ${mix(95, 82, tone).toFixed(0)}% ${mix(77, 63, tone).toFixed(0)}%)`;
-  const faceMid = `hsl(${mix(43, 33, tone).toFixed(0)} ${mix(90, 78, tone).toFixed(0)}% ${mix(66, 52, tone).toFixed(0)}%)`;
-  const faceBot = `hsl(${mix(39, 28, tone).toFixed(0)} ${mix(84, 72, tone).toFixed(0)}% ${mix(55, 41, tone).toFixed(0)}%)`;
-  const sideC = `hsl(${mix(34, 24, tone).toFixed(0)} ${mix(80, 66, tone).toFixed(0)}% ${mix(45, 32, tone).toFixed(0)}%)`;
-  const tipC = `hsl(${mix(30, 20, tone).toFixed(0)} ${mix(74, 60, tone).toFixed(0)}% ${mix(41, 27, tone).toFixed(0)}%)`;
+  const faceTop = `hsl(${mix(50, 45, tone).toFixed(0)} ${mix(98, 92, tone).toFixed(0)}% ${mix(80, 71, tone).toFixed(0)}%)`;
+  const faceMid = `hsl(${mix(47, 42, tone).toFixed(0)} ${mix(96, 90, tone).toFixed(0)}% ${mix(70, 60, tone).toFixed(0)}%)`;
+  const faceBot = `hsl(${mix(44, 38, tone).toFixed(0)} ${mix(93, 86, tone).toFixed(0)}% ${mix(60, 49, tone).toFixed(0)}%)`;
+  const sideC = `hsl(${mix(40, 33, tone).toFixed(0)} ${mix(88, 80, tone).toFixed(0)}% ${mix(50, 39, tone).toFixed(0)}%)`;
+  const tipC = `hsl(${mix(41, 34, tone).toFixed(0)} ${mix(92, 84, tone).toFixed(0)}% ${mix(60, 48, tone).toFixed(0)}%)`;
   // Deterministic salt flecks from the fry's seed.
   const rnd = (n: number) => {
     const x = Math.sin((seed + 1) * 12.9898 + n * 78.233) * 43758.5453;
@@ -85,7 +85,7 @@ function FryBody({
           top: 3,
           width: depth + 1,
           height: h - 3,
-          background: `linear-gradient(180deg, ${sideC}, hsl(27 58% 25%))`,
+          background: `linear-gradient(180deg, ${sideC}, hsl(35 72% 33%))`,
           borderRadius: "0 4px 2px 0",
           boxShadow: "inset -1px 0 2px rgba(0,0,0,0.28)",
         }}
@@ -101,13 +101,13 @@ function FryBody({
           borderRadius: "5px 5px 3px 3px",
           backgroundImage: `${salt}, linear-gradient(180deg, ${faceTop} 0%, ${faceMid} 45%, ${faceBot} 100%)`,
           boxShadow:
-            "inset -3px 0 5px rgba(120,60,0,0.3), inset 3px 0 4px rgba(255,255,255,0.42), inset 0 -7px 9px rgba(90,45,0,0.22), 0 2px 4px rgba(0,0,0,0.12)",
+            "inset -3px 0 5px rgba(155,95,10,0.26), inset 3px 0 4px rgba(255,255,255,0.5), inset 0 -6px 8px rgba(150,90,0,0.16), 0 2px 4px rgba(0,0,0,0.12)",
         }}
       >
         {/* crispy browned tip */}
         <div
           className="absolute inset-x-0 top-0"
-          style={{ height: tipH, background: `linear-gradient(180deg, ${tipC}, transparent)`, opacity: 0.92 }}
+          style={{ height: tipH, background: `linear-gradient(180deg, ${tipC}, transparent)`, opacity: 0.8 }}
         />
         {/* soft sheen */}
         <div
@@ -151,9 +151,9 @@ function Carton({
           bottom: 66,
           width: "68%",
           height: 66,
-          background: "linear-gradient(180deg, #8d1c26 0%, #b3222d 100%)",
+          background: "linear-gradient(180deg, #a8331e 0%, #c8412a 100%)",
           borderRadius: "18px 18px 6px 6px",
-          boxShadow: "inset 0 7px 11px rgba(0,0,0,0.32)",
+          boxShadow: "inset 0 7px 11px rgba(0,0,0,0.3)",
           zIndex: 1,
         }}
       />
@@ -174,43 +174,46 @@ function Carton({
           </button>
         ))}
       </div>
-      {/* carton front panel — occludes the fry bottoms so they sit inside */}
+      {/* carton front panel — solid red fry box, occludes the fry bottoms so they sit inside */}
       <div
         className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
         style={{
           bottom: 0,
-          width: "82%",
-          height: 130,
+          width: "84%",
+          height: 142,
           zIndex: 30,
-          clipPath: "polygon(3% 0, 97% 0, 88% 100%, 12% 100%)",
-          filter: "drop-shadow(0 16px 22px rgba(226,55,68,0.4))",
+          filter: "drop-shadow(0 16px 20px rgba(214,60,44,0.4))",
         }}
       >
-        <div className="absolute inset-0 bg-white" />
-        {/* red stripes */}
-        <div
-          className="absolute inset-0"
-          style={{ backgroundImage: "repeating-linear-gradient(90deg, #E23744 0 13px, #ffffff 13px 26px)", opacity: 0.96 }}
-        />
-        {/* top rim */}
-        <div className="absolute inset-x-0 top-0 h-[26px] bg-white shadow-[0_2px_3px_rgba(0,0,0,0.08)]" />
-        {/* side shading for fold/3D */}
-        <div
-          className="absolute inset-0"
-          style={{ background: "linear-gradient(90deg, rgba(0,0,0,0.16) 0%, transparent 18%, transparent 82%, rgba(0,0,0,0.18) 100%)" }}
-        />
-        {/* gloss */}
-        <div
-          className="absolute inset-x-0 top-0"
-          style={{ height: "48%", background: "linear-gradient(180deg, rgba(255,255,255,0.4), transparent)" }}
-        />
-        {/* center fold crease */}
-        <div className="absolute top-[26px] bottom-0 left-1/2 -translate-x-1/2 w-px" style={{ background: "rgba(0,0,0,0.08)" }} />
-        {/* wordmark on a clean label */}
-        <div className="absolute inset-x-0 flex justify-center" style={{ top: 40 }}>
-          <div className="bg-white rounded-full px-3 py-[3px] shadow-[0_1px_3px_rgba(0,0,0,0.12)]">
-            <span className="font-black tracking-[0.22em] text-[#E23744] text-[15px]">TOAST</span>
-          </div>
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
+          <defs>
+            <linearGradient id="fryboxFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#F26A50" />
+              <stop offset="1" stopColor="#DF4A33" />
+            </linearGradient>
+            <linearGradient id="fryboxEdge" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="rgba(120,22,10,0.32)" />
+              <stop offset="0.15" stopColor="rgba(120,22,10,0)" />
+              <stop offset="0.85" stopColor="rgba(120,22,10,0)" />
+              <stop offset="1" stopColor="rgba(120,22,10,0.34)" />
+            </linearGradient>
+            <linearGradient id="fryboxGloss" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="rgba(255,255,255,0.36)" />
+              <stop offset="0.55" stopColor="rgba(255,255,255,0)" />
+            </linearGradient>
+          </defs>
+          {/* classic fry-box silhouette: pointed top corners, concave opening, tapered base */}
+          <path d="M3 6 Q 50 40 97 6 L 87 98 Q 50 101 13 98 Z" fill="url(#fryboxFill)" />
+          <path d="M3 6 Q 50 40 97 6 L 87 98 Q 50 101 13 98 Z" fill="url(#fryboxEdge)" />
+          <path d="M3 6 Q 50 40 97 6 L 87 98 Q 50 101 13 98 Z" fill="url(#fryboxGloss)" />
+          {/* center fold crease */}
+          <line x1="50" y1="25" x2="50" y2="99" stroke="rgba(110,18,8,0.16)" strokeWidth="0.7" />
+        </svg>
+        {/* subtle brand wordmark */}
+        <div className="absolute inset-x-0 flex justify-center" style={{ bottom: "32%" }}>
+          <span className="font-black tracking-[0.3em] text-[15px]" style={{ color: "rgba(255,255,255,0.26)" }}>
+            TOAST
+          </span>
         </div>
       </div>
     </div>
