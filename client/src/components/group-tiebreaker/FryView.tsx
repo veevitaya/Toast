@@ -129,9 +129,9 @@ function Carton({
   disabled: boolean;
 }) {
   const center = (carton.length - 1) / 2;
-  const overlap = 12;
+  const overlap = 13;
   return (
-    <div className="relative w-full mx-auto" style={{ height: 300, maxWidth: 360 }}>
+    <div className="relative w-full mx-auto" style={{ height: 350, maxWidth: 360 }}>
       {/* soft ground shadow */}
       <div
         className="absolute left-1/2 -translate-x-1/2"
@@ -148,17 +148,17 @@ function Carton({
       <div
         className="absolute left-1/2 -translate-x-1/2"
         style={{
-          bottom: 66,
-          width: "68%",
-          height: 66,
+          bottom: 92,
+          width: "76%",
+          height: 123,
           background: "linear-gradient(180deg, #a8331e 0%, #c8412a 100%)",
-          borderRadius: "18px 18px 6px 6px",
-          boxShadow: "inset 0 7px 11px rgba(0,0,0,0.3)",
+          borderRadius: "20px 20px 6px 6px",
+          boxShadow: "inset 0 9px 14px rgba(0,0,0,0.32)",
           zIndex: 1,
         }}
       />
       {/* the bunch of fries */}
-      <div className="absolute left-0 right-0 flex justify-center items-end px-8" style={{ bottom: 60, zIndex: 10 }}>
+      <div className="absolute left-0 right-0 flex justify-center items-end px-8" style={{ bottom: 98, zIndex: 10 }}>
         {carton.map((f, i) => (
           <button
             key={f.id}
@@ -179,10 +179,10 @@ function Carton({
         className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
         style={{
           bottom: 0,
-          width: "84%",
-          height: 142,
+          width: "86%",
+          height: 215,
           zIndex: 30,
-          filter: "drop-shadow(0 16px 20px rgba(214,60,44,0.4))",
+          filter: "drop-shadow(0 14px 18px rgba(214,60,44,0.3))",
         }}
       >
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
@@ -203,11 +203,11 @@ function Carton({
             </linearGradient>
           </defs>
           {/* classic fry-box silhouette: pointed top corners, concave opening, tapered base */}
-          <path d="M3 6 Q 50 40 97 6 L 87 98 Q 50 101 13 98 Z" fill="url(#fryboxFill)" />
-          <path d="M3 6 Q 50 40 97 6 L 87 98 Q 50 101 13 98 Z" fill="url(#fryboxEdge)" />
-          <path d="M3 6 Q 50 40 97 6 L 87 98 Q 50 101 13 98 Z" fill="url(#fryboxGloss)" />
+          <path d="M2 8 Q 50 48 98 8 L 86 98 Q 50 101 14 98 Z" fill="url(#fryboxFill)" />
+          <path d="M2 8 Q 50 48 98 8 L 86 98 Q 50 101 14 98 Z" fill="url(#fryboxEdge)" />
+          <path d="M2 8 Q 50 48 98 8 L 86 98 Q 50 101 14 98 Z" fill="url(#fryboxGloss)" />
           {/* center fold crease */}
-          <line x1="50" y1="25" x2="50" y2="99" stroke="rgba(110,18,8,0.16)" strokeWidth="0.7" />
+          <line x1="50" y1="30" x2="50" y2="99" stroke="rgba(110,18,8,0.16)" strokeWidth="0.7" />
         </svg>
         {/* subtle brand wordmark */}
         <div className="absolute inset-x-0 flex justify-center" style={{ bottom: "32%" }}>
