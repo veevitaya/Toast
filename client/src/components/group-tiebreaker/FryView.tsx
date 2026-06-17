@@ -144,19 +144,27 @@ function Carton({
           filter: "blur(2px)",
         }}
       />
-      {/* carton interior back wall (fries emerge from inside it) */}
+      {/* carton back wall — same rounded silhouette as the front so the interior reads as a carton, not a flat rectangle */}
       <div
-        className="absolute left-1/2 -translate-x-1/2"
-        style={{
-          bottom: 92,
-          width: "76%",
-          height: 123,
-          background: "linear-gradient(180deg, #a8331e 0%, #c8412a 100%)",
-          borderRadius: "20px 20px 6px 6px",
-          boxShadow: "inset 0 9px 14px rgba(0,0,0,0.32)",
-          zIndex: 1,
-        }}
-      />
+        className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+        style={{ bottom: 0, width: "86%", height: 221, zIndex: 1 }}
+      >
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
+          <defs>
+            <linearGradient id="fryboxBackFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#8a2a18" />
+              <stop offset="0.5" stopColor="#a3331e" />
+              <stop offset="1" stopColor="#5f1c0f" />
+            </linearGradient>
+            <linearGradient id="fryboxBackShade" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="rgba(0,0,0,0.3)" />
+              <stop offset="0.32" stopColor="rgba(0,0,0,0)" />
+            </linearGradient>
+          </defs>
+          <path d="M4 18 Q 2 8 12 7 Q 50 46 88 7 Q 98 8 96 18 L 87 95 Q 86 99 80 99 L 20 99 Q 14 99 13 95 Z" fill="url(#fryboxBackFill)" />
+          <path d="M4 18 Q 2 8 12 7 Q 50 46 88 7 Q 98 8 96 18 L 87 95 Q 86 99 80 99 L 20 99 Q 14 99 13 95 Z" fill="url(#fryboxBackShade)" />
+        </svg>
+      </div>
       {/* the bunch of fries */}
       <div className="absolute left-0 right-0 flex justify-center items-end px-8" style={{ bottom: 98, zIndex: 10 }}>
         {carton.map((f, i) => (
@@ -202,10 +210,10 @@ function Carton({
               <stop offset="0.55" stopColor="rgba(255,255,255,0)" />
             </linearGradient>
           </defs>
-          {/* classic fry-box silhouette: pointed top corners, concave opening, tapered base */}
-          <path d="M2 8 Q 50 48 98 8 L 86 98 Q 50 101 14 98 Z" fill="url(#fryboxFill)" />
-          <path d="M2 8 Q 50 48 98 8 L 86 98 Q 50 101 14 98 Z" fill="url(#fryboxEdge)" />
-          <path d="M2 8 Q 50 48 98 8 L 86 98 Q 50 101 14 98 Z" fill="url(#fryboxGloss)" />
+          {/* classic fry-box silhouette: rounded soft corners, concave opening, tapered base */}
+          <path d="M4 18 Q 2 8 12 7 Q 50 46 88 7 Q 98 8 96 18 L 87 95 Q 86 99 80 99 L 20 99 Q 14 99 13 95 Z" fill="url(#fryboxFill)" />
+          <path d="M4 18 Q 2 8 12 7 Q 50 46 88 7 Q 98 8 96 18 L 87 95 Q 86 99 80 99 L 20 99 Q 14 99 13 95 Z" fill="url(#fryboxEdge)" />
+          <path d="M4 18 Q 2 8 12 7 Q 50 46 88 7 Q 98 8 96 18 L 87 95 Q 86 99 80 99 L 20 99 Q 14 99 13 95 Z" fill="url(#fryboxGloss)" />
           {/* center fold crease */}
           <line x1="50" y1="30" x2="50" y2="99" stroke="rgba(110,18,8,0.16)" strokeWidth="0.7" />
         </svg>
