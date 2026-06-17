@@ -129,7 +129,7 @@ function Carton({
   disabled: boolean;
 }) {
   const center = (carton.length - 1) / 2;
-  const overlap = 13;
+  const overlap = 15;
   return (
     <div className="relative w-full mx-auto" style={{ height: 350, maxWidth: 360 }}>
       {/* soft ground shadow */}
@@ -165,22 +165,27 @@ function Carton({
           <path d="M4 18 Q 2 8 12 7 Q 50 46 88 7 Q 98 8 96 18 L 87 95 Q 86 99 80 99 L 20 99 Q 14 99 13 95 Z" fill="url(#fryboxBackShade)" />
         </svg>
       </div>
-      {/* the bunch of fries */}
-      <div className="absolute left-0 right-0 flex justify-center items-end px-8" style={{ bottom: 98, zIndex: 10 }}>
-        {carton.map((f, i) => (
-          <button
-            key={f.id}
-            disabled={disabled}
-            onClick={() => onPick(f.id)}
-            data-testid={`button-fry-${f.id}`}
-            className="relative group disabled:cursor-default"
-            style={{ marginLeft: i === 0 ? 0 : -overlap, zIndex: 40 - Math.round(Math.abs(i - center)) }}
-          >
-            <div className="transition-transform duration-200 group-active:-translate-y-2 group-hover:-translate-y-3 group-focus-visible:-translate-y-3">
-              <FryBody len={f.poke} w={f.w} tone={f.tone} lean={f.lean} seed={f.seed} />
-            </div>
-          </button>
-        ))}
+      {/* the bunch of fries — clipped to the carton walls so they only emerge from the top opening, never the sides */}
+      <div
+        className="absolute left-1/2 -translate-x-1/2"
+        style={{ bottom: 98, width: "80%", zIndex: 10, overflowX: "clip", overflowY: "visible" }}
+      >
+        <div className="flex justify-center items-end">
+          {carton.map((f, i) => (
+            <button
+              key={f.id}
+              disabled={disabled}
+              onClick={() => onPick(f.id)}
+              data-testid={`button-fry-${f.id}`}
+              className="relative group disabled:cursor-default"
+              style={{ marginLeft: i === 0 ? 0 : -overlap, zIndex: 40 - Math.round(Math.abs(i - center)) }}
+            >
+              <div className="transition-transform duration-200 group-active:-translate-y-2 group-hover:-translate-y-3 group-focus-visible:-translate-y-3">
+                <FryBody len={f.poke} w={f.w} tone={f.tone} lean={f.lean} seed={f.seed} />
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
       {/* carton front panel — solid red fry box, occludes the fry bottoms so they sit inside */}
       <div
