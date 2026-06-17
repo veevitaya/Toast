@@ -70,7 +70,7 @@ export default function TeamMemberActivate() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FCFCFC] flex items-center justify-center p-4" data-testid="team-activate-page">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4" data-testid="team-activate-page">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm max-w-md w-full p-8">
         <div className="text-center mb-6">
           <div className="w-12 h-12 rounded-xl bg-[#FFCC02]/15 flex items-center justify-center mx-auto mb-3">

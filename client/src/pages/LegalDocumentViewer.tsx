@@ -72,7 +72,7 @@ export default function LegalDocumentViewer() {
 
   if (!doc) {
     return (
-      <div className="w-full h-[100dvh] bg-[#FCFCFC] dark:bg-background flex items-center justify-center">
+      <div className="w-full h-[100dvh] bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-lg font-bold text-foreground mb-2">Document not found</p>
           <button
@@ -87,7 +87,7 @@ export default function LegalDocumentViewer() {
   }
 
   return (
-    <div className="w-full min-h-[100dvh] bg-[#FCFCFC] dark:bg-background" data-testid="legal-document-page">
+    <div className="w-full min-h-[100dvh] bg-background" data-testid="legal-document-page">
       <div className="flex-shrink-0 bg-white/80 dark:bg-card/80 backdrop-blur-md border-b border-gray-100/60 dark:border-border/60 sticky top-0 z-40">
         <div className="flex items-center gap-3 px-5 pt-12 pb-3">
           <button

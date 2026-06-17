@@ -13,7 +13,7 @@ import { isMenuFirstVibe } from "@shared/vibeConfig";
 import { GroupTieBreakerGame } from "@/components/group-tiebreaker/GroupTieBreakerGame";
 import { rankByGroupTaste, type MemberTaste } from "@/lib/groupTasteRanking";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { Square, X, Trophy, ChevronRight, Crown, Medal, Award, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils, MapPin, UtensilsCrossed, Swords } from "lucide-react";
+import { Square, X, Trophy, ChevronRight, Crown, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils, MapPin, UtensilsCrossed, Swords, PartyPopper, Flame } from "lucide-react";
 
 type SwipePhase = "menu" | "restaurant";
 
@@ -484,9 +484,6 @@ export default function GroupSwipe() {
   const [loadingResults, setLoadingResults] = useState(false);
   const [tieBreakerActive, setTieBreakerActive] = useState(false);
   const [finalPick, setFinalPick] = useState<{ id: number; swipeType: string } | null>(null);
-  const [groupAggregateStats, setGroupAggregateStats] = useState<{
-    totalSwipes: number; totalLikes: number; totalDislikes: number; totalSuperLikes: number;
-  }>({ totalSwipes: 0, totalLikes: 0, totalDislikes: 0, totalSuperLikes: 0 });
   const [comboStats, setComboStats] = useState<{
     fingerprint: string;
     comboStats: { totalSessions: number; totalMatches: number; totalSwipes: number; topCategoriesJson: string | null; lastSessionAt: string | null } | null;
@@ -1114,14 +1111,6 @@ export default function GroupSwipe() {
       ranked.sort((a, b) => b.voteCount - a.voteCount);
       setRankedResults(ranked);
 
-      let gLikes = 0, gDislikes = 0, gSuper = 0;
-      for (const s of swipes) {
-        if (s.direction === "right") gLikes++;
-        else if (s.direction === "super") { gLikes++; gSuper++; }
-        else if (s.direction === "left") gDislikes++;
-      }
-      setGroupAggregateStats({ totalSwipes: swipes.length, totalLikes: gLikes, totalDislikes: gDislikes, totalSuperLikes: gSuper });
-
       try {
         await fetchWithTimeout(`/api/group/sessions/${sessionCode}/finalize-stats`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lineUserId: profile?.userId }) });
         const statsRes = await fetchWithTimeout(`/api/group/combo-stats/${sessionCode}`);
@@ -1245,7 +1234,7 @@ export default function GroupSwipe() {
 
   if (loading) {
     return (
-      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex items-center justify-center">
+      <div className="w-full h-[100dvh] bg-background flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-gray-300 border-t-foreground animate-spin" />
       </div>
     );
@@ -1253,7 +1242,7 @@ export default function GroupSwipe() {
 
   if (sessionUnavailable) {
     return (
-      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6" data-testid="session-unavailable-page">
+      <div className="w-full h-[100dvh] bg-background flex flex-col items-center justify-center px-6" data-testid="session-unavailable-page">
         <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-5">
           <X className="w-8 h-8 text-gray-400" />
         </div>
@@ -1293,18 +1282,20 @@ export default function GroupSwipe() {
   }
 
   if (showResults || sessionEnded) {
-    const RANK_ICONS = [Crown, Medal, Award];
-    const RANK_COLORS = ["#FFCC02", "#94A3B8", "#CD7F32"];
-    const RANK_BG = ["linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)", "linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)", "linear-gradient(135deg, #FDF4E7 0%, #FDECD0 100%)"];
     const top3 = rankedResults.slice(0, 3);
     const rest = rankedResults.slice(3);
+    const hero = top3[0] || null;
+    const runnersUp = top3.slice(1);
     const tbSwipeType = swipePhase === "menu" ? "menu" : "restaurant";
     const tieBreakerMatchCount = rankedResults.filter((r) => r.isFullMatch && r.swipeType === tbSwipeType).length;
     const canPlayTieBreaker = tieBreakerMatchCount >= 2 && finalPick == null && !tieBreakerActive && !sessionEnded;
+    const fullMatchCount = rankedResults.filter((r) => r.isFullMatch).length;
+    const voterNames = (result: any) => result.voters.map((v: any) => v.lineUserId === profile?.userId ? "You" : v.displayName);
+    const friendlyVoters = (names: string[]) => names.length === 0 ? "" : names.length === 1 ? names[0] : names.length === 2 ? `${names[0]} & ${names[1]}` : `${names[0]}, ${names[1]} +${names.length - 2}`;
 
     return (
-      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col overflow-hidden" data-testid="group-summary-page">
-        <div className="flex-shrink-0 px-6 pt-12 pb-5">
+      <div className="w-full h-[100dvh] bg-background flex flex-col overflow-hidden" data-testid="group-summary-page">
+        <div className="flex-shrink-0 px-6 pt-12 pb-4">
           {!sessionEnded && ((swipePhase === "menu" && currentIndex < dishItems.length) || (swipePhase === "restaurant" && currentIndex < menuItems.length)) && (
             <button
               onClick={() => setShowResults(false)}
@@ -1321,24 +1312,33 @@ export default function GroupSwipe() {
               <p className="text-[12px] font-semibold text-green-700">Session complete — time to eat!</p>
             </div>
           )}
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#FFCC02]/15 flex items-center justify-center">
-              <Trophy className="w-5 h-5 text-[#FFCC02]" />
-            </div>
-            <div className="flex-1">
-              <h1 className="text-[22px] font-bold" data-testid="text-summary-title">
-                {sessionEnded ? "Group Results" : "Your Top Picks"}
-              </h1>
-              <p className="text-[12px] text-muted-foreground">
-                {members.length} people · {rankedResults.filter(r => r.isFullMatch).length} full match{rankedResults.filter(r => r.isFullMatch).length !== 1 ? "es" : ""} · {groupAggregateStats.totalSwipes} swipes
-              </p>
-            </div>
+          <h1 className="text-[26px] font-bold tracking-tight" data-testid="text-summary-title">
+            {sessionEnded ? "Group Results" : "Your Top Picks"}
+          </h1>
+          <p className="text-[13.5px] text-muted-foreground mt-1">
+            {fullMatchCount > 0
+              ? `You all agreed on ${fullMatchCount} spot${fullMatchCount !== 1 ? "s" : ""} 🎉`
+              : "Here's what your group liked most"}
+          </p>
+          <div className="flex items-center gap-1.5 flex-wrap mt-3">
+            {members.map((m) => (
+              <div key={m.lineUserId} className="flex items-center gap-1.5 bg-white rounded-full pl-1 pr-3 py-1 border border-black/[0.06]" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+                {m.pictureUrl ? (
+                  <img src={m.pictureUrl} alt={m.displayName} className="w-6 h-6 rounded-full object-cover" />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                    <span className="text-[9px] font-bold text-amber-600">{m.displayName.charAt(0)}</span>
+                  </div>
+                )}
+                <span className="text-[11px] font-semibold">{m.lineUserId === profile?.userId ? "You" : m.displayName}</span>
+              </div>
+            ))}
           </div>
           {finalPick != null && (() => {
             const pick = rankedResults.find(r => r.item.id === finalPick.id && r.swipeType === finalPick.swipeType)?.item;
             if (!pick) return null;
             return (
-              <div className="flex items-center gap-3 mb-3 rounded-2xl p-3 bg-[#FFCC02]/15 border border-[#FFCC02]/40" data-testid="final-pick-banner">
+              <div className="flex items-center gap-3 mt-3 rounded-2xl p-3 bg-[#FFCC02]/15 border border-[#FFCC02]/40" data-testid="final-pick-banner">
                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-white flex-shrink-0 flex items-center justify-center">
                   {pick.imageUrl ? (
                     <img src={pick.imageUrl} alt={pick.name} className="w-full h-full object-cover" onError={handleImageError} />
@@ -1355,20 +1355,6 @@ export default function GroupSwipe() {
               </div>
             );
           })()}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {members.map((m) => (
-              <div key={m.lineUserId} className="flex items-center gap-1.5 bg-white rounded-full pl-1 pr-3 py-1 border border-gray-100" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-                {m.pictureUrl ? (
-                  <img src={m.pictureUrl} alt={m.displayName} className="w-6 h-6 rounded-full object-cover" />
-                ) : (
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
-                    <span className="text-[9px] font-bold text-amber-600">{m.displayName.charAt(0)}</span>
-                  </div>
-                )}
-                <span className="text-[11px] font-semibold">{m.lineUserId === profile?.userId ? "You" : m.displayName}</span>
-              </div>
-            ))}
-          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 pb-4 hide-scrollbar">
@@ -1377,193 +1363,139 @@ export default function GroupSwipe() {
               <div className="w-7 h-7 rounded-full border-2 border-gray-200 border-t-[#FFCC02] animate-spin" />
             </div>
           ) : top3.length > 0 ? (
-            <div className="space-y-3">
-              <div className="flex gap-2 mb-1" data-testid="group-stats-bar">
-                <div className="flex-1 bg-white rounded-2xl px-3 py-2.5 border border-gray-100 text-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}>
-                  <p className="text-[17px] font-bold text-foreground">{groupAggregateStats.totalSwipes}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Total Swipes</p>
+            <div className="space-y-4">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl px-4 py-3 bg-[#FFCC02]/12 border border-[#FFCC02]/25 flex items-start gap-3"
+                data-testid="verdict-callout"
+              >
+                {fullMatchCount > 0
+                  ? <PartyPopper className="w-6 h-6 text-[#FFCC02] flex-shrink-0 mt-0.5" />
+                  : <Utensils className="w-6 h-6 text-[#FFCC02] flex-shrink-0 mt-0.5" />}
+                <div className="min-w-0">
+                  <p className="text-[14px] font-bold text-foreground">
+                    {fullMatchCount > 0 ? "It's (almost) decided!" : "Your group's favorites"}
+                  </p>
+                  <p className="text-[12px] text-foreground/70 leading-snug mt-0.5">
+                    {fullMatchCount > 0
+                      ? `Everyone liked ${fullMatchCount} of these — tap a spot for details & directions.`
+                      : "Tap a spot for details, or play a quick game to settle it."}
+                  </p>
+                  {comboStats?.comboStats && comboStats.previousSessionCount > 1 && (
+                    <span className="inline-flex items-center gap-1 mt-2 text-[11px] font-semibold text-[#a37a00] bg-white/70 rounded-full px-2 py-0.5" data-testid="combo-pill">
+                      <Flame className="w-3 h-3" /> Meal #{comboStats.comboStats.totalSessions} together
+                    </span>
+                  )}
                 </div>
-                <div className="flex-1 bg-white rounded-2xl px-3 py-2.5 border border-gray-100 text-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}>
-                  <p className="text-[17px] font-bold text-[hsl(160,60%,40%)]">{groupAggregateStats.totalLikes}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Group Likes</p>
-                </div>
-                <div className="flex-1 bg-white rounded-2xl px-3 py-2.5 border border-gray-100 text-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}>
-                  <p className="text-[17px] font-bold text-[#FFCC02]">{rankedResults.filter(r => r.isFullMatch).length}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Full Matches</p>
-                </div>
-              </div>
+              </motion.div>
 
-              {comboStats && comboStats.comboStats && comboStats.previousSessionCount > 1 && (
+              {hero && (
                 <motion.div
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="bg-gradient-to-r from-violet-50 to-blue-50 rounded-2xl px-3.5 py-2.5 border border-violet-100/40 mb-1"
-                  data-testid="group-combo-history"
+                  transition={{ ease: [0.4, 0, 0.2, 1] }}
+                  onClick={() => { sessionStorage.setItem("group_results_return", `/group/swipe?session=${sessionCode}`); navigate(`/restaurant/${hero.item.id}`); }}
+                  className="rounded-[22px] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform bg-white border border-black/[0.06]"
+                  style={{ boxShadow: "0 10px 34px -8px rgba(255,204,2,0.30), 0 4px 16px rgba(0,0,0,0.06)" }}
+                  data-testid={`result-card-${hero.item.id}`}
                 >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-[13px]">{"\uD83D\uDD04"}</span>
-                    <p className="text-[12px] font-bold text-foreground">
-                      Session #{comboStats.comboStats.totalSessions} together
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="text-center">
-                      <p className="text-[14px] font-bold text-violet-600">{comboStats.comboStats.totalMatches}</p>
-                      <p className="text-[9px] text-muted-foreground">All-time Matches</p>
+                  <div className="relative">
+                    <img src={hero.item.imageUrl} alt={hero.item.name} className="w-full aspect-[16/10] object-cover" onError={handleImageError} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-[#FFCC02] rounded-full pl-2 pr-2.5 py-1" style={{ boxShadow: "0 4px 14px rgba(255,204,2,0.45)" }}>
+                      <Crown className="w-3.5 h-3.5 text-[#2d2000]" />
+                      <span className="text-[11px] font-bold text-[#2d2000]">Group favorite</span>
                     </div>
-                    <div className="text-center">
-                      <p className="text-[14px] font-bold text-blue-600">{comboStats.comboStats.totalSwipes}</p>
-                      <p className="text-[9px] text-muted-foreground">Total Swipes</p>
+                    {hero.isFullMatch && (
+                      <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm rounded-full px-2.5 py-1 text-[10px] font-bold text-[hsl(160,60%,32%)] flex items-center gap-1" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[hsl(160,60%,40%)]" /> Everyone liked it
+                      </div>
+                    )}
+                    <div className="absolute bottom-3 left-4 right-4">
+                      <h3 className="text-white text-xl font-bold drop-shadow-lg truncate">{hero.item.name}</h3>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className="text-white/90 text-[12px]">{hero.item.category}</span>
+                        <span className="text-white/50 text-[12px]">·</span>
+                        <span className="text-white/90 text-[12px]">{"฿".repeat(hero.item.priceLevel)}</span>
+                        <span className="text-white/50 text-[12px]">·</span>
+                        <span className="text-white/90 text-[12px]">★ {hero.item.rating}</span>
+                      </div>
                     </div>
-                    {(() => {
-                      const cats = comboStats.comboStats!.topCategoriesJson ? JSON.parse(comboStats.comboStats!.topCategoriesJson) as [string, number][] : [];
-                      return cats.length > 0 ? (
-                        <div className="text-center flex-1 min-w-0">
-                          <p className="text-[14px] font-bold text-foreground truncate">{cats[0][0]}</p>
-                          <p className="text-[9px] text-muted-foreground">Go-to Cuisine</p>
-                        </div>
-                      ) : null;
-                    })()}
                   </div>
-                </motion.div>
-              )}
-
-              {comboStats && comboStats.memberStats.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="bg-white rounded-2xl px-3.5 py-2.5 border border-gray-100 mb-1"
-                  style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}
-                  data-testid="member-stats-panel"
-                >
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 mb-2">Member Trends</p>
-                  <div className="space-y-2">
-                    {comboStats.memberStats.map((ms) => {
-                      const topCats = ms.stats?.topCategoriesJson ? JSON.parse(ms.stats.topCategoriesJson) as [string, number][] : [];
-                      const isYou = ms.lineUserId === profile?.userId;
-                      return (
-                        <div key={ms.lineUserId} className="flex items-center gap-2.5">
-                          {ms.pictureUrl ? (
-                            <img src={ms.pictureUrl} alt={ms.displayName} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                  <div className="px-4 py-3 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className="flex -space-x-2 flex-shrink-0">
+                        {hero.voters.map((v) => (
+                          v.pictureUrl ? (
+                            <img key={v.lineUserId} src={v.pictureUrl} alt={v.displayName} className="w-7 h-7 rounded-full border-2 border-white object-cover" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }} />
                           ) : (
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center flex-shrink-0">
-                              <span className="text-[10px] font-bold text-amber-600">{ms.displayName.charAt(0)}</span>
+                            <div key={v.lineUserId} className="w-7 h-7 rounded-full border-2 border-white bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+                              <span className="text-[9px] font-bold text-amber-600">{v.displayName.charAt(0)}</span>
                             </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[12px] font-semibold truncate">{isYou ? "You" : ms.displayName}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {ms.stats ? (
-                                <>
-                                  <span className="text-[10px] text-[hsl(160,60%,40%)]">{"\u2764"} {ms.stats.totalLikes}</span>
-                                  <span className="text-[10px] text-muted-foreground">{"\u00D7"} {ms.stats.totalDislikes}</span>
-                                  {ms.stats.totalSuperLikes > 0 && (
-                                    <span className="text-[10px] text-[#FFCC02]">{"\u2B50"} {ms.stats.totalSuperLikes}</span>
-                                  )}
-                                  {topCats.length > 0 && (
-                                    <span className="text-[10px] text-muted-foreground/80 truncate">{"\u00B7"} Loves {topCats[0][0]}</span>
-                                  )}
-                                </>
-                              ) : (
-                                <span className="text-[10px] text-muted-foreground">First session</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          )
+                        ))}
+                      </div>
+                      <p className="text-[12px] font-semibold text-foreground/80 truncate">
+                        {friendlyVoters(voterNames(hero))} love this
+                      </p>
+                    </div>
+                    <span className="flex items-center gap-0.5 text-[12px] font-semibold text-[#a37a00] flex-shrink-0">
+                      View <ChevronRight className="w-4 h-4" />
+                    </span>
                   </div>
                 </motion.div>
               )}
 
-              {(() => {
-                const topCategory = rankedResults.length > 0
-                  ? Object.entries(
-                      rankedResults.reduce<Record<string, number>>((acc, r) => {
-                        const cat = r.item.category || "Other";
-                        acc[cat] = (acc[cat] || 0) + r.voteCount;
-                        return acc;
-                      }, {})
-                    ).sort((a, b) => b[1] - a[1])[0]?.[0] || null
-                  : null;
-                return topCategory ? (
-                  <div className="bg-[#FFCC02]/8 rounded-2xl px-3.5 py-2 flex items-center gap-2 mb-1 border border-[#FFCC02]/15" data-testid="group-top-category">
-                    <span className="text-[13px]">{"\uD83C\uDF1F"}</span>
-                    <p className="text-[12px] text-foreground/80 font-medium">
-                      Group favorite: <span className="font-bold text-foreground">{topCategory}</span>
-                    </p>
-                  </div>
-                ) : null;
-              })()}
-              {top3.map((result, idx) => {
-                const RankIcon = RANK_ICONS[idx] || Award;
-                return (
-                  <motion.div
-                    key={result.item.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.12, ease: [0.4, 0, 0.2, 1] }}
-                    onClick={() => { sessionStorage.setItem("group_results_return", `/group/swipe?session=${sessionCode}`); navigate(`/restaurant/${result.item.id}`); }}
-                    className="rounded-[20px] overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
-                    style={{ boxShadow: idx === 0 ? "0 8px 32px -6px rgba(255,204,2,0.25), 0 4px 16px rgba(0,0,0,0.06)" : "0 4px 20px rgba(0,0,0,0.06)", background: RANK_BG[idx] }}
-                    data-testid={`result-card-${result.item.id}`}
-                  >
-                    <div className="relative">
-                      <img src={result.item.imageUrl} alt={result.item.name} className="w-full aspect-[16/9] object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                      <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 bg-white/95 backdrop-blur-sm rounded-full px-2 py-0.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-                        <RankIcon className="w-3.5 h-3.5" style={{ color: RANK_COLORS[idx] }} />
-                        <span className="text-[11px] font-bold">#{idx + 1}</span>
-                      </div>
-                      {result.isFullMatch && (
-                        <div className="absolute top-2.5 right-2.5 bg-[#FFCC02] rounded-full px-2 py-0.5 text-[10px] font-bold text-[#2d2000]" style={{ boxShadow: "0 2px 8px rgba(255,204,2,0.4)" }}>
-                          Full Match
-                        </div>
-                      )}
-                      <div className="absolute bottom-2.5 left-2.5 right-2.5">
-                        <h3 className="text-white text-base sm:text-lg font-bold drop-shadow-lg truncate">{result.item.name}</h3>
-                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                          <span className="text-white/90 text-[11px]">{result.item.category}</span>
-                          <span className="text-white/50 text-[11px]">·</span>
-                          <span className="text-white/90 text-[11px]">{"฿".repeat(result.item.priceLevel)}</span>
-                          <span className="text-white/50 text-[11px]">·</span>
-                          <span className="text-white/90 text-[11px] flex items-center gap-0.5">★ {result.item.rating}</span>
+              {runnersUp.length > 0 && (
+                <div className="space-y-2.5">
+                  {runnersUp.map((result, i) => (
+                    <motion.div
+                      key={result.item.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: (i + 1) * 0.08 }}
+                      onClick={() => { sessionStorage.setItem("group_results_return", `/group/swipe?session=${sessionCode}`); navigate(`/restaurant/${result.item.id}`); }}
+                      className="flex items-center gap-3 bg-white rounded-2xl p-2.5 pr-3 border border-black/[0.06] cursor-pointer active:scale-[0.98] transition-transform"
+                      style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.04)" }}
+                      data-testid={`result-card-${result.item.id}`}
+                    >
+                      <div className="relative flex-shrink-0">
+                        <img src={result.item.imageUrl} alt={result.item.name} className="w-[68px] h-[68px] rounded-xl object-cover" onError={handleImageError} />
+                        <div className="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-full bg-white flex items-center justify-center border border-black/[0.06]" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}>
+                          <span className="text-[11px] font-bold text-muted-foreground">#{i + 2}</span>
                         </div>
                       </div>
-                    </div>
-                    <div className="px-3.5 py-2.5 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div className="flex -space-x-2 flex-shrink-0">
-                          {result.voters.map((v) => (
-                            v.pictureUrl ? (
-                              <img key={v.lineUserId} src={v.pictureUrl} alt={v.displayName} className="w-6 h-6 rounded-full border-2 border-white object-cover" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }} />
-                            ) : (
-                              <div key={v.lineUserId} className="w-6 h-6 rounded-full border-2 border-white bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
-                                <span className="text-[8px] font-bold text-amber-600">{v.displayName.charAt(0)}</span>
-                              </div>
-                            )
-                          ))}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="font-bold text-[14px] truncate">{result.item.name}</h4>
+                          {result.isFullMatch && <span className="w-1.5 h-1.5 rounded-full bg-[hsl(160,60%,40%)] flex-shrink-0" title="Everyone liked it" />}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[11px] font-semibold text-foreground/80 truncate">
-                            {result.voters.map(v => v.lineUserId === profile?.userId ? "You" : v.displayName).join(", ")}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">
-                            {result.voteCount}/{members.length} liked this
-                          </p>
+                        <p className="text-[11px] text-muted-foreground truncate mt-0.5">{result.item.category} · {"฿".repeat(result.item.priceLevel)} · ★ {result.item.rating}</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <div className="flex -space-x-1.5">
+                            {result.voters.slice(0, 4).map((v) => (
+                              v.pictureUrl ? (
+                                <img key={v.lineUserId} src={v.pictureUrl} alt={v.displayName} className="w-5 h-5 rounded-full border border-white object-cover" />
+                              ) : (
+                                <div key={v.lineUserId} className="w-5 h-5 rounded-full border border-white bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center">
+                                  <span className="text-[7px] font-bold text-amber-600">{v.displayName.charAt(0)}</span>
+                                </div>
+                              )
+                            ))}
+                          </div>
+                          <span className="text-[10.5px] text-muted-foreground truncate">{friendlyVoters(voterNames(result))} liked it</span>
                         </div>
                       </div>
                       <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
-                    </div>
-                  </motion.div>
-                );
-              })}
+                    </motion.div>
+                  ))}
+                </div>
+              )}
 
               {rest.length > 0 && (
                 <div className="pt-2">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 mb-2.5 px-1">Also Popular</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/55 mb-2.5 px-1">Also liked</p>
                   <div className="space-y-2">
                     {rest.map((result, idx) => (
                       <motion.div
@@ -1572,7 +1504,7 @@ export default function GroupSwipe() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 + idx * 0.06 }}
                         onClick={() => { sessionStorage.setItem("group_results_return", `/group/swipe?session=${sessionCode}`); navigate(`/restaurant/${result.item.id}`); }}
-                        className="flex items-center gap-3 bg-white rounded-2xl p-2.5 pr-3 border border-gray-100 cursor-pointer active:scale-[0.98] transition-transform"
+                        className="flex items-center gap-3 bg-white rounded-2xl p-2.5 pr-3 border border-black/[0.06] cursor-pointer active:scale-[0.98] transition-transform"
                         style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}
                         data-testid={`result-card-${result.item.id}`}
                       >
@@ -1607,16 +1539,16 @@ export default function GroupSwipe() {
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col items-center justify-center h-full text-center px-4"
             >
-              <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mb-5">
-                <span className="text-4xl">🤷</span>
+              <div className="w-20 h-20 rounded-full bg-[#FFCC02]/12 flex items-center justify-center mb-5">
+                <UtensilsCrossed className="w-9 h-9 text-[#FFCC02]" />
               </div>
               <h2 className="text-lg font-bold mb-2">No shared picks yet</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">Nobody in your group agreed on the same spot. Try again with different preferences!</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">Nobody landed on the same spot this time. Swipe a few more or try a different vibe together!</p>
             </motion.div>
           )}
         </div>
 
-        <div className="flex-shrink-0 px-5 py-4 pb-6 border-t border-gray-50 safe-bottom bg-white/80 backdrop-blur-sm">
+        <div className="flex-shrink-0 px-5 py-4 pb-6 border-t border-black/[0.04] safe-bottom bg-background/80 backdrop-blur-sm">
           {canPlayTieBreaker && (
             <button
               onClick={handleStartTieBreaker}
@@ -1670,7 +1602,7 @@ export default function GroupSwipe() {
 
   if (showDishRestaurants && matchedDish) {
     return (
-      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col" data-testid="dish-restaurants-page">
+      <div className="w-full h-[100dvh] bg-background flex flex-col" data-testid="dish-restaurants-page">
         <div className="flex-shrink-0 pt-[max(env(safe-area-inset-top),1rem)] px-5 pb-3 border-b border-gray-100 bg-white/90 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <button onClick={() => { setShowDishRestaurants(false); setFullMatch(true); }} className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center active:scale-95 transition-transform" data-testid="button-back-to-match">
@@ -1766,7 +1698,7 @@ export default function GroupSwipe() {
     };
 
     return (
-      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col relative overflow-hidden" data-testid="group-match-page">
+      <div className="w-full h-[100dvh] bg-background flex flex-col relative overflow-hidden" data-testid="group-match-page">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[20%] left-[5%] w-48 h-48 bg-amber-50/50 rounded-full blur-3xl" />
           <div className="absolute bottom-[15%] right-[10%] w-56 h-56 bg-amber-50/50 rounded-full blur-3xl" />

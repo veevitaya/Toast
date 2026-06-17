@@ -76,7 +76,7 @@ export default function PartnerAccept() {
   };
 
   return (
-    <div className="w-full min-h-[100dvh] bg-[#FCFCFC] dark:bg-background flex items-center justify-center p-6" data-testid="partner-accept-page">
+    <div className="w-full min-h-[100dvh] bg-background flex items-center justify-center p-6" data-testid="partner-accept-page">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

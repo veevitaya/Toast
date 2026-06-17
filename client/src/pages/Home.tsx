@@ -918,7 +918,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-[100] bg-[#FCFCFC]"
+            className="fixed inset-0 z-[100] bg-background"
             data-testid="search-overlay"
           >
             <div className="safe-top px-4 pt-3 pb-2">

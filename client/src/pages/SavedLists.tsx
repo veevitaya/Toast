@@ -226,7 +226,7 @@ export default function SavedLists() {
 
   if (selectedList) {
     return (
-      <div className="w-full min-h-[100dvh] bg-[#FCFCFC]" data-testid="saved-lists-page">
+      <div className="w-full min-h-[100dvh] bg-background" data-testid="saved-lists-page">
         <div className="px-5 pt-14 pb-32">
           <div className="flex items-center gap-3 mb-6">
             <button
@@ -332,7 +332,7 @@ export default function SavedLists() {
   }
 
   return (
-    <div className="w-full min-h-[100dvh] bg-[#FCFCFC]" data-testid="saved-lists-page">
+    <div className="w-full min-h-[100dvh] bg-background" data-testid="saved-lists-page">
       <div className="px-5 pt-14 pb-32">
         <div className="flex items-center gap-3 mb-6">
           <button

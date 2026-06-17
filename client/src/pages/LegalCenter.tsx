@@ -9,7 +9,7 @@ export default function LegalCenter() {
   const { t } = useLanguage();
 
   return (
-    <div className="w-full min-h-[100dvh] bg-[#FCFCFC] dark:bg-background" data-testid="legal-center-page">
+    <div className="w-full min-h-[100dvh] bg-background" data-testid="legal-center-page">
       <div className="flex-shrink-0 bg-white/80 dark:bg-card/80 backdrop-blur-md border-b border-gray-100/60 dark:border-border/60 sticky top-0 z-40">
         <div className="flex items-center gap-3 px-5 pt-12 pb-3">
           <button

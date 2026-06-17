@@ -91,7 +91,7 @@ export default function SoloQuiz() {
   const totalSelected = selectedCuisines.length + selectedLocations.length + (selectedBudget ? 1 : 0);
 
   return (
-    <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center overflow-hidden" data-testid="solo-quiz-page">
+    <div className="w-full h-[100dvh] bg-background flex flex-col items-center overflow-hidden" data-testid="solo-quiz-page">
       {/* Header */}
       <div className="w-full max-w-md flex-shrink-0 pt-12 px-5 pb-3 z-40">
         <div className="flex items-center mb-5">
@@ -260,7 +260,7 @@ export default function SoloQuiz() {
       </div>
 
       {/* Footer CTA — always available */}
-      <div className="w-full max-w-md flex-shrink-0 px-5 pt-3 pb-5 safe-bottom bg-[#FCFCFC] border-t border-black/[0.04]">
+      <div className="w-full max-w-md flex-shrink-0 px-5 pt-3 pb-5 safe-bottom bg-background border-t border-black/[0.04]">
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handleFinish}

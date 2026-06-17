@@ -48,7 +48,7 @@ export function InlineOnboarding({ onComplete, skipCuisines = false }: { onCompl
 
   return (
     <motion.div
-      className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col overflow-hidden absolute inset-0 z-50"
+      className="w-full h-[100dvh] bg-background flex flex-col overflow-hidden absolute inset-0 z-50"
       initial={{ opacity: 1 }}
       animate={{ opacity: isExiting ? 0 : 1 }}
       transition={{ duration: 0.3 }}

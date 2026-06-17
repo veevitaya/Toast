@@ -463,7 +463,7 @@ export default function WaitingRoom() {
 
   if (profileLoading && !hostOfSession) {
     return (
-      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex items-center justify-center">
+      <div className="w-full h-[100dvh] bg-background flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-gray-300 border-t-foreground animate-spin" />
       </div>
     );
@@ -471,7 +471,7 @@ export default function WaitingRoom() {
 
   if (!sessionId) {
     return (
-      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6">
+      <div className="w-full h-[100dvh] bg-background flex flex-col items-center justify-center px-6">
         <p className="text-muted-foreground text-center mb-4">No session ID found. Start a new group from the home page.</p>
         <button
           onClick={() => navigate("/group")}
@@ -487,7 +487,7 @@ export default function WaitingRoom() {
 
   if (needsNameEntry && !hostOfSession) {
     return (
-      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6" data-testid="join-session-gate">
+      <div className="w-full h-[100dvh] bg-background flex flex-col items-center justify-center px-6" data-testid="join-session-gate">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[15%] left-[10%] w-32 h-32 bg-amber-50/40 rounded-full blur-3xl" />
           <div className="absolute bottom-[20%] right-[15%] w-40 h-40 bg-amber-50/40 rounded-full blur-3xl" />
@@ -581,7 +581,7 @@ export default function WaitingRoom() {
 
   if (sessionExpired || sessionDeleted) {
     return (
-      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6" data-testid="session-ended-page">
+      <div className="w-full h-[100dvh] bg-background flex flex-col items-center justify-center px-6" data-testid="session-ended-page">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[15%] left-[10%] w-32 h-32 bg-amber-50/40 rounded-full blur-3xl" />
           <div className="absolute bottom-[20%] right-[15%] w-40 h-40 bg-amber-50/40 rounded-full blur-3xl" />

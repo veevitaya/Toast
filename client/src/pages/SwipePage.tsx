@@ -692,7 +692,7 @@ export default function SwipePage() {
 
   if (showMatch && matchedRestaurant) {
     return (
-      <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col items-center justify-center px-6 relative overflow-hidden" data-testid="solo-match-page">
+      <div className="w-full h-[100dvh] bg-background flex flex-col items-center justify-center px-6 relative overflow-hidden" data-testid="solo-match-page">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[20%] left-[5%] w-48 h-48 bg-amber-50/50 rounded-full blur-3xl" />
           <div className="absolute bottom-[15%] right-[10%] w-56 h-56 bg-amber-50/50 rounded-full blur-3xl" />

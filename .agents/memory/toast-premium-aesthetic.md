@@ -18,3 +18,7 @@ Toast's brand is #FFCC02 golden yellow, **Figtree** is the one and only app font
 **Hard rule — never violate:** the Solo screens (`client/src/pages/SoloJourney.tsx`, route `/solo`) must keep `bg-background`. Never hardcode a cream/custom page background. The user has restated this many times.
 
 **How to apply:** any redesign of SoloJourney intent/result screens — match the white-card language, keep gold as accent only, leave the page background as `bg-background`.
+
+**Group results/summary screen (`client/src/pages/GroupSwipe.tsx`, the `if (showResults || sessionEnded)` branch):** the user wanted this "friendlier, easier, more fun, LESS statistical." Lead with a warm gold verdict callout + a #1 white "hero" favorite card + clean runner-up cards + "Also liked" — NOT cold stat tiles (Total Swipes / Group Likes / Full Matches), member-trends panels, or combo-history analytics. Prefer lucide icons in gold (PartyPopper/Utensils/Flame/UtensilsCrossed) over raw emoji on this premium surface; keep at most one celebratory emoji as a lone accent.
+
+**Why:** raw emoji read as childish and render as missing-glyph boxes in headless screenshots; lucide icons look more premium and on-brand. Confirmed aligned with the design system by architect review.
