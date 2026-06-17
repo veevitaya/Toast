@@ -1,60 +1,64 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./_group.css";
-import { Star, MapPin, Navigation, RotateCcw, Crown, Swords } from "lucide-react";
+import { Star, MapPin, Navigation, RotateCcw, Crown, Swords, ChevronLeft } from "lucide-react";
 
 type Stage = "pick" | "throw" | "reveal" | "winner";
 type Move = "rock" | "paper" | "scissors";
 type Result = "win" | "lose" | "tie";
 
-const DISHES = [
+export type DuelItem = {
+  name: string;
+  sub: string;
+  emoji: string;
+  img: string;
+  rating: string;
+  area: string;
+  dist: string;
+  price: string;
+  cuisine: string;
+  place?: string; // dish mode: the restaurant that serves this dish
+};
+
+const DEFAULT_ITEMS: DuelItem[] = [
   {
     name: "Khao Soi",
     sub: "Northern Curry Noodles",
     emoji: "🍜",
-    bg: "bg-orange-100",
-    restaurant: {
-      name: "Hom Duan",
-      cuisine: "Authentic Northern Thai cuisine.",
-      rating: "4.8",
-      area: "Ekkamai",
-      dist: "1.2 km",
-      price: "฿฿",
-      img: "/__mockup/images/Winner-khaosoi.png",
-    },
+    img: "/__mockup/images/Winner-khaosoi.png",
+    rating: "4.8",
+    area: "Ekkamai",
+    dist: "1.2 km",
+    price: "฿฿",
+    cuisine: "Authentic Northern Thai cuisine.",
+    place: "Hom Duan",
   },
   {
     name: "Green Curry",
     sub: "Spicy & Sweet",
     emoji: "🍛",
-    bg: "bg-red-100",
-    restaurant: {
-      name: "Krua Apsorn",
-      cuisine: "Beloved home-style Thai kitchen.",
-      rating: "4.7",
-      area: "Phra Nakhon",
-      dist: "2.4 km",
-      price: "฿฿",
-      img: "/__mockup/images/Winner-greencurry.png",
-    },
+    img: "/__mockup/images/Winner-greencurry.png",
+    rating: "4.7",
+    area: "Phra Nakhon",
+    dist: "2.4 km",
+    price: "฿฿",
+    cuisine: "Beloved home-style Thai kitchen.",
+    place: "Krua Apsorn",
   },
   {
     name: "Som Tam",
     sub: "Papaya Salad",
     emoji: "🥗",
-    bg: "bg-green-100",
-    restaurant: {
-      name: "Som Tam Nua",
-      cuisine: "Fiery, fresh Isaan favourites.",
-      rating: "4.6",
-      area: "Siam",
-      dist: "0.8 km",
-      price: "฿",
-      img: "/__mockup/images/Winner-somtam.png",
-    },
+    img: "/__mockup/images/Winner-somtam.png",
+    rating: "4.6",
+    area: "Siam",
+    dist: "0.8 km",
+    price: "฿",
+    cuisine: "Fiery, fresh Isaan favourites.",
+    place: "Som Tam Nua",
   },
 ];
 
-const MINT_DISH = 1; // Mint's secret champion = Green Curry
+const DEFAULT_OPP_PICK = 1; // Mint's secret champion
 const WINS_NEEDED = 2; // best of 3
 
 const MOVES: Move[] = ["rock", "paper", "scissors"];
@@ -83,41 +87,6 @@ function ScorePips({ score, gold }: { score: number; gold?: boolean }) {
   );
 }
 
-function Confetti() {
-  const pieces = React.useMemo(
-    () =>
-      Array.from({ length: 18 }).map((_, i) => ({
-        left: Math.random() * 100,
-        delay: Math.random() * 0.35,
-        dur: 1.7 + Math.random() * 1.3,
-        rot: 240 + Math.random() * 360,
-        color: ["#FFCC02", "#0F172A", "#FFE08A", "#FFFFFF"][i % 4],
-        w: 6 + Math.random() * 6,
-        h: 9 + Math.random() * 9,
-      })),
-    []
-  );
-  return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-30 overflow-hidden">
-      {pieces.map((p, i) => (
-        <span
-          key={i}
-          className="absolute top-[-16px] rounded-[2px] animate-confetti"
-          style={{
-            left: `${p.left}%`,
-            width: p.w,
-            height: p.h,
-            background: p.color,
-            animationDelay: `${p.delay}s`,
-            animationDuration: `${p.dur}s`,
-            ["--rot" as string]: `${p.rot}deg`,
-          } as React.CSSProperties}
-        />
-      ))}
-    </div>
-  );
-}
-
 function TypingDots() {
   return (
     <span aria-hidden="true" className="flex items-end gap-1">
@@ -132,7 +101,24 @@ function TypingDots() {
   );
 }
 
-export function PlayDuel() {
+export type PlayDuelProps = {
+  items?: DuelItem[];
+  mode?: "dish" | "restaurant";
+  myName?: string;
+  opponentName?: string;
+  opponentPickIndex?: number;
+  onBack?: () => void;
+};
+
+export function PlayDuel({
+  items = DEFAULT_ITEMS,
+  mode = "dish",
+  myName = "You",
+  opponentName = "Mint",
+  opponentPickIndex = DEFAULT_OPP_PICK,
+  onBack,
+}: PlayDuelProps = {}) {
+  if (items.length === 0) items = DEFAULT_ITEMS;
   const [stage, setStage] = useState<Stage>("pick");
   const [myDish, setMyDish] = useState<number | null>(0);
   const [myThrow, setMyThrow] = useState<Move | null>(null);
@@ -143,6 +129,9 @@ export function PlayDuel() {
   const [myScore, setMyScore] = useState(0);
   const [mintScore, setMintScore] = useState(0);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const nounPlural = mode === "dish" ? "dishes" : "spots";
+  const oppPick = Math.min(Math.max(opponentPickIndex, 0), items.length - 1);
 
   const clearTimers = () => {
     timers.current.forEach(clearTimeout);
@@ -201,7 +190,8 @@ export function PlayDuel() {
   const matchOver = myScore >= WINS_NEEDED || mintScore >= WINS_NEEDED;
   const roundNum = myScore + mintScore + 1;
   const iWon = myScore >= WINS_NEEDED;
-  const dish = DISHES[iWon ? (myDish ?? 0) : MINT_DISH];
+  const dish = items[iWon ? (myDish ?? 0) : oppPick];
+  const cardHeading = mode === "dish" ? dish.place ?? dish.name : dish.name;
 
   const continueFromReveal = () => {
     if (matchOver) setStage("winner");
@@ -224,32 +214,43 @@ export function PlayDuel() {
       {stage === "pick" && (
         <>
           <div className="pt-14 pb-4 px-6 flex justify-between items-center animate-slide-up">
-            <div className="flex -space-x-3">
-              <div className="toast-avatar z-10">😎</div>
-              <div className="toast-avatar z-0">👩🏻</div>
+            <div className="flex items-center gap-3">
+              {onBack && (
+                <button
+                  onClick={onBack}
+                  data-testid="button-duel-back"
+                  className="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-95 transition-transform"
+                >
+                  <ChevronLeft className="w-5 h-5 text-[#0F172A]" />
+                </button>
+              )}
+              <div className="flex -space-x-3">
+                <div className="toast-avatar z-10">😎</div>
+                <div className="toast-avatar z-0">👩🏻</div>
+              </div>
             </div>
             <div className="flex flex-col items-end">
               <span className="flex items-center gap-1.5 text-[13px] font-bold tracking-widest text-[#FFCC02] uppercase">
                 <Swords className="w-3.5 h-3.5" strokeWidth={2.5} />
                 Duel Time
               </span>
-              <span className="toast-ink font-bold text-lg leading-tight">You vs Mint</span>
+              <span className="toast-ink font-bold text-lg leading-tight">{myName} vs {opponentName}</span>
             </div>
           </div>
 
           <div className="px-6 pt-6 pb-10 flex-1 flex flex-col z-10 animate-slide-up animate-delay-100">
             <div className="mb-7">
               <h1 className="text-3xl font-extrabold toast-ink mb-3 leading-tight">
-                It's a tie! <br />
+                {items.length} matches! <br />
                 Pick your champion.
               </h1>
               <p className="toast-muted text-[15px] leading-relaxed">
-                You and Mint both swiped right on these. Secretly pick the one you want most — best of 3 wins gets their choice!
+                You and {opponentName} kept swiping and matched on these {items.length} {nounPlural}. Secretly pick the one you want most — best of 3 wins picks for the table!
               </p>
             </div>
 
             <div className="space-y-4 flex-1">
-              {DISHES.map((d, i) => {
+              {items.map((d, i) => {
                 const selected = myDish === i;
                 return (
                   <button
@@ -270,7 +271,7 @@ export function PlayDuel() {
                     )}
                     <div className="flex items-center gap-4 relative z-10 min-w-0">
                       <div className="relative w-16 h-16 shrink-0">
-                        <img src={d.restaurant.img} alt={d.name} loading="lazy" className="w-full h-full object-cover rounded-2xl ring-1 ring-black/[0.06]" />
+                        <img src={d.img} alt={d.name} loading="lazy" className="w-full h-full object-cover rounded-2xl ring-1 ring-black/[0.06]" />
                         <span aria-hidden="true" className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-white shadow-[0_2px_6px_rgba(16,24,40,0.18)] flex items-center justify-center text-base">
                           {d.emoji}
                         </span>
@@ -280,9 +281,9 @@ export function PlayDuel() {
                         <p className="toast-muted text-[13px] mb-1.5">{d.sub}</p>
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
                           <Star className="w-3 h-3 fill-current" />
-                          {d.restaurant.rating}
+                          {d.rating}
                           <span className="text-amber-300">·</span>
-                          <span className="text-amber-700/80">{d.restaurant.area}</span>
+                          <span className="text-amber-700/80">{d.area}</span>
                         </span>
                       </div>
                     </div>
@@ -300,7 +301,7 @@ export function PlayDuel() {
 
             <div className="mt-7 flex flex-col items-center">
               <div className="flex items-center gap-2.5 mb-5 bg-white/70 backdrop-blur px-4 py-2 rounded-full border border-[rgba(16,24,40,.05)] shadow-sm">
-                <span className="text-sm font-medium toast-muted">Mint is picking</span>
+                <span className="text-sm font-medium toast-muted">{opponentName} is picking</span>
                 <TypingDots />
               </div>
               <button
@@ -347,13 +348,13 @@ export function PlayDuel() {
                     <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center text-5xl border-2 border-[#FFCC02] shadow-[0_10px_28px_-6px_rgba(255,204,2,0.5)] animate-windup">
                       😎
                     </div>
-                    <span className="bg-[#FFCC02] text-[#0F172A] px-3 py-1 rounded-full font-bold text-xs shadow-sm">You</span>
+                    <span className="bg-[#FFCC02] text-[#0F172A] px-3 py-1 rounded-full font-bold text-xs shadow-sm">{myName}</span>
                   </div>
                   <div className="flex flex-col items-center gap-6">
                     <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center text-5xl border-2 border-white shadow-[0_10px_28px_-6px_rgba(15,23,42,0.25)] animate-windup">
                       👩🏻
                     </div>
-                    <span className="bg-white text-slate-500 px-3 py-1 rounded-full font-bold text-xs shadow-sm">Mint</span>
+                    <span className="bg-white text-slate-500 px-3 py-1 rounded-full font-bold text-xs shadow-sm">{opponentName}</span>
                   </div>
                 </div>
                 <div
@@ -372,7 +373,7 @@ export function PlayDuel() {
                   </div>
                   <div className="bg-white/80 backdrop-blur px-4 py-2 rounded-full border border-[rgba(16,24,40,.06)] shadow-sm flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="toast-ink font-bold text-sm">Mint is ready</span>
+                    <span className="toast-ink font-bold text-sm">{opponentName} is ready</span>
                   </div>
                 </div>
 
@@ -401,7 +402,6 @@ export function PlayDuel() {
       {/* ============ STAGE: REVEAL ============ */}
       {stage === "reveal" && myThrow && mintThrow && result && (
         <>
-          {result === "win" && <Confetti />}
           <div className="absolute inset-0 bg-[#FFCC02]/10 animate-pulse" />
           <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-6">
             <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-full h-[300px] flex items-center justify-center">
@@ -410,11 +410,11 @@ export function PlayDuel() {
                 <span className={`text-[110px] filter drop-shadow-xl transform -rotate-12 ${result === "win" ? "opacity-50 grayscale" : ""}`}>
                   {HAND[mintThrow]}
                 </span>
-                <div className="mt-2 bg-white px-4 py-1.5 rounded-full shadow-sm font-bold text-sm text-slate-500">Mint</div>
+                <div className="mt-2 bg-white px-4 py-1.5 rounded-full shadow-sm font-bold text-sm text-slate-500">{opponentName}</div>
               </div>
               {/* You */}
               <div className="absolute bottom-0 left-10 flex flex-col items-center animate-clash-left">
-                <div className="mb-2 bg-[#FFCC02] px-4 py-1.5 rounded-full shadow-sm font-bold text-sm text-[#0F172A]">You</div>
+                <div className="mb-2 bg-[#FFCC02] px-4 py-1.5 rounded-full shadow-sm font-bold text-sm text-[#0F172A]">{myName}</div>
                 <span className={`text-[130px] filter drop-shadow-[0_10px_40px_rgba(255,204,2,0.4)] transform rotate-12 ${result === "lose" ? "opacity-50 grayscale" : ""}`}>
                   {HAND[myThrow]}
                 </span>
@@ -443,8 +443,8 @@ export function PlayDuel() {
                   ? "TIE!"
                   : matchOver
                   ? result === "win"
-                    ? "YOU WIN! 🎉"
-                    : "MINT WINS!"
+                    ? "YOU WIN!"
+                    : `${opponentName.toUpperCase()} WINS!`
                   : result === "win"
                   ? "ROUND WON"
                   : "ROUND LOST"}
@@ -459,9 +459,9 @@ export function PlayDuel() {
 
               {/* running score */}
               <div className="mt-3 inline-flex items-center gap-3 bg-white/70 px-4 py-1.5 rounded-full border border-[rgba(16,24,40,.05)]">
-                <span className="text-sm font-bold toast-ink">You {myScore}</span>
+                <span className="text-sm font-bold toast-ink">{myName} {myScore}</span>
                 <span className="text-xs text-slate-400">–</span>
-                <span className="text-sm font-bold toast-ink">{mintScore} Mint</span>
+                <span className="text-sm font-bold toast-ink">{mintScore} {opponentName}</span>
               </div>
 
               <button
@@ -479,7 +479,6 @@ export function PlayDuel() {
       {/* ============ STAGE: WINNER ============ */}
       {stage === "winner" && (
         <>
-          <Confetti />
           <div className="absolute top-0 left-0 w-full h-[400px] bg-gradient-to-b from-[#FFCC02]/30 to-transparent pointer-events-none" />
           <div className="pt-14 pb-4 px-6 flex justify-between items-center z-10 relative">
             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
@@ -502,13 +501,13 @@ export function PlayDuel() {
               </div>
               <h1 className="relative text-4xl font-extrabold toast-ink mb-2">{dish.name}!</h1>
               <p className="relative text-slate-500 font-medium text-[16px]">
-                {iWon ? "Your champion takes the crown." : "Mint's champion takes the crown."}
+                {iWon ? "Your champion takes the crown." : `${opponentName}'s champion takes the crown.`}
               </p>
             </div>
 
             <div className="toast-card overflow-hidden flex-1 max-h-[440px] flex flex-col shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)]">
               <div className="relative h-[220px] w-full bg-slate-100">
-                <img src={dish.restaurant.img} alt={`${dish.name} at ${dish.restaurant.name}`} className="w-full h-full object-cover" />
+                <img src={dish.img} alt={`${dish.name} at ${cardHeading}`} className="w-full h-full object-cover" />
                 <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
                   <span className="text-base">{dish.emoji}</span>
                   <span className="font-bold text-xs toast-ink tracking-wide">DINNER SORTED</span>
@@ -516,20 +515,20 @@ export function PlayDuel() {
               </div>
               <div className="p-6 flex-1 flex flex-col">
                 <div className="flex justify-between items-start mb-2">
-                  <h2 className="text-2xl font-bold toast-ink">{dish.restaurant.name}</h2>
+                  <h2 className="text-2xl font-bold toast-ink">{cardHeading}</h2>
                   <div className="flex items-center gap-1 bg-green-50 text-green-700 px-2 py-1 rounded-md">
                     <Star className="w-3.5 h-3.5 fill-current" />
-                    <span className="font-bold text-sm">{dish.restaurant.rating}</span>
+                    <span className="font-bold text-sm">{dish.rating}</span>
                   </div>
                 </div>
-                <p className="text-slate-500 text-sm mb-4">{dish.restaurant.cuisine}</p>
+                <p className="text-slate-500 text-sm mb-4">{dish.cuisine}</p>
                 <div className="flex gap-4 mt-auto">
                   <div className="flex items-center gap-1.5 text-slate-600 text-sm font-medium">
                     <MapPin className="w-4 h-4 text-slate-400" />
-                    {dish.restaurant.area} ({dish.restaurant.dist})
+                    {dish.area} ({dish.dist})
                   </div>
                   <div className="flex items-center gap-1.5 text-slate-600 text-sm font-medium">
-                    <span className="text-slate-400 font-bold">{dish.restaurant.price}</span>
+                    <span className="text-slate-400 font-bold">{dish.price}</span>
                   </div>
                 </div>
               </div>

@@ -106,7 +106,7 @@ function FryBody({
   );
 }
 
-type Dish = {
+export type Dish = {
   id: string;
   name: string;
   cuisine: string;
@@ -115,7 +115,7 @@ type Dish = {
   tint: string;
 };
 
-type Player = {
+export type Player = {
   id: string;
   name: string;
   initial: string;
@@ -185,7 +185,18 @@ function makeFries(): Fry[] {
 
 type Phase = "choosing" | "revealing" | "done";
 
-export default function FryPull() {
+export type FryPullProps = {
+  players?: Player[];
+  mode?: "dish" | "restaurant";
+  onBack?: () => void;
+};
+
+export default function FryPull({
+  players = PLAYERS,
+  mode = "dish",
+  onBack,
+}: FryPullProps = {}) {
+  const noun = mode === "dish" ? "dish" : "spot";
   const [phase, setPhase] = useState<Phase>("choosing");
   const [fries, setFries] = useState<Fry[]>(() => makeFries());
   const [assign, setAssign] = useState<Record<string, string>>({}); // playerId -> fryId
@@ -207,17 +218,18 @@ export default function FryPull() {
     if (phase !== "choosing") return;
     clearTimers();
 
-    // You take the tapped fry; opponents grab from what's left.
+    // You take the tapped fry; the rest grab from what's left.
+    const human = players.find((p) => !p.auto) ?? players[0];
+    const others = players.filter((p) => p.id !== human.id);
     const remaining = fries.filter((f) => f.id !== fryId).map((f) => f.id);
     for (let i = remaining.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
     }
-    const nextAssign: Record<string, string> = {
-      you: fryId,
-      mint: remaining[0],
-      boss: remaining[1],
-    };
+    const nextAssign: Record<string, string> = { [human.id]: fryId };
+    others.forEach((p, idx) => {
+      nextAssign[p.id] = remaining[idx];
+    });
     setAssign(nextAssign);
     setRevealed({});
     setWinner(null);
@@ -225,7 +237,7 @@ export default function FryPull() {
     setPhase("revealing");
 
     // Staggered "pull" of each fry to its true length.
-    const order = ["you", "mint", "boss"];
+    const order = [human.id, ...others.map((p) => p.id)];
     order.forEach((pid, i) => {
       timers.current.push(
         setTimeout(() => setRevealed((prev) => ({ ...prev, [pid]: true })), 280 + i * 700),
@@ -256,8 +268,18 @@ export default function FryPull() {
     setPhase("choosing");
   };
 
-  const winnerPlayer = winner ? PLAYERS.find((p) => p.id === winner)! : null;
+  const winnerPlayer = winner ? players.find((p) => p.id === winner)! : null;
   const winnerFry = winner ? fryById(assign[winner]) : undefined;
+
+  const humanPlayer = players.find((p) => !p.auto) ?? players[0];
+  const otherNames = players.filter((p) => p.id !== humanPlayer.id).map((p) => p.name);
+  const othersText =
+    otherNames.length <= 1
+      ? otherNames[0] ?? ""
+      : `${otherNames.slice(0, -1).join(", ")} & ${otherNames[otherNames.length - 1]}`;
+  const cartonCaption = `${fries.length} fries in the box · ${humanPlayer.name} pick${
+    humanPlayer.name === "You" ? "" : "s"
+  } one${othersText ? `, ${othersText} grab${otherNames.length === 1 ? "s" : ""} the rest` : ""}`;
 
   return (
     <div
@@ -267,6 +289,7 @@ export default function FryPull() {
       <header className="flex items-center justify-between px-6 pt-14 pb-2 z-10">
         <button
           data-testid="button-back"
+          onClick={onBack}
           className="w-10 h-10 rounded-full bg-white flex items-center justify-center border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.04)] active:scale-95 transition-transform"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -288,7 +311,7 @@ export default function FryPull() {
       </header>
 
       {phase === "done" && winnerPlayer && winnerFry ? (
-        <WinnerView winnerPlayer={winnerPlayer} cm={cm(winnerFry.trueLen)} />
+        <WinnerView winnerPlayer={winnerPlayer} cm={cm(winnerFry.trueLen)} noun={noun} />
       ) : (
         <main className="flex-1 px-6 pb-36 pt-2 flex flex-col">
           <div className="text-center mb-4">
@@ -310,7 +333,7 @@ export default function FryPull() {
           </div>
 
           {phase === "choosing" ? (
-            <FriesCarton fries={fries} onPick={pickFry} />
+            <FriesCarton fries={fries} onPick={pickFry} caption={cartonCaption} />
           ) : (
             <RevealLane
               fries={fries}
@@ -318,6 +341,7 @@ export default function FryPull() {
               revealed={revealed}
               winner={winner}
               cm={cm}
+              players={players}
             />
           )}
         </main>
@@ -374,7 +398,7 @@ export default function FryPull() {
   );
 }
 
-function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => void }) {
+function FriesCarton({ fries, onPick, caption }: { fries: Fry[]; onPick: (id: string) => void; caption: string }) {
   const BOX_W = 236;
   const RIM = 156; // px from container bottom where the carton mouth sits
   const INSIDE = 46; // how far fry bottoms sit below the rim (masked by carton)
@@ -530,7 +554,7 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
         </div>
       </div>
       <p className="text-[13px] font-semibold mt-3 text-center" style={{ color: MUTE }}>
-        {fries.length} fries in the box · You pick one, Mint &amp; Boss grab the rest
+        {caption}
       </p>
     </div>
   );
@@ -542,12 +566,14 @@ function RevealLane({
   revealed,
   winner,
   cm,
+  players,
 }: {
   fries: Fry[];
   assign: Record<string, string>;
   revealed: Record<string, boolean>;
   winner: string | null;
   cm: (v: number) => string;
+  players: Player[];
 }) {
   const fryById = (id: string) => fries.find((f) => f.id === id);
   return (
@@ -560,8 +586,11 @@ function RevealLane({
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-2 items-start">
-        {PLAYERS.map((p) => {
+      <div
+        className="grid gap-2 items-start"
+        style={{ gridTemplateColumns: `repeat(${players.length}, minmax(0,1fr))` }}
+      >
+        {players.map((p) => {
           const fry = fryById(assign[p.id]);
           const isShown = !!revealed[p.id];
           const isWin = winner === p.id;
@@ -572,7 +601,7 @@ function RevealLane({
               <div className="flex flex-col items-center gap-1 mb-2 h-[52px] justify-start">
                 <span
                   className="w-7 h-7 rounded-full flex items-center justify-center font-['Plus_Jakarta_Sans'] text-[12px] font-bold relative"
-                  style={{ backgroundColor: isWin ? GOLD : p.id === "you" ? GOLD : "#F0EDE6", color: INK }}
+                  style={{ backgroundColor: isWin ? GOLD : !p.auto ? GOLD : "#F0EDE6", color: INK }}
                 >
                   {p.initial}
                   {isWin && (
@@ -633,7 +662,7 @@ function RevealLane({
   );
 }
 
-function WinnerView({ winnerPlayer, cm }: { winnerPlayer: Player; cm: string }) {
+function WinnerView({ winnerPlayer, cm, noun }: { winnerPlayer: Player; cm: string; noun: string }) {
   const dish = winnerPlayer.dish;
   const isYou = winnerPlayer.id === "you";
   return (
@@ -649,7 +678,7 @@ function WinnerView({ winnerPlayer, cm }: { winnerPlayer: Player; cm: string }) 
         {isYou ? "You" : winnerPlayer.name} got the longest
       </h1>
       <p className="text-[15px] mt-3 leading-relaxed mb-8 max-w-[300px]" style={{ color: "rgba(26,26,26,0.6)" }}>
-        A {cm} cm monster fry. {isYou ? "Your" : `${winnerPlayer.name}'s`} craving locks in the group pick.
+        A {cm} cm monster fry. {isYou ? "Your" : `${winnerPlayer.name}'s`} {noun} locks in for the group.
       </p>
 
       <div
@@ -679,7 +708,7 @@ function WinnerView({ winnerPlayer, cm }: { winnerPlayer: Player; cm: string }) 
               {winnerPlayer.initial}
             </span>
             <span className="text-[14px] font-medium" style={{ color: MUTE }}>
-              {winnerPlayer.name}'s craving wins
+              {winnerPlayer.name}'s pick wins
             </span>
           </div>
         </div>
