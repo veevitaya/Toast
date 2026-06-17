@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { ArrowLeft, Check, Lock, Crown, Soup, Utensils, Flame, RotateCcw, Hand } from "lucide-react";
 
 const GOLD = "#FFCC02";
@@ -8,8 +8,27 @@ const MUTE = "#9A938A";
 const LINE = "#06C755";
 const FRY = "#F2B340";
 const FRY_DEEP = "#D9942A";
-const MC_RED = "#DA291C";
-const MC_YELLOW = "#FFC72C";
+
+// Coral fry-carton palette (matches the classic takeaway box look)
+const BOX_HI = "#F4633C";
+const BOX_MID = "#E8472C";
+const BOX_LO = "#C5391F";
+const BOX_BACK = "#B7331C";
+
+// hex → rgb lerp for per-fry colour variety
+function mix(a: string, b: string, t: number) {
+  const pa = [parseInt(a.slice(1, 3), 16), parseInt(a.slice(3, 5), 16), parseInt(a.slice(5, 7), 16)];
+  const pb = [parseInt(b.slice(1, 3), 16), parseInt(b.slice(3, 5), 16), parseInt(b.slice(5, 7), 16)];
+  const c = pa.map((v, i) => Math.round(v + (pb[i] - v) * t));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+// fry body gradient by browning tone (0 = pale, 1 = deep golden)
+function fryFill(tone: number) {
+  const top = mix("#FCE9B0", "#EBC069", tone);
+  const mid = mix("#F4CB6E", "#D89B37", tone);
+  const bot = mix("#DDA546", "#A86A1B", tone);
+  return `linear-gradient(180deg, ${top} 0%, ${mid} 46%, ${bot} 100%)`;
+}
 
 type Dish = {
   id: string;
@@ -58,7 +77,9 @@ type Fry = {
   id: string;
   poke: number; // 0..1 — how far it sticks out of the box (cosmetic only)
   trueLen: number; // 0..1 — actual hidden length, revealed when pulled
-  lean: number; // px tilt for a natural look
+  lean: number; // deg tilt for a natural fanned look
+  w: number; // px width — varied for realism
+  tone: number; // 0..1 browning — varied golden colour
 };
 
 // cm shown to the user for a given true length (single source of truth).
@@ -72,11 +93,15 @@ function makeFries(): Fry[] {
     trueLens = Array.from({ length: FRY_COUNT }, () => 0.28 + Math.random() * 0.72);
   } while (new Set(trueLens.map((v) => Math.round(lenToCm(v) * 10))).size !== FRY_COUNT);
 
+  const center = (FRY_COUNT - 1) / 2;
   return Array.from({ length: FRY_COUNT }, (_, i) => ({
     id: `f${i}`,
-    poke: 0.3 + Math.random() * 0.7,
+    poke: 0.18 + Math.random() * 0.82,
     trueLen: trueLens[i],
-    lean: Math.round((Math.random() - 0.5) * 10),
+    // outer fries splay outward (bouquet fan), with a touch of jitter
+    lean: Math.round(((i - center) / center) * 15 + (Math.random() - 0.5) * 7),
+    w: 8 + Math.round(Math.random() * 3), // 8..11px
+    tone: Math.random(), // pale → deep golden
   }));
 }
 
@@ -273,20 +298,70 @@ export default function FryPull() {
 
 function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => void }) {
   const BOX_W = 236;
-  const BOX_H = 156;
   const RIM = 156; // px from container bottom where the carton mouth sits
   const INSIDE = 46; // how far fry bottoms sit below the rim (masked by carton)
+
+  // Decorative back layer — purely cosmetic, fills gaps so the box reads as a packed pile.
+  const filler = useMemo(() => {
+    const N = 18;
+    const c = (N - 1) / 2;
+    return Array.from({ length: N }, (_, i) => ({
+      id: `bf${i}`,
+      poke: 0.08 + Math.random() * 0.62,
+      lean: Math.round(((i - c) / c) * 17 + (Math.random() - 0.5) * 9),
+      w: 8 + Math.round(Math.random() * 3),
+      tone: 0.25 + Math.random() * 0.55,
+    }));
+  }, []);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center pb-4">
       <div className="relative" style={{ width: 304, height: 336 }}>
-        {/* Fries (clickable) poking out of the carton */}
+        {/* dark interior peeking up behind the fries */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 flex items-end justify-center gap-[1px] z-10"
-          style={{ bottom: RIM - INSIDE, width: BOX_W - 26 }}
+          className="absolute left-1/2 -translate-x-1/2 z-0"
+          style={{
+            bottom: 122,
+            width: BOX_W - 44,
+            height: 66,
+            borderRadius: "44% 44% 0 0 / 34px 34px 0 0",
+            background: `linear-gradient(180deg, ${BOX_BACK} 0%, ${BOX_LO} 100%)`,
+          }}
+        />
+
+        {/* Decorative back fries (non-interactive) — adds density behind the pickable ones */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 flex items-end justify-center z-[5] pointer-events-none"
+          style={{ bottom: RIM - INSIDE, width: BOX_W - 6, filter: "brightness(0.84) saturate(0.95)" }}
         >
-          {fries.map((f) => {
-            const total = INSIDE + 36 + f.poke * 104; // bottom (hidden) + visible poke
+          {filler.map((f, i) => {
+            const total = INSIDE + 22 + f.poke * 110;
+            return (
+              <div
+                key={f.id}
+                style={{
+                  width: f.w,
+                  height: total,
+                  marginLeft: i === 0 ? 0 : -3,
+                  transformOrigin: "bottom center",
+                  transform: `rotate(${f.lean}deg)`,
+                  borderRadius: f.w,
+                  background: fryFill(f.tone),
+                  boxShadow: "inset -2px 0 3px rgba(120,70,10,0.30)",
+                }}
+              />
+            );
+          })}
+        </div>
+
+        {/* Fries (clickable) fanning out of the carton */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 flex items-end justify-center z-10"
+          style={{ bottom: RIM - INSIDE, width: BOX_W - 18 }}
+        >
+          {fries.map((f, i) => {
+            const total = INSIDE + 30 + f.poke * 120; // bottom (hidden) + visible poke
+            const browned = f.tone > 0.55;
             return (
               <button
                 key={f.id}
@@ -294,24 +369,37 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
                 onClick={() => onPick(f.id)}
                 aria-label="Pull this fry"
                 className="group relative outline-none"
-                style={{ width: 8, height: total, transformOrigin: "bottom center", transform: `rotate(${f.lean}deg)` }}
+                style={{
+                  width: f.w,
+                  height: total,
+                  marginLeft: i === 0 ? 0 : -2,
+                  transformOrigin: "bottom center",
+                  transform: `rotate(${f.lean}deg)`,
+                  zIndex: i % 2 === 0 ? 11 : 10,
+                }}
               >
                 <span
-                  className="absolute inset-0 block transition-transform duration-200 group-hover:-translate-y-2 group-active:-translate-y-1"
+                  className="absolute inset-0 block transition-transform duration-200 group-hover:-translate-y-2.5 group-active:-translate-y-1"
                   style={{
-                    borderRadius: 9,
-                    background: `linear-gradient(180deg, #FAD27A 0%, ${FRY} 42%, ${FRY_DEEP} 100%)`,
-                    boxShadow: "inset -2px 0 3px rgba(150,90,15,0.28), inset 2px 0 4px rgba(255,240,200,0.5)",
+                    borderRadius: f.w,
+                    background: fryFill(f.tone),
+                    boxShadow:
+                      "inset -2px 0 3px rgba(150,90,15,0.30), inset 2px 0 4px rgba(255,243,205,0.55), 0 1px 2px rgba(120,70,10,0.20)",
                   }}
                 >
-                  {/* highlight + crisp top */}
+                  {/* highlight stripe */}
                   <span
-                    className="absolute left-[3px] top-2 bottom-3 w-[3px] rounded-full"
-                    style={{ background: "rgba(255,247,224,0.6)" }}
+                    className="absolute top-2 bottom-3 rounded-full"
+                    style={{ left: 2.5, width: 2.5, background: "rgba(255,248,225,0.6)" }}
                   />
+                  {/* crisp / browned tip */}
                   <span
-                    className="absolute inset-x-0 top-0 h-[6px]"
-                    style={{ borderRadius: "9px 9px 3px 3px", background: "#FBDD96" }}
+                    className="absolute inset-x-0 top-0"
+                    style={{
+                      height: 7,
+                      borderRadius: `${f.w}px ${f.w}px 3px 3px`,
+                      background: browned ? mix("#E7B45A", "#A4661A", f.tone) : "#FBDD96",
+                    }}
                   />
                 </span>
               </button>
@@ -319,60 +407,52 @@ function FriesCarton({ fries, onPick }: { fries: Fry[]; onPick: (id: string) => 
           })}
         </div>
 
-        {/* McDonald's carton (drawn above fry bottoms to mask them) */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20" style={{ width: BOX_W, height: BOX_H }}>
-          {/* back lip of the carton mouth */}
-          <div
-            className="absolute left-1/2 -translate-x-1/2"
-            style={{
-              top: -9,
-              width: BOX_W - 6,
-              height: 18,
-              borderRadius: 4,
-              background: "#B81910",
-              clipPath: "polygon(2% 0, 98% 0, 94% 100%, 6% 100%)",
-            }}
-          />
-          {/* body */}
-          <div
-            className="absolute inset-0"
-            style={{
-              clipPath: "polygon(0 0, 100% 0, 88% 100%, 12% 100%)",
-              background: `linear-gradient(180deg, #E2231A 0%, ${MC_RED} 55%, #B81910 100%)`,
-              boxShadow: "0 18px 30px -14px rgba(176,25,15,0.55)",
-            }}
+        {/* Coral fry carton (drawn above fry bottoms to mask them) */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 z-20"
+          style={{ bottom: 0, width: BOX_W, height: 174 }}
+        >
+          <svg
+            viewBox="0 0 236 174"
+            preserveAspectRatio="none"
+            className="w-full h-full"
+            style={{ filter: "drop-shadow(0 16px 24px rgba(160,40,20,0.40))", overflow: "visible" }}
           >
-            {/* soft side shading */}
-            <div
-              className="absolute inset-y-0 right-0 w-1/3"
-              style={{ background: "linear-gradient(90deg, rgba(0,0,0,0), rgba(0,0,0,0.16))" }}
+            <defs>
+              <linearGradient id="fpBoxBody" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={BOX_HI} />
+                <stop offset="52%" stopColor={BOX_MID} />
+                <stop offset="100%" stopColor={BOX_LO} />
+              </linearGradient>
+              <clipPath id="fpBoxClip">
+                <path d="M40 172 L16 22 Q16 14 26 14 C74 44 162 44 210 14 Q220 14 220 22 L196 172 Q118 180 40 172 Z" />
+              </clipPath>
+            </defs>
+            {/* front face */}
+            <path
+              d="M40 172 L16 22 Q16 14 26 14 C74 44 162 44 210 14 Q220 14 220 22 L196 172 Q118 180 40 172 Z"
+              fill="url(#fpBoxBody)"
             />
-            <div
-              className="absolute inset-y-0 left-0 w-1/4"
-              style={{ background: "linear-gradient(90deg, rgba(255,255,255,0.12), rgba(255,255,255,0))" }}
-            />
-            {/* Toast "T" mark */}
-            <div className="absolute left-1/2 -translate-x-1/2" style={{ top: "33%", width: 78 }}>
-              <ToastMark />
-            </div>
-          </div>
+            <g clipPath="url(#fpBoxClip)">
+              {/* left highlight */}
+              <rect x="0" y="0" width="62" height="174" fill="rgba(255,255,255,0.10)" />
+              {/* right shadow for roundness */}
+              <rect x="176" y="0" width="60" height="174" fill="rgba(0,0,0,0.16)" />
+              {/* soft center fold sheen */}
+              <rect x="112" y="0" width="12" height="174" fill="rgba(255,255,255,0.05)" />
+              {/* inner shadow where fries meet the box */}
+              <path
+                d="M16 16 C74 46 162 46 220 16 L220 42 C162 72 74 72 16 42 Z"
+                fill="rgba(120,30,15,0.30)"
+              />
+            </g>
+          </svg>
         </div>
       </div>
       <p className="text-[13px] font-semibold mt-3 text-center" style={{ color: MUTE }}>
         {fries.length} fries in the box · You pick one, Mint &amp; Boss grab the rest
       </p>
     </div>
-  );
-}
-
-function ToastMark() {
-  return (
-    <svg viewBox="0 0 100 96" className="w-full h-auto" style={{ filter: "drop-shadow(0 2px 1px rgba(120,10,5,0.35))" }}>
-      <g fill={MC_YELLOW}>
-        <rect x="8" y="8" width="84" height="25" rx="10" />
-        <rect x="37.5" y="27" width="25" height="61" rx="10" />
-      </g>
-    </svg>
   );
 }
 
