@@ -197,10 +197,10 @@ export function DuelView({
           />
           <div className="flex-1 flex flex-col items-center justify-center px-6 -mt-6">
             <div className="flex items-center justify-center gap-12 h-[180px] mb-8">
-              <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center text-5xl border-2 border-[#FFCC02] shadow-[0_10px_28px_-6px_rgba(255,204,2,0.5)] animate-windup overflow-hidden">
+              <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center text-5xl border-2 border-[#FFCC02] shadow-[0_10px_28px_-6px_rgba(255,204,2,0.5)] animate-windup-left overflow-hidden">
                 <Avatar pic={myPic} name="You" className="w-full h-full rounded-full" />
               </div>
-              <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center text-5xl border-2 border-white shadow-[0_10px_28px_-6px_rgba(15,23,42,0.25)] animate-windup overflow-hidden">
+              <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center text-5xl border-2 border-white shadow-[0_10px_28px_-6px_rgba(15,23,42,0.25)] animate-windup-right overflow-hidden">
                 <Avatar pic={oppPic} name={oppName} className="w-full h-full rounded-full" />
               </div>
             </div>
