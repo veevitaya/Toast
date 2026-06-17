@@ -35,39 +35,86 @@ function FryBody({
   tone,
   lean,
   dim,
+  seed = 0,
 }: {
   len: number;
   w: number;
   tone: number;
   lean: number;
   dim?: boolean;
+  seed?: number;
 }) {
-  const h = 34 + len * 168;
-  const light = `hsl(${mix(46, 38, tone)}, ${mix(88, 72, tone)}%, ${mix(72, 60, tone)}%)`;
-  const dark = `hsl(${mix(40, 30, tone)}, ${mix(82, 66, tone)}%, ${mix(56, 44, tone)}%)`;
+  const h = Math.round(30 + len * 188);
+  const width = Math.round(Math.max(w + 5, 17));
+  const depth = Math.max(4, Math.min(7, Math.round(width * 0.34)));
+  // Appetizing golden palette; tone 0 = pale golden, tone 1 = deep crispy.
+  const faceTop = `hsl(${mix(47, 37, tone).toFixed(0)} ${mix(95, 82, tone).toFixed(0)}% ${mix(77, 63, tone).toFixed(0)}%)`;
+  const faceMid = `hsl(${mix(43, 33, tone).toFixed(0)} ${mix(90, 78, tone).toFixed(0)}% ${mix(66, 52, tone).toFixed(0)}%)`;
+  const faceBot = `hsl(${mix(39, 28, tone).toFixed(0)} ${mix(84, 72, tone).toFixed(0)}% ${mix(55, 41, tone).toFixed(0)}%)`;
+  const sideC = `hsl(${mix(34, 24, tone).toFixed(0)} ${mix(80, 66, tone).toFixed(0)}% ${mix(45, 32, tone).toFixed(0)}%)`;
+  const tipC = `hsl(${mix(30, 20, tone).toFixed(0)} ${mix(74, 60, tone).toFixed(0)}% ${mix(41, 27, tone).toFixed(0)}%)`;
+  // Deterministic salt flecks from the fry's seed.
+  const rnd = (n: number) => {
+    const x = Math.sin((seed + 1) * 12.9898 + n * 78.233) * 43758.5453;
+    return x - Math.floor(x);
+  };
+  const so = dim ? 0 : 0.6;
+  const salt =
+    `radial-gradient(circle at ${(20 + rnd(1) * 58).toFixed(0)}% ${(18 + rnd(2) * 26).toFixed(0)}%, rgba(255,255,255,${so}) 0 1px, transparent 1.7px),` +
+    `radial-gradient(circle at ${(26 + rnd(3) * 52).toFixed(0)}% ${(46 + rnd(4) * 22).toFixed(0)}%, rgba(255,251,238,${(so * 0.9).toFixed(2)}) 0 0.9px, transparent 1.5px),` +
+    `radial-gradient(circle at ${(30 + rnd(5) * 48).toFixed(0)}% ${(72 + rnd(6) * 18).toFixed(0)}%, rgba(255,255,255,${(so * 0.8).toFixed(2)}) 0 0.8px, transparent 1.4px)`;
+  const tipH = Math.min(22, Math.max(9, Math.round(h * 0.15)));
   return (
     <div
       style={{
-        width: w,
+        width: width + depth,
         height: h,
         transform: `rotate(${lean}deg)`,
         transformOrigin: "bottom center",
-        opacity: dim ? 0.45 : 1,
+        opacity: dim ? 0.5 : 1,
+        filter: dim ? "saturate(0.55)" : "none",
         transition: "height 0.7s cubic-bezier(0.16,1,0.3,1)",
       }}
       className="relative"
     >
+      {/* right side face → reads as 3D thickness */}
       <div
-        className="absolute inset-0 rounded-t-[5px] rounded-b-[3px]"
+        className="absolute"
         style={{
-          background: `linear-gradient(180deg, ${light}, ${dark})`,
-          boxShadow: "inset 0 -6px 9px rgba(0,0,0,0.16), inset 2px 0 3px rgba(255,255,255,0.25), 0 2px 3px rgba(0,0,0,0.08)",
+          left: width - 1,
+          top: 3,
+          width: depth + 1,
+          height: h - 3,
+          background: `linear-gradient(180deg, ${sideC}, hsl(27 58% 25%))`,
+          borderRadius: "0 4px 2px 0",
+          boxShadow: "inset -1px 0 2px rgba(0,0,0,0.28)",
         }}
       />
+      {/* front face */}
       <div
-        className="absolute left-1/2 top-1 bottom-2 w-[1.5px] -translate-x-1/2 rounded-full"
-        style={{ background: "rgba(255,255,255,0.28)" }}
-      />
+        className="absolute overflow-hidden"
+        style={{
+          left: 0,
+          top: 0,
+          width,
+          height: h,
+          borderRadius: "5px 5px 3px 3px",
+          backgroundImage: `${salt}, linear-gradient(180deg, ${faceTop} 0%, ${faceMid} 45%, ${faceBot} 100%)`,
+          boxShadow:
+            "inset -3px 0 5px rgba(120,60,0,0.3), inset 3px 0 4px rgba(255,255,255,0.42), inset 0 -7px 9px rgba(90,45,0,0.22), 0 2px 4px rgba(0,0,0,0.12)",
+        }}
+      >
+        {/* crispy browned tip */}
+        <div
+          className="absolute inset-x-0 top-0"
+          style={{ height: tipH, background: `linear-gradient(180deg, ${tipC}, transparent)`, opacity: 0.92 }}
+        />
+        {/* soft sheen */}
+        <div
+          className="absolute top-2 bottom-2"
+          style={{ left: Math.max(2, Math.round(width * 0.24)), width: 1.5, background: "rgba(255,255,255,0.5)", borderRadius: 2 }}
+        />
+      </div>
     </div>
   );
 }
@@ -82,9 +129,36 @@ function Carton({
   disabled: boolean;
 }) {
   const center = (carton.length - 1) / 2;
+  const overlap = 12;
   return (
     <div className="relative w-full mx-auto" style={{ height: 300, maxWidth: 360 }}>
-      <div className="absolute left-0 right-0 flex justify-center items-end gap-[2px] px-7" style={{ bottom: 86 }}>
+      {/* soft ground shadow */}
+      <div
+        className="absolute left-1/2 -translate-x-1/2"
+        style={{
+          bottom: -4,
+          width: "60%",
+          height: 22,
+          borderRadius: "50%",
+          background: "radial-gradient(ellipse at center, rgba(16,24,40,0.26), transparent 70%)",
+          filter: "blur(2px)",
+        }}
+      />
+      {/* carton interior back wall (fries emerge from inside it) */}
+      <div
+        className="absolute left-1/2 -translate-x-1/2"
+        style={{
+          bottom: 66,
+          width: "68%",
+          height: 66,
+          background: "linear-gradient(180deg, #8d1c26 0%, #b3222d 100%)",
+          borderRadius: "18px 18px 6px 6px",
+          boxShadow: "inset 0 7px 11px rgba(0,0,0,0.32)",
+          zIndex: 1,
+        }}
+      />
+      {/* the bunch of fries */}
+      <div className="absolute left-0 right-0 flex justify-center items-end px-8" style={{ bottom: 60, zIndex: 10 }}>
         {carton.map((f, i) => (
           <button
             key={f.id}
@@ -92,26 +166,51 @@ function Carton({
             onClick={() => onPick(f.id)}
             data-testid={`button-fry-${f.id}`}
             className="relative group disabled:cursor-default"
-            style={{ zIndex: 40 - Math.round(Math.abs(i - center)) }}
+            style={{ marginLeft: i === 0 ? 0 : -overlap, zIndex: 40 - Math.round(Math.abs(i - center)) }}
           >
-            <div className="transition-transform duration-200 group-active:-translate-y-2 group-hover:-translate-y-3">
-              <FryBody len={f.poke} w={f.w} tone={f.tone} lean={f.lean} />
+            <div className="transition-transform duration-200 group-active:-translate-y-2 group-hover:-translate-y-3 group-focus-visible:-translate-y-3">
+              <FryBody len={f.poke} w={f.w} tone={f.tone} lean={f.lean} seed={f.seed} />
             </div>
           </button>
         ))}
       </div>
-      {/* carton */}
+      {/* carton front panel — occludes the fry bottoms so they sit inside */}
       <div
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[82%] h-[112px] rounded-b-[10px] rounded-t-[5px] overflow-hidden"
+        className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
         style={{
-          background:
-            "repeating-linear-gradient(90deg, #E23744 0 14px, #ffffff 14px 28px)",
-          boxShadow: "0 14px 30px -10px rgba(226,55,68,0.45), inset 0 3px 6px rgba(255,255,255,0.4)",
+          bottom: 0,
+          width: "82%",
+          height: 130,
+          zIndex: 30,
+          clipPath: "polygon(3% 0, 97% 0, 88% 100%, 12% 100%)",
+          filter: "drop-shadow(0 16px 22px rgba(226,55,68,0.4))",
         }}
       >
-        <div className="absolute inset-x-0 top-0 h-[26px] bg-white/85" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="font-black tracking-[0.25em] text-[#E23744] text-lg drop-shadow-sm">TOAST</span>
+        <div className="absolute inset-0 bg-white" />
+        {/* red stripes */}
+        <div
+          className="absolute inset-0"
+          style={{ backgroundImage: "repeating-linear-gradient(90deg, #E23744 0 13px, #ffffff 13px 26px)", opacity: 0.96 }}
+        />
+        {/* top rim */}
+        <div className="absolute inset-x-0 top-0 h-[26px] bg-white shadow-[0_2px_3px_rgba(0,0,0,0.08)]" />
+        {/* side shading for fold/3D */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(90deg, rgba(0,0,0,0.16) 0%, transparent 18%, transparent 82%, rgba(0,0,0,0.18) 100%)" }}
+        />
+        {/* gloss */}
+        <div
+          className="absolute inset-x-0 top-0"
+          style={{ height: "48%", background: "linear-gradient(180deg, rgba(255,255,255,0.4), transparent)" }}
+        />
+        {/* center fold crease */}
+        <div className="absolute top-[26px] bottom-0 left-1/2 -translate-x-1/2 w-px" style={{ background: "rgba(0,0,0,0.08)" }} />
+        {/* wordmark on a clean label */}
+        <div className="absolute inset-x-0 flex justify-center" style={{ top: 40 }}>
+          <div className="bg-white rounded-full px-3 py-[3px] shadow-[0_1px_3px_rgba(0,0,0,0.12)]">
+            <span className="font-black tracking-[0.22em] text-[#E23744] text-[15px]">TOAST</span>
+          </div>
         </div>
       </div>
     </div>
