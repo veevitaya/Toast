@@ -3,6 +3,7 @@
 - [Group session host identity](group-session-host-identity.md) — host-only actions 403 unless session host id == browser guest id; don't block waiting-room member load on geolocation.
 - [Group-swipe real-time polling](group-swipe-realtime-polling.md) — keep match polling on the unlimited /matches endpoint (session lookup is rate-limited); render guard must yield to match overlay for a waiting user.
 - [Canvas callback gotchas](canvas-callback-gotchas.md) — update uses `updates`+`shapeType`; presentArtifact needs an existing `artifactId` (e.g. "artifacts/mockup-sandbox"); getCanvasState is viewport-scoped.
+- [Toast dev e2e verification](toast-dev-e2e-verification.md) — runTest always over-budgets (Vite optimizer churn in fresh browser); verify flows via app_preview screenshots + localhost API fetch.
 - [Capturing member-gated screens](screenshot-capture-constraints.md) — app_preview inherits preview's own identity (Session Unavailable); runTest only returns screenshots on failure. Need a controlled browser to export images.
 - [Group tie-breaker trigger gating](group-tiebreaker-trigger.md) — "Can't decide?" button must stay gated on !sessionEnded or non-initiators silently won't join (poll skips after end).
 - [Visual self-verify via sandbox](visual-self-verify-via-sandbox.md) — runTest returns no screenshots; to SEE a component, render it self-contained in the mockup sandbox and screenshot its preview URL.

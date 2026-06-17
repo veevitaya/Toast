@@ -19,7 +19,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://static.line-scdn.net", "https://liff.line.me"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       imgSrc: ["'self'", "data:", "blob:", "https:", "http:"],
-      connectSrc: ["'self'", "https://api.line.me", "https://liff.line.me", "https://api.unsplash.com", "https://maps.googleapis.com", "wss:", "ws:"],
+      connectSrc: ["'self'", "https://api.line.me", "https://liff.line.me", "https://liffsdk.line-scdn.net", "https://static.line-scdn.net", "https://api.unsplash.com", "https://maps.googleapis.com", "https://api.open-meteo.com", "wss:", "ws:"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
       frameSrc: ["'self'", "https://liff.line.me"],
       frameAncestors: ["'self'", "https://liff.line.me", "https://access.line.me"],
