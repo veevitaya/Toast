@@ -466,6 +466,8 @@
     "view_restaurant": "View Restaurant",
     "top_picks": "Top Picks",
     "keep_swiping": "Keep Swiping",
+    "cant_decide": "Can't decide?",
+    "cant_decide_sub": "Play a quick game to settle it",
     "restaurants_with": "Restaurants with {{name}}",
     "places_found": "{{count}} places found",
     "finding_restaurants": "Finding restaurants...",

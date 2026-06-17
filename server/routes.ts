@@ -4328,8 +4328,9 @@ export async function registerRoutes(
 
       const session = await storage.getGroupSession(code);
       if (!session) return res.status(404).json({ message: "Session not found" });
-      if (session.hostLineUserId !== input.lineUserId) {
-        return res.status(403).json({ message: "Only the host can start the tie-breaker" });
+      const members = await storage.getGroupMembers(code);
+      if (!members.some((m) => m.lineUserId === input.lineUserId)) {
+        return res.status(403).json({ message: "Only a session member can start the tie-breaker" });
       }
 
       const existing = await storage.getTieBreaker(code);
@@ -4341,7 +4342,6 @@ export async function registerRoutes(
       if (matches.length <= 1) {
         return res.status(400).json({ message: "Need more than one match to start a tie-breaker", matchCount: matches.length });
       }
-      const members = await storage.getGroupMembers(code);
       const participantIds = members.map((m) => m.lineUserId);
       if (participantIds.length < 2) {
         return res.status(400).json({ message: "Need at least two members for a tie-breaker" });

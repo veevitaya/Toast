@@ -2,6 +2,7 @@
 - [Mockup preview screenshot cache](mockup-preview-screenshot-cache.md) — /__mockup preview screenshots cache by URL + blank lazy-compile race; warm route, add ?cb=N, retry once.
 - [Group session host identity](group-session-host-identity.md) — host-only actions 403 unless session host id == browser guest id; don't block waiting-room member load on geolocation.
 - [Canvas callback gotchas](canvas-callback-gotchas.md) — update uses `updates`+`shapeType`; presentArtifact needs an existing `artifactId` (e.g. "artifacts/mockup-sandbox"); getCanvasState is viewport-scoped.
+- [Group tie-breaker trigger gating](group-tiebreaker-trigger.md) — "Can't decide?" button must stay gated on !sessionEnded or non-initiators silently won't join (poll skips after end).
 - [Visual self-verify via sandbox](visual-self-verify-via-sandbox.md) — runTest returns no screenshots; to SEE a component, render it self-contained in the mockup sandbox and screenshot its preview URL.
 - [Group swipe id collision](group-swipe-id-collision.md) — group_swipes.menuItemId holds BOTH dish & restaurant ids; key any grouping by `${swipeType}:${id}`, never raw id.
 - [Polled turn-game guards](polled-turn-game-guards.md) — tie-breaker submissions are single-UPDATE WHERE-guarded (idempotent); include round count so delayed dupes can't cross rounds.

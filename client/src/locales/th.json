@@ -466,6 +466,8 @@
     "view_restaurant": "ดูร้านอาหาร",
     "top_picks": "ตัวเลือกเด็ด",
     "keep_swiping": "ปัดต่อ",
+    "cant_decide": "ตัดสินใจไม่ได้?",
+    "cant_decide_sub": "เล่นเกมสั้นๆ ให้ช่วยตัดสิน",
     "restaurants_with": "ร้านที่มี {{name}}",
     "places_found": "เจอ {{count}} ร้าน",
     "finding_restaurants": "กำลังหาร้าน...",

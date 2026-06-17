@@ -13,7 +13,7 @@ import { isMenuFirstVibe } from "@shared/vibeConfig";
 import { GroupTieBreakerGame } from "@/components/group-tiebreaker/GroupTieBreakerGame";
 import { rankByGroupTaste, type MemberTaste } from "@/lib/groupTasteRanking";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { Square, X, Trophy, ChevronRight, Crown, Medal, Award, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils, MapPin, UtensilsCrossed } from "lucide-react";
+import { Square, X, Trophy, ChevronRight, Crown, Medal, Award, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils, MapPin, UtensilsCrossed, Swords } from "lucide-react";
 
 type SwipePhase = "menu" | "restaurant";
 
@@ -1166,25 +1166,9 @@ export default function GroupSwipe() {
   const handleEndSession = async () => {
     if (!sessionCode || !profile) return;
     try {
-      // If the group has more than one full match, launch a tie-breaker mini-game
-      // instead of ending immediately. The server gates on match count (>1) and
-      // member count, returning 400 when a game isn't warranted — we fall through.
-      try {
-        const swipeType = swipePhase === "menu" ? "menu" : "restaurant";
-        const tbRes = await apiRequest("POST", `/api/group/sessions/${sessionCode}/tiebreaker/start`, {
-          lineUserId: profile.userId,
-          swipeType,
-        });
-        const tbData = await tbRes.json();
-        if (tbData?.tieBreaker) {
-          queryClient.setQueryData(["/api/group/sessions", sessionCode, "tiebreaker"], tbData);
-          setTieBreakerActive(true);
-          setShowEndConfirm(false);
-          return;
-        }
-      } catch {
-        // Single match (400) or other error — proceed with a normal session end.
-      }
+      // Ending simply wraps the session up and shows the results / top-picks page.
+      // The tie-breaker mini-game is no longer auto-launched here — it is opt-in via
+      // the "Can't decide?" button on the results page (handleStartTieBreaker).
       await fetchWithTimeout(`/api/group/sessions/${sessionCode}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1194,6 +1178,28 @@ export default function GroupSwipe() {
       setShowEndConfirm(false);
     } catch (err) {
       console.error("Failed to end session:", err);
+    }
+  };
+
+  // Launch the tie-breaker mini-game from the "Can't decide?" button on the results
+  // page. Any session member can start it; everyone else auto-joins via the poll.
+  // The server gates on match count (>1) and member count, so the button is only
+  // surfaced when 2+ full matches exist.
+  const handleStartTieBreaker = async () => {
+    if (!sessionCode || !profile) return;
+    try {
+      const swipeType = swipePhase === "menu" ? "menu" : "restaurant";
+      const tbRes = await apiRequest("POST", `/api/group/sessions/${sessionCode}/tiebreaker/start`, {
+        lineUserId: profile.userId,
+        swipeType,
+      });
+      const tbData = await tbRes.json();
+      if (tbData?.tieBreaker) {
+        queryClient.setQueryData(["/api/group/sessions", sessionCode, "tiebreaker"], tbData);
+        setTieBreakerActive(true);
+      }
+    } catch (err) {
+      console.error("Failed to start tie-breaker:", err);
     }
   };
 
@@ -1292,6 +1298,9 @@ export default function GroupSwipe() {
     const RANK_BG = ["linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)", "linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)", "linear-gradient(135deg, #FDF4E7 0%, #FDECD0 100%)"];
     const top3 = rankedResults.slice(0, 3);
     const rest = rankedResults.slice(3);
+    const tbSwipeType = swipePhase === "menu" ? "menu" : "restaurant";
+    const tieBreakerMatchCount = rankedResults.filter((r) => r.isFullMatch && r.swipeType === tbSwipeType).length;
+    const canPlayTieBreaker = tieBreakerMatchCount >= 2 && finalPick == null && !tieBreakerActive && !sessionEnded;
 
     return (
       <div className="w-full h-[100dvh] bg-[#FCFCFC] flex flex-col overflow-hidden" data-testid="group-summary-page">
@@ -1608,6 +1617,20 @@ export default function GroupSwipe() {
         </div>
 
         <div className="flex-shrink-0 px-5 py-4 pb-6 border-t border-gray-50 safe-bottom bg-white/80 backdrop-blur-sm">
+          {canPlayTieBreaker && (
+            <button
+              onClick={handleStartTieBreaker}
+              data-testid="button-cant-decide"
+              className="w-full mb-2.5 py-3 rounded-2xl bg-[#0F172A] text-white active:scale-[0.97] transition-transform flex flex-col items-center justify-center"
+              style={{ boxShadow: "0 8px 24px -6px rgba(15,23,42,0.45)" }}
+            >
+              <span className="flex items-center gap-2 font-bold text-[14px]">
+                <Swords className="w-4 h-4 text-[#FFCC02]" />
+                {t("group_swipe.cant_decide")}
+              </span>
+              <span className="text-[11px] font-medium text-white/55 mt-0.5">{t("group_swipe.cant_decide_sub")}</span>
+            </button>
+          )}
           {!sessionEnded && isHost ? (
             <div className="flex gap-3">
               <button
