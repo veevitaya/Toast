@@ -168,7 +168,7 @@ function Carton({
       {/* the bunch of fries — clipped to the carton walls so they only emerge from the top opening, never the sides */}
       <div
         className="absolute left-1/2 -translate-x-1/2"
-        style={{ bottom: 108, width: "80%", zIndex: 10, overflowX: "clip", overflowY: "visible" }}
+        style={{ bottom: 125, width: "80%", zIndex: 10, overflowX: "clip", overflowY: "visible" }}
       >
         <div className="flex justify-center items-end">
           {carton.map((f, i) => (
