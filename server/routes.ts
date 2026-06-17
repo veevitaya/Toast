@@ -4171,7 +4171,9 @@ export async function registerRoutes(
     const center = (FRY_COUNT - 1) / 2;
     return Array.from({ length: FRY_COUNT }, (_, i) => ({
       id: `f${i}`,
-      poke: 0.18 + Math.random() * 0.82,
+      // poke = how tall the fry *looks* in the carton (kept in a tight band so the bunch
+      // reads as balanced); trueLen below stays fully random and decides the actual winner.
+      poke: 0.66 + Math.random() * 0.22,
       trueLen: trueLens[i],
       lean: Math.round(((i - center) / center) * 15 + (Math.random() - 0.5) * 7),
       w: 11 + Math.round(Math.random() * 3),
