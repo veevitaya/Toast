@@ -21,7 +21,7 @@ const CUISINE_OPTIONS = [
   { id: "street", emoji: "\u{1F362}", label: "Street Food" },
 ];
 
-export function InlineOnboarding({ onComplete }: { onComplete: () => void }) {
+export function InlineOnboarding({ onComplete, skipCuisines = false }: { onComplete: () => void; skipCuisines?: boolean }) {
   const { t } = useLanguage();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
@@ -62,7 +62,7 @@ export function InlineOnboarding({ onComplete }: { onComplete: () => void }) {
 
       <div className="flex-shrink-0 pt-14 px-6 pb-2 relative z-10">
         <div className="flex items-center gap-2">
-          {[0, 1].map(i => (
+          {(skipCuisines ? [0] : [0, 1]).map(i => (
             <div key={i} className="flex-1 h-1 rounded-full overflow-hidden bg-gray-200/60">
               <motion.div
                 className="h-full rounded-full bg-[#FFCC02]"
@@ -129,7 +129,7 @@ export function InlineOnboarding({ onComplete }: { onComplete: () => void }) {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) setStep(1); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) { if (skipCuisines) handleComplete(); else setStep(1); } }}
                   placeholder="Your name"
                   className="w-full px-5 py-4 rounded-2xl border border-gray-200 bg-white text-[16px] font-medium text-center focus:outline-none focus:border-[#FFCC02] focus:ring-2 focus:ring-[#FFCC02]/20 transition-all"
                   style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}
@@ -144,7 +144,7 @@ export function InlineOnboarding({ onComplete }: { onComplete: () => void }) {
                 initial={{ y: 16, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                onClick={() => setStep(1)}
+                onClick={() => { if (skipCuisines) handleComplete(); else setStep(1); }}
                 disabled={!name.trim()}
                 className={`mt-6 w-full max-w-xs py-4 rounded-full font-bold text-[15px] flex items-center justify-center gap-2 transition-all active:scale-[0.96] ${
                   name.trim()
@@ -157,6 +157,20 @@ export function InlineOnboarding({ onComplete }: { onComplete: () => void }) {
                 Next
                 <ArrowRight className="w-4 h-4" />
               </motion.button>
+
+              {skipCuisines && (
+                <motion.p
+                  initial={{ y: 16, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.35 }}
+                  className="text-center text-[11px] text-muted-foreground/60 mt-4 max-w-xs leading-relaxed"
+                >
+                  {t("legal.consent_label")}{" "}
+                  <a href="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="underline text-muted-foreground hover:text-foreground transition-colors" data-testid="link-consent-privacy">{t("legal.privacy_policy")}</a>
+                  {" "}{t("legal.consent_and")}{" "}
+                  <a href="/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="underline text-muted-foreground hover:text-foreground transition-colors" data-testid="link-consent-terms">{t("legal.terms_of_service")}</a>
+                </motion.p>
+              )}
             </motion.div>
           )}
 

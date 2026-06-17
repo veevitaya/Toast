@@ -162,7 +162,7 @@ export default function GroupSetup() {
   const hostInitial = (profile?.displayName || "You").charAt(0).toUpperCase();
 
   if (!onboarded) {
-    return <InlineOnboarding onComplete={() => { setOnboarded(true); refreshProfile(); }} />;
+    return <InlineOnboarding skipCuisines onComplete={() => { setOnboarded(true); refreshProfile(); }} />;
   }
 
   return (

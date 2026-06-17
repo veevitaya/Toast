@@ -61,11 +61,11 @@ export default function GroupTaste() {
     }
   });
 
-  const [mood, setMood] = useState<string>("Comfort");
+  const [mood, setMood] = useState<string>("");
   const [cuisines, setCuisines] = useState<string[]>([]);
-  const [budget, setBudget] = useState<number>(1);
+  const [budget, setBudget] = useState<number>(-1);
   const [diet, setDiet] = useState<string[]>([]);
-  const [spice, setSpice] = useState<string>("Medium");
+  const [spice, setSpice] = useState<string>("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -84,7 +84,13 @@ export default function GroupTaste() {
     try {
       sessionStorage.setItem(
         "toast_group_taste",
-        JSON.stringify({ mood, cuisines, budget, diet, spice }),
+        JSON.stringify({
+          mood: mood || null,
+          cuisines,
+          budget: budget >= 0 ? budget : null,
+          diet,
+          spice: spice || null,
+        }),
       );
     } catch {}
   };
