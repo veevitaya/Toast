@@ -37,11 +37,35 @@ const dateLabelFor = (d: number) => {
   return `${WEEKDAY_SHORT[dt.getDay()]}, ${MONTH_SHORT[CUR_MONTH]} ${d}`;
 };
 
-const TIMES = [
-  "11:30 AM", "12:00 PM", "12:30 PM", "1:00 PM", "5:30 PM", "6:00 PM", "6:30 PM",
-  "7:00 PM", "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM",
-];
+const TIMES = Array.from({ length: 48 }, (_, i) => {
+  const h24 = Math.floor(i / 2);
+  const minute = i % 2 === 0 ? "00" : "30";
+  const period = h24 < 12 ? "AM" : "PM";
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return `${h12}:${minute} ${period}`;
+});
 const AREAS = ["Thonglor", "Ekkamai", "Asok", "Sukhumvit", "Ari", "Siam", "Sathorn", "Riverside"];
+const AREA_COORDS: Record<string, { lat: number; lng: number }> = {
+  Thonglor: { lat: 13.7329, lng: 100.5795 },
+  Ekkamai: { lat: 13.7197, lng: 100.5853 },
+  Asok: { lat: 13.7373, lng: 100.5602 },
+  Sukhumvit: { lat: 13.7308, lng: 100.5700 },
+  Ari: { lat: 13.7730, lng: 100.5445 },
+  Siam: { lat: 13.7454, lng: 100.5341 },
+  Sathorn: { lat: 13.7220, lng: 100.5290 },
+  Riverside: { lat: 13.7265, lng: 100.5100 },
+};
+const nearestArea = (lat: number, lng: number): string => {
+  let best = AREAS[0];
+  let bestDist = Infinity;
+  for (const a of AREAS) {
+    const c = AREA_COORDS[a];
+    if (!c) continue;
+    const d = (c.lat - lat) ** 2 + (c.lng - lng) ** 2;
+    if (d < bestDist) { bestDist = d; best = a; }
+  }
+  return best;
+};
 
 const toMinutes = (s: string): number => {
   const [hm, ap] = s.split(" ");
@@ -74,6 +98,7 @@ export default function GroupSetup() {
   const [area, setArea] = useState("Thonglor");
   const [areaQuery, setAreaQuery] = useState("");
   const [usedLocation, setUsedLocation] = useState(false);
+  const [locating, setLocating] = useState(false);
 
   const [inviteStatus, setInviteStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
@@ -99,13 +124,26 @@ export default function GroupSetup() {
   const pickDay = (d: number) => { setSelDay(d); setOpenPicker(null); };
   const pickTime = (i: number) => { setTimeIdx(i); setOpenPicker(null); };
   const pickArea = (a: string) => { setArea(a); setUsedLocation(false); setOpenPicker(null); };
-  const useMyLocation = () => { setArea("Thonglor"); setUsedLocation(true); setAreaQuery(""); setOpenPicker(null); };
+  const detectLocation = () => {
+    if (!("geolocation" in navigator)) { setUsedLocation(false); return; }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setArea(nearestArea(pos.coords.latitude, pos.coords.longitude));
+        setUsedLocation(true);
+        setAreaQuery("");
+        setLocating(false);
+      },
+      () => { setLocating(false); },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+    );
+  };
+  const useMyLocation = () => { detectLocation(); };
   const setNow = () => {
-    setSelDay(TODAY_DAY);
-    setTimeIdx(nearestTimeIdx());
-    setArea("Thonglor");
-    setUsedLocation(true);
-    setAreaQuery("");
+    const now = new Date();
+    setSelDay(now.getDate());
+    setTimeIdx(nearestTimeIdx(now));
+    detectLocation();
     setOpenPicker(null);
   };
   const dateLabel = dateLabelFor(selDay);
@@ -242,7 +280,7 @@ export default function GroupSetup() {
           <Divider />
           <PlanRow id="area" Icon={MapPin} label="Area" value={area} open={openPicker === "area"} onToggle={() => togglePicker("area")} />
           {openPicker === "area" && (
-            <AreaPicker value={area} query={areaQuery} setQuery={setAreaQuery} usedLocation={usedLocation} onSelect={pickArea} onUseLocation={useMyLocation} />
+            <AreaPicker value={area} query={areaQuery} setQuery={setAreaQuery} usedLocation={usedLocation} locating={locating} onSelect={pickArea} onUseLocation={useMyLocation} />
           )}
         </div>
 
@@ -265,11 +303,11 @@ export default function GroupSetup() {
         <button
           data-testid="button-set-taste"
           onClick={handleSend}
-          disabled={inviteStatus === "sending" || profileLoading || !profile}
+          disabled={inviteStatus === "sending" || profileLoading || !profile || locating}
           className="w-full h-14 rounded-full font-bold text-[16px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-70"
           style={{ backgroundColor: GOLD, color: INK, boxShadow: "0 8px 20px -8px rgba(255,204,2,0.55)" }}
         >
-          {inviteStatus === "sending" ? "Creating session…" : profileLoading ? "Getting ready…" : "Set your taste first"}
+          {inviteStatus === "sending" ? "Creating session…" : profileLoading ? "Getting ready…" : locating ? "Locating…" : "Set your taste first"}
           <ArrowRight className="w-5 h-5" />
         </button>
       </div>
@@ -374,8 +412,8 @@ function TimeScroller({ idx, onSelect }: { idx: number; onSelect: (i: number) =>
   );
 }
 
-function AreaPicker({ value, query, setQuery, usedLocation, onSelect, onUseLocation }: {
-  value: string; query: string; setQuery: (v: string) => void; usedLocation: boolean; onSelect: (a: string) => void; onUseLocation: () => void;
+function AreaPicker({ value, query, setQuery, usedLocation, locating, onSelect, onUseLocation }: {
+  value: string; query: string; setQuery: (v: string) => void; usedLocation: boolean; locating: boolean; onSelect: (a: string) => void; onUseLocation: () => void;
 }) {
   const filtered = AREAS.filter((a) => a.toLowerCase().includes(query.toLowerCase()));
   return (
@@ -391,7 +429,7 @@ function AreaPicker({ value, query, setQuery, usedLocation, onSelect, onUseLocat
         </span>
         <span className="flex-1 text-left">
           <span className="block text-[14px] font-bold">Use my current location</span>
-          <span className="block text-[12px]" style={{ color: MUTE }}>{usedLocation ? "Detected · Thonglor" : "We'll center on where you are"}</span>
+          <span className="block text-[12px]" style={{ color: MUTE }}>{locating ? "Locating…" : usedLocation ? `Detected · ${value}` : "We'll center on where you are"}</span>
         </span>
         {usedLocation && <Check className="w-5 h-5 shrink-0" style={{ color: LINE }} />}
       </button>
