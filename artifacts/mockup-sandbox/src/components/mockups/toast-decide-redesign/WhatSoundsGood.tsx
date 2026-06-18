@@ -9,6 +9,7 @@ import {
   MapPin,
   Wallet,
   UtensilsCrossed,
+  LocateFixed,
   X,
 } from "lucide-react";
 
@@ -34,13 +35,13 @@ const CRAVINGS: Craving[] = [
   { id: "surprise", emoji: "🎲", title: "Surprise me", sub: "Let Toast choose", tint: "#FFE9EC" },
 ];
 
-const WHERE = [
-  { id: "bts", emoji: "🚇", label: "Near BTS" },
-  { id: "mall", emoji: "🏬", label: "At the mall" },
-  { id: "street", emoji: "🍢", label: "Street food" },
-  { id: "rooftop", emoji: "🏙️", label: "Rooftop" },
-  { id: "river", emoji: "🌊", label: "Riverside" },
-  { id: "late", emoji: "🌙", label: "Late night" },
+const AREAS = [
+  { id: "sukhumvit", label: "Sukhumvit" },
+  { id: "silom", label: "Silom" },
+  { id: "siam", label: "Siam" },
+  { id: "ari", label: "Ari" },
+  { id: "thonglor", label: "Thonglor" },
+  { id: "chinatown", label: "Chinatown" },
 ];
 
 const BUDGETS = [
@@ -50,11 +51,15 @@ const BUDGETS = [
   { id: "splurge", glyph: "฿฿฿฿", label: "Splurge" },
 ];
 
-const MEALS = [
-  { id: "meal", label: "Meal" },
-  { id: "dessert", label: "Dessert" },
-  { id: "buffet", label: "Buffet" },
-  { id: "coffee", label: "Coffee" },
+const DINING = [
+  { id: "street", emoji: "🍢", label: "Street food" },
+  { id: "rooftop", emoji: "🏙️", label: "Rooftop" },
+  { id: "riverside", emoji: "🌊", label: "Riverside" },
+  { id: "buffet", emoji: "🍽️", label: "Buffet" },
+  { id: "dessert", emoji: "🍰", label: "Desserts" },
+  { id: "cafe", emoji: "☕", label: "Cafe" },
+  { id: "finedining", emoji: "🍷", label: "Fine dining" },
+  { id: "latenight", emoji: "🌙", label: "Late night" },
 ];
 
 function greetingFor(hour: number): { label: string; emoji: string } {
@@ -68,42 +73,54 @@ function greetingFor(hour: number): { label: string; emoji: string } {
 export default function WhatSoundsGood() {
   const [craving, setCraving] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [where, setWhere] = useState<string[]>([]);
+  const [areas, setAreas] = useState<string[]>([]);
+  const [useCurrentLoc, setUseCurrentLoc] = useState(false);
   const [budget, setBudget] = useState<string | null>(null);
-  const [meal, setMeal] = useState<string | null>(null);
+  const [dining, setDining] = useState<string | null>(null);
 
-  const toggleWhere = (id: string) =>
-    setWhere((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  const toggleArea = (id: string) => {
+    setUseCurrentLoc(false);
+    setAreas((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  };
+
+  const toggleCurrentLoc = () => {
+    const next = !useCurrentLoc;
+    setUseCurrentLoc(next);
+    if (next) setAreas([]);
+  };
 
   const greeting = greetingFor(new Date().getHours());
 
   const cravingObj = CRAVINGS.find((c) => c.id === craving);
-  const whereLabels = WHERE.filter((w) => where.includes(w.id)).map((w) => w.label);
+  const areaLabels = AREAS.filter((a) => areas.includes(a.id)).map((a) => a.label);
   const budgetLabel = BUDGETS.find((b) => b.id === budget)?.label;
-  const mealLabel = MEALS.find((m) => m.id === meal)?.label;
+  const diningLabel = DINING.find((d) => d.id === dining)?.label;
 
-  const filterCount = where.length + (budget ? 1 : 0) + (meal ? 1 : 0);
+  const locationLabels = useCurrentLoc ? ["Near me"] : areaLabels;
+  const locationCount = useCurrentLoc ? 1 : areas.length;
+  const filterCount = locationCount + (budget ? 1 : 0) + (dining ? 1 : 0);
 
   const filterSummaryText = [
-    ...whereLabels,
+    ...locationLabels,
     ...(budgetLabel ? [budgetLabel] : []),
-    ...(mealLabel ? [mealLabel] : []),
+    ...(diningLabel ? [diningLabel] : []),
   ].join(" · ");
   const hasSummary = filterCount > 0 && !filtersOpen;
 
   const summary: string[] = [
     ...(cravingObj ? [cravingObj.title] : []),
-    ...whereLabels,
+    ...locationLabels,
     ...(budgetLabel ? [`${budgetLabel} budget`] : []),
-    ...(mealLabel ? [mealLabel] : []),
+    ...(diningLabel ? [diningLabel] : []),
   ];
 
   const ready = !!craving;
 
   const clearFilters = () => {
-    setWhere([]);
+    setAreas([]);
+    setUseCurrentLoc(false);
     setBudget(null);
-    setMeal(null);
+    setDining(null);
   };
 
   return (
@@ -229,7 +246,7 @@ export default function WhatSoundsGood() {
                 className="block text-[12.5px] leading-snug line-clamp-1"
                 style={{ color: hasSummary ? INK : MUTE, fontWeight: hasSummary ? 500 : 400 }}
               >
-                {hasSummary ? filterSummaryText : "Area, budget & meal — optional"}
+                {hasSummary ? filterSummaryText : "Location, budget & style — optional"}
               </span>
             </span>
             {filterCount > 0 && (
@@ -266,45 +283,72 @@ export default function WhatSoundsGood() {
                   transition: "opacity 200ms ease",
                 }}
               >
-                {/* Area */}
-                <div className="mb-2.5 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5" color={MUTE} strokeWidth={2.2} />
-                    <span className="text-[12px] font-semibold uppercase tracking-[0.07em]" style={{ color: MUTE }}>
-                      Area
-                    </span>
-                  </span>
-                  <span className="text-[11px] font-medium" style={{ color: MUTE }}>
-                    Pick a few
+                {/* Location */}
+                <div className="mb-2.5 flex items-center gap-1.5">
+                  <MapPin className="h-3.5 w-3.5" color={MUTE} strokeWidth={2.2} />
+                  <span className="text-[12px] font-semibold uppercase tracking-[0.07em]" style={{ color: MUTE }}>
+                    Location
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {WHERE.map((w) => {
-                    const active = where.includes(w.id);
+                <button
+                  type="button"
+                  onClick={toggleCurrentLoc}
+                  data-testid="button-current-location"
+                  aria-pressed={useCurrentLoc}
+                  className="mb-3 flex w-full items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left transition-all duration-150 active:scale-[0.99]"
+                  style={{
+                    border: useCurrentLoc ? `1.5px solid ${GOLD}` : "1px solid rgba(0,0,0,0.07)",
+                    backgroundColor: useCurrentLoc ? "#FFF8DC" : "#FFFFFF",
+                    boxShadow: useCurrentLoc ? "0 6px 16px -10px rgba(255,204,2,0.55)" : "none",
+                  }}
+                >
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                    style={{ backgroundColor: useCurrentLoc ? GOLD : "rgba(255,90,95,0.10)" }}
+                  >
+                    <LocateFixed
+                      className="h-[18px] w-[18px]"
+                      color={useCurrentLoc ? INK : "#FF5A5F"}
+                      strokeWidth={2.2}
+                    />
+                  </span>
+                  <span className="flex-1">
+                    <span className="block text-[13.5px] font-semibold leading-tight">
+                      Use my current location
+                    </span>
+                    <span className="block text-[11.5px] leading-snug" style={{ color: MUTE }}>
+                      Find spots near you right now
+                    </span>
+                  </span>
+                  {useCurrentLoc && (
+                    <Check className="h-[18px] w-[18px] shrink-0" strokeWidth={3} color={INK} />
+                  )}
+                </button>
+                <div className="mb-2.5 flex items-center gap-2">
+                  <span className="h-px flex-1" style={{ backgroundColor: "rgba(0,0,0,0.07)" }} />
+                  <span className="text-[11px] font-medium" style={{ color: MUTE }}>
+                    or pick an area
+                  </span>
+                  <span className="h-px flex-1" style={{ backgroundColor: "rgba(0,0,0,0.07)" }} />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {AREAS.map((a) => {
+                    const active = areas.includes(a.id);
                     return (
                       <button
-                        key={w.id}
+                        key={a.id}
                         type="button"
-                        onClick={() => toggleWhere(w.id)}
-                        data-testid={`chip-where-${w.id}`}
+                        onClick={() => toggleArea(a.id)}
+                        data-testid={`chip-area-${a.id}`}
                         aria-pressed={active}
-                        className="relative flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center transition-all duration-150 active:scale-[0.97]"
+                        className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-all duration-150 active:scale-[0.97]"
                         style={{
                           border: active ? `1.5px solid ${GOLD}` : "1px solid rgba(0,0,0,0.07)",
                           backgroundColor: active ? "#FFF8DC" : "#FFFFFF",
-                          boxShadow: active ? "0 6px 16px -10px rgba(255,204,2,0.55)" : "none",
                         }}
                       >
-                        {active && (
-                          <span
-                            className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full"
-                            style={{ backgroundColor: GOLD }}
-                          >
-                            <Check className="h-2.5 w-2.5" strokeWidth={3.5} color={INK} />
-                          </span>
-                        )}
-                        <span className="text-[18px] leading-none">{w.emoji}</span>
-                        <span className="text-[11.5px] font-medium leading-tight">{w.label}</span>
+                        {active && <Check className="h-3.5 w-3.5" strokeWidth={3} color={INK} />}
+                        {a.label}
                       </button>
                     );
                   })}
@@ -348,31 +392,40 @@ export default function WhatSoundsGood() {
                   })}
                 </div>
 
-                {/* Meal type */}
+                {/* Dining style */}
                 <div className="mb-2.5 mt-5 flex items-center gap-1.5">
                   <UtensilsCrossed className="h-3.5 w-3.5" color={MUTE} strokeWidth={2.2} />
                   <span className="text-[12px] font-semibold uppercase tracking-[0.07em]" style={{ color: MUTE }}>
-                    Meal type
+                    Dining style
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {MEALS.map((m) => {
-                    const active = meal === m.id;
+                <div className="grid grid-cols-3 gap-2">
+                  {DINING.map((d) => {
+                    const active = dining === d.id;
                     return (
                       <button
-                        key={m.id}
+                        key={d.id}
                         type="button"
-                        onClick={() => setMeal(active ? null : m.id)}
-                        data-testid={`chip-meal-${m.id}`}
+                        onClick={() => setDining(active ? null : d.id)}
+                        data-testid={`chip-dining-${d.id}`}
                         aria-pressed={active}
-                        className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-all duration-150 active:scale-[0.97]"
+                        className="relative flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center transition-all duration-150 active:scale-[0.97]"
                         style={{
                           border: active ? `1.5px solid ${GOLD}` : "1px solid rgba(0,0,0,0.07)",
                           backgroundColor: active ? "#FFF8DC" : "#FFFFFF",
+                          boxShadow: active ? "0 6px 16px -10px rgba(255,204,2,0.55)" : "none",
                         }}
                       >
-                        {active && <Check className="h-3.5 w-3.5" strokeWidth={3} color={INK} />}
-                        {m.label}
+                        {active && (
+                          <span
+                            className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full"
+                            style={{ backgroundColor: GOLD }}
+                          >
+                            <Check className="h-2.5 w-2.5" strokeWidth={3.5} color={INK} />
+                          </span>
+                        )}
+                        <span className="text-[18px] leading-none">{d.emoji}</span>
+                        <span className="text-[11.5px] font-medium leading-tight">{d.label}</span>
                       </button>
                     );
                   })}
