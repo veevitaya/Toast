@@ -6,6 +6,10 @@ import {
   Check,
   Sparkles,
   ArrowRight,
+  MapPin,
+  Wallet,
+  UtensilsCrossed,
+  X,
 } from "lucide-react";
 
 const GOLD = "#FFCC02";
@@ -79,6 +83,13 @@ export default function WhatSoundsGood() {
   const mealLabel = MEALS.find((m) => m.id === meal)?.label;
 
   const filterCount = where.length + (budget ? 1 : 0) + (meal ? 1 : 0);
+
+  const filterSummaryText = [
+    ...whereLabels,
+    ...(budgetLabel ? [budgetLabel] : []),
+    ...(mealLabel ? [mealLabel] : []),
+  ].join(" · ");
+  const hasSummary = filterCount > 0 && !filtersOpen;
 
   const summary: string[] = [
     ...(cravingObj ? [cravingObj.title] : []),
@@ -201,6 +212,7 @@ export default function WhatSoundsGood() {
             onClick={() => setFiltersOpen((o) => !o)}
             data-testid="button-filters-toggle"
             aria-expanded={filtersOpen}
+            aria-controls="finetune-panel"
             className="flex w-full items-center gap-3 px-4 py-4"
           >
             <span
@@ -213,8 +225,11 @@ export default function WhatSoundsGood() {
               <span className="block font-['Plus_Jakarta_Sans'] text-[15px] font-semibold">
                 Fine-tune your search
               </span>
-              <span className="block text-[12.5px]" style={{ color: MUTE }}>
-                Area, budget &amp; meal — optional
+              <span
+                className="block text-[12.5px] leading-snug line-clamp-1"
+                style={{ color: hasSummary ? INK : MUTE, fontWeight: hasSummary ? 500 : 400 }}
+              >
+                {hasSummary ? filterSummaryText : "Area, budget & meal — optional"}
               </span>
             </span>
             {filterCount > 0 && (
@@ -233,105 +248,153 @@ export default function WhatSoundsGood() {
             />
           </button>
 
-          {filtersOpen && (
-            <div className="px-4 pb-5 pt-1">
-              {/* Where */}
-              <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.07em]" style={{ color: MUTE }}>
-                Area
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {WHERE.map((w) => {
-                  const active = where.includes(w.id);
-                  return (
-                    <button
-                      key={w.id}
-                      type="button"
-                      onClick={() => toggleWhere(w.id)}
-                      data-testid={`chip-where-${w.id}`}
-                      className="flex flex-col items-center gap-1 rounded-2xl px-2 py-3 text-center transition-all duration-150 active:scale-[0.97]"
-                      style={{
-                        border: active ? `1.5px solid ${GOLD}` : "1px solid rgba(0,0,0,0.07)",
-                        backgroundColor: active ? "#FFF8DC" : "#FFFFFF",
-                      }}
-                    >
-                      <span className="text-[18px] leading-none">{w.emoji}</span>
-                      <span className="text-[11.5px] font-medium leading-tight">{w.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Budget */}
-              <p className="mb-2 mt-5 text-[12px] font-semibold uppercase tracking-[0.07em]" style={{ color: MUTE }}>
-                Budget
-              </p>
-              <div className="grid grid-cols-4 gap-2">
-                {BUDGETS.map((b) => {
-                  const active = budget === b.id;
-                  return (
-                    <button
-                      key={b.id}
-                      type="button"
-                      onClick={() => setBudget(active ? null : b.id)}
-                      data-testid={`chip-budget-${b.id}`}
-                      className="flex flex-col items-center gap-1 rounded-2xl px-1 py-3 transition-all duration-150 active:scale-[0.97]"
-                      style={{
-                        border: active ? `1.5px solid ${GOLD}` : "1px solid rgba(0,0,0,0.07)",
-                        backgroundColor: active ? "#FFF8DC" : "#FFFFFF",
-                      }}
-                    >
-                      <span
-                        className="font-['Plus_Jakarta_Sans'] text-[15px] font-bold leading-none"
-                        style={{ color: active ? INK : "#C9A227" }}
+          <div
+            id="finetune-panel"
+            className="grid transition-[grid-template-rows] duration-300 ease-out"
+            style={{ gridTemplateRows: filtersOpen ? "1fr" : "0fr" }}
+          >
+            <div
+              className="overflow-hidden"
+              aria-hidden={!filtersOpen}
+              {...(filtersOpen ? {} : ({ inert: true } as any))}
+            >
+              <div
+                className="mx-4 border-t pb-5 pt-4"
+                style={{
+                  borderColor: "rgba(0,0,0,0.06)",
+                  opacity: filtersOpen ? 1 : 0,
+                  transition: "opacity 200ms ease",
+                }}
+              >
+                {/* Area */}
+                <div className="mb-2.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5" color={MUTE} strokeWidth={2.2} />
+                    <span className="text-[12px] font-semibold uppercase tracking-[0.07em]" style={{ color: MUTE }}>
+                      Area
+                    </span>
+                  </span>
+                  <span className="text-[11px] font-medium" style={{ color: MUTE }}>
+                    Pick a few
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {WHERE.map((w) => {
+                    const active = where.includes(w.id);
+                    return (
+                      <button
+                        key={w.id}
+                        type="button"
+                        onClick={() => toggleWhere(w.id)}
+                        data-testid={`chip-where-${w.id}`}
+                        aria-pressed={active}
+                        className="relative flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center transition-all duration-150 active:scale-[0.97]"
+                        style={{
+                          border: active ? `1.5px solid ${GOLD}` : "1px solid rgba(0,0,0,0.07)",
+                          backgroundColor: active ? "#FFF8DC" : "#FFFFFF",
+                          boxShadow: active ? "0 6px 16px -10px rgba(255,204,2,0.55)" : "none",
+                        }}
                       >
-                        {b.glyph}
-                      </span>
-                      <span className="text-[10.5px] font-medium leading-tight" style={{ color: MUTE }}>
-                        {b.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+                        {active && (
+                          <span
+                            className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full"
+                            style={{ backgroundColor: GOLD }}
+                          >
+                            <Check className="h-2.5 w-2.5" strokeWidth={3.5} color={INK} />
+                          </span>
+                        )}
+                        <span className="text-[18px] leading-none">{w.emoji}</span>
+                        <span className="text-[11.5px] font-medium leading-tight">{w.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
 
-              {/* Meal type */}
-              <p className="mb-2 mt-5 text-[12px] font-semibold uppercase tracking-[0.07em]" style={{ color: MUTE }}>
-                Meal type
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {MEALS.map((m) => {
-                  const active = meal === m.id;
-                  return (
+                {/* Budget */}
+                <div className="mb-2.5 mt-5 flex items-center gap-1.5">
+                  <Wallet className="h-3.5 w-3.5" color={MUTE} strokeWidth={2.2} />
+                  <span className="text-[12px] font-semibold uppercase tracking-[0.07em]" style={{ color: MUTE }}>
+                    Budget
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {BUDGETS.map((b) => {
+                    const active = budget === b.id;
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => setBudget(active ? null : b.id)}
+                        data-testid={`chip-budget-${b.id}`}
+                        aria-pressed={active}
+                        className="flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 transition-all duration-150 active:scale-[0.97]"
+                        style={{
+                          border: active ? `1.5px solid ${GOLD}` : "1px solid rgba(0,0,0,0.07)",
+                          backgroundColor: active ? "#FFF8DC" : "#FFFFFF",
+                          boxShadow: active ? "0 6px 16px -10px rgba(255,204,2,0.55)" : "none",
+                        }}
+                      >
+                        <span
+                          className="font-['Plus_Jakarta_Sans'] text-[15px] font-bold leading-none"
+                          style={{ color: active ? INK : "#8C6510" }}
+                        >
+                          {b.glyph}
+                        </span>
+                        <span className="text-[10.5px] font-medium leading-tight" style={{ color: MUTE }}>
+                          {b.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Meal type */}
+                <div className="mb-2.5 mt-5 flex items-center gap-1.5">
+                  <UtensilsCrossed className="h-3.5 w-3.5" color={MUTE} strokeWidth={2.2} />
+                  <span className="text-[12px] font-semibold uppercase tracking-[0.07em]" style={{ color: MUTE }}>
+                    Meal type
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {MEALS.map((m) => {
+                    const active = meal === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setMeal(active ? null : m.id)}
+                        data-testid={`chip-meal-${m.id}`}
+                        aria-pressed={active}
+                        className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-all duration-150 active:scale-[0.97]"
+                        style={{
+                          border: active ? `1.5px solid ${GOLD}` : "1px solid rgba(0,0,0,0.07)",
+                          backgroundColor: active ? "#FFF8DC" : "#FFFFFF",
+                        }}
+                      >
+                        {active && <Check className="h-3.5 w-3.5" strokeWidth={3} color={INK} />}
+                        {m.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {filterCount > 0 && (
+                  <div className="mt-4 flex justify-end">
                     <button
-                      key={m.id}
                       type="button"
-                      onClick={() => setMeal(active ? null : m.id)}
-                      data-testid={`chip-meal-${m.id}`}
-                      className="inline-flex min-h-[44px] items-center rounded-full px-5 text-[13px] font-medium transition-all duration-150 active:scale-[0.97]"
-                      style={{
-                        border: active ? `1.5px solid ${GOLD}` : "1px solid rgba(0,0,0,0.07)",
-                        backgroundColor: active ? "#FFF8DC" : "#FFFFFF",
-                      }}
+                      onClick={clearFilters}
+                      data-testid="button-clear-filters"
+                      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold transition-opacity active:opacity-60"
+                      style={{ color: "#E0484D" }}
                     >
-                      {m.label}
+                      <X className="h-4 w-4" strokeWidth={2.4} />
+                      Clear all
                     </button>
-                  );
-                })}
+                  </div>
+                )}
               </div>
-
-              {filterCount > 0 && (
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  data-testid="button-clear-filters"
-                  className="mt-3 inline-flex min-h-[44px] items-center text-[13px] font-semibold transition-opacity active:opacity-60"
-                  style={{ color: "#E0484D" }}
-                >
-                  Clear filters
-                </button>
-              )}
             </div>
-          )}
+          </div>
         </section>
 
         {/* Reassurance summary */}
