@@ -309,48 +309,6 @@ export default function WhatSoundsGood() {
                     Location
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={toggleCurrentLoc}
-                  data-testid="button-current-location"
-                  aria-pressed={useCurrentLoc}
-                  className="mb-3 flex w-full items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left transition-all duration-150 active:scale-[0.99]"
-                  style={{
-                    border: useCurrentLoc ? `1.5px solid ${GOLD}` : "1px solid rgba(0,0,0,0.07)",
-                    backgroundColor: useCurrentLoc ? "#FFF8DC" : "#FFFFFF",
-                    boxShadow: useCurrentLoc ? "0 6px 16px -10px rgba(255,204,2,0.55)" : "none",
-                  }}
-                >
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                    style={{ backgroundColor: useCurrentLoc ? GOLD : "rgba(255,90,95,0.10)" }}
-                  >
-                    <LocateFixed
-                      className="h-[18px] w-[18px]"
-                      color={useCurrentLoc ? INK : "#FF5A5F"}
-                      strokeWidth={2.2}
-                    />
-                  </span>
-                  <span className="flex-1">
-                    <span className="block text-[13.5px] font-semibold leading-tight">
-                      Use my current location
-                    </span>
-                    <span className="block text-[11.5px] leading-snug" style={{ color: MUTE }}>
-                      Find spots near you right now
-                    </span>
-                  </span>
-                  {useCurrentLoc && (
-                    <Check className="h-[18px] w-[18px] shrink-0" strokeWidth={3} color={INK} />
-                  )}
-                </button>
-                <div className="mb-2.5 flex items-center gap-2">
-                  <span className="h-px flex-1" style={{ backgroundColor: "rgba(0,0,0,0.07)" }} />
-                  <span className="text-[11px] font-medium" style={{ color: MUTE }}>
-                    or search a place
-                  </span>
-                  <span className="h-px flex-1" style={{ backgroundColor: "rgba(0,0,0,0.07)" }} />
-                </div>
-
                 <div
                   className="flex items-center gap-2 rounded-2xl px-3"
                   style={{ border: "1px solid rgba(0,0,0,0.10)", backgroundColor: "#FFFFFF" }}
@@ -388,6 +346,39 @@ export default function WhatSoundsGood() {
                     </button>
                   )}
                 </div>
+
+                <button
+                  type="button"
+                  onClick={toggleCurrentLoc}
+                  data-testid="button-current-location"
+                  aria-pressed={useCurrentLoc}
+                  className="mt-2 flex min-h-[52px] w-full items-center gap-2.5 rounded-xl px-2.5 text-left transition-colors duration-150 active:bg-black/[0.03]"
+                  style={{ backgroundColor: useCurrentLoc ? "#FFF8DC" : "transparent" }}
+                >
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                    style={{ backgroundColor: useCurrentLoc ? GOLD : "rgba(255,90,95,0.10)" }}
+                  >
+                    <LocateFixed
+                      className="h-[18px] w-[18px]"
+                      color={useCurrentLoc ? INK : "#FF5A5F"}
+                      strokeWidth={2.2}
+                    />
+                  </span>
+                  <span className="flex-1">
+                    <span className="block text-[13.5px] font-semibold leading-tight">
+                      Use my current location
+                    </span>
+                    <span className="block text-[11.5px] leading-snug" style={{ color: MUTE }}>
+                      Find spots near you right now
+                    </span>
+                  </span>
+                  {useCurrentLoc && (
+                    <Check className="h-[18px] w-[18px] shrink-0" strokeWidth={3} color={INK} />
+                  )}
+                </button>
+
+                <div className="mt-2 h-px" style={{ backgroundColor: "rgba(0,0,0,0.06)" }} />
 
                 {selectedLocObjs.length > 0 && (
                   <div className="mt-2.5 flex flex-wrap gap-2" data-testid="list-selected-locations">
