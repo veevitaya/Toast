@@ -1064,13 +1064,23 @@ export async function registerRoutes(
       if (rateLimit(`solo-decide:${ip}`, 40, 10000)) {
         return res.status(429).json({ message: "Too many requests" });
       }
-      const { userId, hour, dayOfWeek, mood, excludeIds, avoidTags } = req.body as {
+      const {
+        userId, hour, dayOfWeek, mood, excludeIds, avoidTags,
+        districts, nearMe, userLat, userLng, budget, dining,
+      } = req.body as {
         userId?: string;
         hour?: number;
         dayOfWeek?: number;
         mood?: string;
         excludeIds?: number[];
         avoidTags?: string[];
+        // Fine-tune filters from the solo "What sounds good" screen.
+        districts?: string[];   // canonical DB district names
+        nearMe?: boolean;       // distance-rank around the user's coords
+        userLat?: number;
+        userLng?: number;
+        budget?: string;        // cheap | mid | fancy | splurge
+        dining?: string;        // street | rooftop | riverside | buffet | dessert | cafe | finedining | latenight
       };
 
       const allRestaurants = await getCached("restaurants:all", 30000, () => storage.getRestaurants());
@@ -1112,7 +1122,90 @@ export async function registerRoutes(
       };
       const moodKey = (mood || "surprise").toLowerCase();
       const mapped = MOOD_MAP[moodKey] || MOOD_MAP.surprise;
-      const cuisineBoosts = mapped.craving ? (CRAVING_MAP[mapped.craving] || []) : [];
+      const moodBoosts = mapped.craving ? (CRAVING_MAP[mapped.craving] || []) : [];
+
+      // ---- Fine-tune filters (location, budget, dining style) ----
+      // Each filter genuinely narrows the candidate pool, but relaxes (keeps the
+      // prior pool) if applying it would empty the set, so "Toast, decide for me"
+      // never dead-ends.
+      const BUDGET_RANGE: Record<string, [number, number]> = {
+        cheap: [1, 2], mid: [2, 3], fancy: [3, 4], splurge: [4, 5],
+      };
+      const DINING_VIBE_MAP: Record<string, string | null> = {
+        street: "street_food", rooftop: "rooftop", riverside: "outdoor",
+        buffet: null, dessert: "sweets", cafe: "cafe",
+        finedining: null, latenight: "late_night",
+      };
+      const DINING_CUISINE_MAP: Record<string, string[]> = {
+        street: ["street food"],
+        rooftop: ["rooftop", "bar"],
+        riverside: ["seafood", "riverside"],
+        buffet: ["buffet"],
+        dessert: ["dessert", "cafe", "bakery"],
+        cafe: ["cafe", "coffee", "brunch"],
+        finedining: ["fine dining", "steakhouse", "french"],
+        latenight: ["street food", "bar", "ramen"],
+      };
+
+      let pool = candidatePool;
+
+      // Location: hard-filter by selected district(s); first district also nudges ranking.
+      const selectedDistricts = Array.isArray(districts)
+        ? districts.map((d) => String(d).toLowerCase().trim()).filter(Boolean)
+        : [];
+      let areaLabel: string | undefined;
+      if (selectedDistricts.length > 0) {
+        const inDistrict = pool.filter(
+          (r) => r.district && selectedDistricts.includes(r.district.toLowerCase().trim()),
+        );
+        if (inDistrict.length > 0) {
+          pool = inDistrict;
+          areaLabel = districts![0];
+        }
+      }
+
+      // Near me: distance-rank around the user's coordinates when shared.
+      const lat = typeof userLat === "number" ? userLat : undefined;
+      const lng = typeof userLng === "number" ? userLng : undefined;
+      if (nearMe && lat !== undefined && lng !== undefined) {
+        const byDistance = pool
+          .map((r) => {
+            const rLat = r.lat ? parseFloat(r.lat) : NaN;
+            const rLng = r.lng ? parseFloat(r.lng) : NaN;
+            if (Number.isNaN(rLat) || Number.isNaN(rLng)) return null;
+            return { r, dist: haversineDistance(lat, lng, rLat, rLng) };
+          })
+          .filter((x): x is { r: typeof pool[number]; dist: number } => x !== null)
+          .sort((a, b) => a.dist - b.dist);
+        if (byDistance.length > 0) {
+          pool = byDistance.slice(0, 30).map((x) => x.r);
+        }
+      }
+
+      // Budget: price-range hard-filter (overrides the mood's price hint).
+      const budgetKey = typeof budget === "string" ? budget.toLowerCase() : "";
+      const budgetRange = BUDGET_RANGE[budgetKey];
+      if (budgetRange) {
+        const inRange = pool.filter(
+          (r) => r.priceLevel >= budgetRange[0] && r.priceLevel <= budgetRange[1],
+        );
+        if (inRange.length > 0) pool = inRange;
+      }
+
+      // Dining style: vibe hard-filter + cuisine ranking boost.
+      const diningKey = typeof dining === "string" ? dining.toLowerCase() : "";
+      const diningVibe = DINING_VIBE_MAP[diningKey] || null;
+      if (diningVibe) {
+        const inVibe = pool.filter((r) =>
+          (r.vibes || []).some((v) => v.toLowerCase() === diningVibe),
+        );
+        if (inVibe.length > 0) pool = inVibe;
+      }
+
+      const cuisineBoosts = Array.from(
+        new Set([...moodBoosts, ...(DINING_CUISINE_MAP[diningKey] || [])]),
+      );
+      const pricePref = budgetRange ? budgetRange[1] : mapped.price;
 
       let tasteDnaData = null;
       let contextPatterns = null;
@@ -1134,15 +1227,16 @@ export async function registerRoutes(
       const userHistory = buildUserHistory(userEvents, behaviorEvents);
 
       const result = generateRecommendation(
-        candidatePool,
+        pool,
         {
           userId: userId || "anonymous",
           daypart: timeSlot,
           isWeekend,
           mood: mapped.craving,
+          areaLabel,
           avoidTags: avoidTags || [],
           cuisineBoosts,
-          pricePref: mapped.price,
+          pricePref,
           guaranteePick: true,
         },
         tasteDnaData,

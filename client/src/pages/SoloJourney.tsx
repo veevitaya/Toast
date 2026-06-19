@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, Sparkles, MapPin, Star, Check, RotateCcw,
   Navigation, Heart, Share2, Bike, ChevronRight,
+  SlidersHorizontal, ChevronDown, Wallet, UtensilsCrossed, LocateFixed, Search, X,
 } from "lucide-react";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
@@ -13,7 +14,6 @@ import { fetchWithTimeout } from "@/lib/queryClient";
 import { trackDecisionEvent } from "@/lib/decisionEvents";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import waffleThinkingPath from "@assets/waffle-thinking-cropped.png";
-import duoFoodPath from "@assets/duo-food-cropped.png";
 import toastThinkingPath from "@assets/toast-thinking-cropped.png";
 
 interface SoloPick {
@@ -49,6 +49,51 @@ const MOODS = [
   { id: "worth", emoji: "\u2728", key: "mood_worth", subKey: "mood_worth_sub", tint: "#F3ECFF" },
   { id: "surprise", emoji: "\uD83C\uDFB2", key: "mood_surprise", subKey: "mood_surprise_sub", tint: "#FFE9EC" },
 ];
+
+// Fine-tune options. `districts` holds canonical DB district names sent to the
+// backend; the user-facing label comes from i18n (`loc_<id>`), so display text
+// and the matching key stay decoupled.
+const LOCATIONS: { id: string; kind: "neighborhood" | "bts" | "mall"; popular: boolean; districts: string[] }[] = [
+  { id: "sukhumvit", kind: "neighborhood", popular: true, districts: ["Sukhumvit"] },
+  { id: "silom", kind: "neighborhood", popular: true, districts: ["Silom"] },
+  { id: "siam", kind: "neighborhood", popular: true, districts: ["Siam"] },
+  { id: "ari", kind: "neighborhood", popular: true, districts: ["Ari"] },
+  { id: "thonglor", kind: "neighborhood", popular: true, districts: ["Thonglor"] },
+  { id: "chinatown", kind: "neighborhood", popular: true, districts: ["Chinatown"] },
+  { id: "ekkamai", kind: "neighborhood", popular: false, districts: ["Ekkamai"] },
+  { id: "sathorn", kind: "neighborhood", popular: false, districts: ["Sathorn", "Silom"] },
+  { id: "asok", kind: "bts", popular: false, districts: ["Sukhumvit"] },
+  { id: "phromphong", kind: "bts", popular: false, districts: ["Phrom Phong", "Sukhumvit"] },
+  { id: "iconsiam", kind: "mall", popular: false, districts: ["Charoen Krung"] },
+  { id: "emquartier", kind: "mall", popular: false, districts: ["Phrom Phong", "Sukhumvit"] },
+  { id: "centralworld", kind: "mall", popular: false, districts: ["Ratchathewi", "Siam", "Langsuan"] },
+];
+
+const BUDGETS = [
+  { id: "cheap", glyph: "\u0E3F" },
+  { id: "mid", glyph: "\u0E3F\u0E3F" },
+  { id: "fancy", glyph: "\u0E3F\u0E3F\u0E3F" },
+  { id: "splurge", glyph: "\u0E3F\u0E3F\u0E3F\u0E3F" },
+];
+
+const DINING = [
+  { id: "street", emoji: "\uD83C\uDF62" },
+  { id: "rooftop", emoji: "\uD83C\uDFD9\uFE0F" },
+  { id: "riverside", emoji: "\uD83C\uDF0A" },
+  { id: "buffet", emoji: "\uD83C\uDF7D\uFE0F" },
+  { id: "dessert", emoji: "\uD83C\uDF70" },
+  { id: "cafe", emoji: "\u2615" },
+  { id: "finedining", emoji: "\uD83C\uDF77" },
+  { id: "latenight", emoji: "\uD83C\uDF19" },
+];
+
+function greetingFor(hour: number): { key: string; emoji: string } {
+  if (hour < 11) return { key: "greet_breakfast", emoji: "\u2600\uFE0F" };
+  if (hour < 15) return { key: "greet_lunch", emoji: "\uD83C\uDF24\uFE0F" };
+  if (hour < 18) return { key: "greet_afternoon", emoji: "\uD83C\uDF75" };
+  if (hour < 22) return { key: "greet_dinner", emoji: "\uD83C\uDF06" };
+  return { key: "greet_late", emoji: "\uD83C\uDF19" };
+}
 
 const REFINE_CHIPS = [
   { id: "expensive", key: "refine_expensive", mood: "cheap" },
@@ -107,8 +152,20 @@ export default function SoloJourney() {
   const [deliveryOpen, setDeliveryOpen] = useState(false);
   const [error, setError] = useState(false);
 
+  // Fine-tune filters (intent step only)
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [selectedLocs, setSelectedLocs] = useState<string[]>([]);
+  const [locQuery, setLocQuery] = useState("");
+  const [useCurrentLoc, setUseCurrentLoc] = useState(false);
+  const [nearMeCoords, setNearMeCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [budget, setBudget] = useState<string | null>(null);
+  const [dining, setDining] = useState<string | null>(null);
+
   const userId = profile?.userId;
   const excludeRef = useRef<number[]>([]);
+  // Active filters captured when a decision starts, so "Another option" and
+  // refine chips reuse the same fine-tune selections without re-reading state.
+  const filtersRef = useRef<Record<string, unknown>>({});
 
   const decide = useCallback(async (selectedMood: string, exclude: number[]) => {
     setError(false);
@@ -123,6 +180,7 @@ export default function SoloJourney() {
           hour: now.getHours(),
           dayOfWeek: now.getDay(),
           excludeIds: exclude,
+          ...filtersRef.current,
         }),
       }, 9000);
       if (!res.ok) throw new Error("decide failed");
@@ -166,12 +224,40 @@ export default function SoloJourney() {
     return () => clearInterval(timer);
   }, [step]);
 
+  // Tapping a mood only highlights it now — the decision runs from the CTA so
+  // users can fine-tune first.
   const handleMood = (m: string) => {
-    setMood(m);
+    setMood((prev) => (prev === m ? null : m));
+  };
+
+  const buildFilters = (): Record<string, unknown> => {
+    // Only treat "Near me" as active once real coordinates have arrived —
+    // otherwise the backend would silently ignore nearMe with no coords.
+    const useNear = useCurrentLoc && !!nearMeCoords;
+    const districts = useNear
+      ? []
+      : Array.from(
+          new Set(
+            LOCATIONS.filter((l) => selectedLocs.includes(l.id)).flatMap((l) => l.districts),
+          ),
+        );
+    return {
+      districts,
+      nearMe: useNear,
+      userLat: useNear ? nearMeCoords!.lat : undefined,
+      userLng: useNear ? nearMeCoords!.lng : undefined,
+      budget: budget || undefined,
+      dining: dining || undefined,
+    };
+  };
+
+  const handleDecide = () => {
+    if (!mood) return;
+    filtersRef.current = buildFilters();
     setRefined(false);
     excludeRef.current = [];
     setExcludeIds([]);
-    runDecision(m, []);
+    runDecision(mood, []);
   };
 
   const handleAnother = () => {
@@ -185,8 +271,53 @@ export default function SoloJourney() {
     setRefineOpen(false);
     setRefined(true);
     setMood(chipMood);
+    // "Too expensive" should drop any budget cap so a cheaper pick can surface.
+    if (chipId === "expensive") {
+      filtersRef.current = { ...filtersRef.current, budget: undefined };
+      setBudget(null);
+    }
     trackDecisionEvent("refine_applied", { userId, restaurantId: pick?.id, metadata: { source: "solo_journey", refine: chipId } });
     runDecision(chipMood, excludeRef.current);
+  };
+
+  const toggleLoc = (id: string) => {
+    setUseCurrentLoc(false);
+    setNearMeCoords(null);
+    setLocQuery("");
+    setSelectedLocs((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  };
+
+  const toggleCurrentLoc = () => {
+    if (useCurrentLoc) {
+      setUseCurrentLoc(false);
+      setNearMeCoords(null);
+      return;
+    }
+    setSelectedLocs([]);
+    setLocQuery("");
+    if (!("geolocation" in navigator)) {
+      toast({ title: t("soloJourney.location_unavailable") });
+      return;
+    }
+    setUseCurrentLoc(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setNearMeCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {
+        setUseCurrentLoc(false);
+        setNearMeCoords(null);
+        toast({ title: t("soloJourney.location_denied") });
+      },
+      { timeout: 8000, maximumAge: 60000 },
+    );
+  };
+
+  const clearFilters = () => {
+    setSelectedLocs([]);
+    setUseCurrentLoc(false);
+    setNearMeCoords(null);
+    setLocQuery("");
+    setBudget(null);
+    setDining(null);
   };
 
   const handlePickAlternative = (alt: SoloPick) => {
@@ -259,15 +390,49 @@ export default function SoloJourney() {
     setDeliveryOpen(false);
     excludeRef.current = [];
     setExcludeIds([]);
+    setFiltersOpen(false);
+    clearFilters();
+    filtersRef.current = {};
   };
 
   const priceStr = (n: number | null) => "\u0E3F".repeat(Math.max(1, n || 1));
+
+  // ---- Derived values for the intent (fine-tune) UI ----
+  const greeting = greetingFor(new Date().getHours());
+  // "Near me" is chosen but coordinates haven't resolved yet.
+  const locating = useCurrentLoc && !nearMeCoords;
+  const locLabel = (id: string) => t(`soloJourney.loc_${id}`);
+  const q = locQuery.trim().toLowerCase();
+  const locResults = q ? LOCATIONS.filter((l) => locLabel(l.id).toLowerCase().includes(q)) : [];
+  const popularLocs = LOCATIONS.filter((l) => l.popular && !selectedLocs.includes(l.id));
+  const selectedLocObjs = LOCATIONS.filter((l) => selectedLocs.includes(l.id));
+
+  const moodLabel = mood ? t(`soloJourney.${MOODS.find((m) => m.id === mood)?.key}`) : null;
+  const budgetLabel = budget ? t(`soloJourney.budget_${budget}`) : null;
+  const diningLabel = dining ? t(`soloJourney.dining_${dining}`) : null;
+  const locationLabels = useCurrentLoc ? [t("soloJourney.near_me")] : selectedLocObjs.map((l) => locLabel(l.id));
+  const locationCount = useCurrentLoc ? 1 : selectedLocs.length;
+  const filterCount = locationCount + (budget ? 1 : 0) + (dining ? 1 : 0);
+
+  const filterSummaryText = [
+    ...locationLabels,
+    ...(budgetLabel ? [budgetLabel] : []),
+    ...(diningLabel ? [diningLabel] : []),
+  ].join(" \u00B7 ");
+  const hasFilterSummary = filterCount > 0 && !filtersOpen;
+
+  const summaryChips: string[] = [
+    ...(moodLabel ? [moodLabel] : []),
+    ...locationLabels,
+    ...(budgetLabel ? [t("soloJourney.summary_budget", { label: budgetLabel })] : []),
+    ...(diningLabel ? [diningLabel] : []),
+  ];
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center" data-testid="page-solo-journey">
       <div className="w-full max-w-md flex flex-col flex-1">
       {/* Header */}
-      <div className="flex items-center px-5 pt-5 pb-3">
+      <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <button
           onClick={() => (step === "intent" ? navigate("/") : restart())}
           className="w-10 h-10 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)] flex items-center justify-center active:scale-95 transition-transform"
@@ -276,6 +441,15 @@ export default function SoloJourney() {
         >
           <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
+        {step === "intent" && (
+          <span
+            className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[12px] font-medium text-foreground border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
+            data-testid="chip-greeting"
+          >
+            <span>{greeting.emoji}</span>
+            {t(`soloJourney.${greeting.key}`)}
+          </span>
+        )}
       </div>
 
       <div className="flex-1 flex flex-col px-5 pb-8">
@@ -285,55 +459,386 @@ export default function SoloJourney() {
             <motion.div
               key="intent"
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-              className="flex-1 flex flex-col justify-start pt-2 pb-6"
+              className="flex-1 flex flex-col"
             >
-              {/* Header */}
-              <div className="pt-2 pb-6">
-                <h1 className="text-[27px] font-bold text-foreground leading-[1.1] tracking-tight" data-testid="text-intent-title">
-                  {t("soloJourney.intent_title")}
-                </h1>
-                <p className="text-[15px] text-muted-foreground mt-2 leading-snug" data-testid="text-intent-sub">
-                  {t("soloJourney.intent_sub")}
-                </p>
-              </div>
+              <div className="flex-1 pb-4">
+                {/* Title + mascot */}
+                <header className="flex items-end justify-between gap-3 pt-1 pb-6">
+                  <div className="flex-1">
+                    <h1 className="text-[27px] font-bold text-foreground leading-[1.1] tracking-tight" data-testid="text-intent-title">
+                      {t("soloJourney.intent_title")}
+                    </h1>
+                    <p className="text-[15px] text-muted-foreground mt-2 leading-snug" data-testid="text-intent-sub">
+                      {t("soloJourney.intent_sub")}
+                    </p>
+                  </div>
+                  <img
+                    src={mascotPath}
+                    alt=""
+                    aria-hidden="true"
+                    className="h-[64px] w-[64px] shrink-0 object-contain select-none"
+                    data-testid="img-mascot"
+                  />
+                </header>
 
-              {/* Mood grid — uniform, refined cards */}
-              <div className="grid grid-cols-2 gap-3">
-                {MOODS.map((m, i) => {
-                  return (
-                    <motion.button
-                      key={m.id}
-                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.04 }}
-                      onClick={() => handleMood(m.id)}
-                      className="relative h-[120px] rounded-[20px] bg-white p-4 flex flex-col justify-between text-left shadow-[0_1px_3px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-all border border-black/[0.06]"
-                      data-testid={`button-mood-${m.id}`}
-                    >
-                      <span className="text-[30px] leading-none">
-                        {m.emoji}
+                {/* Mood grid — deferred select (highlight only) */}
+                <div className="grid grid-cols-2 gap-3">
+                  {MOODS.map((m, i) => {
+                    const active = mood === m.id;
+                    return (
+                      <motion.button
+                        key={m.id}
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.04 }}
+                        onClick={() => handleMood(m.id)}
+                        aria-pressed={active}
+                        className={`relative h-[120px] rounded-[20px] bg-white p-4 flex flex-col justify-between text-left active:scale-[0.98] transition-all ${active ? "border-[1.5px] border-[#FFCC02] shadow-[0_12px_30px_-10px_rgba(255,204,2,0.5)] -translate-y-0.5" : "border border-black/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)]"}`}
+                        data-testid={`button-mood-${m.id}`}
+                      >
+                        {active && (
+                          <span className="absolute right-3 top-3 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-[#FFCC02] shadow-[0_2px_8px_rgba(255,204,2,0.5)]">
+                            <Check className="h-3.5 w-3.5 text-black" strokeWidth={3} />
+                          </span>
+                        )}
+                        <span
+                          className="flex h-11 w-11 items-center justify-center rounded-full text-[24px] leading-none"
+                          style={{ backgroundColor: m.tint }}
+                        >
+                          {m.emoji}
+                        </span>
+                        <div>
+                          <span className="block text-[15px] font-semibold text-foreground leading-tight">
+                            {t(`soloJourney.${m.key}`)}
+                          </span>
+                          <span className="block text-[12px] text-muted-foreground leading-snug mt-0.5 line-clamp-1">
+                            {t(`soloJourney.${m.subKey}`)}
+                          </span>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+
+                {/* Fine-tune drawer — collapsed by default */}
+                <section className="mt-4 overflow-hidden rounded-[20px] bg-white border border-black/[0.06] shadow-[0_6px_20px_-14px_rgba(0,0,0,0.10)]">
+                  <button
+                    type="button"
+                    onClick={() => setFiltersOpen((o) => !o)}
+                    data-testid="button-filters-toggle"
+                    aria-expanded={filtersOpen}
+                    aria-controls="finetune-panel"
+                    className="flex w-full items-center gap-3 px-4 py-4"
+                  >
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#FF5A5F]/10">
+                      <SlidersHorizontal className="h-[18px] w-[18px] text-[#FF5A5F]" strokeWidth={2.2} />
+                    </span>
+                    <span className="flex-1 text-left">
+                      <span className="block text-[15px] font-semibold text-foreground">
+                        {t("soloJourney.finetune_title")}
                       </span>
-                      <div>
-                        <span className="block text-[15px] font-semibold text-foreground leading-tight">
-                          {t(`soloJourney.${m.key}`)}
-                        </span>
-                        <span className="block text-[12px] text-muted-foreground leading-snug mt-0.5 line-clamp-1">
-                          {t(`soloJourney.${m.subKey}`)}
-                        </span>
+                      <span className={`block text-[12.5px] leading-snug line-clamp-1 ${hasFilterSummary ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+                        {hasFilterSummary ? filterSummaryText : t("soloJourney.finetune_hint")}
+                      </span>
+                    </span>
+                    {filterCount > 0 && (
+                      <span className="flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-[12px] font-bold bg-[#FFCC02] text-black" data-testid="badge-filter-count">
+                        {filterCount}
+                      </span>
+                    )}
+                    <ChevronDown
+                      className="h-5 w-5 text-muted-foreground transition-transform duration-200"
+                      style={{ transform: filtersOpen ? "rotate(180deg)" : "none" }}
+                    />
+                  </button>
+
+                  <div
+                    id="finetune-panel"
+                    className="grid transition-[grid-template-rows] duration-300 ease-out"
+                    style={{ gridTemplateRows: filtersOpen ? "1fr" : "0fr" }}
+                  >
+                    <div
+                      className="overflow-hidden"
+                      aria-hidden={!filtersOpen}
+                      {...(filtersOpen ? {} : ({ inert: "" } as any))}
+                    >
+                      <div
+                        className="mx-4 border-t border-black/[0.06] pb-5 pt-4"
+                        style={{ opacity: filtersOpen ? 1 : 0, transition: "opacity 200ms ease" }}
+                      >
+                        {/* Location */}
+                        <div className="mb-2.5 flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2.2} />
+                          <span className="text-[12px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">
+                            {t("soloJourney.location_label")}
+                          </span>
+                        </div>
+                        <div className={`flex items-center gap-2 rounded-2xl px-3 transition-colors duration-150 ${useCurrentLoc ? "border-[1.5px] border-[#FFCC02] bg-[#FFF8DC]" : "border border-black/10 bg-white"}`}>
+                          {useCurrentLoc ? (
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFCC02]">
+                              <LocateFixed className="h-4 w-4 text-black" strokeWidth={2.4} />
+                            </span>
+                          ) : (
+                            <Search className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={2.2} />
+                          )}
+
+                          {useCurrentLoc ? (
+                            <span className="flex min-h-[44px] flex-1 items-center text-[14px] font-semibold text-foreground" data-testid="text-current-location">
+                              {locating ? t("soloJourney.locating") : t("soloJourney.current_location")}
+                            </span>
+                          ) : (
+                            <input
+                              type="text"
+                              inputMode="search"
+                              aria-label={t("soloJourney.location_label")}
+                              value={locQuery}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                setLocQuery(v);
+                                if (v.trim()) { setUseCurrentLoc(false); setNearMeCoords(null); }
+                              }}
+                              data-testid="input-location-search"
+                              placeholder={t("soloJourney.location_search_ph")}
+                              className="min-h-[44px] flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground/70"
+                            />
+                          )}
+
+                          {locQuery ? (
+                            <button
+                              type="button"
+                              onClick={() => setLocQuery("")}
+                              data-testid="button-clear-location-search"
+                              aria-label={t("common.clear")}
+                              className="-mr-1 flex h-11 w-11 shrink-0 items-center justify-center active:opacity-60"
+                            >
+                              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/5">
+                                <X className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2.4} />
+                              </span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={toggleCurrentLoc}
+                              data-testid="button-current-location"
+                              aria-pressed={useCurrentLoc}
+                              aria-label={useCurrentLoc ? t("soloJourney.current_location") : t("soloJourney.near_me")}
+                              className="-mr-1.5 flex h-11 min-w-[44px] shrink-0 items-center justify-center active:opacity-70"
+                            >
+                              {useCurrentLoc ? (
+                                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/[0.08]">
+                                  <X className="h-3.5 w-3.5 text-black" strokeWidth={2.5} />
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 rounded-full py-1.5 pl-2.5 pr-3 bg-[#FF5A5F]/10">
+                                  <LocateFixed className="h-[15px] w-[15px] text-[#FF5A5F]" strokeWidth={2.3} />
+                                  <span className="text-[12.5px] font-semibold text-[#FF5A5F]">{t("soloJourney.near_me")}</span>
+                                </span>
+                              )}
+                            </button>
+                          )}
+                        </div>
+
+                        {selectedLocObjs.length > 0 && (
+                          <div className="mt-2.5 flex flex-wrap gap-2" data-testid="list-selected-locations">
+                            {selectedLocObjs.map((l) => (
+                              <button
+                                key={l.id}
+                                type="button"
+                                onClick={() => toggleLoc(l.id)}
+                                data-testid={`chip-selected-loc-${l.id}`}
+                                aria-label={`${t("common.remove")} ${locLabel(l.id)}`}
+                                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full py-1.5 pl-3.5 pr-2 text-[13px] font-medium border-[1.5px] border-[#FFCC02] bg-[#FFF8DC] transition-all duration-150 active:scale-[0.97]"
+                              >
+                                {locLabel(l.id)}
+                                <span className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-black/[0.08]">
+                                  <X className="h-3 w-3 text-black" strokeWidth={2.6} />
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {q ? (
+                          <div className="mt-2.5 flex flex-col gap-1" data-testid="list-location-results">
+                            {locResults.length > 0 ? (
+                              locResults.map((l) => {
+                                const active = selectedLocs.includes(l.id);
+                                return (
+                                  <button
+                                    key={l.id}
+                                    type="button"
+                                    onClick={() => toggleLoc(l.id)}
+                                    data-testid={`option-location-${l.id}`}
+                                    aria-pressed={active}
+                                    className={`flex min-h-[44px] items-center gap-2.5 rounded-xl px-2.5 text-left transition-colors duration-150 ${active ? "bg-[#FFF8DC]" : "active:bg-black/[0.03]"}`}
+                                  >
+                                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.04]">
+                                      <MapPin className={`h-4 w-4 ${active ? "text-[#8C6510]" : "text-muted-foreground"}`} strokeWidth={2.2} />
+                                    </span>
+                                    <span className="flex-1">
+                                      <span className="block text-[13.5px] font-medium leading-tight text-foreground">{locLabel(l.id)}</span>
+                                      <span className="block text-[11px] leading-snug text-muted-foreground">{t(`soloJourney.loc_kind_${l.kind}`)}</span>
+                                    </span>
+                                    {active && <Check className="h-4 w-4 shrink-0 text-black" strokeWidth={3} />}
+                                  </button>
+                                );
+                              })
+                            ) : (
+                              <p className="px-1 py-2 text-[13px] text-muted-foreground" data-testid="text-no-location-results">
+                                {t("soloJourney.no_loc_results", { q: locQuery.trim() })}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          popularLocs.length > 0 && (
+                            <>
+                              <p className="mb-2 mt-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground">
+                                {t("soloJourney.popular_areas")}
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {popularLocs.map((l) => (
+                                  <button
+                                    key={l.id}
+                                    type="button"
+                                    onClick={() => toggleLoc(l.id)}
+                                    data-testid={`chip-location-${l.id}`}
+                                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[13px] font-medium border border-black/[0.07] bg-white transition-all duration-150 active:scale-[0.97]"
+                                  >
+                                    <span className="text-[14px] leading-none text-muted-foreground">+</span>
+                                    {locLabel(l.id)}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )
+                        )}
+
+                        {/* Budget */}
+                        <div className="mb-2.5 mt-5 flex items-center gap-1.5">
+                          <Wallet className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2.2} />
+                          <span className="text-[12px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">
+                            {t("soloJourney.budget_label")}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {BUDGETS.map((b) => {
+                            const active = budget === b.id;
+                            return (
+                              <button
+                                key={b.id}
+                                type="button"
+                                onClick={() => setBudget(active ? null : b.id)}
+                                data-testid={`chip-budget-${b.id}`}
+                                aria-pressed={active}
+                                className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 transition-all duration-150 active:scale-[0.97] ${active ? "border-[1.5px] border-[#FFCC02] bg-[#FFF8DC] shadow-[0_6px_16px_-10px_rgba(255,204,2,0.55)]" : "border border-black/[0.07] bg-white"}`}
+                              >
+                                <span className={`text-[15px] font-bold leading-none ${active ? "text-foreground" : "text-[#8C6510]"}`}>{b.glyph}</span>
+                                <span className="text-[10.5px] font-medium leading-tight text-muted-foreground">{t(`soloJourney.budget_${b.id}`)}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Dining style */}
+                        <div className="mb-2.5 mt-5 flex items-center gap-1.5">
+                          <UtensilsCrossed className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2.2} />
+                          <span className="text-[12px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">
+                            {t("soloJourney.dining_label")}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {DINING.map((d) => {
+                            const active = dining === d.id;
+                            return (
+                              <button
+                                key={d.id}
+                                type="button"
+                                onClick={() => setDining(active ? null : d.id)}
+                                data-testid={`chip-dining-${d.id}`}
+                                aria-pressed={active}
+                                className={`relative flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-2xl px-2 py-3 text-center transition-all duration-150 active:scale-[0.97] ${active ? "border-[1.5px] border-[#FFCC02] bg-[#FFF8DC] shadow-[0_6px_16px_-10px_rgba(255,204,2,0.55)]" : "border border-black/[0.07] bg-white"}`}
+                              >
+                                {active && (
+                                  <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#FFCC02]">
+                                    <Check className="h-2.5 w-2.5 text-black" strokeWidth={3.5} />
+                                  </span>
+                                )}
+                                <span className="text-[18px] leading-none">{d.emoji}</span>
+                                <span className="text-[11.5px] font-medium leading-tight text-foreground">{t(`soloJourney.dining_${d.id}`)}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {filterCount > 0 && (
+                          <div className="mt-4 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={clearFilters}
+                              data-testid="button-clear-filters"
+                              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold text-[#E0484D] transition-opacity active:opacity-60"
+                            >
+                              <X className="h-4 w-4" strokeWidth={2.4} />
+                              {t("soloJourney.clear_all")}
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    </motion.button>
-                  );
-                })}
+                    </div>
+                  </div>
+                </section>
+
+                {/* Reassurance summary */}
+                {summaryChips.length > 0 && (
+                  <section className="mt-5" data-testid="section-summary">
+                    <span className="mb-2 block text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                      {t("soloJourney.summary_label")}
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {summaryChips.map((s, i) => (
+                        <span
+                          key={`${s}-${i}`}
+                          data-testid={`tag-selected-${i}`}
+                          className="rounded-full px-3 py-1.5 text-[12.5px] font-medium bg-[#FFF1B8] text-[#7A5E00]"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </section>
+                )}
               </div>
 
-              {/* Bottom mascot scene */}
-              <img
-                src={duoFoodPath}
-                alt=""
-                aria-hidden="true"
-                className="mt-5 w-full max-w-[185px] mx-auto object-contain select-none pointer-events-none"
-                data-testid="img-intent-duo"
-              />
-
+              {/* Sticky decision CTA — solid bar with a short fade strip above
+                  so scrolling content reads cleanly behind it. */}
+              <div className="sticky bottom-0 -mx-5">
+                <div className="h-6 bg-gradient-to-t from-background to-transparent" aria-hidden="true" />
+                <div className="bg-background px-5 pb-4">
+                  {(!mood || locating) && (
+                    <p className="mb-2 text-center text-[12.5px] text-muted-foreground" data-testid="text-cta-hint">
+                      {locating ? t("soloJourney.locating") : t("soloJourney.cta_hint")}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleDecide}
+                    disabled={!mood || locating}
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#FFCC02] px-6 py-4 text-[16px] font-bold text-black shadow-[0_10px_30px_-8px_rgba(255,204,2,0.6)] transition-all active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
+                    data-testid="button-decide"
+                  >
+                    <Sparkles className="h-5 w-5" />
+                    {t("soloJourney.cta_decide")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/solo/results")}
+                    className="mt-1.5 flex w-full items-center justify-center gap-1 py-2 text-[13.5px] font-semibold text-muted-foreground active:opacity-60"
+                    data-testid="button-browse-all"
+                  >
+                    {t("soloJourney.browse_all")}
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             </motion.div>
           )}
 
