@@ -310,26 +310,50 @@ export default function WhatSoundsGood() {
                   </span>
                 </div>
                 <div
-                  className="flex items-center gap-2 rounded-2xl px-3"
-                  style={{ border: "1px solid rgba(0,0,0,0.10)", backgroundColor: "#FFFFFF" }}
+                  className="flex items-center gap-2 rounded-2xl px-3 transition-colors duration-150"
+                  style={{
+                    border: useCurrentLoc ? `1.5px solid ${GOLD}` : "1px solid rgba(0,0,0,0.10)",
+                    backgroundColor: useCurrentLoc ? "#FFF8DC" : "#FFFFFF",
+                  }}
                 >
-                  <Search className="h-4 w-4 shrink-0" color={MUTE} strokeWidth={2.2} />
-                  <input
-                    type="text"
-                    inputMode="search"
-                    aria-label="Search location"
-                    value={locQuery}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setLocQuery(v);
-                      if (v.trim()) setUseCurrentLoc(false);
-                    }}
-                    data-testid="input-location-search"
-                    placeholder="Search area, BTS, or mall…"
-                    className="min-h-[44px] flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9A9387]"
-                    style={{ color: INK }}
-                  />
-                  {locQuery && (
+                  {useCurrentLoc ? (
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                      style={{ backgroundColor: GOLD }}
+                    >
+                      <LocateFixed className="h-4 w-4" color={INK} strokeWidth={2.4} />
+                    </span>
+                  ) : (
+                    <Search className="h-4 w-4 shrink-0" color={MUTE} strokeWidth={2.2} />
+                  )}
+
+                  {useCurrentLoc ? (
+                    <span
+                      className="flex min-h-[44px] flex-1 items-center text-[14px] font-semibold"
+                      style={{ color: INK }}
+                      data-testid="text-current-location"
+                    >
+                      Current location
+                    </span>
+                  ) : (
+                    <input
+                      type="text"
+                      inputMode="search"
+                      aria-label="Search location"
+                      value={locQuery}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setLocQuery(v);
+                        if (v.trim()) setUseCurrentLoc(false);
+                      }}
+                      data-testid="input-location-search"
+                      placeholder="Search area, BTS, or mall…"
+                      className="min-h-[44px] flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9A9387]"
+                      style={{ color: INK }}
+                    />
+                  )}
+
+                  {locQuery ? (
                     <button
                       type="button"
                       onClick={() => setLocQuery("")}
@@ -344,41 +368,45 @@ export default function WhatSoundsGood() {
                         <X className="h-3.5 w-3.5" color={MUTE} strokeWidth={2.4} />
                       </span>
                     </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={toggleCurrentLoc}
+                      data-testid="button-current-location"
+                      aria-pressed={useCurrentLoc}
+                      aria-label={
+                        useCurrentLoc ? "Clear current location" : "Use my current location"
+                      }
+                      className="-mr-1.5 flex h-11 min-w-[44px] shrink-0 items-center justify-center active:opacity-70"
+                    >
+                      {useCurrentLoc ? (
+                        <span
+                          className="flex h-7 w-7 items-center justify-center rounded-full"
+                          style={{ backgroundColor: "rgba(0,0,0,0.08)" }}
+                        >
+                          <X className="h-3.5 w-3.5" color={INK} strokeWidth={2.5} />
+                        </span>
+                      ) : (
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded-full py-1.5 pl-2.5 pr-3"
+                          style={{ backgroundColor: "rgba(255,90,95,0.10)" }}
+                        >
+                          <LocateFixed
+                            className="h-[15px] w-[15px]"
+                            color="#FF5A5F"
+                            strokeWidth={2.3}
+                          />
+                          <span
+                            className="text-[12.5px] font-semibold"
+                            style={{ color: "#FF5A5F" }}
+                          >
+                            Near me
+                          </span>
+                        </span>
+                      )}
+                    </button>
                   )}
                 </div>
-
-                <button
-                  type="button"
-                  onClick={toggleCurrentLoc}
-                  data-testid="button-current-location"
-                  aria-pressed={useCurrentLoc}
-                  className="mt-2 flex min-h-[52px] w-full items-center gap-2.5 rounded-xl px-2.5 text-left transition-colors duration-150 active:bg-black/[0.03]"
-                  style={{ backgroundColor: useCurrentLoc ? "#FFF8DC" : "transparent" }}
-                >
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                    style={{ backgroundColor: useCurrentLoc ? GOLD : "rgba(255,90,95,0.10)" }}
-                  >
-                    <LocateFixed
-                      className="h-[18px] w-[18px]"
-                      color={useCurrentLoc ? INK : "#FF5A5F"}
-                      strokeWidth={2.2}
-                    />
-                  </span>
-                  <span className="flex-1">
-                    <span className="block text-[13.5px] font-semibold leading-tight">
-                      Use my current location
-                    </span>
-                    <span className="block text-[11.5px] leading-snug" style={{ color: MUTE }}>
-                      Find spots near you right now
-                    </span>
-                  </span>
-                  {useCurrentLoc && (
-                    <Check className="h-[18px] w-[18px] shrink-0" strokeWidth={3} color={INK} />
-                  )}
-                </button>
-
-                <div className="mt-2 h-px" style={{ backgroundColor: "rgba(0,0,0,0.06)" }} />
 
                 {selectedLocObjs.length > 0 && (
                   <div className="mt-2.5 flex flex-wrap gap-2" data-testid="list-selected-locations">
