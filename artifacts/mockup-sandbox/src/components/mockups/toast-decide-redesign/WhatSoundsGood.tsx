@@ -10,6 +10,7 @@ import {
   Wallet,
   UtensilsCrossed,
   LocateFixed,
+  Search,
   X,
 } from "lucide-react";
 
@@ -35,13 +36,20 @@ const CRAVINGS: Craving[] = [
   { id: "surprise", emoji: "🎲", title: "Surprise me", sub: "Let Toast choose", tint: "#FFE9EC" },
 ];
 
-const AREAS = [
-  { id: "sukhumvit", label: "Sukhumvit" },
-  { id: "silom", label: "Silom" },
-  { id: "siam", label: "Siam" },
-  { id: "ari", label: "Ari" },
-  { id: "thonglor", label: "Thonglor" },
-  { id: "chinatown", label: "Chinatown" },
+const LOCATIONS = [
+  { id: "sukhumvit", label: "Sukhumvit", kind: "Neighborhood", popular: true },
+  { id: "silom", label: "Silom", kind: "Neighborhood", popular: true },
+  { id: "siam", label: "Siam", kind: "Neighborhood", popular: true },
+  { id: "ari", label: "Ari", kind: "Neighborhood", popular: true },
+  { id: "thonglor", label: "Thonglor", kind: "Neighborhood", popular: true },
+  { id: "chinatown", label: "Chinatown (Yaowarat)", kind: "Neighborhood", popular: true },
+  { id: "ekkamai", label: "Ekkamai", kind: "Neighborhood", popular: false },
+  { id: "sathorn", label: "Sathorn", kind: "Neighborhood", popular: false },
+  { id: "asok", label: "Asok", kind: "BTS station", popular: false },
+  { id: "phromphong", label: "Phrom Phong", kind: "BTS station", popular: false },
+  { id: "iconsiam", label: "ICONSIAM", kind: "Mall", popular: false },
+  { id: "emquartier", label: "EmQuartier", kind: "Mall", popular: false },
+  { id: "centralworld", label: "CentralWorld", kind: "Mall", popular: false },
 ];
 
 const BUDGETS = [
@@ -73,31 +81,41 @@ function greetingFor(hour: number): { label: string; emoji: string } {
 export default function WhatSoundsGood() {
   const [craving, setCraving] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [areas, setAreas] = useState<string[]>([]);
+  const [selectedLocs, setSelectedLocs] = useState<string[]>([]);
+  const [locQuery, setLocQuery] = useState("");
   const [useCurrentLoc, setUseCurrentLoc] = useState(false);
   const [budget, setBudget] = useState<string | null>(null);
   const [dining, setDining] = useState<string | null>(null);
 
-  const toggleArea = (id: string) => {
+  const toggleLoc = (id: string) => {
     setUseCurrentLoc(false);
-    setAreas((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+    setLocQuery("");
+    setSelectedLocs((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   };
 
   const toggleCurrentLoc = () => {
     const next = !useCurrentLoc;
     setUseCurrentLoc(next);
-    if (next) setAreas([]);
+    if (next) {
+      setSelectedLocs([]);
+      setLocQuery("");
+    }
   };
 
   const greeting = greetingFor(new Date().getHours());
 
   const cravingObj = CRAVINGS.find((c) => c.id === craving);
-  const areaLabels = AREAS.filter((a) => areas.includes(a.id)).map((a) => a.label);
   const budgetLabel = BUDGETS.find((b) => b.id === budget)?.label;
   const diningLabel = DINING.find((d) => d.id === dining)?.label;
 
-  const locationLabels = useCurrentLoc ? ["Near me"] : areaLabels;
-  const locationCount = useCurrentLoc ? 1 : areas.length;
+  const q = locQuery.trim().toLowerCase();
+  const locResults = q ? LOCATIONS.filter((l) => l.label.toLowerCase().includes(q)) : [];
+  const popularLocs = LOCATIONS.filter((l) => l.popular && !selectedLocs.includes(l.id));
+  const selectedLocObjs = LOCATIONS.filter((l) => selectedLocs.includes(l.id));
+  const selectedLocLabels = selectedLocObjs.map((l) => l.label);
+
+  const locationLabels = useCurrentLoc ? ["Near me"] : selectedLocLabels;
+  const locationCount = useCurrentLoc ? 1 : selectedLocs.length;
   const filterCount = locationCount + (budget ? 1 : 0) + (dining ? 1 : 0);
 
   const filterSummaryText = [
@@ -117,8 +135,9 @@ export default function WhatSoundsGood() {
   const ready = !!craving;
 
   const clearFilters = () => {
-    setAreas([]);
+    setSelectedLocs([]);
     setUseCurrentLoc(false);
+    setLocQuery("");
     setBudget(null);
     setDining(null);
   };
@@ -327,32 +346,154 @@ export default function WhatSoundsGood() {
                 <div className="mb-2.5 flex items-center gap-2">
                   <span className="h-px flex-1" style={{ backgroundColor: "rgba(0,0,0,0.07)" }} />
                   <span className="text-[11px] font-medium" style={{ color: MUTE }}>
-                    or pick an area
+                    or search a place
                   </span>
                   <span className="h-px flex-1" style={{ backgroundColor: "rgba(0,0,0,0.07)" }} />
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {AREAS.map((a) => {
-                    const active = areas.includes(a.id);
-                    return (
-                      <button
-                        key={a.id}
-                        type="button"
-                        onClick={() => toggleArea(a.id)}
-                        data-testid={`chip-area-${a.id}`}
-                        aria-pressed={active}
-                        className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-all duration-150 active:scale-[0.97]"
-                        style={{
-                          border: active ? `1.5px solid ${GOLD}` : "1px solid rgba(0,0,0,0.07)",
-                          backgroundColor: active ? "#FFF8DC" : "#FFFFFF",
-                        }}
+
+                <div
+                  className="flex items-center gap-2 rounded-2xl px-3"
+                  style={{ border: "1px solid rgba(0,0,0,0.10)", backgroundColor: "#FFFFFF" }}
+                >
+                  <Search className="h-4 w-4 shrink-0" color={MUTE} strokeWidth={2.2} />
+                  <input
+                    type="text"
+                    inputMode="search"
+                    aria-label="Search location"
+                    value={locQuery}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setLocQuery(v);
+                      if (v.trim()) setUseCurrentLoc(false);
+                    }}
+                    data-testid="input-location-search"
+                    placeholder="Search area, BTS, or mall…"
+                    className="min-h-[44px] flex-1 bg-transparent text-[14px] outline-none placeholder:text-[#9A9387]"
+                    style={{ color: INK }}
+                  />
+                  {locQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setLocQuery("")}
+                      data-testid="button-clear-location-search"
+                      aria-label="Clear search"
+                      className="-mr-1 flex h-11 w-11 shrink-0 items-center justify-center active:opacity-60"
+                    >
+                      <span
+                        className="flex h-7 w-7 items-center justify-center rounded-full"
+                        style={{ backgroundColor: "rgba(0,0,0,0.05)" }}
                       >
-                        {active && <Check className="h-3.5 w-3.5" strokeWidth={3} color={INK} />}
-                        {a.label}
-                      </button>
-                    );
-                  })}
+                        <X className="h-3.5 w-3.5" color={MUTE} strokeWidth={2.4} />
+                      </span>
+                    </button>
+                  )}
                 </div>
+
+                {selectedLocObjs.length > 0 && (
+                  <div className="mt-2.5 flex flex-wrap gap-2" data-testid="list-selected-locations">
+                    {selectedLocObjs.map((l) => (
+                      <button
+                        key={l.id}
+                        type="button"
+                        onClick={() => toggleLoc(l.id)}
+                        data-testid={`chip-selected-loc-${l.id}`}
+                        aria-label={`Remove ${l.label}`}
+                        className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full py-1.5 pl-3.5 pr-2 text-[13px] font-medium transition-all duration-150 active:scale-[0.97]"
+                        style={{ border: `1.5px solid ${GOLD}`, backgroundColor: "#FFF8DC" }}
+                      >
+                        {l.label}
+                        <span
+                          className="flex h-[18px] w-[18px] items-center justify-center rounded-full"
+                          style={{ backgroundColor: "rgba(0,0,0,0.08)" }}
+                        >
+                          <X className="h-3 w-3" color={INK} strokeWidth={2.6} />
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {q ? (
+                  <div className="mt-2.5 flex flex-col gap-1" data-testid="list-location-results">
+                    {locResults.length > 0 ? (
+                      locResults.map((l) => {
+                        const active = selectedLocs.includes(l.id);
+                        return (
+                          <button
+                            key={l.id}
+                            type="button"
+                            onClick={() => toggleLoc(l.id)}
+                            data-testid={`option-location-${l.id}`}
+                            aria-pressed={active}
+                            className="flex min-h-[44px] items-center gap-2.5 rounded-xl px-2.5 text-left transition-colors duration-150 active:bg-black/[0.03]"
+                            style={{ backgroundColor: active ? "#FFF8DC" : "transparent" }}
+                          >
+                            <span
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                              style={{ backgroundColor: "rgba(0,0,0,0.04)" }}
+                            >
+                              <MapPin
+                                className="h-4 w-4"
+                                color={active ? "#8C6510" : MUTE}
+                                strokeWidth={2.2}
+                              />
+                            </span>
+                            <span className="flex-1">
+                              <span className="block text-[13.5px] font-medium leading-tight">
+                                {l.label}
+                              </span>
+                              <span className="block text-[11px] leading-snug" style={{ color: MUTE }}>
+                                {l.kind}
+                              </span>
+                            </span>
+                            {active && (
+                              <Check className="h-4 w-4 shrink-0" strokeWidth={3} color={INK} />
+                            )}
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <p
+                        className="px-1 py-2 text-[13px]"
+                        style={{ color: MUTE }}
+                        data-testid="text-no-location-results"
+                      >
+                        No matches for “{locQuery.trim()}”. Try a nearby area.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  popularLocs.length > 0 && (
+                    <>
+                      <p
+                        className="mb-2 mt-3 text-[11px] font-semibold uppercase tracking-[0.06em]"
+                        style={{ color: MUTE }}
+                      >
+                        Popular areas
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {popularLocs.map((l) => (
+                          <button
+                            key={l.id}
+                            type="button"
+                            onClick={() => toggleLoc(l.id)}
+                            data-testid={`chip-location-${l.id}`}
+                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-all duration-150 active:scale-[0.97]"
+                            style={{
+                              border: "1px solid rgba(0,0,0,0.07)",
+                              backgroundColor: "#FFFFFF",
+                            }}
+                          >
+                            <span className="text-[14px] leading-none" style={{ color: MUTE }}>
+                              +
+                            </span>
+                            {l.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )
+                )}
 
                 {/* Budget */}
                 <div className="mb-2.5 mt-5 flex items-center gap-1.5">
