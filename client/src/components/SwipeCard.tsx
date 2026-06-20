@@ -42,6 +42,8 @@ export function SwipeCard({ restaurant, active, onSwipe, zIndex }: SwipeCardProp
         scale: active ? scale : 0.95,
         rotate: active ? rotate : 0,
         zIndex,
+        willChange: active ? "transform" : "auto",
+        backfaceVisibility: "hidden",
       }}
       drag={active ? "x" : false}
       dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}

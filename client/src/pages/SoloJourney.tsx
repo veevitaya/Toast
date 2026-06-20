@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -404,9 +404,18 @@ export default function SoloJourney() {
   const locating = useCurrentLoc && !nearMeCoords;
   const locLabel = (id: string) => t(`soloJourney.loc_${id}`);
   const q = locQuery.trim().toLowerCase();
-  const locResults = q ? LOCATIONS.filter((l) => locLabel(l.id).toLowerCase().includes(q)) : [];
-  const popularLocs = LOCATIONS.filter((l) => l.popular && !selectedLocs.includes(l.id));
-  const selectedLocObjs = LOCATIONS.filter((l) => selectedLocs.includes(l.id));
+  const locResults = useMemo(
+    () => (q ? LOCATIONS.filter((l) => locLabel(l.id).toLowerCase().includes(q)) : []),
+    [q, t],
+  );
+  const popularLocs = useMemo(
+    () => LOCATIONS.filter((l) => l.popular && !selectedLocs.includes(l.id)),
+    [selectedLocs],
+  );
+  const selectedLocObjs = useMemo(
+    () => LOCATIONS.filter((l) => selectedLocs.includes(l.id)),
+    [selectedLocs],
+  );
 
   const moodLabel = mood ? t(`soloJourney.${MOODS.find((m) => m.id === mood)?.key}`) : null;
   const budgetLabel = budget ? t(`soloJourney.budget_${budget}`) : null;

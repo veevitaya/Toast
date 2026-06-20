@@ -1583,6 +1583,10 @@ export async function registerRoutes(
 
   app.post("/api/toast-decides/events", async (req, res) => {
     try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`td-events:${ip}`, 20, 60000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
       const { events } = req.body;
       if (!Array.isArray(events) || events.length === 0) {
         return res.status(400).json({ message: "events array required" });
@@ -1912,8 +1916,14 @@ export async function registerRoutes(
 
   app.post("/api/restaurants/by-vibe", async (req, res) => {
     try {
-      const { vibe, limit = 20 } = req.body;
-      if (!vibe) return res.status(400).json({ message: "vibe is required" });
+      const ip = req.ip || "unknown";
+      if (rateLimit(`by-vibe:${ip}`, 30, 60000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+      const { vibe } = req.body;
+      if (!vibe || typeof vibe !== "string") return res.status(400).json({ message: "vibe is required" });
+      const rawLimit = Number(req.body.limit);
+      const limit = Number.isFinite(rawLimit) ? Math.min(50, Math.max(1, Math.floor(rawLimit))) : 20;
 
       if (vibe === "popular") {
         const popular = await storage.getPopularRestaurants(7, limit);
@@ -1945,6 +1955,10 @@ export async function registerRoutes(
 
   app.get("/api/restaurants/for-swipe", async (req, res) => {
     try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`for-swipe:${ip}`, 60, 60000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
       const vibes = req.query.vibes ? String(req.query.vibes).split(",").filter(Boolean) : undefined;
       const priceLevel = req.query.priceLevel
         ? String(req.query.priceLevel).split(",").map(Number).filter(n => !isNaN(n))
@@ -3743,12 +3757,16 @@ export async function registerRoutes(
   app.post("/api/admin/google-places/fetch", adminAuth, async (req: any, res) => {
     try {
       if (!requirePermission(req, res, "manage_restaurants")) return;
+      const ip = req.ip || "unknown";
+      if (rateLimit(`gplaces:${ip}`, 10, 600000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
       const schema = z.object({
-        query: z.string().default("restaurants in Bangkok"),
-        radius: z.number().default(5000),
-        lat: z.number().default(13.7563),
-        lng: z.number().default(100.5018),
-        maxResults: z.number().default(20),
+        query: z.string().max(200).default("restaurants in Bangkok"),
+        radius: z.number().min(500).max(10000).default(5000),
+        lat: z.number().min(-90).max(90).default(13.7563),
+        lng: z.number().min(-180).max(180).default(100.5018),
+        maxResults: z.number().int().min(1).max(50).default(20),
       });
       const input = schema.parse(req.body);
 
@@ -4237,7 +4255,11 @@ export async function registerRoutes(
       const { code } = req.params;
       const session = await storage.getGroupSession(code);
       if (!session) return res.status(404).json({ message: "Session not found" });
-      const swipeType = (req.query.swipeType as string) || undefined;
+      const swipeTypeParse = z.enum(["menu", "restaurant"]).optional().safeParse(req.query.swipeType);
+      if (!swipeTypeParse.success) {
+        return res.status(400).json({ message: "Invalid swipeType" });
+      }
+      const swipeType = swipeTypeParse.data;
       const matches = await storage.getGroupMatches(code, swipeType);
       const members = await storage.getGroupMembers(code);
       const restaurantMap = matches.length > 0 ? await buildRestaurantMap(code) : new Map();
@@ -4783,6 +4805,10 @@ export async function registerRoutes(
 
   app.get("/api/group/sessions/:code/trending-restaurants", async (req, res) => {
     try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`grp-trending:${ip}`, 20, 60000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
       const { code } = req.params;
       const session = await storage.getGroupSession(code);
       if (!session) {
@@ -4809,6 +4835,8 @@ export async function registerRoutes(
         centerLng = locatedMembers.reduce((sum, m) => sum + parseFloat(m.longitude!), 0) / locatedMembers.length;
       }
 
+      const cacheKey = `grp-trending:${code}:${locatedMembers.length}:${centerLat.toFixed(3)}:${centerLng.toFixed(3)}`;
+      const payload = await getCached(cacheKey, 90000, async () => {
       const apiKey = process.env.GOOGLE_PLACES_API_KEY;
       if (apiKey) {
         try {
@@ -4881,7 +4909,7 @@ export async function registerRoutes(
                   trendingScore: classified.trendingScore,
                 });
               }
-              return res.json({ restaurants: restaurantsOut, center: { lat: centerLat, lng: centerLng }, source: "google_places" });
+              return { restaurants: restaurantsOut, center: { lat: centerLat, lng: centerLng }, source: "google_places" };
             }
           }
         } catch (err) {
@@ -4902,7 +4930,9 @@ export async function registerRoutes(
         return scoreB - scoreA;
       });
 
-      res.json({ restaurants: withDistance.slice(0, 30), center: { lat: centerLat, lng: centerLng }, source: "database" });
+      return { restaurants: withDistance.slice(0, 30), center: { lat: centerLat, lng: centerLng }, source: "database" };
+      });
+      res.json(payload);
     } catch (err) {
       console.error("Trending restaurants error:", err);
       res.status(500).json({ message: "Internal server error" });

@@ -287,54 +287,6 @@ function PriceIndicator({ level, isDark }: { level: number; isDark: boolean }) {
   );
 }
 
-function analyzeImageBrightness(
-  url: string,
-  region: "top" | "bottom",
-  callback: (isDark: boolean) => void
-) {
-  const img = new Image();
-  img.crossOrigin = "anonymous";
-  img.onload = () => {
-    try {
-      const canvas = document.createElement("canvas");
-      const size = 100;
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      const sy = region === "top" ? 0 : img.height * 0.6;
-      const sh = region === "top" ? img.height * 0.15 : img.height * 0.4;
-      ctx.drawImage(img, 0, sy, img.width, sh, 0, 0, size, size);
-      const data = ctx.getImageData(0, 0, size, size).data;
-      let totalLum = 0;
-      let darkPixels = 0;
-      const pixelCount = size * size;
-      for (let i = 0; i < data.length; i += 4) {
-        const lum = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
-        totalLum += lum;
-        if (lum < 128) darkPixels++;
-      }
-      const avgLum = totalLum / pixelCount;
-      const darkRatio = darkPixels / pixelCount;
-      const isDark = avgLum < 160 || darkRatio > 0.4;
-      callback(isDark);
-    } catch {}
-  };
-  img.src = url;
-}
-
-function useImageBrightness(url: string) {
-  const [isDark, setIsDark] = useState(true);
-  useEffect(() => { analyzeImageBrightness(url, "bottom", setIsDark); }, [url]);
-  return isDark;
-}
-
-function useImageTopBrightness(url: string) {
-  const [isDark, setIsDark] = useState(true);
-  useEffect(() => { analyzeImageBrightness(url, "top", setIsDark); }, [url]);
-  return isDark;
-}
-
 function FullScreenSlide({
   post,
   isSaved,
@@ -344,7 +296,6 @@ function FullScreenSlide({
   onShare,
   onNavigate,
   onInviteSwipe,
-  onHeaderBrightness,
 }: {
   post: TrendingPost;
   isSaved: boolean;
@@ -354,18 +305,13 @@ function FullScreenSlide({
   onShare: () => void;
   onNavigate: () => void;
   onInviteSwipe: () => void;
-  onHeaderBrightness?: (isDark: boolean) => void;
 }) {
   const { t } = useLanguage();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [direction, setDirection] = useState(0);
   const isDragging = useRef(false);
   const dragX = useMotionValue(0);
-  const isDark = useImageBrightness(post.mediaItems[currentIdx].url);
-  const isTopDark = useImageTopBrightness(post.mediaItems[currentIdx].url);
-  const onHeaderBrightnessRef = useRef(onHeaderBrightness);
-  onHeaderBrightnessRef.current = onHeaderBrightness;
-  useEffect(() => { onHeaderBrightnessRef.current?.(isTopDark); }, [isTopDark]);
+  const isDark = true;
 
   const txt = isDark ? "text-white" : "text-gray-900";
   const txtSub = isDark ? "text-white/90" : "text-gray-700";
@@ -569,9 +515,8 @@ export default function TrendingFeed() {
   const [savedPosts, setSavedPosts] = useState<Set<number>>(new Set(getSavedPosts()));
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
   const [activeIndex, setActiveIndex] = useState(0);
-  const [headerBrightness, setHeaderBrightness] = useState<Record<number, boolean>>({});
   const [savePickerPostId, setSavePickerPostId] = useState<number | null>(null);
-  const headerIsDark = headerBrightness[activeIndex] ?? true;
+  const headerIsDark = true;
 
   const deepLinkId = new URLSearchParams(window.location.search).get("id");
 
@@ -792,7 +737,7 @@ export default function TrendingFeed() {
         className="w-full overflow-y-auto snap-y snap-mandatory hide-scrollbar"
         style={{ scrollBehavior: "smooth", height: "calc(100dvh - 52px)", overscrollBehavior: "contain" }}
       >
-        {TRENDING_POSTS.map((post, index) => (
+        {TRENDING_POSTS.map((post) => (
           <FullScreenSlide
             key={post.id}
             post={post}
@@ -803,7 +748,6 @@ export default function TrendingFeed() {
             onShare={() => handleShare(post)}
             onNavigate={() => handleNavigate(post)}
             onInviteSwipe={() => handleInviteSwipe(post)}
-            onHeaderBrightness={(dark) => setHeaderBrightness(prev => prev[index] === dark ? prev : { ...prev, [index]: dark })}
           />
         ))}
       </div>

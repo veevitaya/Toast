@@ -28,6 +28,7 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<number, L.Marker>>(new Map());
+  const markerMetaRef = useRef<Map<number, { visualKey: string; lat: number; lng: number }>>(new Map());
   const userMarkerRef = useRef<L.Marker | null>(null);
   const onPinSelectRef = useRef(onPinSelect);
   onPinSelectRef.current = onPinSelect;
@@ -55,6 +56,7 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
       map.remove();
       leafletMap.current = null;
       markersRef.current.clear();
+      markerMetaRef.current.clear();
     };
   }, []);
 
@@ -101,14 +103,7 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
     const map = leafletMap.current;
     if (!map) return;
 
-    markersRef.current.forEach(m => m.remove());
-    markersRef.current.clear();
-
-    pins.forEach((pin) => {
-      const isFiltered = !filteredCategory || pin.category === filteredCategory;
-      const isSelected = selectedPinId === pin.id;
-      const isBarsPin = pin.category === "Bars" && filteredCategory === "Bars" && isFiltered && !isSelected;
-
+    const buildIcon = (pin: MapPin, isSelected: boolean, isFiltered: boolean, isBarsPin: boolean) => {
       const html = `
         <div class="pin-marker ${isSelected ? 'pin-selected' : ''} ${!isFiltered ? 'pin-dimmed' : ''} ${isBarsPin ? 'pin-drunk-sway' : ''}" data-testid="map-pin-${pin.id}">
           <div class="pin-content">
@@ -118,17 +113,44 @@ export function InteractiveMap({ pins, center, zoom = 13, selectedPinId, onPinSe
           ${isSelected ? '<div class="pin-arrow"></div>' : ''}
         </div>
       `;
+      return L.divIcon({ html, className: "custom-pin-icon", iconSize: [70, 30], iconAnchor: [35, 15] });
+    };
 
-      const icon = L.divIcon({
-        html,
-        className: "custom-pin-icon",
-        iconSize: [70, 30],
-        iconAnchor: [35, 15],
-      });
+    // Remove markers for pins that no longer exist
+    const desiredIds = new Set(pins.map(p => p.id));
+    markersRef.current.forEach((marker, id) => {
+      if (!desiredIds.has(id)) {
+        marker.remove();
+        markersRef.current.delete(id);
+        markerMetaRef.current.delete(id);
+      }
+    });
 
-      const marker = L.marker([pin.lat, pin.lng], { icon }).addTo(map);
+    // Add new markers; update existing ones only when something actually changed
+    pins.forEach((pin) => {
+      const isFiltered = !filteredCategory || pin.category === filteredCategory;
+      const isSelected = selectedPinId === pin.id;
+      const isBarsPin = pin.category === "Bars" && filteredCategory === "Bars" && isFiltered && !isSelected;
+      const visualKey = `${pin.emoji}|${pin.price}|${isSelected ? 1 : 0}|${isFiltered ? 1 : 0}|${isBarsPin ? 1 : 0}`;
+
+      const existing = markersRef.current.get(pin.id);
+      const meta = markerMetaRef.current.get(pin.id);
+
+      if (existing && meta) {
+        if (meta.lat !== pin.lat || meta.lng !== pin.lng) {
+          existing.setLatLng([pin.lat, pin.lng]);
+        }
+        if (meta.visualKey !== visualKey) {
+          existing.setIcon(buildIcon(pin, isSelected, isFiltered, isBarsPin));
+        }
+        markerMetaRef.current.set(pin.id, { visualKey, lat: pin.lat, lng: pin.lng });
+        return;
+      }
+
+      const marker = L.marker([pin.lat, pin.lng], { icon: buildIcon(pin, isSelected, isFiltered, isBarsPin) }).addTo(map);
       marker.on("click", () => onPinSelectRef.current(pin.id));
       markersRef.current.set(pin.id, marker);
+      markerMetaRef.current.set(pin.id, { visualKey, lat: pin.lat, lng: pin.lng });
     });
   }, [pins, selectedPinId, filteredCategory]);
 
