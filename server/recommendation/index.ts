@@ -127,9 +127,10 @@ export function generateRecommendation(
   userHistory: UserHistory,
   eventCount: number
 ): RecommendationResult | null {
+  const safeAreaLabel = typeof request.areaLabel === "string" ? request.areaLabel : undefined;
   const candidateContext: CandidateContext = {
     daypart: request.daypart,
-    areaLabel: request.areaLabel,
+    areaLabel: safeAreaLabel,
     pricePref: request.pricePref,
     avoidTags: request.avoidTags,
     cuisineBoosts: request.cuisineBoosts,
@@ -142,7 +143,7 @@ export function generateRecommendation(
   const momentContext: MomentContext = {
     daypart: request.daypart,
     mood: request.mood,
-    areaLabel: request.areaLabel,
+    areaLabel: safeAreaLabel,
     weatherLabel: request.weatherLabel,
     isWeekend: request.isWeekend,
     groupSize: request.groupSize,
@@ -164,7 +165,7 @@ export function generateRecommendation(
   const contextClarity = computeContextClarity(
     !!request.daypart,
     !!request.mood,
-    !!request.areaLabel,
+    !!safeAreaLabel,
     !!request.weatherLabel
   );
   const confidence = computeConfidence(primary, runnerUp, dataCompleteness, contextClarity);

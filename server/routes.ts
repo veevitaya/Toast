@@ -947,7 +947,8 @@ export async function registerRoutes(
         "surprise": [],
       };
 
-      const cuisineBoosts = craving ? (CRAVING_MAP[craving.toLowerCase()] || []) : [];
+      const cravingKey = typeof craving === "string" ? craving.toLowerCase() : "";
+      const cuisineBoosts = cravingKey ? (CRAVING_MAP[cravingKey] || []) : [];
 
       let priceNum: number | undefined;
       if (pricePref && pricePref !== "any") {
@@ -970,14 +971,19 @@ export async function registerRoutes(
         ]);
       }
 
-      if (tasteProfile && tasteDnaData) {
-        const { likes = {}, superLikes = {} } = tasteProfile;
+      if (tasteProfile && typeof tasteProfile === "object" && tasteDnaData) {
+        const isPlainObj = (v: unknown): v is Record<string, any> =>
+          !!v && typeof v === "object" && !Array.isArray(v);
+        const likes = isPlainObj(tasteProfile.likes) ? tasteProfile.likes : {};
+        const superLikes = isPlainObj(tasteProfile.superLikes) ? tasteProfile.superLikes : {};
+        const entryCount = (entry: any) =>
+          isPlainObj(entry) && typeof entry.count === "number" ? entry.count : 1;
         const affinityUpdates = { ...(tasteDnaData.cuisineAffinityJson as Record<string, number> || {}) };
         for (const [cat, entry] of Object.entries(likes) as [string, any][]) {
-          affinityUpdates[cat.toLowerCase()] = (affinityUpdates[cat.toLowerCase()] || 0) + (entry.count || 1) * 1.5;
+          affinityUpdates[cat.toLowerCase()] = (affinityUpdates[cat.toLowerCase()] || 0) + entryCount(entry) * 1.5;
         }
         for (const [cat, entry] of Object.entries(superLikes) as [string, any][]) {
-          affinityUpdates[cat.toLowerCase()] = (affinityUpdates[cat.toLowerCase()] || 0) + (entry.count || 1) * 3;
+          affinityUpdates[cat.toLowerCase()] = (affinityUpdates[cat.toLowerCase()] || 0) + entryCount(entry) * 3;
         }
         tasteDnaData = { ...tasteDnaData, cuisineAffinityJson: affinityUpdates };
       }
@@ -991,8 +997,8 @@ export async function registerRoutes(
           userId: userId || "anonymous",
           daypart: timeSlot,
           isWeekend,
-          mood: craving?.toLowerCase(),
-          avoidTags: avoidTags || [],
+          mood: cravingKey || undefined,
+          avoidTags: Array.isArray(avoidTags) ? avoidTags : [],
           cuisineBoosts,
           pricePref: priceNum,
         },
@@ -1084,7 +1090,7 @@ export async function registerRoutes(
       };
 
       const allRestaurants = await getCached("restaurants:all", 30000, () => storage.getRestaurants());
-      const excludeSet = new Set((excludeIds || []).filter((n) => typeof n === "number"));
+      const excludeSet = new Set((Array.isArray(excludeIds) ? excludeIds : []).filter((n) => typeof n === "number"));
       const filteredPool = excludeSet.size > 0
         ? allRestaurants.filter((r) => !excludeSet.has(r.id))
         : allRestaurants;
@@ -1120,7 +1126,7 @@ export async function registerRoutes(
         worth: { craving: "indulgent", price: 3 },
         surprise: { craving: "surprise" },
       };
-      const moodKey = (mood || "surprise").toLowerCase();
+      const moodKey = (typeof mood === "string" ? mood : "surprise").toLowerCase();
       const mapped = MOOD_MAP[moodKey] || MOOD_MAP.surprise;
       const moodBoosts = mapped.craving ? (CRAVING_MAP[mapped.craving] || []) : [];
 
@@ -1172,7 +1178,7 @@ export async function registerRoutes(
         );
         if (inDistrict.length > 0) {
           pool = inDistrict;
-          areaLabel = districts![0];
+          areaLabel = String(districts![0]);
         }
       }
 
@@ -1249,7 +1255,7 @@ export async function registerRoutes(
           isWeekend,
           mood: mapped.craving,
           areaLabel,
-          avoidTags: avoidTags || [],
+          avoidTags: Array.isArray(avoidTags) ? avoidTags : [],
           cuisineBoosts,
           pricePref,
           guaranteePick: true,

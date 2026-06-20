@@ -23,7 +23,11 @@ export function generateCandidates(
 ): Restaurant[] {
   const { daypart, areaLabel, pricePref, avoidTags = [], maxCandidates = 50 } = context;
 
-  const avoidSet = new Set(avoidTags.map(t => t.toLowerCase()));
+  const avoidSet = new Set(
+    (Array.isArray(avoidTags) ? avoidTags : [])
+      .filter((t): t is string => typeof t === "string")
+      .map(t => t.toLowerCase()),
+  );
   const daypartCats = DAYPART_CATEGORIES[daypart] || [];
 
   const candidates = allRestaurants.filter(r => {

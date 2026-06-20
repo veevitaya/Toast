@@ -191,6 +191,40 @@ async function run() {
     nonNull(overConstrained),
   );
 
+  // --- Adversarial / type-confusion regression. Request-controlled JSON shapes
+  // (arrays with non-string elements, etc.) previously reached the recommendation
+  // engine and crashed it with a 500 via .toLowerCase()/.map(). They must now stay
+  // 200 and still filter on the valid values. ---
+  async function rawStatus(body: unknown): Promise<number> {
+    const res = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return res.status;
+  }
+
+  check(
+    "avoidTags with mixed non-string elements \u2192 200 (no 500)",
+    (await rawStatus({ ...baseBody, avoidTags: ["spicy", 123, null, {}, "thai"] })) === 200,
+  );
+  check(
+    "districts with non-string first element \u2192 200 (no 500)",
+    (await rawStatus({ ...baseBody, districts: [123, "Sukhumvit"] })) === 200,
+  );
+  check(
+    "districts with null/object elements \u2192 200 (no 500)",
+    (await rawStatus({ ...baseBody, districts: [null, {}, "Sukhumvit"] })) === 200,
+  );
+
+  // A mixed-type districts array still filters by the valid district value.
+  const mixedDistrict = await picks(3, { districts: [123, "Sukhumvit"] });
+  check(
+    "mixed districts [123,'Sukhumvit'] \u2192 pick still in Sukhumvit",
+    nonNull(mixedDistrict) && mixedDistrict.every((p) => p!.district === "Sukhumvit"),
+    nonNull(mixedDistrict) ? mixedDistrict.map((p) => p!.district).join(",") : "null pick",
+  );
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (failed > 0) process.exit(1);
 }
