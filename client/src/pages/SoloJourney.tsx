@@ -13,6 +13,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { fetchWithTimeout } from "@/lib/queryClient";
 import { trackDecisionEvent } from "@/lib/decisionEvents";
 import mascotPath from "@assets/toast_mascot_nobg.png";
+import intentMascotPath from "@assets/waffle_mascot_nobg.png";
 import waffleThinkingPath from "@assets/waffle-thinking-cropped.png";
 import toastThinkingPath from "@assets/toast-thinking-cropped.png";
 
@@ -463,7 +464,7 @@ export default function SoloJourney() {
             >
               <div className="flex-1 pb-4">
                 {/* Title + mascot */}
-                <header className="flex items-end justify-between gap-3 pt-1 pb-6">
+                <header className="flex items-center justify-between gap-2 pt-1 pb-4">
                   <div className="flex-1">
                     <h1 className="text-[27px] font-bold text-foreground leading-[1.1] tracking-tight" data-testid="text-intent-title">
                       {t("soloJourney.intent_title")}
@@ -473,10 +474,10 @@ export default function SoloJourney() {
                     </p>
                   </div>
                   <img
-                    src={mascotPath}
+                    src={intentMascotPath}
                     alt=""
                     aria-hidden="true"
-                    className="h-[64px] w-[64px] shrink-0 object-contain select-none"
+                    className="h-[56px] w-auto shrink-0 object-contain select-none -my-1"
                     data-testid="img-mascot"
                   />
                 </header>
