@@ -1321,7 +1321,7 @@ export class DatabaseStorage implements IStorage {
     if (memberRows.length === 0) return null;
 
     const sessionCodes = memberRows.map(m => m.sessionCode);
-    const activeSessions = await db.select().from(groupSessions)
+    const candidates = await db.select().from(groupSessions)
       .where(and(
         inArray(groupSessions.sessionCode, sessionCodes),
         or(
@@ -1335,14 +1335,21 @@ export class DatabaseStorage implements IStorage {
           ),
         ),
       ))
-      .orderBy(desc(groupSessions.id))
-      .limit(1);
+      .orderBy(desc(groupSessions.id));
 
-    if (activeSessions.length === 0) return null;
-    const session = activeSessions[0];
-    const members = await db.select().from(groupSessionMembers)
-      .where(eq(groupSessionMembers.sessionCode, session.sessionCode));
-    return { ...session, members };
+    if (candidates.length === 0) return null;
+
+    // Only surface a session genuinely worth rejoining. A "waiting" room that
+    // never got past the host (nobody else joined) is an abandoned / never-really-
+    // started session — don't nag the user to "Rejoin" it on every app open.
+    // "swiping" and recent "completed" sessions always represent real activity.
+    for (const session of candidates) {
+      const members = await db.select().from(groupSessionMembers)
+        .where(eq(groupSessionMembers.sessionCode, session.sessionCode));
+      if (session.status === "waiting" && members.length < 2) continue;
+      return { ...session, members };
+    }
+    return null;
   }
 
   async updateGroupSessionLocation(sessionCode: string, locationName: string | null, locationLat: string | null, locationLng: string | null): Promise<void> {

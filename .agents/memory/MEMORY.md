@@ -3,6 +3,7 @@
 - [Group session host identity](group-session-host-identity.md) — host-only actions 403 unless session host id == browser guest id; don't block waiting-room member load on geolocation.
 - [Group-swipe real-time polling](group-swipe-realtime-polling.md) — keep match polling on the unlimited /matches endpoint (session lookup is rate-limited); render guard must yield to match overlay for a waiting user.
 - [Canvas callback gotchas](canvas-callback-gotchas.md) — update uses `updates`+`shapeType`; presentArtifact needs an existing `artifactId` (e.g. "artifacts/mockup-sandbox"); getCanvasState is viewport-scoped.
+- [Session recovery semantics](session-recovery-semantics.md) — home "Rejoin" card only for swiping / recent-completed / 2+member-waiting; solo host-only waiting rooms are phantom, excluded.
 - [Recommendation input hardening](recommendation-input-hardening.md) — guard untrusted JSON shapes at the engine choke point, not just per-route; coerce before string/array methods.
 - [tsc is not a build gate](tsc-not-a-gate.md) — `tsc --noEmit` shows ~30 pre-existing errors that don't break the tsx/Vite runtime; grep for your edited files, don't mass-fix.
 - [Geolocation filter active state](geolocation-filter-active-state.md) — don't mark "near me" active until coords resolve, or the request silently sends nearMe with no coords; gate CTA on a `locating` state.
