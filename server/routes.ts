@@ -1146,6 +1146,18 @@ export async function registerRoutes(
         finedining: ["fine dining", "steakhouse", "french"],
         latenight: ["street food", "bar", "ramen"],
       };
+      // Buffet and fine dining have no dedicated vibe tag, so hard-filter them by
+      // restaurant attributes (name / category / description / price) instead.
+      const diningHaystack = (r: typeof candidatePool[number]) =>
+        `${r.name} ${r.category || ""} ${r.description || ""}`.toLowerCase();
+      const DINING_PREDICATE: Record<string, (r: typeof candidatePool[number]) => boolean> = {
+        buffet: (r) => /buffet|all[ -]you[ -]can[ -]eat|all you can eat/.test(diningHaystack(r)),
+        finedining: (r) =>
+          r.priceLevel >= 4 ||
+          /fine[ -]dining|omakase|kaiseki|steakhouse|tasting menu|degustation|\bfrench\b/.test(
+            diningHaystack(r),
+          ),
+      };
 
       let pool = candidatePool;
 
@@ -1192,7 +1204,7 @@ export async function registerRoutes(
         if (inRange.length > 0) pool = inRange;
       }
 
-      // Dining style: vibe hard-filter + cuisine ranking boost.
+      // Dining style: vibe (or attribute predicate) hard-filter + cuisine ranking boost.
       const diningKey = typeof dining === "string" ? dining.toLowerCase() : "";
       const diningVibe = DINING_VIBE_MAP[diningKey] || null;
       if (diningVibe) {
@@ -1200,6 +1212,9 @@ export async function registerRoutes(
           (r.vibes || []).some((v) => v.toLowerCase() === diningVibe),
         );
         if (inVibe.length > 0) pool = inVibe;
+      } else if (DINING_PREDICATE[diningKey]) {
+        const matched = pool.filter(DINING_PREDICATE[diningKey]);
+        if (matched.length > 0) pool = matched;
       }
 
       const cuisineBoosts = Array.from(
