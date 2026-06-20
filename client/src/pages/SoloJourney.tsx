@@ -464,8 +464,8 @@ export default function SoloJourney() {
             >
               <div className="flex-1 pb-4">
                 {/* Title + mascot */}
-                <header className="flex items-center justify-between gap-2 pt-1 pb-4">
-                  <div className="flex-1">
+                <header className="flex items-center gap-2.5 pt-1 pb-4">
+                  <div className="min-w-0">
                     <h1 className="text-[27px] font-bold text-foreground leading-[1.1] tracking-tight" data-testid="text-intent-title">
                       {t("soloJourney.intent_title")}
                     </h1>
@@ -477,7 +477,7 @@ export default function SoloJourney() {
                     src={intentMascotPath}
                     alt=""
                     aria-hidden="true"
-                    className="h-[56px] w-auto shrink-0 object-contain select-none -my-1"
+                    className="h-[76px] w-auto shrink-0 object-contain select-none -my-1"
                     data-testid="img-mascot"
                   />
                 </header>
