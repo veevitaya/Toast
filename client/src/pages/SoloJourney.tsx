@@ -828,15 +828,6 @@ export default function SoloJourney() {
                     <Sparkles className="h-5 w-5" />
                     {t("soloJourney.cta_decide")}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/solo/results")}
-                    className="mt-1.5 flex w-full items-center justify-center gap-1 py-2 text-[13.5px] font-semibold text-muted-foreground active:opacity-60"
-                    data-testid="button-browse-all"
-                  >
-                    {t("soloJourney.browse_all")}
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
                 </div>
               </div>
             </motion.div>
