@@ -3601,11 +3601,12 @@ export async function registerRoutes(
 
       let stats = { views: 0, likes: 0, saves: 0, deliveryTaps: 0 };
       if (owner.restaurantId) {
-        const events = await storage.getEvents({ restaurantId: owner.restaurantId });
-        stats.views = events.filter(e => e.eventType === "view_detail").length;
-        stats.likes = events.filter(e => e.eventType === "swipe_right").length;
-        stats.saves = events.filter(e => e.eventType === "save").length;
-        stats.deliveryTaps = events.filter(e => e.eventType === "delivery_click" || e.eventType === "delivery_tap").length;
+        const counts = await storage.getRestaurantEventCounts(owner.restaurantId);
+        const sum = (...keys: string[]) => keys.reduce((n, k) => n + (counts[k] || 0), 0);
+        stats.views = sum("view_detail", "detail_viewed", "restaurant_detail_opened");
+        stats.likes = counts["swipe_right"] || 0;
+        stats.saves = sum("save", "saved");
+        stats.deliveryTaps = sum("delivery_click", "delivery_tap");
       }
       res.json({
         owner: { ...owner, passwordHash: undefined },

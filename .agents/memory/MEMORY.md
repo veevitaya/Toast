@@ -13,3 +13,4 @@
 - [Visual self-verify via sandbox](visual-self-verify-via-sandbox.md) — runTest returns no screenshots; to SEE a component, render it self-contained in the mockup sandbox and screenshot its preview URL.
 - [Group swipe id collision](group-swipe-id-collision.md) — group_swipes.menuItemId holds BOTH dish & restaurant ids; key any grouping by `${swipeType}:${id}`, never raw id.
 - [Polled turn-game guards](polled-turn-game-guards.md) — tie-breaker submissions are single-UPDATE WHERE-guarded (idempotent); include round count so delayed dupes can't cross rounds.
+- [Analytics event aliases & counting](analytics-event-aliases.md) — view/save events have multiple names; aggregate the canonical alias set or stats silently undercount. Never count types via getEvents().limit(500)+filter.

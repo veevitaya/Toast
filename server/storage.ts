@@ -145,6 +145,7 @@ export interface IStorage {
   logEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
   getEvents(filters?: { eventType?: string; userId?: string; restaurantId?: number; since?: string; until?: string }): Promise<AnalyticsEvent[]>;
   getEventCounts(eventType?: string, since?: string): Promise<number>;
+  getRestaurantEventCounts(restaurantId: number): Promise<Record<string, number>>;
   getTopRestaurantsByEvent(eventType: string, limit: number): Promise<{ restaurantId: number; count: number }[]>;
 
   createBanner(banner: InsertAdBanner): Promise<AdBanner>;
@@ -518,6 +519,17 @@ export class DatabaseStorage implements IStorage {
     }
     const [result] = await db.select({ count: count() }).from(analyticsEvents);
     return result.count;
+  }
+
+  async getRestaurantEventCounts(restaurantId: number): Promise<Record<string, number>> {
+    const rows = await db
+      .select({ eventType: analyticsEvents.eventType, count: count() })
+      .from(analyticsEvents)
+      .where(eq(analyticsEvents.restaurantId, restaurantId))
+      .groupBy(analyticsEvents.eventType);
+    const result: Record<string, number> = {};
+    for (const row of rows) result[row.eventType] = row.count;
+    return result;
   }
 
   async getTopRestaurantsByEvent(eventType: string, limit: number): Promise<{ restaurantId: number; count: number }[]> {
