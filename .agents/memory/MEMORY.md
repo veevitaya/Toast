@@ -1,17 +1,5 @@
 - [Toast premium aesthetic](toast-premium-aesthetic.md) — what "friendly+premium, not childish" means for Toast UI, and the hard bg-background rule.
 - [Mockup preview screenshot cache](mockup-preview-screenshot-cache.md) — /__mockup preview screenshots cache by URL + blank lazy-compile race; warm route, add ?cb=N, retry once.
 - [Group session host identity](group-session-host-identity.md) — host-only actions 403 unless session host id == browser guest id; don't block waiting-room member load on geolocation.
-- [Group-swipe real-time polling](group-swipe-realtime-polling.md) — keep match polling on the unlimited /matches endpoint (session lookup is rate-limited); render guard must yield to match overlay for a waiting user.
+- [Group-swipe match overlay](group-swipe-match-overlay.md) — poll-driven menu-match overlays re-fire after dismissal unless a seen-set tracks acknowledged dishes across both detection paths.
 - [Canvas callback gotchas](canvas-callback-gotchas.md) — update uses `updates`+`shapeType`; presentArtifact needs an existing `artifactId` (e.g. "artifacts/mockup-sandbox"); getCanvasState is viewport-scoped.
-- [Session recovery semantics](session-recovery-semantics.md) — home "Rejoin" card only for swiping / recent-completed / 2+member-waiting; solo host-only waiting rooms are phantom, excluded.
-- [Recommendation input hardening](recommendation-input-hardening.md) — guard untrusted JSON shapes at the engine choke point, not just per-route; coerce before string/array methods.
-- [tsc is not a build gate](tsc-not-a-gate.md) — `tsc --noEmit` shows ~30 pre-existing errors that don't break the tsx/Vite runtime; grep for your edited files, don't mass-fix.
-- [Geolocation filter active state](geolocation-filter-active-state.md) — don't mark "near me" active until coords resolve, or the request silently sends nearMe with no coords; gate CTA on a `locating` state.
-- [Bash grep output mangling](bash-grep-output-mangling.md) — bash rg/grep garbles real strings (Thonglor→ln, geolocation→n.n); match locations OK, content NOT — confirm with read tool.
-- [Toast dev e2e verification](toast-dev-e2e-verification.md) — runTest always over-budgets (Vite optimizer churn in fresh browser); verify flows via app_preview screenshots + localhost API fetch.
-- [Capturing member-gated screens](screenshot-capture-constraints.md) — app_preview inherits preview's own identity (Session Unavailable); runTest only returns screenshots on failure. Need a controlled browser to export images.
-- [Group tie-breaker trigger gating](group-tiebreaker-trigger.md) — "Can't decide?" button must stay gated on !sessionEnded or non-initiators silently won't join (poll skips after end).
-- [Visual self-verify via sandbox](visual-self-verify-via-sandbox.md) — runTest returns no screenshots; to SEE a component, render it self-contained in the mockup sandbox and screenshot its preview URL.
-- [Group swipe id collision](group-swipe-id-collision.md) — group_swipes.menuItemId holds BOTH dish & restaurant ids; key any grouping by `${swipeType}:${id}`, never raw id.
-- [Polled turn-game guards](polled-turn-game-guards.md) — tie-breaker submissions are single-UPDATE WHERE-guarded (idempotent); include round count so delayed dupes can't cross rounds.
-- [Analytics event aliases & counting](analytics-event-aliases.md) — view/save events have multiple names; aggregate the canonical alias set or stats silently undercount. Never count types via getEvents().limit(500)+filter.

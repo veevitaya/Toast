@@ -664,6 +664,10 @@ export default function GroupSwipe() {
   fullMatchRef.current = fullMatch;
   const showDishRestaurantsRef = useRef(false);
   showDishRestaurantsRef.current = showDishRestaurants;
+  // Dish ids whose menu-match overlay has already been shown this session. Without
+  // this, the 2s poll re-detects the still-matched dish after "Keep Swiping"
+  // clears fullMatch and re-opens the same match overlay over and over.
+  const seenMenuMatchesRef = useRef<Set<number>>(new Set());
   const tieBreakerActiveRef = useRef(false);
   tieBreakerActiveRef.current = tieBreakerActive;
   const loadRestaurantsForDishRef = useRef<((dish: DishItem) => void) | null>(null);
@@ -692,6 +696,7 @@ export default function GroupSwipe() {
                 for (const m of matchData.matches) {
                   if (m.voters.length >= memberCount && m.menuItem) {
                     const dish = m.menuItem;
+                    if (seenMenuMatchesRef.current.has(dish.id)) continue;
                     setConfetti(true);
                     setMatchIsDish(true);
                     setMatchedDish({
@@ -716,6 +721,7 @@ export default function GroupSwipe() {
                       imageUrl: dish.imageUrl || "",
                       isNew: false,
                     });
+                    seenMenuMatchesRef.current.add(dish.id);
                     setFullMatch(true);
                     break;
                   }
@@ -839,6 +845,10 @@ export default function GroupSwipe() {
     prevMatchCountRef.current = allMatches.length;
   }, [allMatches, sessionCode]);
 
+  useEffect(() => {
+    seenMenuMatchesRef.current = new Set();
+  }, [sessionCode]);
+
   const sessionInitRef = useRef<string | null>(null);
   useEffect(() => {
     if (!sessionCode) return;
@@ -953,6 +963,7 @@ export default function GroupSwipe() {
         for (const match of matches) {
           const matched = dishItems.find(d => d.id === match.menuItemId);
           if (matched && match.voters.length >= memberCount) {
+            if (seenMenuMatchesRef.current.has(matched.id)) continue;
             setConfetti(true);
             setMatchIsDish(true);
             setMatchedDish(matched);
@@ -968,6 +979,7 @@ export default function GroupSwipe() {
               imageUrl: matched.imageUrl || "",
               isNew: false,
             });
+            seenMenuMatchesRef.current.add(matched.id);
             setFullMatch(true);
             return;
           }
