@@ -3,3 +3,4 @@
 - [Group session host identity](group-session-host-identity.md) — host-only actions 403 unless session host id == browser guest id; don't block waiting-room member load on geolocation.
 - [Group-swipe match overlay](group-swipe-match-overlay.md) — poll-driven menu-match overlays re-fire after dismissal unless a seen-set tracks acknowledged dishes across both detection paths.
 - [Canvas callback gotchas](canvas-callback-gotchas.md) — update uses `updates`+`shapeType`; presentArtifact needs an existing `artifactId` (e.g. "artifacts/mockup-sandbox"); getCanvasState is viewport-scoped.
+- [Toast asset tracking](toast-asset-tracking.md) — `attached_assets/`/`@assets` is git-ignored; ship images you commit from `client/src/assets/` via `@/assets/...` (mascots precedent).

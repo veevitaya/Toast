@@ -1,12 +1,12 @@
 import type { TutorialFeatureId } from "@/lib/tutorialState";
-import soloHome from "@assets/tutorial/solo-1-home.jpg";
-import soloSwipe from "@assets/tutorial/solo-2-swipe.jpg";
-import soloProfile from "@assets/tutorial/solo-3-profile.jpg";
-import soloPicks from "@assets/tutorial/solo-4-picks.jpg";
-import groupSetup from "@assets/tutorial/group-1-setup.jpg";
-import groupWaiting from "@assets/tutorial/group-3-waiting.jpg";
-import groupSwipe from "@assets/tutorial/group-4-swipe.jpg";
-import trendingShot from "@assets/tutorial/trending-1.jpg";
+import soloVibe from "@/assets/tutorial/solo-1-vibe.jpg";
+import soloSwipe from "@/assets/tutorial/solo-2-swipe.jpg";
+import soloProfile from "@/assets/tutorial/solo-3-profile.jpg";
+import soloPicks from "@/assets/tutorial/solo-4-picks.jpg";
+import groupSetup from "@/assets/tutorial/group-1-setup.jpg";
+import groupWaiting from "@/assets/tutorial/group-3-waiting.jpg";
+import groupSwipe from "@/assets/tutorial/group-4-swipe.jpg";
+import trendingShot from "@/assets/tutorial/trending-1.jpg";
 
 export interface TutorialStep {
   title: string;
@@ -32,7 +32,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
   solo: {
     id: "solo",
     title: "Solo Play",
-    finishPath: "/",
+    finishPath: "/solo",
     steps: [
       {
         title: "Pick your vibe.",
@@ -40,7 +40,7 @@ export const TUTORIAL_FLOWS: Record<TutorialFeatureId, TutorialFlow> = {
         mascot: "toast",
         bubble: "Start with your mood. Toast gets smarter from there.",
         cta: "Next",
-        screenshot: soloHome,
+        screenshot: soloVibe,
       },
       {
         title: "Swipe what looks good.",
