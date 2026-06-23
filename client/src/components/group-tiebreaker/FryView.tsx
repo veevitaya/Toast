@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Crown, Loader2, Sparkles } from "lucide-react";
 import type { GroupTieBreaker } from "@shared/schema";
 import {
@@ -123,13 +123,88 @@ function Carton({
   carton,
   onPick,
   disabled,
+  pickError,
 }: {
   carton: Fry[];
   onPick: (id: string) => void;
   disabled: boolean;
+  pickError: string | null;
 }) {
   const center = (carton.length - 1) / 2;
   const overlap = 15;
+
+  // Hold a fry and drag it up: it tracks the finger, and once pulled past COMMIT_AT it
+  // locks in (calls onPick). Released early, it snaps back. State lives here in refs so the
+  // parent's 1.5s tie-breaker poll can re-render without interrupting an in-progress drag.
+  const MAX_PULL = 140;
+  const COMMIT_AT = 92;
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragY, setDragY] = useState(0);
+  const [committedId, setCommittedId] = useState<string | null>(null);
+  const activeIdRef = useRef<string | null>(null);
+  const startYRef = useRef(0);
+  const committedRef = useRef(false);
+  const prevDisabledRef = useRef(disabled);
+
+  // If a pull was submitted but we're still on the pick screen (e.g. the fry got
+  // snatched), the submit flag flips back to false — reset so they can grab another.
+  useEffect(() => {
+    if (prevDisabledRef.current && !disabled) {
+      committedRef.current = false;
+      activeIdRef.current = null;
+      setCommittedId(null);
+      setDragId(null);
+      setDragY(0);
+    }
+    prevDisabledRef.current = disabled;
+  }, [disabled]);
+
+  // A failed pull (e.g. the fry got snatched) should free things up to grab another,
+  // even if the submit flag never visibly toggled.
+  useEffect(() => {
+    if (pickError) {
+      committedRef.current = false;
+      activeIdRef.current = null;
+      setCommittedId(null);
+      setDragId(null);
+      setDragY(0);
+    }
+  }, [pickError]);
+
+  const commit = (id: string) => {
+    if (committedRef.current) return;
+    committedRef.current = true;
+    activeIdRef.current = null;
+    setDragId(null);
+    setDragY(0);
+    setCommittedId(id);
+    onPick(id);
+  };
+
+  const handleDown = (e: ReactPointerEvent<HTMLDivElement>, id: string) => {
+    if (disabled || committedRef.current || activeIdRef.current) return;
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+    activeIdRef.current = id;
+    startYRef.current = e.clientY;
+    setDragId(id);
+    setDragY(0);
+  };
+
+  const handleMove = (e: ReactPointerEvent<HTMLDivElement>, id: string) => {
+    if (committedRef.current || activeIdRef.current !== id) return;
+    const dy = startYRef.current - e.clientY;
+    const clamped = Math.max(0, Math.min(MAX_PULL, dy));
+    setDragY(clamped);
+    if (clamped >= COMMIT_AT) commit(id);
+  };
+
+  const handleUp = (_e: ReactPointerEvent<HTMLDivElement>, id: string) => {
+    if (activeIdRef.current !== id || committedRef.current) return;
+    activeIdRef.current = null;
+    setDragId(null);
+    setDragY(0);
+  };
+
   return (
     <div className="relative w-full mx-auto" style={{ height: 350, maxWidth: 360 }}>
       {/* soft ground shadow */}
@@ -171,20 +246,42 @@ function Carton({
         style={{ bottom: 125, width: "80%", zIndex: 10, overflowX: "clip", overflowY: "visible" }}
       >
         <div className="flex justify-center items-end">
-          {carton.map((f, i) => (
-            <button
-              key={f.id}
-              disabled={disabled}
-              onClick={() => onPick(f.id)}
-              data-testid={`button-fry-${f.id}`}
-              className="relative group disabled:cursor-default"
-              style={{ marginLeft: i === 0 ? 0 : -overlap, zIndex: 40 - Math.round(Math.abs(i - center)) }}
-            >
-              <div className="transition-transform duration-200 group-active:-translate-y-2 group-hover:-translate-y-3 group-focus-visible:-translate-y-3">
-                <FryBody len={f.poke} w={f.w} tone={f.tone} lean={f.lean} seed={f.seed} />
+          {carton.map((f, i) => {
+            const isCommitted = committedId === f.id;
+            const isDragging = dragId === f.id && !isCommitted;
+            const lifted = dragId === f.id ? dragY : 0;
+            return (
+              <div
+                key={f.id}
+                role="button"
+                aria-disabled={disabled}
+                data-testid={`button-fry-${f.id}`}
+                onPointerDown={(e) => handleDown(e, f.id)}
+                onPointerMove={(e) => handleMove(e, f.id)}
+                onPointerUp={(e) => handleUp(e, f.id)}
+                onPointerCancel={(e) => handleUp(e, f.id)}
+                onLostPointerCapture={(e) => handleUp(e, f.id)}
+                className="relative select-none"
+                style={{
+                  marginLeft: i === 0 ? 0 : -overlap,
+                  zIndex: isDragging || isCommitted ? 60 : 40 - Math.round(Math.abs(i - center)),
+                  touchAction: "none",
+                  cursor: disabled ? "default" : "grab",
+                }}
+              >
+                <div
+                  style={{
+                    transform: `translateY(${isCommitted ? -(MAX_PULL + 80) : -lifted}px)`,
+                    opacity: isCommitted ? 0 : 1,
+                    transition: isDragging ? "none" : "transform 0.34s cubic-bezier(0.16,1,0.3,1), opacity 0.34s ease",
+                    willChange: "transform",
+                  }}
+                >
+                  <FryBody len={f.poke} w={f.w} tone={f.tone} lean={f.lean} seed={f.seed} />
+                </div>
               </div>
-            </button>
-          ))}
+            );
+          })}
         </div>
       </div>
       {/* carton front panel — solid red fry box, occludes the fry bottoms so they sit inside */}
@@ -393,11 +490,11 @@ export function FryView({
     <div className="relative z-10 flex flex-col flex-1">
       <div className="pt-12 pb-1 px-6 text-center">
         <span className="text-[12px] font-bold tracking-widest text-[#FFCC02] uppercase">Longest Fry</span>
-        <h2 className="text-2xl font-extrabold toast-ink mt-1">Pull a fry</h2>
-        <p className="toast-muted text-[15px] mt-1">Longest one wins the table. Choose wisely 👀</p>
+        <h2 className="text-2xl font-extrabold toast-ink mt-1">Pull your fry</h2>
+        <p className="toast-muted text-[15px] mt-1">Press a fry and drag it up to pull it out — longest wins 👀</p>
       </div>
       <div className="flex-1 flex flex-col items-center justify-center px-4">
-        <Carton carton={carton} onPick={onPick} disabled={pickSubmitting} />
+        <Carton carton={carton} onPick={onPick} disabled={pickSubmitting} pickError={pickError} />
         {pickError && (
           <p className="mt-3 text-[13px] font-semibold text-[#E23744]" data-testid="text-fry-error">
             That fry got snatched — grab another!

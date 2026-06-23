@@ -467,6 +467,7 @@ export default function GroupSwipe() {
   const [liked, setLiked] = useState<Set<number>>(new Set());
   const [matchCount, setMatchCount] = useState(0);
   const [allMatches, setAllMatches] = useState<MenuItem[]>([]);
+  const [phaseMatchCount, setPhaseMatchCount] = useState(0);
   const prevMatchCountRef = useRef(0);
   const [likedCount, setLikedCount] = useState(0);
   const [lastAction, setLastAction] = useState<string | null>(null);
@@ -671,6 +672,11 @@ export default function GroupSwipe() {
   const tieBreakerActiveRef = useRef(false);
   tieBreakerActiveRef.current = tieBreakerActive;
   const loadRestaurantsForDishRef = useRef<((dish: DishItem) => void) | null>(null);
+  // Auto-launch the tie-breaker once the group piles up this many full matches in the
+  // current swipe phase, instead of waiting for the opt-in "Can't decide?" button.
+  const TIEBREAKER_MATCH_LIMIT = 3;
+  const phaseMatchCountRef = useRef(0);
+  const autoTbStartedRef = useRef(false);
 
   useEffect(() => {
     if (!sessionCode) return;
@@ -691,6 +697,14 @@ export default function GroupSwipe() {
           const matchData = await matchRes.json();
           const memberCount = matchData.members?.length ?? 0;
           if (matchData.matches && memberCount > 0) {
+            // Full matches (everyone in) for the current phase — drives the 3-match auto-launch.
+            const fullCount = matchData.matches.filter(
+              (m: any) => m.voters.length >= memberCount && (swipePhase === "menu" ? m.menuItem : m.restaurant),
+            ).length;
+            if (fullCount !== phaseMatchCountRef.current) {
+              phaseMatchCountRef.current = fullCount;
+              setPhaseMatchCount(fullCount);
+            }
             if (swipePhase === "menu") {
               if (!fullMatchRef.current && !showDishRestaurantsRef.current) {
                 for (const m of matchData.matches) {
@@ -765,6 +779,10 @@ export default function GroupSwipe() {
             const tbData = await tbRes.json();
             if (tbData?.tieBreaker && tbData.tieBreaker.status !== "finished") {
               queryClient.setQueryData(["/api/group/sessions", sessionCode, "tiebreaker"], tbData);
+              setFullMatch(false);
+              setConfetti(false);
+              setMatchedItem(null);
+              setShowResults(false);
               setTieBreakerActive(true);
             }
           }
@@ -1244,8 +1262,8 @@ export default function GroupSwipe() {
   // page. Any session member can start it; everyone else auto-joins via the poll.
   // The server gates on match count (>1) and member count, so the button is only
   // surfaced when 2+ full matches exist.
-  const handleStartTieBreaker = async () => {
-    if (!sessionCode || !profile) return;
+  const handleStartTieBreaker = async (): Promise<boolean> => {
+    if (!sessionCode || !profile) return false;
     try {
       const swipeType = swipePhase === "menu" ? "menu" : "restaurant";
       const tbRes = await apiRequest("POST", `/api/group/sessions/${sessionCode}/tiebreaker/start`, {
@@ -1255,12 +1273,54 @@ export default function GroupSwipe() {
       const tbData = await tbRes.json();
       if (tbData?.tieBreaker) {
         queryClient.setQueryData(["/api/group/sessions", sessionCode, "tiebreaker"], tbData);
+        // Drop any in-flight match overlay/confetti so the game takes over cleanly.
+        setFullMatch(false);
+        setConfetti(false);
+        setMatchedItem(null);
+        setShowResults(false);
         setTieBreakerActive(true);
+        return true;
       }
+      return false;
     } catch (err) {
       console.error("Failed to start tie-breaker:", err);
+      return false;
     }
   };
+
+  // Host-only: when the group hits the match limit in the current phase, auto-launch the
+  // tie-breaker. Everyone else is pulled in by the poll above (which flips tieBreakerActive).
+  // The server is idempotent (returns the existing game); a per-session sessionStorage lock
+  // keeps a host with two tabs from double-starting.
+  useEffect(() => {
+    if (!isHost || !profile) return;
+    if (tieBreakerActive || finalPick != null || sessionEnded) return;
+    if (phaseMatchCount < TIEBREAKER_MATCH_LIMIT) return;
+    if (autoTbStartedRef.current) return;
+    const lockKey = `toast_tb_autostart_${sessionCode}`;
+    if (sessionStorage.getItem(lockKey)) { autoTbStartedRef.current = true; return; }
+    // Re-entry guard while the request is in flight; only persist the per-session lock
+    // once the server confirms a game, so a transient failure (or null profile) can retry.
+    autoTbStartedRef.current = true;
+    (async () => {
+      const ok = await handleStartTieBreaker();
+      if (ok) sessionStorage.setItem(lockKey, "1");
+      else autoTbStartedRef.current = false;
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phaseMatchCount, isHost, profile, tieBreakerActive, finalPick, sessionEnded, sessionCode]);
+
+  // Reset the per-phase match count when the phase or session changes, so a stale count
+  // from a prior phase can't launch a game before the new phase's matches are polled.
+  useEffect(() => {
+    phaseMatchCountRef.current = 0;
+    setPhaseMatchCount(0);
+  }, [swipePhase, sessionCode]);
+
+  // A brand-new session is allowed a fresh auto-launch.
+  useEffect(() => {
+    autoTbStartedRef.current = false;
+  }, [sessionCode]);
 
   const handleTieBreakerComplete = useCallback((finalItemId: number, swipeType: string) => {
     setFinalPick({ id: finalItemId, swipeType });

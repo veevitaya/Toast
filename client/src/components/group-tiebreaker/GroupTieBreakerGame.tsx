@@ -16,6 +16,8 @@ import {
 } from "./shared";
 import { DuelView } from "./DuelView";
 import { FryView } from "./FryView";
+import tiebreakerVsImg from "@/assets/tiebreaker-vs.png";
+import tiebreakerFryImg from "@/assets/tiebreaker-fry.png";
 
 export type GroupTieBreakerGameProps = {
   sessionCode: string;
@@ -73,6 +75,16 @@ export function GroupTieBreakerGame({ sessionCode, meId, isHost, onComplete }: G
     }
   }, [tb?.status, tb?.finalItemId, tb?.swipeType, onComplete]);
 
+  // Splash intro shown once at the start of a fresh tie-breaker. Late joiners (who land
+  // mid-game) skip it. Auto-dismisses after a beat, or on tap.
+  const [showIntro, setShowIntro] = useState(true);
+  useEffect(() => {
+    if (!tb) return;
+    if (tb.status !== "choosing") { setShowIntro(false); return; }
+    const t = setTimeout(() => setShowIntro(false), 3400);
+    return () => clearTimeout(t);
+  }, [tb?.status]);
+
   const displayItems = useMemo(() => items.map((it) => toDisplayItem(it, swipeType)), [items, swipeType]);
   const itemById = useMemo(() => {
     const m = new Map<number, DisplayItem>();
@@ -87,6 +99,14 @@ export function GroupTieBreakerGame({ sessionCode, meId, isHost, onComplete }: G
           <Loader2 className="w-8 h-8 animate-spin toast-muted" />
           <p className="toast-muted mt-4 font-semibold">Setting up the tie-breaker…</p>
         </div>
+      </Shell>
+    );
+  }
+
+  if (showIntro) {
+    return (
+      <Shell>
+        <IntroSplash gameType={tb.gameType} onContinue={() => setShowIntro(false)} />
       </Shell>
     );
   }
@@ -146,6 +166,38 @@ export function GroupTieBreakerGame({ sessionCode, meId, isHost, onComplete }: G
         finishing={finishMut.isPending}
       />
     </Shell>
+  );
+}
+
+function IntroSplash({ gameType, onContinue }: { gameType: string; onContinue: () => void }) {
+  const isRps = gameType === "rps";
+  const img = isRps ? tiebreakerVsImg : tiebreakerFryImg;
+  return (
+    <div
+      className="relative z-10 flex flex-col flex-1 items-center justify-center px-6 text-center"
+      data-testid="tiebreaker-intro"
+      onClick={onContinue}
+    >
+      <div className="inline-flex items-center gap-2 bg-[#0F172A] text-white px-4 py-1.5 rounded-full mb-6 animate-pop-in">
+        <Swords className="w-3.5 h-3.5 text-[#FFCC02]" strokeWidth={2.5} />
+        <span className="text-[12px] font-bold tracking-wide">{isRps ? "RPS DUEL" : "LONGEST FRY"}</span>
+      </div>
+      <img
+        src={img}
+        alt={isRps ? "Toast versus Waffle" : "Longest fry wins"}
+        className="w-full max-w-[300px] object-contain mb-7 animate-scale-pop"
+        style={{ filter: "drop-shadow(0 18px 26px rgba(0,0,0,0.18))" }}
+      />
+      <h1 className="text-[32px] font-extrabold toast-ink leading-tight">Can't decide?</h1>
+      <p className="text-[17px] font-semibold toast-muted mt-2">Let's settle this! {isRps ? "🥊" : "🍟"}</p>
+      <button
+        onClick={onContinue}
+        data-testid="button-intro-continue"
+        className="mt-8 toast-gold px-8 py-3.5 rounded-2xl font-bold text-[16px] shadow-[0_8px_20px_-6px_rgba(255,204,2,0.4)] active:scale-95 transition-transform"
+      >
+        {isRps ? "Bring it on" : "Let's pull"}
+      </button>
+    </div>
   );
 }
 
