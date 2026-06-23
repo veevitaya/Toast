@@ -3930,6 +3930,12 @@ export async function registerRoutes(
         expectedMembers: z.number().int().min(2).max(20).optional(),
         latitude: z.string().optional(),
         longitude: z.string().optional(),
+        cardPreference: z.enum(["menu", "restaurant"]).optional(),
+        planData: z.object({
+          date: z.string().max(64),
+          time: z.string().max(64),
+          area: z.string().max(64),
+        }).optional(),
       });
       const input = schema.parse(req.body);
 
@@ -3963,6 +3969,8 @@ export async function registerRoutes(
         sessionType: input.sessionType || "regular",
         sourceData: input.sourceData || null,
         expectedMembers: input.expectedMembers || null,
+        cardPreference: input.cardPreference || null,
+        planData: input.planData || null,
         createdAt: new Date().toISOString(),
       });
 

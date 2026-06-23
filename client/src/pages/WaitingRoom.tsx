@@ -802,64 +802,34 @@ export default function WaitingRoom() {
             )}
           </AnimatePresence>
 
-          <div className="flex items-center gap-4">
-            {(() => {
-              const r = 34;
-              const c = 2 * Math.PI * r;
-              const total = Math.max(memberCount, 2);
-              const pct = total ? memberCount / total : 0;
-              const dash = c * pct;
-              return (
-                <div
-                  className="relative shrink-0"
-                  style={{ width: 84, height: 84 }}
-                  role="progressbar"
-                  aria-valuenow={memberCount}
-                  aria-valuemin={0}
-                  aria-valuemax={total}
-                  aria-label={`${memberCount} joined`}
-                >
-                  <svg width="84" height="84" viewBox="0 0 84 84" className="-rotate-90" aria-hidden="true">
-                    <circle cx="42" cy="42" r={r} fill="none" stroke="#F3F1EC" strokeWidth="8" />
-                    <circle
-                      cx="42"
-                      cy="42"
-                      r={r}
-                      fill="none"
-                      stroke="#06C755"
-                      strokeWidth="8"
-                      strokeLinecap="round"
-                      strokeDasharray={dash + " " + (c - dash)}
-                      style={{ transition: "stroke-dasharray 0.5s ease" }}
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-[24px] font-bold leading-none">{memberCount}</span>
-                    <span className="text-[10px] font-semibold mt-0.5 text-[#9A938A]">joined</span>
-                  </div>
-                </div>
-              );
-            })()}
-            <div className="flex-1 min-w-0">
-              <p className="text-[19px] font-bold leading-tight" data-testid="text-member-count">
-                {memberCount} joined
-              </p>
-              <p className="text-[13.5px] mt-1 leading-snug text-[#9A938A]">
-                {canStart ? "Everyone's here — let's start!" : "Waiting for friends to join…"}
-              </p>
-              {members.length > 0 && (
-                <div className="flex -space-x-2 mt-3">
-                  {members.slice(0, 6).map((m) => (
-                    <span
-                      key={m.lineUserId}
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold border-2 border-white overflow-hidden bg-[#F3F1EC] text-[#1A1A1A]"
-                    >
-                      {m.pictureUrl ? <img src={m.pictureUrl} alt="" className="w-full h-full object-cover" /> : m.displayName.charAt(0)}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+          <div className="flex flex-col items-center text-center">
+            <motion.img
+              src={mascotImg}
+              alt="Toast mascot"
+              className="h-24 w-24 object-contain"
+              draggable={false}
+              animate={canStart ? { y: 0 } : { y: [0, -7, 0] }}
+              transition={{ duration: 2.4, repeat: canStart ? 0 : Infinity, ease: "easeInOut" }}
+              data-testid="img-waiting-mascot"
+            />
+            <p className="text-[19px] font-bold leading-tight mt-2" data-testid="text-member-count">
+              {memberCount} joined
+            </p>
+            <p className="text-[13.5px] mt-1 leading-snug text-[#9A938A]">
+              {canStart ? "Everyone's here — let's start!" : "Waiting for friends to join…"}
+            </p>
+            {members.length > 0 && (
+              <div className="flex -space-x-2 mt-3 justify-center">
+                {members.slice(0, 6).map((m) => (
+                  <span
+                    key={m.lineUserId}
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold border-2 border-white overflow-hidden bg-[#F3F1EC] text-[#1A1A1A]"
+                  >
+                    {m.pictureUrl ? <img src={m.pictureUrl} alt="" className="w-full h-full object-cover" /> : m.displayName.charAt(0)}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

@@ -277,6 +277,8 @@ export const groupSessions = pgTable("group_sessions", {
   locationName: text("location_name"),
   locationLat: text("location_lat"),
   locationLng: text("location_lng"),
+  cardPreference: text("card_preference"),
+  planData: jsonb("plan_data"),
   createdAt: text("created_at").notNull(),
 });
 

@@ -103,6 +103,7 @@ export default function GroupSetup() {
   const [inviteStatus, setInviteStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
   const [listInviteData, setListInviteData] = useState<{ listId: number; restaurantIds: number[] } | null>(null);
+  const [cardMode, setCardMode] = useState<"menu" | "restaurant">("menu");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -159,10 +160,13 @@ export default function GroupSetup() {
             hostLineUserId: profile.userId,
             hostDisplayName: profile.displayName,
             hostPictureUrl: profile.pictureUrl || "",
+            planData: { date: dateLabel, time: TIMES[timeIdx], area },
             ...(listInviteData ? {
               sessionType: "saved_list",
               sourceData: JSON.stringify({ listId: listInviteData.listId, restaurantIds: listInviteData.restaurantIds }),
-            } : {}),
+            } : {
+              cardPreference: cardMode,
+            }),
           }),
         });
         if (resp.ok) {
@@ -284,6 +288,34 @@ export default function GroupSetup() {
           )}
         </div>
 
+        {!listInviteData && (
+          <>
+            <div className="mt-7 flex items-center justify-between">
+              <span className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: MUTE }}>
+                How you&apos;ll swipe
+              </span>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <SwipeModeCard
+                emoji="🍜"
+                title="Dishes first"
+                subtitle="Swipe food, then spots that serve it"
+                selected={cardMode === "menu"}
+                onClick={() => setCardMode("menu")}
+                testId="button-cardmode-menu"
+              />
+              <SwipeModeCard
+                emoji="🍽️"
+                title="Restaurants only"
+                subtitle="Swipe places, pick where to eat"
+                selected={cardMode === "restaurant"}
+                onClick={() => setCardMode("restaurant")}
+                testId="button-cardmode-restaurant"
+              />
+            </div>
+          </>
+        )}
+
         <div className="mt-5 flex items-center gap-3">
           <span
             className="w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold border-2 border-white overflow-hidden shrink-0"
@@ -317,6 +349,33 @@ export default function GroupSetup() {
 
 function Divider() {
   return <div className="h-px mx-3.5 my-0.5" style={{ backgroundColor: "rgba(26,26,26,0.06)" }} />;
+}
+
+function SwipeModeCard({ emoji, title, subtitle, selected, onClick, testId }: {
+  emoji: string; title: string; subtitle: string; selected: boolean; onClick: () => void; testId: string;
+}) {
+  return (
+    <button
+      data-testid={testId}
+      onClick={onClick}
+      aria-pressed={selected}
+      className="relative rounded-[20px] p-4 text-left active:scale-[0.98] transition-transform"
+      style={{
+        backgroundColor: "#fff",
+        border: selected ? `2px solid ${GOLD}` : "1px solid rgba(0,0,0,0.08)",
+        boxShadow: selected ? "0 12px 26px -14px rgba(255,204,2,0.6)" : "0 2px 8px rgba(0,0,0,0.04)",
+      }}
+    >
+      {selected && (
+        <span className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: GOLD }}>
+          <Check className="w-3.5 h-3.5" style={{ color: INK }} strokeWidth={3} />
+        </span>
+      )}
+      <span className="text-[24px] leading-none">{emoji}</span>
+      <span className="block text-[15px] font-bold mt-2.5">{title}</span>
+      <span className="block text-[12px] mt-0.5 leading-snug" style={{ color: MUTE }}>{subtitle}</span>
+    </button>
+  );
 }
 
 function PlanRow({ id, Icon, label, value, open, onToggle }: {

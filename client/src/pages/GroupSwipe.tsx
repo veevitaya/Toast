@@ -13,7 +13,7 @@ import { isMenuFirstVibe } from "@shared/vibeConfig";
 import { GroupTieBreakerGame } from "@/components/group-tiebreaker/GroupTieBreakerGame";
 import { rankByGroupTaste, type MemberTaste } from "@/lib/groupTasteRanking";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { Square, X, Trophy, ChevronRight, Crown, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils, MapPin, UtensilsCrossed, Swords, PartyPopper, Flame } from "lucide-react";
+import { Square, X, Trophy, ChevronRight, Crown, ArrowLeft, ExternalLink, MessageCircle, Users, Heart, Utensils, MapPin, UtensilsCrossed, Swords, PartyPopper, Flame, Calendar, Clock } from "lucide-react";
 
 type SwipePhase = "menu" | "restaurant";
 
@@ -458,6 +458,7 @@ export default function GroupSwipe() {
   const pollFailCount = useRef(0);
   const [sessionLocationLabel, setSessionLocationLabel] = useState<string | null>(null);
   const sessionLocationLabelRef = useRef<string | null>(null);
+  const [groupPlan, setGroupPlan] = useState<{ date?: string; time?: string; area?: string } | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [matchNotification, setMatchNotification] = useState<string | null>(null);
   const [fullMatch, setFullMatch] = useState(false);
@@ -541,6 +542,30 @@ export default function GroupSwipe() {
 
             if (sessionData.session?.sessionType === "saved_list" || sessionData.session?.sessionType === "toast_decides") {
               useMenuFirst = false;
+            }
+
+            // The host's plan-screen choice ("Dishes first" vs "Restaurants only") drives the
+            // journey for regular sessions, overriding the menu-first default. Scoped to
+            // sessionType "regular" so saved_list / toast_decides / trending stay restaurant-only.
+            if (sessionData.session?.sessionType === "regular" && sessionData.session?.cardPreference) {
+              useMenuFirst = sessionData.session.cardPreference === "menu";
+            }
+
+            // Capture the shared group plan (date/time/area) so every member can see the
+            // session summary on the dish-restaurants screen. Validate each field and reset
+            // when absent so a stale plan can't carry over to a session without one.
+            const pd = sessionData.session?.planData as
+              | { date?: string; time?: string; area?: string }
+              | null
+              | undefined;
+            if (pd && typeof pd === "object") {
+              setGroupPlan({
+                date: typeof pd.date === "string" ? pd.date : undefined,
+                time: typeof pd.time === "string" ? pd.time : undefined,
+                area: typeof pd.area === "string" ? pd.area : undefined,
+              });
+            } else {
+              setGroupPlan(null);
             }
 
             if (!useMenuFirst) {
@@ -1385,6 +1410,28 @@ export default function GroupSwipe() {
     }
   };
 
+  // Non-hosts don't drive the group decision. When a full match surfaces they see the
+  // celebration briefly, then auto-return to swiping — only the host gets the Keep
+  // Swiping / Top Picks / End controls. Cleanup clears the timer if a tie-breaker starts,
+  // the session ends, or results / dish-restaurants take over, preventing re-fire loops.
+  useEffect(() => {
+    if (isHost) return;
+    if (!fullMatch || !matchedItem) return;
+    if (sessionEnded || tieBreakerActive || showResults || showDishRestaurants) return;
+    const tid = setTimeout(() => {
+      setFullMatch(false);
+      setConfetti(false);
+      setMatchIsDish(false);
+      setMatchedDish(null);
+      setDishRestaurants([]);
+      setShowDishRestaurants(false);
+      setMatchedItem(null);
+      handleContinueSwiping();
+    }, 2800);
+    return () => clearTimeout(tid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost, fullMatch, matchedItem, sessionEnded, tieBreakerActive, showResults, showDishRestaurants, swipePhase]);
+
   if (!sessionCode) {
     return (
       <div className="w-full h-[100dvh] flex flex-col items-center justify-center bg-[hsl(30,20%,97%)] gap-4 px-6 text-center">
@@ -1785,6 +1832,22 @@ export default function GroupSwipe() {
               <p className="text-[12px] text-muted-foreground">{t("group_swipe.places_found", { count: dishRestaurants.length })}</p>
             </div>
           </div>
+          {(groupPlan?.date || groupPlan?.time || groupPlan?.area || sessionLocationLabel) && (
+            <div className="mt-3 rounded-2xl px-3.5 py-2.5 bg-[#FAF6EF] border border-black/[0.05]" data-testid="banner-group-plan">
+              <p className="text-[10px] uppercase tracking-wider font-semibold text-[#9A938A] mb-1.5">Group plan</p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] font-semibold text-[#1A1A1A]">
+                {groupPlan?.date && (
+                  <span className="inline-flex items-center gap-1" data-testid="text-plan-date"><Calendar className="w-3.5 h-3.5 text-[#9A938A]" />{groupPlan.date}</span>
+                )}
+                {groupPlan?.time && (
+                  <span className="inline-flex items-center gap-1" data-testid="text-plan-time"><Clock className="w-3.5 h-3.5 text-[#9A938A]" />{groupPlan.time}</span>
+                )}
+                {(sessionLocationLabel || groupPlan?.area) && (
+                  <span className="inline-flex items-center gap-1" data-testid="text-plan-area"><MapPin className="w-3.5 h-3.5 text-[#9A938A]" />{sessionLocationLabel || groupPlan?.area}</span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
           {loadingDishRestaurants ? (
@@ -1944,6 +2007,7 @@ export default function GroupSwipe() {
         </div>
 
         <div className="flex-shrink-0 px-5 pb-[max(env(safe-area-inset-bottom),1.25rem)] pt-3 bg-white/80 backdrop-blur-sm border-t border-gray-50 relative z-10">
+          {isHost ? (
           <div className="flex flex-col gap-2.5 w-full max-w-xs mx-auto">
             <motion.button
               initial={{ y: 16, opacity: 0 }}
@@ -1983,18 +2047,22 @@ export default function GroupSwipe() {
                 {t("group_swipe.keep_swiping")}
               </button>
 
-              {isHost && (
-                <button
-                  onClick={handleEndSession}
-                  data-testid="button-end-session-match"
-                  className="py-3 px-4 rounded-full bg-red-50 border border-red-200/60 text-red-600 font-bold text-[13px] active:scale-[0.96] transition-transform"
-                  style={{ boxShadow: "0 2px 8px rgba(239,68,68,0.08)" }}
-                >
-                  End
-                </button>
-              )}
+              <button
+                onClick={handleEndSession}
+                data-testid="button-end-session-match"
+                className="py-3 px-4 rounded-full bg-red-50 border border-red-200/60 text-red-600 font-bold text-[13px] active:scale-[0.96] transition-transform"
+                style={{ boxShadow: "0 2px 8px rgba(239,68,68,0.08)" }}
+              >
+                End
+              </button>
             </motion.div>
           </div>
+          ) : (
+            <div className="w-full max-w-xs mx-auto text-center py-2" data-testid="text-host-deciding">
+              <p className="text-[13px] font-semibold text-muted-foreground">Your host is picking what&apos;s next…</p>
+              <p className="text-[11px] text-muted-foreground/70 mt-1">Taking you back to swiping in a moment</p>
+            </div>
+          )}
         </div>
       </div>
     );

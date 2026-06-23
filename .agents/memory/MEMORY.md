@@ -1,6 +1,7 @@
 - [Toast premium aesthetic](toast-premium-aesthetic.md) — what "friendly+premium, not childish" means for Toast UI, and the hard bg-background rule.
 - [Mockup preview screenshot cache](mockup-preview-screenshot-cache.md) — /__mockup preview screenshots cache by URL + blank lazy-compile race; warm route, add ?cb=N, retry once.
 - [Group session host identity](group-session-host-identity.md) — host-only actions 403 unless session host id == browser guest id; don't block waiting-room member load on geolocation.
+- [Group session flow is host-driven](group-session-flow.md) — host alone drives match overlay; non-hosts auto-return; NO host→members nav broadcast (intentional, not a bug).
 - [Group-swipe match overlay](group-swipe-match-overlay.md) — poll-driven menu-match overlays re-fire after dismissal unless a seen-set tracks acknowledged dishes across both detection paths.
 - [Canvas callback gotchas](canvas-callback-gotchas.md) — update uses `updates`+`shapeType`; presentArtifact needs an existing `artifactId` (e.g. "artifacts/mockup-sandbox"); getCanvasState is viewport-scoped.
 - [Tie-breaker auto-start](tiebreaker-autostart.md) — group minigame auto-fires once per session at 3 full matches (host-only); manual button is the re-run path; lock only after a successful start.
