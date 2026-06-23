@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { TrendingUp, Copy, Check, X, Share2, MapPin, Navigation, Search, ArrowLeft, Sparkles, Plus } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import mascotImg from "@assets/toast_mascot_nobg.png";
-import { sendGroupInviteNoRedirect, getAccessToken, getGroupInviteUrl } from "@/lib/liff";
+import { sendGroupInviteNoRedirect, getAccessToken, getGroupInviteUrl, getLineGroupId } from "@/lib/liff";
 import { useLineProfile } from "@/lib/useLineProfile";
 import { getSavedDisplayName, getOnboardingProfile } from "@/hooks/use-onboarding";
 import { fetchWithTimeout } from "@/lib/queryClient";
@@ -148,6 +148,7 @@ export default function WaitingRoom() {
           pictureUrl: profile.pictureUrl || "",
           latitude: loc?.latitude,
           longitude: loc?.longitude,
+          lineGroupId: getLineGroupId() || undefined,
         }),
       });
 
@@ -171,6 +172,7 @@ export default function WaitingRoom() {
             hostPictureUrl: profile.pictureUrl || "",
             latitude: loc?.latitude,
             longitude: loc?.longitude,
+            lineGroupId: getLineGroupId() || undefined,
           }),
         });
         if (createRes.ok) {
@@ -416,6 +418,7 @@ export default function WaitingRoom() {
           lineUserId: guestUserId,
           displayName: guestName.trim(),
           pictureUrl: "",
+          lineGroupId: getLineGroupId() || undefined,
         }),
       });
 

@@ -1313,6 +1313,23 @@ export default function GroupSwipe() {
     }
   };
 
+  // Host-only, fire-and-forget: ask the server to push the group's final decision
+  // to LINE (the group chat if we captured its id, otherwise each member). The
+  // server claim is one-shot + idempotent, so calling this from multiple result
+  // paths (dish-match view, restaurant-match view, tie-breaker complete) is safe.
+  const notifyResult = useCallback((kind: "menu" | "restaurant", id: number) => {
+    if (!isHost || !sessionCode || !profile) return;
+    fetchWithTimeout(`/api/group/sessions/${sessionCode}/notify-result`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        lineUserId: profile.userId,
+        kind,
+        ...(kind === "menu" ? { menuItemId: id } : { restaurantId: id }),
+      }),
+    }).catch((err) => console.error("Failed to notify result:", err));
+  }, [isHost, sessionCode, profile]);
+
   // Host-only: when the group hits the match limit in the current phase, auto-launch the
   // tie-breaker. Everyone else is pulled in by the poll above (which flips tieBreakerActive).
   // The server is idempotent (returns the existing game); a per-session sessionStorage lock
@@ -1362,11 +1379,13 @@ export default function GroupSwipe() {
     // restaurant mode → that restaurant's detail screen;
     // menu mode → the list of restaurants serving the winning dish.
     if (swipeType === "restaurant") {
+      notifyResult("restaurant", finalItemId);
       if (sessionCode) sessionStorage.setItem("group_results_return", `/group/swipe?session=${sessionCode}`);
       navigate(`/restaurant/${finalItemId}`);
       return;
     }
 
+    notifyResult("menu", finalItemId);
     const winningDish = dishItems.find((d) => d.id === finalItemId);
     if (winningDish) {
       showRestaurantsForDish(winningDish);
@@ -1398,7 +1417,7 @@ export default function GroupSwipe() {
       }
       setSessionEnded(true);
     })();
-  }, [isHost, sessionCode, profile, navigate, dishItems, showRestaurantsForDish]);
+  }, [isHost, sessionCode, profile, navigate, dishItems, showRestaurantsForDish, notifyResult]);
 
   const handleContinueSwiping = () => {
     setFullMatch(false);
@@ -1903,6 +1922,7 @@ export default function GroupSwipe() {
   if (fullMatch && matchedItem) {
     const handleViewRestaurants = async () => {
       if (!matchedDish) return;
+      notifyResult("menu", matchedDish.id);
       await showRestaurantsForDish(matchedDish);
     };
 
@@ -2013,7 +2033,7 @@ export default function GroupSwipe() {
               initial={{ y: 16, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.85, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              onClick={matchIsDish ? handleViewRestaurants : () => navigate(`/restaurant/${matchedItem.id}`)}
+              onClick={matchIsDish ? handleViewRestaurants : () => { notifyResult("restaurant", matchedItem.id); navigate(`/restaurant/${matchedItem.id}`); }}
               data-testid="button-view-restaurant"
               className="w-full py-3.5 rounded-full bg-[#FFCC02] text-[#2d2000] font-bold text-[14px] active:scale-[0.96] transition-transform duration-200 flex items-center justify-center gap-2"
               style={{ boxShadow: "var(--shadow-glow-primary)" }}

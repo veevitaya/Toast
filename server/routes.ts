@@ -7,10 +7,16 @@ import { z } from "zod";
 import { createHash, randomBytes } from "crypto";
 import { classifyRestaurant, VERIFICATION_CHECKLIST_TEMPLATE } from "./classifier";
 import { autoDetectDistrict } from "@shared/vibeConfig";
+import { isLineConfigured, linePush, lineMulticast, buildResultFlex } from "./line";
 
 function hashPassword(password: string): string {
   return createHash("sha256").update(password).digest("hex");
 }
+
+// LINE group ids are 'C' + 32 hex chars. We validate client-supplied group ids
+// against this so a session result is only ever pushed to a real group
+// destination (never a user/room id); anything else falls back to multicast.
+const LINE_GROUP_ID_RE = /^C[0-9a-f]{32}$/i;
 
 function generateSessionCode(): string {
   return randomBytes(4).toString("hex");
@@ -3931,6 +3937,7 @@ export async function registerRoutes(
         latitude: z.string().optional(),
         longitude: z.string().optional(),
         cardPreference: z.enum(["menu", "restaurant"]).optional(),
+        lineGroupId: z.string().max(200).optional(),
         planData: z.object({
           date: z.string().max(64),
           time: z.string().max(64),
@@ -3971,6 +3978,7 @@ export async function registerRoutes(
         expectedMembers: input.expectedMembers || null,
         cardPreference: input.cardPreference || null,
         planData: input.planData || null,
+        lineGroupId: input.lineGroupId && LINE_GROUP_ID_RE.test(input.lineGroupId) ? input.lineGroupId : null,
         createdAt: new Date().toISOString(),
       });
 
@@ -4008,6 +4016,7 @@ export async function registerRoutes(
         pictureUrl: z.string().optional(),
         latitude: z.string().optional(),
         longitude: z.string().optional(),
+        lineGroupId: z.string().max(200).optional(),
       });
       const input = schema.parse(req.body);
 
@@ -4057,6 +4066,10 @@ export async function registerRoutes(
         longitude: input.longitude || null,
         joinedAt: new Date().toISOString(),
       });
+
+      if (input.lineGroupId && LINE_GROUP_ID_RE.test(input.lineGroupId)) {
+        await storage.setGroupSessionLineGroupId(code, input.lineGroupId);
+      }
 
       logSessionEvent(code, "USER_JOINED", userId, { displayName });
 
@@ -4156,6 +4169,145 @@ export async function registerRoutes(
       }
 
       res.json({ success: true });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Host-triggered, one-shot LINE push of the group's decision. Deep-links to the
+  // chosen restaurant (restaurant mode) or to the list of restaurants serving the
+  // chosen dish (menu mode). Idempotent via an atomic notification claim.
+  app.post("/api/group/sessions/:code/notify-result", async (req, res) => {
+    try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`notify-result:${ip}`, 20, 60000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+
+      const { code } = req.params;
+      const schema = z.object({
+        lineUserId: z.string().min(1),
+        kind: z.enum(["menu", "restaurant"]),
+        menuItemId: z.number().int().positive().optional(),
+        restaurantId: z.number().int().positive().optional(),
+      });
+      const input = schema.parse(req.body);
+
+      const targetId = input.kind === "menu" ? input.menuItemId : input.restaurantId;
+      if (!targetId) {
+        return res.status(400).json({ message: `${input.kind === "menu" ? "menuItemId" : "restaurantId"} is required` });
+      }
+
+      const session = await storage.getGroupSession(code);
+      if (!session) return res.status(404).json({ message: "Session not found" });
+      if (session.hostLineUserId !== input.lineUserId) {
+        return res.status(403).json({ message: "Only the host can send the result notification" });
+      }
+      const sessionAge = Date.now() - new Date(session.createdAt).getTime();
+      if (sessionAge > 24 * 60 * 60 * 1000) {
+        return res.status(410).json({ message: "Session has expired" });
+      }
+
+      // Validate the chosen id against real session state so a host can't push an
+      // arbitrary restaurant/dish: it must be a full match in the relevant phase
+      // or the resolved tie-breaker winner.
+      const swipeType = input.kind;
+      const matches = await storage.getGroupMatches(code, swipeType);
+      const tieBreaker = await storage.getTieBreaker(code);
+      const isMatch = matches.some(m => m.menuItemId === targetId);
+      const isTieWinner =
+        !!tieBreaker &&
+        tieBreaker.finalItemId === targetId &&
+        tieBreaker.swipeType === input.kind &&
+        (tieBreaker.status === "resolved" || tieBreaker.status === "finished");
+      if (!isMatch && !isTieWinner) {
+        return res.status(400).json({ message: "Result does not match this session's decision" });
+      }
+
+      if (!isLineConfigured()) {
+        return res.json({ sent: false, reason: "not_configured" });
+      }
+
+      // Atomically claim the one-shot notification; duplicate/concurrent triggers
+      // (host views the match, opens it again, tie-breaker also fires) are no-ops.
+      const claimed = await storage.claimGroupSessionNotification(code, {
+        kind: input.kind,
+        menuItemId: input.kind === "menu" ? targetId : null,
+        restaurantId: input.kind === "restaurant" ? targetId : null,
+      });
+      if (!claimed) {
+        return res.json({ sent: false, reason: "already" });
+      }
+
+      try {
+        // Server owns the deep link — never trust a client-supplied URL. Prefer the
+        // OA LIFF entry (keeps LINE login context) and fall back to the app domain.
+        const oaLiffId = process.env.VITE_LINE_OA_LIFF_ID || "";
+        const path = input.kind === "menu" ? `/menu-item/${targetId}` : `/restaurant/${targetId}`;
+        const url = oaLiffId ? `https://liff.line.me/${oaLiffId}${path}` : `https://letstoast.app${path}`;
+
+        let flex;
+        if (input.kind === "restaurant") {
+          const restaurant = await storage.getRestaurantById(targetId);
+          if (!restaurant) throw new Error("Restaurant not found");
+          flex = buildResultFlex({
+            headline: "Your group decided! \uD83C\uDF89",
+            title: restaurant.name,
+            subtitle: restaurant.category || "Tap to see the details",
+            imageUrl: restaurant.imageUrl,
+            buttonLabel: "View restaurant",
+            url,
+          });
+        } else {
+          const dish = await storage.getMenuItemById(targetId);
+          if (!dish) throw new Error("Menu item not found");
+          flex = buildResultFlex({
+            headline: "Your group decided! \uD83C\uDF89",
+            title: dish.name,
+            subtitle: "Tap to see where to get it",
+            imageUrl: dish.imageUrl,
+            buttonLabel: "Find restaurants",
+            url,
+          });
+        }
+
+        // Prefer the LINE group when its id was captured; otherwise multicast to
+        // each member's userId (requires them to have friended the OA). If the
+        // group push fails (e.g. the OA was never added to that group), fall back
+        // to a member multicast so the result still reaches people.
+        let recipients = 0;
+        let via = session.lineGroupId ? "group" : "multicast";
+        const multicastMembers = async () => {
+          const members = await storage.getGroupMembers(code);
+          const userIds = members.map(m => m.lineUserId);
+          await lineMulticast(userIds, [flex]);
+          return userIds.length;
+        };
+        if (session.lineGroupId) {
+          try {
+            await linePush(session.lineGroupId, [flex]);
+            recipients = 1;
+          } catch (groupErr: any) {
+            console.warn("LINE group push failed, falling back to multicast:", groupErr?.message);
+            via = "multicast_fallback";
+            recipients = await multicastMembers();
+          }
+        } else {
+          recipients = await multicastMembers();
+        }
+
+        await storage.completeGroupSessionNotification(code, claimed.notificationStartedAt!, "sent");
+        logSessionEvent(code, "RESULT_NOTIFIED", input.lineUserId, { kind: input.kind, targetId, via, recipients });
+        res.json({ sent: true, via, recipients });
+      } catch (sendErr: any) {
+        const msg = sendErr?.message ? String(sendErr.message).slice(0, 500) : "Unknown error";
+        await storage.completeGroupSessionNotification(code, claimed.notificationStartedAt!, "failed", msg);
+        console.error("Failed to send LINE result notification:", msg);
+        res.status(502).json({ sent: false, reason: "send_failed", message: msg });
+      }
     } catch (err) {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: err.errors[0].message });

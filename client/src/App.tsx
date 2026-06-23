@@ -15,6 +15,7 @@ const SoloJourney = lazy(() => import("@/pages/SoloJourney"));
 const SoloQuiz = lazy(() => import("@/pages/SoloQuiz"));
 const SoloResults = lazy(() => import("@/pages/SoloResults"));
 const RestaurantList = lazy(() => import("@/pages/RestaurantList"));
+const MenuItemRestaurants = lazy(() => import("@/pages/MenuItemRestaurants"));
 const GroupSetup = lazy(() => import("@/pages/GroupSetup"));
 const GroupTaste = lazy(() => import("@/pages/GroupTaste"));
 const WaitingRoom = lazy(() => import("@/pages/WaitingRoom"));
@@ -121,6 +122,9 @@ function Router() {
           </Route>
           <Route path="/restaurant/:id">
             <AnimatedPage><RestaurantDetail /></AnimatedPage>
+          </Route>
+          <Route path="/menu-item/:id">
+            <AnimatedPage><MenuItemRestaurants /></AnimatedPage>
           </Route>
           <Route path="/campaign/:id">
             <AnimatedPage><CampaignDetail /></AnimatedPage>

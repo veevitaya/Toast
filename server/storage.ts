@@ -115,7 +115,7 @@ import {
   type ContactSubmissionActivity,
   type InsertContactSubmissionActivity,
 } from "@shared/schema";
-import { eq, desc, and, or, gte, lte, gt, inArray, count, sql } from "drizzle-orm";
+import { eq, desc, and, or, gte, lte, gt, inArray, count, sql, isNull } from "drizzle-orm";
 
 export interface IStorage {
   getRestaurants(mode?: string, lat?: number, lng?: number, query?: string): Promise<Restaurant[]>;
@@ -176,6 +176,9 @@ export interface IStorage {
   createGroupSession(session: InsertGroupSession): Promise<GroupSession>;
   getGroupSession(sessionCode: string): Promise<GroupSession | undefined>;
   updateGroupSessionStatus(sessionCode: string, status: string): Promise<void>;
+  setGroupSessionLineGroupId(sessionCode: string, lineGroupId: string): Promise<void>;
+  claimGroupSessionNotification(sessionCode: string, result: { kind: string; menuItemId: number | null; restaurantId: number | null }): Promise<GroupSession | undefined>;
+  completeGroupSessionNotification(sessionCode: string, claimToken: string, status: "sent" | "failed", error?: string | null): Promise<void>;
   addGroupMember(member: InsertGroupSessionMember): Promise<GroupSessionMember>;
   getGroupMembers(sessionCode: string): Promise<GroupSessionMember[]>;
   isGroupMember(sessionCode: string, lineUserId: string): Promise<boolean>;
@@ -662,6 +665,69 @@ export class DatabaseStorage implements IStorage {
 
   async updateGroupSessionStatus(sessionCode: string, status: string): Promise<void> {
     await db.update(groupSessions).set({ status }).where(eq(groupSessions.sessionCode, sessionCode));
+  }
+
+  async setGroupSessionLineGroupId(sessionCode: string, lineGroupId: string): Promise<void> {
+    await db.update(groupSessions)
+      .set({ lineGroupId })
+      .where(and(eq(groupSessions.sessionCode, sessionCode), isNull(groupSessions.lineGroupId)));
+  }
+
+  // Atomically claim the one-shot result notification for a session. Returns the
+  // claimed row only to the first caller; concurrent/duplicate triggers get
+  // undefined. A 'sending' claim older than 60s is treated as stale and may be
+  // re-claimed so a crashed send can be retried; 'sent' is terminal.
+  async claimGroupSessionNotification(
+    sessionCode: string,
+    result: { kind: string; menuItemId: number | null; restaurantId: number | null },
+  ): Promise<GroupSession | undefined> {
+    const staleThreshold = new Date(Date.now() - 60_000).toISOString();
+    const [claimed] = await db.update(groupSessions)
+      .set({
+        notificationStatus: "sending",
+        notificationStartedAt: new Date().toISOString(),
+        notificationError: null,
+        finalResultKind: result.kind,
+        finalMenuItemId: result.menuItemId,
+        finalRestaurantId: result.restaurantId,
+      })
+      .where(and(
+        eq(groupSessions.sessionCode, sessionCode),
+        isNull(groupSessions.notifiedAt),
+        or(
+          isNull(groupSessions.notificationStatus),
+          eq(groupSessions.notificationStatus, "failed"),
+          and(
+            eq(groupSessions.notificationStatus, "sending"),
+            sql`${groupSessions.notificationStartedAt} < ${staleThreshold}`,
+          ),
+        ),
+      ))
+      .returning();
+    return claimed;
+  }
+
+  async completeGroupSessionNotification(
+    sessionCode: string,
+    claimToken: string,
+    status: "sent" | "failed",
+    error?: string | null,
+  ): Promise<void> {
+    // CAS on the claim token (notificationStartedAt) so only the claimer that is
+    // still the current owner can finalize. A stale sender superseded by a later
+    // re-claim, or one returning after a newer attempt already marked 'sent'
+    // (notifiedAt set), is ignored — it can neither regress state nor double-send.
+    await db.update(groupSessions)
+      .set({
+        notificationStatus: status,
+        notifiedAt: status === "sent" ? new Date().toISOString() : null,
+        notificationError: error ?? null,
+      })
+      .where(and(
+        eq(groupSessions.sessionCode, sessionCode),
+        eq(groupSessions.notificationStartedAt, claimToken),
+        isNull(groupSessions.notifiedAt),
+      ));
   }
 
   async addGroupMember(member: InsertGroupSessionMember): Promise<GroupSessionMember> {

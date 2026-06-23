@@ -4,5 +4,6 @@
 - [Group session flow is host-driven](group-session-flow.md) — host alone drives match overlay; non-hosts auto-return; NO host→members nav broadcast (intentional, not a bug).
 - [Group-swipe match overlay](group-swipe-match-overlay.md) — poll-driven menu-match overlays re-fire after dismissal unless a seen-set tracks acknowledged dishes across both detection paths.
 - [Canvas callback gotchas](canvas-callback-gotchas.md) — update uses `updates`+`shapeType`; presentArtifact needs an existing `artifactId` (e.g. "artifacts/mockup-sandbox"); getCanvasState is viewport-scoped.
+- [Group result LINE push](group-result-line-push.md) — fire result push on host's decision ACTION not the transient match overlay; send-timeout must stay << stale-claim window.
 - [Tie-breaker auto-start](tiebreaker-autostart.md) — group minigame auto-fires once per session at 3 full matches (host-only); manual button is the re-run path; lock only after a successful start.
 - [Toast asset tracking](toast-asset-tracking.md) — `attached_assets/`/`@assets` is git-ignored; ship images you commit from `client/src/assets/` via `@/assets/...` (mascots precedent).

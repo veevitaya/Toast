@@ -37,6 +37,19 @@ export function getLineOALiffId(): string {
   return LINE_OA_LIFF_ID;
 }
 
+// When the LIFF app is opened from inside a LINE group chat, the context exposes
+// that group's id. We capture it best-effort so the server can push the group's
+// decision back to the group. Returns null outside a group context (e.g. opened
+// from a 1:1 chat or external browser).
+export function getLineGroupId(): string | null {
+  try {
+    const ctx = liff.getContext();
+    return ctx?.groupId ?? null;
+  } catch {
+    return null;
+  }
+}
+
 const LIFF_INIT_TIMEOUT = 8000;
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {

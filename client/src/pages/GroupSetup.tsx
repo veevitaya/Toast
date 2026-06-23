@@ -6,6 +6,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useLineProfile } from "@/lib/useLineProfile";
+import { getLineGroupId } from "@/lib/liff";
 import { fetchWithTimeout } from "@/lib/queryClient";
 import { isOnboardingComplete } from "@/hooks/use-onboarding";
 import { InlineOnboarding } from "@/pages/Onboarding";
@@ -160,6 +161,7 @@ export default function GroupSetup() {
             hostLineUserId: profile.userId,
             hostDisplayName: profile.displayName,
             hostPictureUrl: profile.pictureUrl || "",
+            lineGroupId: getLineGroupId() || undefined,
             planData: { date: dateLabel, time: TIMES[timeIdx], area },
             ...(listInviteData ? {
               sessionType: "saved_list",

@@ -279,6 +279,14 @@ export const groupSessions = pgTable("group_sessions", {
   locationLng: text("location_lng"),
   cardPreference: text("card_preference"),
   planData: jsonb("plan_data"),
+  lineGroupId: text("line_group_id"),
+  finalResultKind: text("final_result_kind"),
+  finalMenuItemId: integer("final_menu_item_id"),
+  finalRestaurantId: integer("final_restaurant_id"),
+  notificationStatus: text("notification_status"),
+  notificationStartedAt: text("notification_started_at"),
+  notifiedAt: text("notified_at"),
+  notificationError: text("notification_error"),
   createdAt: text("created_at").notNull(),
 });
 
