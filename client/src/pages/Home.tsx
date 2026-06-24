@@ -783,6 +783,14 @@ export default function Home() {
                   <span className="inline-flex items-center gap-1.5 bg-white rounded-full px-3 py-1.5 text-xs font-medium text-foreground border border-gray-100" data-testid="badge-streak">
                     12-wk streak
                   </span>
+                  <button
+                    onClick={() => navigate("/motion")}
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-black border border-[#FFCC02]/40"
+                    style={{ backgroundColor: "#FFF4CC" }}
+                    data-testid="button-motion-demo"
+                  >
+                    ✨ Motion demo
+                  </button>
                 </div>
               </div>
               <img
