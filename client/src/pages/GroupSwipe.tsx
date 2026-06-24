@@ -458,6 +458,7 @@ export default function GroupSwipe() {
   const pollFailCount = useRef(0);
   const [sessionLocationLabel, setSessionLocationLabel] = useState<string | null>(null);
   const sessionLocationLabelRef = useRef<string | null>(null);
+  const sessionCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
   const [groupPlan, setGroupPlan] = useState<{ date?: string; time?: string; area?: string } | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [matchNotification, setMatchNotification] = useState<string | null>(null);
@@ -527,6 +528,11 @@ export default function GroupSwipe() {
             if (sessionLocation) {
               setSessionLocationLabel(sessionLocation);
               sessionLocationLabelRef.current = sessionLocation;
+            }
+            const sLat = parseFloat(sessionData.session?.locationLat);
+            const sLng = parseFloat(sessionData.session?.locationLng);
+            if (Number.isFinite(sLat) && Number.isFinite(sLng)) {
+              sessionCoordsRef.current = { lat: sLat, lng: sLng };
             }
 
             if (sessionData.session?.sessionType === "vibe_swipe" && sessionData.session?.sourceData) {
@@ -627,7 +633,9 @@ export default function GroupSwipe() {
               }
 
               if (restaurantData.length === 0) {
-                const locationParam = sessionLocationLabelRef.current ? `?location=${encodeURIComponent(sessionLocationLabelRef.current)}` : "";
+                const locationParam = sessionCoordsRef.current
+                  ? `?lat=${sessionCoordsRef.current.lat}&lng=${sessionCoordsRef.current.lng}`
+                  : (sessionLocationLabelRef.current ? `?location=${encodeURIComponent(sessionLocationLabelRef.current)}` : "");
                 const res = await fetchWithTimeout(`/api/restaurants${locationParam}`, { signal: controller.signal });
                 if (cancelled) return;
                 if (res.ok) {
@@ -944,7 +952,8 @@ export default function GroupSwipe() {
     try {
       setLoading(true);
       setMatchedDish(dish);
-      const res = await fetchWithTimeout(`/api/menu-items/${dish.id}/restaurants`);
+      const coordQ = sessionCoordsRef.current ? `?lat=${sessionCoordsRef.current.lat}&lng=${sessionCoordsRef.current.lng}` : "";
+      const res = await fetchWithTimeout(`/api/menu-items/${dish.id}/restaurants${coordQ}`);
       if (res.ok) {
         const data = await res.json();
         const items: MenuItem[] = data.map((r: any) => ({
@@ -1241,7 +1250,8 @@ export default function GroupSwipe() {
     setFullMatch(false);
     setShowDishRestaurants(true);
     try {
-      const res = await fetchWithTimeout(`/api/menu-items/${dish.id}/restaurants`);
+      const coordQ = sessionCoordsRef.current ? `?lat=${sessionCoordsRef.current.lat}&lng=${sessionCoordsRef.current.lng}` : "";
+      const res = await fetchWithTimeout(`/api/menu-items/${dish.id}/restaurants${coordQ}`);
       if (res.ok) {
         const data = await res.json();
         const items: MenuItem[] = data.map((r: any) => ({

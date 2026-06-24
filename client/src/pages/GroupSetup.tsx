@@ -97,6 +97,7 @@ export default function GroupSetup() {
   const [selDay, setSelDay] = useState(TODAY_DAY);
   const [timeIdx, setTimeIdx] = useState(() => nearestTimeIdx());
   const [area, setArea] = useState("Thonglor");
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(AREA_COORDS["Thonglor"]);
   const [areaQuery, setAreaQuery] = useState("");
   const [usedLocation, setUsedLocation] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -125,13 +126,23 @@ export default function GroupSetup() {
     setOpenPicker((cur) => (cur === p ? null : p));
   const pickDay = (d: number) => { setSelDay(d); setOpenPicker(null); };
   const pickTime = (i: number) => { setTimeIdx(i); setOpenPicker(null); };
-  const pickArea = (a: string) => { setArea(a); setUsedLocation(false); setOpenPicker(null); };
+  const pickArea = (a: string) => { setArea(a); setCoords(AREA_COORDS[a] || null); setUsedLocation(false); setOpenPicker(null); };
   const detectLocation = () => {
     if (!("geolocation" in navigator)) { setUsedLocation(false); return; }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setArea(nearestArea(pos.coords.latitude, pos.coords.longitude));
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setCoords({ lat: latitude, lng: longitude });
+        let resolved = "";
+        try {
+          const r = await fetch(`/api/geocode/reverse?lat=${latitude}&lng=${longitude}`);
+          if (r.ok) {
+            const data = await r.json();
+            if (data?.name) resolved = String(data.name);
+          }
+        } catch {}
+        setArea(resolved || nearestArea(latitude, longitude));
         setUsedLocation(true);
         setAreaQuery("");
         setLocating(false);
@@ -163,6 +174,13 @@ export default function GroupSetup() {
             hostPictureUrl: profile.pictureUrl || "",
             lineGroupId: getLineGroupId() || undefined,
             planData: { date: dateLabel, time: TIMES[timeIdx], area },
+            locationName: area,
+            ...(coords ? {
+              latitude: String(coords.lat),
+              longitude: String(coords.lng),
+              locationLat: String(coords.lat),
+              locationLng: String(coords.lng),
+            } : {}),
             ...(listInviteData ? {
               sessionType: "saved_list",
               sourceData: JSON.stringify({ listId: listInviteData.listId, restaurantIds: listInviteData.restaurantIds }),
@@ -476,7 +494,9 @@ function TimeScroller({ idx, onSelect }: { idx: number; onSelect: (i: number) =>
 function AreaPicker({ value, query, setQuery, usedLocation, locating, onSelect, onUseLocation }: {
   value: string; query: string; setQuery: (v: string) => void; usedLocation: boolean; locating: boolean; onSelect: (a: string) => void; onUseLocation: () => void;
 }) {
-  const filtered = AREAS.filter((a) => a.toLowerCase().includes(query.toLowerCase()));
+  const q = query.trim();
+  const filtered = AREAS.filter((a) => a.toLowerCase().includes(q.toLowerCase()));
+  const showCustom = q.length > 0 && !AREAS.some((a) => a.toLowerCase() === q.toLowerCase());
   return (
     <div className="px-3.5 pb-3 pt-1" data-testid="picker-area">
       <button
@@ -508,7 +528,17 @@ function AreaPicker({ value, query, setQuery, usedLocation, locating, onSelect, 
       </div>
 
       <div className="max-h-44 overflow-y-auto [&::-webkit-scrollbar]:hidden">
-        {filtered.length === 0 ? (
+        {showCustom && (
+          <button
+            data-testid="button-use-typed-area"
+            onClick={() => onSelect(q)}
+            className="w-full flex items-center gap-3 py-2.5 px-1.5 text-left rounded-xl active:opacity-70"
+          >
+            <MapPin className="w-4 h-4 shrink-0" style={{ color: GOLD }} />
+            <span className="flex-1 text-[14px] font-medium">Use “{q}”</span>
+          </button>
+        )}
+        {filtered.length === 0 && !showCustom ? (
           <p className="text-[13px] py-4 text-center" style={{ color: MUTE }}>No areas match that search</p>
         ) : (
           filtered.map((a) => {

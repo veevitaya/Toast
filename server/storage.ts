@@ -361,10 +361,22 @@ function invalidateCache(prefix: string) {
 export class DatabaseStorage implements IStorage {
   async getRestaurants(mode?: string, lat?: number, lng?: number, query?: string): Promise<Restaurant[]> {
     const cacheKey = `restaurants:list:${mode || ''}:${query || ''}`;
-    return cached(cacheKey, 30000, async () => {
+    const list = await cached(cacheKey, 30000, async () => {
       let queryBuilder = db.select().from(restaurants);
       return await queryBuilder.orderBy(desc(restaurants.id));
     });
+    if (typeof lat === "number" && typeof lng === "number" && Number.isFinite(lat) && Number.isFinite(lng)) {
+      const toRad = (d: number) => (d * Math.PI) / 180;
+      const distKm = (rLat: number, rLng: number) => {
+        if (!Number.isFinite(rLat) || !Number.isFinite(rLng)) return Number.POSITIVE_INFINITY;
+        const dLat = toRad(rLat - lat);
+        const dLng = toRad(rLng - lng);
+        const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat)) * Math.cos(toRad(rLat)) * Math.sin(dLng / 2) ** 2;
+        return 2 * 6371 * Math.asin(Math.min(1, Math.sqrt(s)));
+      };
+      return [...list].sort((a, b) => distKm(parseFloat(a.lat), parseFloat(a.lng)) - distKm(parseFloat(b.lat), parseFloat(b.lng)));
+    }
+    return list;
   }
 
   async getRestaurantById(id: number): Promise<Restaurant | undefined> {

@@ -885,7 +885,21 @@ export async function registerRoutes(
         return false;
       });
 
-      matched.sort((a, b) => (b.trendingScore || 0) - (a.trendingScore || 0));
+      const dLat = req.query.lat ? parseFloat(String(req.query.lat)) : NaN;
+      const dLng = req.query.lng ? parseFloat(String(req.query.lng)) : NaN;
+      if (Number.isFinite(dLat) && Number.isFinite(dLng)) {
+        const toRad = (d: number) => (d * Math.PI) / 180;
+        const distKm = (rLat: number, rLng: number) => {
+          if (!Number.isFinite(rLat) || !Number.isFinite(rLng)) return Number.POSITIVE_INFINITY;
+          const aLat = toRad(rLat - dLat);
+          const aLng = toRad(rLng - dLng);
+          const s = Math.sin(aLat / 2) ** 2 + Math.cos(toRad(dLat)) * Math.cos(toRad(rLat)) * Math.sin(aLng / 2) ** 2;
+          return 2 * 6371 * Math.asin(Math.min(1, Math.sqrt(s)));
+        };
+        matched.sort((a, b) => distKm(parseFloat(a.lat), parseFloat(a.lng)) - distKm(parseFloat(b.lat), parseFloat(b.lng)));
+      } else {
+        matched.sort((a, b) => (b.trendingScore || 0) - (a.trendingScore || 0));
+      }
       res.json(matched.slice(0, 30));
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
@@ -2076,17 +2090,20 @@ export async function registerRoutes(
       const input = api.restaurants.list.input ? api.restaurants.list.input.parse(req.query) : {};
       const parsed = input || {};
       const locationFilter = "location" in parsed ? (parsed as { location?: string }).location : undefined;
-      const cacheKey = `restaurants:${parsed.mode || ''}:${parsed.query || ''}:${locationFilter || ''}`;
+      const latKey = typeof parsed.lat === "number" ? parsed.lat.toFixed(2) : "";
+      const lngKey = typeof parsed.lng === "number" ? parsed.lng.toFixed(2) : "";
+      const cacheKey = `restaurants:${parsed.mode || ''}:${parsed.query || ''}:${locationFilter || ''}:${latKey}:${lngKey}`;
       let restaurants = await getCached(cacheKey, 30000, () =>
         storage.getRestaurants(parsed.mode, parsed.lat, parsed.lng, parsed.query)
       );
       if (locationFilter) {
         const loc = locationFilter.toLowerCase();
-        restaurants = restaurants.filter((r) => {
+        const filtered = restaurants.filter((r) => {
           const addr = (r.address || "").toLowerCase();
           const district = (r.district || "").toLowerCase();
           return addr.includes(loc) || district.includes(loc);
         });
+        if (filtered.length > 0) restaurants = filtered;
       }
       res.set("Cache-Control", "public, max-age=60, stale-while-revalidate=120");
       res.json(restaurants);
@@ -3938,6 +3955,9 @@ export async function registerRoutes(
         longitude: z.string().optional(),
         cardPreference: z.enum(["menu", "restaurant"]).optional(),
         lineGroupId: z.string().max(200).optional(),
+        locationName: z.string().max(120).optional(),
+        locationLat: z.string().max(32).optional(),
+        locationLng: z.string().max(32).optional(),
         planData: z.object({
           date: z.string().max(64),
           time: z.string().max(64),
@@ -3978,6 +3998,9 @@ export async function registerRoutes(
         expectedMembers: input.expectedMembers || null,
         cardPreference: input.cardPreference || null,
         planData: input.planData || null,
+        locationName: input.locationName || null,
+        locationLat: input.locationLat || null,
+        locationLng: input.locationLng || null,
         lineGroupId: input.lineGroupId && LINE_GROUP_ID_RE.test(input.lineGroupId) ? input.lineGroupId : null,
         createdAt: new Date().toISOString(),
       });
@@ -4966,6 +4989,58 @@ export async function registerRoutes(
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: err.errors[0].message });
       }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Reverse geocoding via OpenStreetMap Nominatim (keyless). Resolves a real,
+  // human-readable area label from GPS coords so group planning can use the
+  // user's actual location even when it isn't one of the predefined areas.
+  // Cached in-memory (coarse key) to respect Nominatim's usage policy.
+  const reverseGeoCache = new Map<string, { name: string; at: number }>();
+  const REVERSE_GEO_TTL = 24 * 60 * 60 * 1000;
+  app.get("/api/geocode/reverse", async (req, res) => {
+    try {
+      const ip = req.ip || "unknown";
+      if (rateLimit(`geocode:${ip}`, 15, 60000)) {
+        return res.status(429).json({ message: "Too many requests" });
+      }
+      const lat = parseFloat(String(req.query.lat));
+      const lng = parseFloat(String(req.query.lng));
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        return res.status(400).json({ message: "Invalid coordinates" });
+      }
+      const key = `${lat.toFixed(3)},${lng.toFixed(3)}`;
+      const cached = reverseGeoCache.get(key);
+      if (cached && Date.now() - cached.at < REVERSE_GEO_TTL) {
+        return res.json({ name: cached.name });
+      }
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1&accept-language=en`;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 6000);
+      let name: string | null = null;
+      try {
+        const r = await fetch(url, {
+          headers: { "User-Agent": "Toast-Food-App/1.0 (group-session-location)" },
+          signal: controller.signal,
+        });
+        if (r.ok) {
+          const data: any = await r.json();
+          const a = data?.address || {};
+          name = a.suburb || a.city_district || a.neighbourhood || a.quarter || a.town || a.village || a.city || a.county || a.state || null;
+          if (!name && typeof data?.display_name === "string") {
+            name = String(data.display_name).split(",")[0];
+          }
+        }
+      } finally {
+        clearTimeout(timer);
+      }
+      if (!name) return res.status(502).json({ message: "Could not resolve location" });
+      name = String(name).trim().slice(0, 60);
+      if (reverseGeoCache.size > 2000) reverseGeoCache.clear();
+      reverseGeoCache.set(key, { name, at: Date.now() });
+      res.json({ name });
+    } catch {
       res.status(500).json({ message: "Internal server error" });
     }
   });
