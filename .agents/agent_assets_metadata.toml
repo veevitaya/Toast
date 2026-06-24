@@ -179,3 +179,15 @@ id = "Eb4r6MV3cbwubsfyWf-Q0"
 uri = "file://screenshots/group-tiebreaker.jpg"
 type = "image"
 title = "Bonus — RPS tie-breaker game"
+
+[[outputs]]
+id = "cZhZIHX4AhpaBkyKLaw9t"
+uri = "file://screenshots/rps-duel-splash.jpg"
+type = "image"
+title = "RPS Duel — splash screen"
+
+[[outputs]]
+id = "qCLiCILgzYm1Gf7F5Md6m"
+uri = "file://screenshots/longest-fry-splash.jpg"
+type = "image"
+title = "Longest Fry — splash screen"
