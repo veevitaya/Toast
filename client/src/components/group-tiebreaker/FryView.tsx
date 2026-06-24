@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Crown, Loader2, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 import type { GroupTieBreaker } from "@shared/schema";
 import {
   Avatar,
   WinnerHeroCard,
   memberName,
   memberPic,
+  TB_EASE,
+  TB_SPRING,
   type DisplayItem,
   type TieBreakerMember,
 } from "./shared";
@@ -373,27 +376,39 @@ export function FryView({
           <div className="px-6 flex-1 flex flex-col z-10 relative pb-8 pt-14 animate-slide-up">
             <div className="text-center mb-5">
               <div className="flex justify-center mb-3">
-                <div className="w-12 h-12 rounded-2xl bg-[#FFCC02] flex items-center justify-center shadow-[0_12px_26px_-8px_rgba(255,204,2,0.75)] animate-scale-pop">
+                <motion.div
+                  className="w-12 h-12 rounded-2xl bg-[#FFCC02] flex items-center justify-center shadow-[0_12px_26px_-8px_rgba(255,204,2,0.75)]"
+                  initial={{ scale: 0, rotate: -40 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={TB_SPRING}
+                >
                   <Crown className="w-6 h-6 text-[#0F172A]" strokeWidth={2.5} />
-                </div>
+                </motion.div>
               </div>
               <h1 className="text-3xl font-extrabold toast-ink mb-2">{item.name}</h1>
               <p className="text-slate-500 font-medium text-[15px]">
                 {iWon ? "Your fry was the longest — you pick!" : `${memberName(members, winnerId, meId)} pulled the longest fry.`}
               </p>
             </div>
-            <WinnerHeroCard item={item} heading={item.place ? item.place : item.name} badge="LONGEST FRY WINS" />
+            <motion.div
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.45, ease: TB_EASE }}
+            >
+              <WinnerHeroCard item={item} heading={item.place ? item.place : item.name} badge="LONGEST FRY WINS" />
+            </motion.div>
             <div className="mt-6">
               {isHost ? (
-                <button
+                <motion.button
                   onClick={onFinish}
                   disabled={finishing}
                   data-testid="button-tiebreaker-finish"
-                  className="w-full toast-gold py-4 rounded-2xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,204,2,0.4)] transform active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                  whileTap={{ scale: 0.96 }}
+                  className="w-full toast-gold py-4 rounded-2xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,204,2,0.4)] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
                 >
                   {finishing ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
                   Lock it in · let's eat
-                </button>
+                </motion.button>
               ) : (
                 <div className="w-full bg-white/70 border border-black/[0.05] py-4 rounded-2xl font-bold text-[15px] toast-muted flex items-center justify-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" /> Waiting for the host…
@@ -407,10 +422,15 @@ export function FryView({
 
     return (
       <div className="relative z-10 flex flex-col flex-1">
-        <div className="pt-12 pb-2 px-6 text-center">
+        <motion.div
+          className="pt-12 pb-2 px-6 text-center"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: TB_EASE }}
+        >
           <span className="text-[12px] font-bold tracking-widest text-[#FFCC02] uppercase">The reveal</span>
           <h2 className="text-2xl font-extrabold toast-ink mt-1">Longest fry wins</h2>
-        </div>
+        </motion.div>
         <div className="flex-1 flex items-end justify-center px-4 pb-16">
           <div className="flex items-end justify-center gap-3 w-full" style={{ minHeight: 300 }}>
             {participants.map((uid, i) => {
@@ -460,7 +480,12 @@ export function FryView({
   // ---------------- PLAYING: pick / waiting ----------------
   if (iPicked) {
     return (
-      <div className="relative z-10 flex flex-col flex-1 items-center justify-center px-6 text-center">
+      <motion.div
+        className="relative z-10 flex flex-col flex-1 items-center justify-center px-6 text-center"
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.35, ease: TB_EASE }}
+      >
         <div className="w-16 h-16 rounded-2xl bg-[#FFCC02]/20 flex items-center justify-center mb-5 animate-float">
           <Sparkles className="w-8 h-8 text-[#FFCC02]" />
         </div>
@@ -482,17 +507,22 @@ export function FryView({
             {finishing ? "Deciding…" : "Taking too long? Decide it now"}
           </button>
         )}
-      </div>
+      </motion.div>
     );
   }
 
   return (
     <div className="relative z-10 flex flex-col flex-1">
-      <div className="pt-12 pb-1 px-6 text-center">
+      <motion.div
+        className="pt-12 pb-1 px-6 text-center"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: TB_EASE }}
+      >
         <span className="text-[12px] font-bold tracking-widest text-[#FFCC02] uppercase">Longest Fry</span>
         <h2 className="text-2xl font-extrabold toast-ink mt-1">Pull your fry</h2>
         <p className="toast-muted text-[15px] mt-1">Press a fry and drag it up to pull it out — longest wins 👀</p>
-      </div>
+      </motion.div>
       <div className="flex-1 flex flex-col items-center justify-center px-4">
         <Carton carton={carton} onPick={onPick} disabled={pickSubmitting} pickError={pickError} />
         {pickError && (

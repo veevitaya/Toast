@@ -2,6 +2,20 @@ import type { ReactNode } from "react";
 import { Star, MapPin } from "lucide-react";
 import type { GroupTieBreaker } from "@shared/schema";
 
+// Shared motion language for the tie-breaker flow — keeps entrances, springs and
+// list staggers consistent across the intro, champion picker and both mini-games.
+export const TB_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+export const TB_SPRING = { type: "spring" as const, stiffness: 380, damping: 26 };
+
+export const tbListContainer = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
+};
+export const tbListItem = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.36, ease: TB_EASE } },
+};
+
 export type SwipeMode = "menu" | "restaurant";
 
 export type TieBreakerItem = {

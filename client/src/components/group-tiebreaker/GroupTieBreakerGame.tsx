@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Check, Loader2, Star, Crown } from "lucide-react";
 import type { GroupTieBreaker } from "@shared/schema";
@@ -9,6 +10,10 @@ import {
   memberName,
   memberPic,
   toDisplayItem,
+  TB_EASE,
+  TB_SPRING,
+  tbListContainer,
+  tbListItem,
   type DisplayItem,
   type SwipeMode,
   type TieBreakerMember,
@@ -16,8 +21,8 @@ import {
 } from "./shared";
 import { DuelView } from "./DuelView";
 import { FryView } from "./FryView";
-import tiebreakerVsImg from "@/assets/tiebreaker-vs.png";
-import tiebreakerFryImg from "@/assets/tiebreaker-fry.png";
+import tiebreakerVsImg from "@/assets/tiebreaker-vs-nobg.png";
+import tiebreakerFryImg from "@/assets/tiebreaker-fry-nobg.png";
 
 export type GroupTieBreakerGameProps = {
   sessionCode: string;
@@ -92,66 +97,56 @@ export function GroupTieBreakerGame({ sessionCode, meId, isHost, onComplete }: G
     return m;
   }, [displayItems]);
 
+  let stageKey: string;
+  let stageBody: ReactNode;
+
   if (!tb) {
-    return (
-      <Shell>
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center z-10">
-          <Loader2 className="w-8 h-8 animate-spin toast-muted" />
-          <p className="toast-muted mt-4 font-semibold">Setting up the tie-breaker…</p>
-        </div>
-      </Shell>
+    stageKey = "loading";
+    stageBody = (
+      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center z-10">
+        <Loader2 className="w-8 h-8 animate-spin toast-muted" />
+        <p className="toast-muted mt-4 font-semibold">Setting up the tie-breaker…</p>
+      </div>
     );
-  }
-
-  if (showIntro) {
-    return (
-      <Shell>
-        <IntroSplash gameType={tb.gameType} onContinue={() => setShowIntro(false)} />
-      </Shell>
+  } else if (showIntro) {
+    stageKey = "intro";
+    stageBody = <IntroSplash gameType={tb.gameType} onContinue={() => setShowIntro(false)} />;
+  } else if (tb.status === "choosing") {
+    stageKey = "choosing";
+    stageBody = (
+      <ChampionPicker
+        tb={tb}
+        displayItems={displayItems}
+        members={members}
+        meId={meId}
+        isHost={isHost}
+        swipeType={swipeType}
+        submitting={championMut.isPending}
+        onPick={(itemId) => championMut.mutate(itemId)}
+        onForceFinish={() => finishMut.mutate(true)}
+        finishing={finishMut.isPending}
+      />
     );
-  }
-
-  if (tb.status === "choosing") {
-    return (
-      <Shell>
-        <ChampionPicker
-          tb={tb}
-          displayItems={displayItems}
-          members={members}
-          meId={meId}
-          isHost={isHost}
-          swipeType={swipeType}
-          submitting={championMut.isPending}
-          onPick={(itemId) => championMut.mutate(itemId)}
-          onForceFinish={() => finishMut.mutate(true)}
-          finishing={finishMut.isPending}
-        />
-      </Shell>
+  } else if (tb.gameType === "rps") {
+    stageKey = "rps";
+    stageBody = (
+      <DuelView
+        tb={tb}
+        itemById={itemById}
+        members={members}
+        meId={meId}
+        isHost={isHost}
+        swipeType={swipeType}
+        onMove={(m) => moveMut.mutate({ move: m, round: (((tb.gameState as any)?.rounds || []) as any[]).length })}
+        moveSubmitting={moveMut.isPending}
+        onFinish={() => finishMut.mutate(false)}
+        onForceFinish={() => finishMut.mutate(true)}
+        finishing={finishMut.isPending}
+      />
     );
-  }
-
-  if (tb.gameType === "rps") {
-    return (
-      <Shell>
-        <DuelView
-          tb={tb}
-          itemById={itemById}
-          members={members}
-          meId={meId}
-          isHost={isHost}
-          swipeType={swipeType}
-          onMove={(m) => moveMut.mutate({ move: m, round: (((tb.gameState as any)?.rounds || []) as any[]).length })}
-          moveSubmitting={moveMut.isPending}
-          onFinish={() => finishMut.mutate(false)}
-          onForceFinish={() => finishMut.mutate(true)}
-          finishing={finishMut.isPending}
-        />
-      </Shell>
-    );
-  }
-
-  return (
-    <Shell>
+  } else {
+    stageKey = "fry";
+    stageBody = (
       <FryView
         tb={tb}
         itemById={itemById}
@@ -165,6 +160,23 @@ export function GroupTieBreakerGame({ sessionCode, meId, isHost, onComplete }: G
         onForceFinish={() => finishMut.mutate(true)}
         finishing={finishMut.isPending}
       />
+    );
+  }
+
+  return (
+    <Shell>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={stageKey}
+          className="relative z-10 flex flex-1 flex-col min-h-0"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.3, ease: TB_EASE }}
+        >
+          {stageBody}
+        </motion.div>
+      </AnimatePresence>
     </Shell>
   );
 }
@@ -178,21 +190,46 @@ function IntroSplash({ gameType, onContinue }: { gameType: string; onContinue: (
       data-testid="tiebreaker-intro"
       onClick={onContinue}
     >
-      <img
+      <motion.img
         src={img}
         alt={isRps ? "Toast versus Waffle" : "Longest fry wins"}
-        className="w-full max-w-[300px] object-contain mb-7 animate-scale-pop"
+        className="w-full max-w-[300px] object-contain mb-7"
         style={{ filter: "drop-shadow(0 18px 26px rgba(0,0,0,0.18))" }}
+        initial={{ opacity: 0, scale: 0.6 }}
+        animate={{ opacity: 1, scale: 1, y: [0, -10, 0] }}
+        transition={{
+          opacity: { duration: 0.4, ease: TB_EASE },
+          scale: { type: "spring", stiffness: 300, damping: 16 },
+          y: { duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 0.5 },
+        }}
       />
-      <h1 className="text-[32px] font-extrabold toast-ink leading-tight">Can't decide?</h1>
-      <p className="text-[17px] font-semibold toast-muted mt-2">Let's settle this! {isRps ? "🥊" : "🍟"}</p>
-      <button
+      <motion.h1
+        className="text-[32px] font-extrabold toast-ink leading-tight"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4, ease: TB_EASE }}
+      >
+        Can't decide?
+      </motion.h1>
+      <motion.p
+        className="text-[17px] font-semibold toast-muted mt-2"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.4, ease: TB_EASE }}
+      >
+        Let's settle this! {isRps ? "🥊" : "🍟"}
+      </motion.p>
+      <motion.button
         onClick={onContinue}
         data-testid="button-intro-continue"
-        className="mt-8 toast-gold px-8 py-3.5 rounded-2xl font-bold text-[16px] shadow-[0_8px_20px_-6px_rgba(255,204,2,0.4)] active:scale-95 transition-transform"
+        className="mt-8 toast-gold px-8 py-3.5 rounded-2xl font-bold text-[16px] shadow-[0_8px_20px_-6px_rgba(255,204,2,0.4)]"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.42, duration: 0.4, ease: TB_EASE }}
+        whileTap={{ scale: 0.95 }}
       >
         {isRps ? "Bring it on" : "Let's pull"}
-      </button>
+      </motion.button>
     </div>
   );
 }
@@ -232,12 +269,22 @@ function ChampionPicker({
   if (iPicked) {
     const mine = displayItems.find((d) => d.id === myChampion);
     return (
-      <div className="relative z-10 flex flex-col flex-1 px-6">
+      <motion.div
+        className="relative z-10 flex flex-col flex-1 px-6"
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: TB_EASE }}
+      >
         <div className="pt-14 text-center">
-          <div className="inline-flex items-center gap-2 bg-[#FFCC02]/20 px-4 py-1.5 rounded-full mb-4">
+          <motion.div
+            className="inline-flex items-center gap-2 bg-[#FFCC02]/20 px-4 py-1.5 rounded-full mb-4"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={TB_SPRING}
+          >
             <Check className="w-4 h-4 text-[#0F172A]" strokeWidth={3} />
             <span className="text-[13px] font-bold toast-ink">You're backing {mine?.name}</span>
-          </div>
+          </motion.div>
           <h1 className="text-2xl font-extrabold toast-ink">Waiting for the table</h1>
           <p className="toast-muted text-[15px] mt-1">
             {isDuel ? "Then it's a Rock-Paper-Scissors duel." : "Then the Longest Fry decides."}
@@ -248,11 +295,11 @@ function ChampionPicker({
             <p className="text-[12px] font-bold tracking-wide toast-muted uppercase mb-3">
               {pickedCount}/{participants.length} locked in
             </p>
-            <div className="space-y-3">
+            <motion.div className="space-y-3" variants={tbListContainer} initial="hidden" animate="show">
               {participants.map((uid) => {
                 const ready = champions[uid] != null;
                 return (
-                  <div key={uid} className="flex items-center gap-3" data-testid={`row-champion-${uid}`}>
+                  <motion.div key={uid} variants={tbListItem} className="flex items-center gap-3" data-testid={`row-champion-${uid}`}>
                     <div className="toast-avatar w-9 h-9 text-base border-2 border-white">
                       <Avatar pic={memberPic(members, uid)} name={memberName(members, uid, meId)} className="w-full h-full rounded-full" />
                     </div>
@@ -264,10 +311,10 @@ function ChampionPicker({
                     ) : (
                       <Loader2 className="w-4 h-4 animate-spin toast-muted" />
                     )}
-                  </div>
+                  </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
           </div>
           {isHost && pickedCount < participants.length && (
             <button
@@ -280,27 +327,39 @@ function ChampionPicker({
             </button>
           )}
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
     <div className="relative z-10 flex flex-col flex-1">
-      <div className="pt-14 px-6 text-center">
+      <motion.div
+        className="pt-14 px-6 text-center"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: TB_EASE }}
+      >
         <h1 className="text-[28px] font-extrabold toast-ink leading-tight">
           {displayItems.length} {noun}, one table
         </h1>
         <p className="toast-muted text-[15px] mt-2">
           Back your favorite — {isDuel ? "then duel for it." : "then pull for it."}
         </p>
-      </div>
+      </motion.div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-5 space-y-3">
+      <motion.div
+        className="flex-1 overflow-y-auto px-5 py-5 space-y-3"
+        variants={tbListContainer}
+        initial="hidden"
+        animate="show"
+      >
         {displayItems.map((item) => {
           const active = selected === item.id;
           return (
-            <button
+            <motion.button
               key={item.id}
+              variants={tbListItem}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setSelected(item.id)}
               data-testid={`button-champion-${item.id}`}
               className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all ${
@@ -335,21 +394,22 @@ function ChampionPicker({
               >
                 {active && <Check className="w-4 h-4 text-[#0F172A]" strokeWidth={3} />}
               </div>
-            </button>
+            </motion.button>
           );
         })}
-      </div>
+      </motion.div>
 
       <div className="px-6 pb-8 pt-2 bg-gradient-to-t from-[#FAF6EF] via-[#FAF6EF] to-transparent">
-        <button
+        <motion.button
           onClick={() => selected != null && onPick(selected)}
           disabled={selected == null || submitting}
           data-testid="button-lock-champion"
-          className="w-full toast-gold py-4 rounded-2xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,204,2,0.4)] transform active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+          whileTap={{ scale: 0.96 }}
+          className="w-full toast-gold py-4 rounded-2xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,204,2,0.4)] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
         >
           {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Crown className="w-5 h-5" strokeWidth={2.5} />}
           Lock in my champion
-        </button>
+        </motion.button>
       </div>
     </div>
   );
