@@ -13,6 +13,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
+const MotionPlayground = lazy(() => import("@/pages/MotionPlayground"));
 const SoloJourney = lazy(() => import("@/pages/SoloJourney"));
 const SoloQuiz = lazy(() => import("@/pages/SoloQuiz"));
 const SoloResults = lazy(() => import("@/pages/SoloResults"));
@@ -117,6 +118,9 @@ function Router() {
           </Route>
           <Route path="/onboarding">
             <AnimatedPage><Onboarding /></AnimatedPage>
+          </Route>
+          <Route path="/motion">
+            <AnimatedPage><MotionPlayground /></AnimatedPage>
           </Route>
           <Route path="/solo">
             <AnimatedPage><SoloJourney /></AnimatedPage>
