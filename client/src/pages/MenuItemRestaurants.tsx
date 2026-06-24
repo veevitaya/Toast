@@ -1,13 +1,16 @@
 import { useLocation, useRoute } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Utensils } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import { LoadingMascot } from "@/components/LoadingMascot";
+import { fadeUp, staggerContainer, staggerItem, pressable } from "@/lib/motion";
 import type { MenuItem, Restaurant } from "@shared/schema";
 
 export default function MenuItemRestaurants() {
   const [, navigate] = useLocation();
   const [, params] = useRoute("/menu-item/:id");
   const id = params?.id;
+  const reduce = useReducedMotion();
 
   const { data: dish, isLoading: dishLoading } = useQuery<MenuItem>({
     queryKey: ["/api/menu-items", id],
@@ -24,7 +27,12 @@ export default function MenuItemRestaurants() {
 
   return (
     <div className="min-h-[100dvh] bg-background" data-testid="page-menu-item-restaurants">
-      <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm px-6 pt-[max(env(safe-area-inset-top),1rem)] pb-3 flex items-center gap-3 border-b border-black/5">
+      <motion.div
+        variants={fadeUp}
+        initial={reduce ? false : "hidden"}
+        animate="show"
+        className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm px-6 pt-[max(env(safe-area-inset-top),1rem)] pb-3 flex items-center gap-3 border-b border-black/5"
+      >
         <button
           onClick={() => navigate("/")}
           className="w-9 h-9 rounded-full bg-white flex items-center justify-center active:scale-95 transition-transform shadow-sm"
@@ -39,7 +47,7 @@ export default function MenuItemRestaurants() {
             {dish?.name ?? "Loading..."}
           </h1>
         </div>
-      </div>
+      </motion.div>
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
@@ -56,13 +64,20 @@ export default function MenuItemRestaurants() {
           </p>
         </div>
       ) : (
-        <div className="px-6 py-5 pb-24 space-y-4">
+        <motion.div
+          variants={staggerContainer()}
+          initial={reduce ? false : "hidden"}
+          animate="show"
+          className="px-6 py-5 pb-24 space-y-4"
+        >
           <p className="text-xs text-muted-foreground font-medium" data-testid="text-result-count">
             {list.length} place{list.length !== 1 ? "s" : ""} serving this
           </p>
           {list.map((r) => (
-            <div
+            <motion.div
               key={r.id}
+              variants={staggerItem}
+              {...pressable}
               className="flex gap-4 bg-white rounded-2xl cursor-pointer active:scale-[0.98] transition-transform p-1"
               style={{ boxShadow: "0 2px 12px -3px rgba(0,0,0,0.06)" }}
               onClick={() => navigate(`/restaurant/${r.id}`)}
@@ -89,9 +104,9 @@ export default function MenuItemRestaurants() {
                   <p className="text-xs text-muted-foreground mt-1 truncate">{r.description}</p>
                 )}
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
     </div>
   );

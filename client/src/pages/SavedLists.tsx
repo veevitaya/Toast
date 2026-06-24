@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { BottomNav } from "@/components/BottomNav";
@@ -10,6 +10,7 @@ import { Heart, ChevronRight, Star, ArrowLeft, Trash2, Play, Share2, Search, Tre
 import type { RestaurantResponse } from "@shared/routes";
 import { handleImageError } from "@/lib/imageUtils";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { fadeUp, staggerContainer, staggerItem, pressable } from "@/lib/motion";
 
 function SavedCard({ restaurant, onNavigate, onRemove }: {
   restaurant: RestaurantResponse;
@@ -18,10 +19,10 @@ function SavedCard({ restaurant, onNavigate, onRemove }: {
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      variants={staggerItem}
       exit={{ opacity: 0, x: -80 }}
       layout
+      {...pressable}
       onClick={onNavigate}
       className="flex items-center gap-3 bg-white rounded-2xl p-3 cursor-pointer active:scale-[0.98] transition-transform"
       style={{ boxShadow: "0 2px 12px -2px rgba(0,0,0,0.06)" }}
@@ -83,8 +84,7 @@ function ListCard({
   const timeAgo = lastUpdated ? formatTimeAgo(lastUpdated) : null;
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
+      variants={staggerItem}
       className="bg-white rounded-2xl p-4"
       style={{ boxShadow: "0 2px 12px -2px rgba(0,0,0,0.06)" }}
       data-testid={`card-list-${name.toLowerCase().replace(/\s+/g, "-")}`}
@@ -102,15 +102,17 @@ function ListCard({
         </div>
       </div>
       <div className="flex gap-2">
-        <button
+        <motion.button
+          {...pressable}
           onClick={onView}
           className="flex items-center gap-1 px-3 py-2 bg-gray-100 rounded-xl text-[11px] font-medium active:scale-95 transition-transform flex-1 justify-center"
           data-testid={`button-view-${name.toLowerCase().replace(/\s+/g, "-")}`}
         >
           <Eye className="w-3 h-3" />
           View
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          {...pressable}
           onClick={onSwipe}
           className="flex items-center gap-1 px-3 py-2 bg-[#FFCC02] rounded-xl text-[11px] font-semibold active:scale-95 transition-transform flex-1 justify-center"
           data-testid={`button-swipe-${name.toLowerCase().replace(/\s+/g, "-")}`}
@@ -118,8 +120,9 @@ function ListCard({
         >
           <Play className="w-3 h-3" />
           Swipe
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          {...pressable}
           onClick={onInvite}
           className="flex items-center gap-1 px-3 py-2 bg-gray-100 rounded-xl text-[11px] font-medium active:scale-95 transition-transform flex-1 justify-center"
           data-testid={`button-invite-${name.toLowerCase().replace(/\s+/g, "-")}`}
@@ -127,7 +130,7 @@ function ListCard({
         >
           <Share2 className="w-3 h-3" />
           Invite
-        </button>
+        </motion.button>
       </div>
     </motion.div>
   );
@@ -150,6 +153,7 @@ export default function SavedLists() {
   const { data: savedData, unsave, serverLists } = useSavedRestaurants();
   const { profile } = useLineProfile();
   const [selectedList, setSelectedList] = useState<"mine" | "partner" | null>(null);
+  const reduce = useReducedMotion();
 
   const { data: allRestaurants = [] } = useQuery<RestaurantResponse[]>({
     queryKey: ["/api/restaurants"],
@@ -228,7 +232,12 @@ export default function SavedLists() {
     return (
       <div className="w-full min-h-[100dvh] bg-background" data-testid="saved-lists-page">
         <div className="px-5 pt-14 pb-32">
-          <div className="flex items-center gap-3 mb-6">
+          <motion.div
+            variants={fadeUp}
+            initial={reduce ? false : "hidden"}
+            animate="show"
+            className="flex items-center gap-3 mb-6"
+          >
             <button
               onClick={() => setSelectedList(null)}
               className="p-2 -ml-2 rounded-full active:bg-gray-100 transition-colors"
@@ -246,29 +255,36 @@ export default function SavedLists() {
             </div>
             {displayedRestaurants.length > 0 && (
               <div className="flex gap-1.5">
-                <button
+                <motion.button
+                  {...pressable}
                   onClick={() => handleSwipeFromList(selectedList)}
                   className="flex items-center gap-1 px-3 py-1.5 bg-[#FFCC02] rounded-full text-[11px] font-semibold active:scale-95 transition-transform"
                   data-testid="button-swipe-from-list"
                 >
                   <Play className="w-3 h-3" />
                   Swipe
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  {...pressable}
                   onClick={() => handleInviteFromList(selectedList)}
                   className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 rounded-full text-[11px] font-medium active:scale-95 transition-transform"
                   data-testid="button-invite-from-list"
                 >
                   <Share2 className="w-3 h-3" />
                   Invite
-                </button>
+                </motion.button>
               </div>
             )}
-          </div>
+          </motion.div>
 
           <AnimatePresence mode="popLayout">
             {displayedRestaurants.length > 0 ? (
-              <div className="space-y-3">
+              <motion.div
+                className="space-y-3"
+                variants={staggerContainer()}
+                initial={reduce ? false : "hidden"}
+                animate="show"
+              >
                 {displayedRestaurants.map((restaurant) => (
                   <SavedCard
                     key={restaurant.id}
@@ -277,7 +293,7 @@ export default function SavedLists() {
                     onRemove={() => unsave(restaurant.id)}
                   />
                 ))}
-              </div>
+              </motion.div>
             ) : (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -334,7 +350,12 @@ export default function SavedLists() {
   return (
     <div className="w-full min-h-[100dvh] bg-background" data-testid="saved-lists-page">
       <div className="px-5 pt-14 pb-32">
-        <div className="flex items-center gap-3 mb-6">
+        <motion.div
+          variants={fadeUp}
+          initial={reduce ? false : "hidden"}
+          animate="show"
+          className="flex items-center gap-3 mb-6"
+        >
           <button
             onClick={() => navigate("/")}
             className="p-2 -ml-2 rounded-full active:bg-gray-100 transition-colors"
@@ -348,9 +369,14 @@ export default function SavedLists() {
               {totalSaved} saved across {serverLists.length} list{serverLists.length !== 1 ? "s" : ""}
             </p>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="space-y-3 mb-8">
+        <motion.div
+          className="space-y-3 mb-8"
+          variants={staggerContainer()}
+          initial={reduce ? false : "hidden"}
+          animate="show"
+        >
           <ListCard
             name="My Saves"
             emoji="❤️"
@@ -369,7 +395,7 @@ export default function SavedLists() {
             onSwipe={() => handleSwipeFromList("partner")}
             onInvite={() => handleInviteFromList("partner")}
           />
-        </div>
+        </motion.div>
 
         {totalSaved === 0 && (
           <motion.div

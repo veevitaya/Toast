@@ -1,6 +1,8 @@
 import { useRef, useState, memo } from "react";
 
 import { useLocation } from "wouter";
+import { motion, useReducedMotion } from "framer-motion";
+import { staggerContainer, staggerItem, pressable } from "@/lib/motion";
 import type { RestaurantResponse } from "@shared/routes";
 import { LoadingMascot } from "./LoadingMascot";
 import { SaveBucketPicker } from "./SaveBucketPicker";
@@ -60,6 +62,7 @@ function HeartButton({ restaurantId, restaurantName }: { restaurantId: number; r
 export const RestaurantRow = memo(function RestaurantRow({ title, subtitle, restaurants, isLoading, size = "default", category }: RestaurantRowProps) {
   const [, navigate] = useLocation();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
 
   if (isLoading) {
     return (
@@ -95,8 +98,11 @@ export const RestaurantRow = memo(function RestaurantRow({ title, subtitle, rest
         </button>
       </div>
 
-      <div
+      <motion.div
         ref={scrollRef}
+        variants={staggerContainer()}
+        initial={reduce ? false : "hidden"}
+        animate="show"
         className="flex gap-3.5 pb-4 snap-x snap-mandatory hide-scrollbar"
         data-testid={`scroll-row-${title.toLowerCase().replace(/\s/g, '-')}`}
         style={{
@@ -111,14 +117,16 @@ export const RestaurantRow = memo(function RestaurantRow({ title, subtitle, rest
       >
         <div className="flex-shrink-0 w-[10px]" aria-hidden="true" />
         {restaurants.map((rest, idx) => (
-          <div
+          <motion.div
             key={rest.id}
+            variants={staggerItem}
+            {...pressable}
             className={`flex-shrink-0 ${cardWidth} snap-start group cursor-pointer gpu-accelerated`}
             onClick={() => navigate(`/restaurant/${rest.id}`)}
             data-testid={`card-restaurant-${rest.id}`}
           >
             <div
-              className={`w-full ${imageHeight} rounded-2xl overflow-hidden relative active:scale-[0.97] transition-transform duration-200`}
+              className={`w-full ${imageHeight} rounded-2xl overflow-hidden relative`}
             >
               <img
                 src={optimizeRowImage(rest.imageUrl, size === "xl" ? 300 : 200)}
@@ -150,10 +158,10 @@ export const RestaurantRow = memo(function RestaurantRow({ title, subtitle, rest
               <p className="text-xs text-muted-foreground truncate mt-0.5">{rest.category}</p>
               <p className="text-xs text-muted-foreground mt-0.5 truncate">{"฿".repeat(rest.priceLevel)} · {rest.address}</p>
             </div>
-          </div>
+          </motion.div>
         ))}
         <div className="flex-shrink-0 w-[2px]" aria-hidden="true" />
-      </div>
+      </motion.div>
     </div>
   );
 });

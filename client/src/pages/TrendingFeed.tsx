@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { fetchWithTimeout } from "@/lib/queryClient";
-import { motion, AnimatePresence, useMotionValue, PanInfo } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useReducedMotion, PanInfo } from "framer-motion";
 import { useLocation } from "wouter";
 import { Heart, Bookmark, Share2, MapPin, Star, TrendingUp, Layers } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
@@ -9,6 +9,7 @@ import { useLineProfile } from "@/lib/useLineProfile";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { staggerContainer, staggerItem, pressable, fadeUp } from "@/lib/motion";
 
 interface TrendingPost {
   id: number;
@@ -411,7 +412,8 @@ function FullScreenSlide({
       </div>
 
       <div className="absolute right-3 z-20 flex flex-col items-center gap-4" style={{ bottom: "230px" }}>
-        <button
+        <motion.button
+          {...pressable}
           onClick={(e) => { e.stopPropagation(); onLike(); }}
           className="flex flex-col items-center gap-0.5"
           aria-label={isLiked ? t("trending.liked") : t("trending.like")}
@@ -421,9 +423,10 @@ function FullScreenSlide({
             <Heart className={`w-[22px] h-[22px] ${isLiked ? "text-red-500 fill-red-500" : btnIcon}`} />
           </div>
           <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>{isLiked ? t("trending.liked") : t("trending.like")}</span>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          {...pressable}
           onClick={(e) => { e.stopPropagation(); onSave(); }}
           className="flex flex-col items-center gap-0.5"
           aria-label={isSaved ? t("trending.saved") : t("trending.save")}
@@ -433,9 +436,10 @@ function FullScreenSlide({
             <Bookmark className={`w-[22px] h-[22px] ${isSaved ? "text-[#FFCC02] fill-[#FFCC02]" : btnIcon}`} />
           </div>
           <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>{isSaved ? t("trending.saved") : t("trending.save")}</span>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          {...pressable}
           onClick={(e) => { e.stopPropagation(); onShare(); }}
           className="flex flex-col items-center gap-0.5"
           aria-label={t("trending.share")}
@@ -445,9 +449,10 @@ function FullScreenSlide({
             <Share2 className={`w-[22px] h-[22px] ${btnIcon}`} />
           </div>
           <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>{t("trending.share")}</span>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          {...pressable}
           onClick={(e) => { e.stopPropagation(); onInviteSwipe(); }}
           className="flex flex-col items-center gap-0.5"
           aria-label={t("trending.swipe")}
@@ -457,14 +462,15 @@ function FullScreenSlide({
             <Layers className={`w-[22px] h-[22px] ${btnIcon}`} />
           </div>
           <span className={`${btnLabel} text-[10px] font-medium drop-shadow-md`}>{t("trending.swipe")}</span>
-        </button>
+        </motion.button>
       </div>
 
       <div className="absolute left-0 right-0 bottom-0 z-10 pointer-events-none" style={{ height: "50%" }}>
         <div className="w-full h-full" style={{ background: gradient }} />
       </div>
 
-      <button
+      <motion.button
+        {...pressable}
         onClick={onNavigate}
         className="absolute left-0 right-16 z-20 text-left px-5 cursor-pointer"
         style={{ bottom: "56px" }}
@@ -500,7 +506,7 @@ function FullScreenSlide({
           <span className="shrink-0">·</span>
           <span className="shrink-0">{post.distance}</span>
         </div>
-      </button>
+      </motion.button>
     </div>
   );
 }
@@ -517,6 +523,7 @@ export default function TrendingFeed() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [savePickerPostId, setSavePickerPostId] = useState<number | null>(null);
   const headerIsDark = true;
+  const reduce = useReducedMotion();
 
   const deepLinkId = new URLSearchParams(window.location.search).get("id");
 
@@ -719,7 +726,12 @@ export default function TrendingFeed() {
       className="fixed inset-0 bg-black flex flex-col"
       data-testid="trending-feed-page"
     >
-      <div className={`absolute top-0 left-0 right-0 z-30 backdrop-blur-md pt-[env(safe-area-inset-top)] border-b transition-colors duration-300 ${headerIsDark ? "bg-white/20 border-white/15" : "bg-black/10 border-black/10"}`}>
+      <motion.div
+        variants={fadeUp}
+        initial={reduce ? false : "hidden"}
+        animate="show"
+        className={`absolute top-0 left-0 right-0 z-30 backdrop-blur-md pt-[env(safe-area-inset-top)] border-b transition-colors duration-300 ${headerIsDark ? "bg-white/20 border-white/15" : "bg-black/10 border-black/10"}`}
+      >
         <div className="flex items-center justify-between px-5 py-3">
           <div className="flex items-center gap-2">
             <TrendingUp className={`w-5 h-5 text-[#FFCC02] ${headerIsDark ? "drop-shadow-md" : ""}`} />
@@ -730,27 +742,31 @@ export default function TrendingFeed() {
             <span className={`text-[12px] font-medium transition-colors duration-300 ${headerIsDark ? "text-white/90" : "text-gray-800"}`}>{activeDistrict}</span>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <div
+      <motion.div
         ref={containerRef}
+        variants={staggerContainer()}
+        initial={reduce ? false : "hidden"}
+        animate="show"
         className="w-full overflow-y-auto snap-y snap-mandatory hide-scrollbar"
         style={{ scrollBehavior: "smooth", height: "calc(100dvh - 52px)", overscrollBehavior: "contain" }}
       >
         {TRENDING_POSTS.map((post) => (
-          <FullScreenSlide
-            key={post.id}
-            post={post}
-            isSaved={savedPosts.has(post.restaurantId)}
-            isLiked={likedPosts.has(post.id)}
-            onSave={() => handleSave(post.restaurantId)}
-            onLike={() => handleLike(post.id)}
-            onShare={() => handleShare(post)}
-            onNavigate={() => handleNavigate(post)}
-            onInviteSwipe={() => handleInviteSwipe(post)}
-          />
+          <motion.div key={post.id} variants={staggerItem}>
+            <FullScreenSlide
+              post={post}
+              isSaved={savedPosts.has(post.restaurantId)}
+              isLiked={likedPosts.has(post.id)}
+              onSave={() => handleSave(post.restaurantId)}
+              onLike={() => handleLike(post.id)}
+              onShare={() => handleShare(post)}
+              onNavigate={() => handleNavigate(post)}
+              onInviteSwipe={() => handleInviteSwipe(post)}
+            />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {savePickerPostId !== null && (

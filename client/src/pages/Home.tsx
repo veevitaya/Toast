@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { staggerContainer, staggerItem } from "@/lib/motion";
 import { useLocation } from "wouter";
 import {
   Search, X, MapPin, ArrowRight, ChevronDown,
@@ -182,6 +183,7 @@ function getContextLine(tempC: number | null, emoji: string): string {
 
 export default function Home() {
   const [, navigate] = useLocation();
+  const reduce = useReducedMotion();
   const { t } = useLanguage();
   const { profile: tasteProfile, getSuggestionTitle, topPreference, getMoodSignal } = useTasteProfile();
   const { recordVibe, freq } = useVibeFrequency();
@@ -783,14 +785,6 @@ export default function Home() {
                   <span className="inline-flex items-center gap-1.5 bg-white rounded-full px-3 py-1.5 text-xs font-medium text-foreground border border-gray-100" data-testid="badge-streak">
                     12-wk streak
                   </span>
-                  <button
-                    onClick={() => navigate("/motion")}
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-black border border-[#FFCC02]/40"
-                    style={{ backgroundColor: "#FFF4CC" }}
-                    data-testid="button-motion-demo"
-                  >
-                    ✨ Motion demo
-                  </button>
                 </div>
               </div>
               <img
@@ -810,32 +804,38 @@ export default function Home() {
             >
               {t("home.whos_eating")}
             </h2>
-            <div className="grid grid-cols-2 gap-3">
-              <button
+            <motion.div
+              className="grid grid-cols-2 gap-3"
+              variants={staggerContainer()}
+              initial={reduce ? false : "hidden"}
+              animate="show"
+            >
+              <motion.button
+                variants={staggerItem}
                 onClick={(e) => handleModeClickAnimated("/solo", e.currentTarget)}
                 data-testid="button-solo"
-                className="flex items-center justify-center gap-2.5 rounded-[20px] bg-white px-2.5 h-[100px] border border-gray-100 shadow-md overflow-hidden transition-transform duration-150 ease-out active:scale-[0.97] animate-page-in"
+                className="flex items-center justify-center gap-2.5 rounded-[20px] bg-white px-2.5 h-[100px] border border-gray-100 shadow-md overflow-hidden"
               >
                 <img src={toastCharPath} alt="" className="h-[66px] w-auto object-contain flex-shrink-0" />
                 <div className="min-w-0">
                   <p className="text-[18px] font-bold text-foreground leading-tight truncate">{t("home.solo_mode")}</p>
                   <p className="text-[12px] text-muted-foreground mt-0.5 truncate">{t("home.just_for_you")}</p>
                 </div>
-              </button>
+              </motion.button>
 
-              <button
+              <motion.button
+                variants={staggerItem}
                 onClick={(e) => handleModeClickAnimated("/group/setup", e.currentTarget)}
                 data-testid="button-group"
-                className="flex items-center justify-center gap-2.5 rounded-[20px] bg-white px-2.5 h-[100px] border border-gray-100 shadow-md overflow-hidden transition-transform duration-150 ease-out active:scale-[0.97] animate-page-in"
-                style={{ animationDelay: "40ms" }}
+                className="flex items-center justify-center gap-2.5 rounded-[20px] bg-white px-2.5 h-[100px] border border-gray-100 shadow-md overflow-hidden"
               >
                 <img src={toastWafflePath} alt="" className="h-[50px] w-auto object-contain flex-shrink-0" />
                 <div className="min-w-0">
                   <p className="text-[18px] font-bold text-foreground leading-tight truncate">{t("home.group_mode")}</p>
                   <p className="text-[12px] text-muted-foreground mt-0.5 truncate">{t("home.with_friends")}</p>
                 </div>
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           </div>
 
           <ToastDecides onRefineToggle={setRefineOpen} />

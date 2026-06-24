@@ -1,7 +1,9 @@
 import { useLocation } from "wouter";
+import { motion, useReducedMotion } from "framer-motion";
 import { useRestaurants } from "@/hooks/use-restaurants";
 import { LoadingMascot } from "@/components/LoadingMascot";
 import { BottomNav } from "@/components/BottomNav";
+import { fadeUp, staggerContainer, staggerItem, pressable } from "@/lib/motion";
 import drunkToastImg from "@assets/drunk_toast_nobg.png";
 
 const MOCK_RESTAURANTS_BY_MENU: Record<string, Array<{ id: number; name: string; category: string; rating: string; priceLevel: number; address: string; imageUrl: string; description: string; sponsored?: boolean }>> = {
@@ -187,6 +189,7 @@ const MOCK_RESTAURANTS_BY_MENU: Record<string, Array<{ id: number; name: string;
 export default function RestaurantList() {
   const [, navigate] = useLocation();
   const { data: apiRestaurants = [], isLoading } = useRestaurants();
+  const reduce = useReducedMotion();
 
   const params = new URLSearchParams(window.location.search);
   const category = params.get("category") || "Restaurants";
@@ -200,7 +203,12 @@ export default function RestaurantList() {
 
   return (
     <div className="w-full min-h-[100dvh] bg-background" data-testid="restaurant-list-page">
-      <div className="flex items-center gap-3 px-6 pt-14 pb-4 border-b border-gray-100/80">
+      <motion.div
+        className="flex items-center gap-3 px-6 pt-14 pb-4 border-b border-gray-100/80"
+        variants={fadeUp}
+        initial={reduce ? false : "hidden"}
+        animate="show"
+      >
         {isBars ? (
           <>
             <h1 className="text-[28px] font-bold tracking-tight">🍸 Bars</h1>
@@ -221,18 +229,25 @@ export default function RestaurantList() {
             <span className="text-xs text-muted-foreground font-medium">{restaurants.length} places</span>
           </>
         )}
-      </div>
+      </motion.div>
 
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <LoadingMascot size="md" />
         </div>
       ) : (
-        <div className="px-6 py-5 pb-24 space-y-4">
+        <motion.div
+          className="px-6 py-5 pb-24 space-y-4"
+          variants={staggerContainer()}
+          initial={reduce ? false : "hidden"}
+          animate="show"
+        >
           {restaurants.map((r: any, idx: number) => (
-            <div
+            <motion.div
               key={r.id}
-              className={`flex gap-4 bg-white rounded-2xl cursor-pointer active:scale-[0.98] transition-transform p-1 relative ${isBars ? "animate-drunk-sway" : ""}`}
+              variants={staggerItem}
+              {...pressable}
+              className={`flex gap-4 bg-white rounded-2xl cursor-pointer p-1 relative ${isBars ? "animate-drunk-sway" : ""}`}
               style={{
                 boxShadow: r.sponsored ? "0 2px 16px -3px rgba(234,179,8,0.15)" : "0 2px 12px -3px rgba(0,0,0,0.06)",
                 ...(isBars ? { animationDelay: `${idx * -0.8}s` } : {}),
@@ -268,9 +283,9 @@ export default function RestaurantList() {
                   <p className="text-xs text-muted-foreground mt-1 truncate">{r.description}</p>
                 )}
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
 
       <BottomNav />
