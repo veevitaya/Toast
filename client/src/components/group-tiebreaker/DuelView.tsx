@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Star, Crown, Swords, Loader2 } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageProvider";
 import type { GroupTieBreaker } from "@shared/schema";
 import {
   Avatar,
@@ -70,6 +71,7 @@ export function DuelView({
   onForceFinish,
   finishing,
 }: DuelViewProps) {
+  const { locale } = useLanguage();
   const participants = tb.participantIds || [];
   const oppId = participants.find((p) => p !== meId) || participants[0] || "";
   const gs = (tb.gameState || {}) as any;
@@ -327,7 +329,16 @@ export function DuelView({
               </div>
             </div>
             <h2 className="text-2xl font-extrabold toast-ink mb-1">Make your move</h2>
-            <p className="toast-muted text-sm mb-7">Best of 3 — winner picks the table's spot.</p>
+            <p className="toast-muted text-sm mb-1" data-testid="text-rps-explainer">
+              {locale === "th"
+                ? "เกมเป่ายิ้งฉุบ — ค้อน กระดาษ กรรไกร"
+                : "It's a rock-paper-scissors match — rock, paper, scissors."}
+            </p>
+            <p className="toast-muted text-sm mb-7">
+              {locale === "th"
+                ? "ชนะ 2 ใน 3 — ผู้ชนะเลือกร้าน"
+                : "Best of 3 — winner picks the table's spot."}
+            </p>
             <div className="grid grid-cols-3 gap-3 w-full">
               {MOVES.map((m) => (
                 <button
