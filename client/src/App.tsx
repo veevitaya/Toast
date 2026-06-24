@@ -1,4 +1,6 @@
 import { Switch, Route, useLocation, Redirect } from "wouter";
+import { motion, useReducedMotion } from "framer-motion";
+import { pageVariants } from "@/lib/motion";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -71,10 +73,18 @@ const OwnerCustomerInsights = lazy(() => import("@/pages/admin/OwnerCustomerInsi
 const OwnerBilling = lazy(() => import("@/pages/admin/OwnerBilling"));
 
 function AnimatedPage({ children }: { children: React.ReactNode }) {
+  const reduce = useReducedMotion();
+  const [location] = useLocation();
   return (
-    <div className="w-full h-full animate-page-in">
+    <motion.div
+      key={location}
+      className="w-full h-full"
+      variants={pageVariants}
+      initial={reduce ? false : "hidden"}
+      animate="show"
+    >
       {children}
-    </div>
+    </motion.div>
   );
 }
 
