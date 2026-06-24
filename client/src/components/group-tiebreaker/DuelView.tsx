@@ -331,7 +331,7 @@ export function DuelView({
             <h2 className="text-2xl font-extrabold toast-ink mb-1">Make your move</h2>
             <p className="toast-muted text-sm mb-1" data-testid="text-rps-explainer">
               {locale === "th"
-                ? "เกมเป่ายิ้งฉุบ — ค้อน กระดาษ กรรไกร"
+                ? "เกมเป่ายิ้งฉุบ"
                 : "It's a rock-paper-scissors match — rock, paper, scissors."}
             </p>
             <p className="toast-muted text-sm mb-7">
