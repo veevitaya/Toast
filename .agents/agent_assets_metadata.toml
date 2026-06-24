@@ -191,3 +191,51 @@ id = "qCLiCILgzYm1Gf7F5Md6m"
 uri = "file://screenshots/longest-fry-splash.jpg"
 type = "image"
 title = "Longest Fry — splash screen"
+
+[[outputs]]
+id = "Cdcl9fZjHhDZ1_sbT1Bja"
+uri = "file://screenshots/mg-rps-1-splash.jpg"
+type = "image"
+title = "RPS Duel — 1. Splash (pill removed)"
+
+[[outputs]]
+id = "TAOoEmWAp8BT7fwleQkyK"
+uri = "file://screenshots/mg-rps-2-champion.jpg"
+type = "image"
+title = "RPS Duel — 2. Pick your champion (pill removed)"
+
+[[outputs]]
+id = "BYp8Z0xhmUmICBh1ujXId"
+uri = "file://screenshots/mg-rps-3-duel.jpg"
+type = "image"
+title = "RPS Duel — 3. Make your move"
+
+[[outputs]]
+id = "M4ta4zlbk1mVDojyBhBmH"
+uri = "file://screenshots/mg-rps-4-winner.jpg"
+type = "image"
+title = "RPS Duel — 4. Winner"
+
+[[outputs]]
+id = "szM-VBoE26RJvdWF-DmgE"
+uri = "file://screenshots/mg-fry-1-splash.jpg"
+type = "image"
+title = "Longest Fry — 1. Splash (pill removed)"
+
+[[outputs]]
+id = "PZxiWHxNPLOkVvipWRQyo"
+uri = "file://screenshots/mg-fry-2-champion.jpg"
+type = "image"
+title = "Longest Fry — 2. Pick your champion (pill removed)"
+
+[[outputs]]
+id = "zP2Pk51Dl6bv4bzKV3NUZ"
+uri = "file://screenshots/mg-fry-3-pull.jpg"
+type = "image"
+title = "Longest Fry — 3. Pull your fry"
+
+[[outputs]]
+id = "IpfbD-9_Znfr8ZTLWrgEL"
+uri = "file://screenshots/mg-fry-4-reveal.jpg"
+type = "image"
+title = "Longest Fry — 4. The reveal"

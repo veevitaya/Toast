@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Check, Loader2, Swords, Star, Crown } from "lucide-react";
+import { Check, Loader2, Star, Crown } from "lucide-react";
 import type { GroupTieBreaker } from "@shared/schema";
 import {
   Avatar,
@@ -178,10 +178,6 @@ function IntroSplash({ gameType, onContinue }: { gameType: string; onContinue: (
       data-testid="tiebreaker-intro"
       onClick={onContinue}
     >
-      <div className="inline-flex items-center gap-2 bg-[#0F172A] text-white px-4 py-1.5 rounded-full mb-6 animate-pop-in">
-        <Swords className="w-3.5 h-3.5 text-[#FFCC02]" strokeWidth={2.5} />
-        <span className="text-[12px] font-bold tracking-wide">{isRps ? "RPS DUEL" : "LONGEST FRY"}</span>
-      </div>
       <img
         src={img}
         alt={isRps ? "Toast versus Waffle" : "Longest fry wins"}
@@ -291,10 +287,6 @@ function ChampionPicker({
   return (
     <div className="relative z-10 flex flex-col flex-1">
       <div className="pt-14 px-6 text-center">
-        <div className="inline-flex items-center gap-2 bg-[#0F172A] text-white px-4 py-1.5 rounded-full mb-4">
-          <Swords className="w-3.5 h-3.5 text-[#FFCC02]" strokeWidth={2.5} />
-          <span className="text-[12px] font-bold tracking-wide">{isDuel ? "RPS DUEL" : "LONGEST FRY"}</span>
-        </div>
         <h1 className="text-[28px] font-extrabold toast-ink leading-tight">
           {displayItems.length} {noun}, one table
         </h1>
