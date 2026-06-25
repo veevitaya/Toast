@@ -13,6 +13,7 @@ import { VIBE_LABELS, VIBE_EMOJI, isMenuFirstVibe } from "@shared/vibeConfig";
 import type { VibeTag } from "@shared/vibeConfig";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import drunkToastPath from "@assets/drunk_toast_nobg.png";
+import thinkingMascotPath from "@/assets/toast-thinking-mascot-nobg.png";
 import { useLanguage } from "@/i18n/LanguageProvider";
 
 const ALL_MENUS = [
@@ -161,8 +162,8 @@ function ToastMascot({ pointDirection, drunk = false }: { pointDirection: "left"
         transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
       >
         <motion.img
-          src={mascotPath}
-          alt="Toast mascot"
+          src={thinkingMascotPath}
+          alt="Toast thinking mascot"
           className="h-24 w-auto object-contain"
           animate={{
             rotate: pointDirection === "left" ? -10 : pointDirection === "right" ? 10 : [0, 3, -3, 0],
