@@ -1,11 +1,11 @@
 ---
 name: Tie-breaker reveal architecture
-description: How the group tie-breaker payoff reveals (fry race / duel) are built — dark handoff, honesty guard, and poll-safe timers.
+description: How the group tie-breaker payoff reveals (fry race / duel) are built — light cream fry stage, honesty guard, poll-safe timers, zoomed fry scale.
 ---
 
 # Tie-breaker reveal (fry race / duel → destination)
 
-The resolved tie-breaker games render a full-screen DARK stage (`#070B16`, `absolute inset-0 z-[60]`) that runs its own timed sequence, then hands off to the shared `DestinationReveal`, which itself opens on a dark "sealed" cloche phase (sealed→lifting→reveal→payoff). Keep the pre-handoff stage dark so the cut into DestinationReveal is seamless — a light/cream stage flashes.
+The resolved tie-breaker games render a full-screen stage (`absolute inset-0 z-[60]`) that runs its own timed sequence, then hands off to the shared `DestinationReveal` (dark "sealed" cloche: sealed→lifting→reveal→payoff). The fry race (`FryView`) was intentionally re-skinned to a LIGHT cream stage to match the requested old design — golden "THE REVEAL" eyebrow, dark "Longest fry wins" heading, glossy 3D golden fries on a shared baseline, and a meta row (cm + cream letter-avatar + name) under each fry, with a crown dropping on the winner. **Do NOT revert it to the old dark `#070B16` stage.** There is a known light→dark cut at the handoff into the still-dark `DestinationReveal`; that's accepted (out of scope) — if it ever bothers, restyle DestinationReveal to cream rather than re-darkening the fry reveal. The `darkHold` loader is also cream to avoid a flash before the reveal mounts.
 
 **Honesty guard (never fabricate a winner).** A resolved reveal must only crown a winner whose REAL data is present — `tb.winnerLineUserId` set, that id is in `participants`, and their pulled item exists (e.g. the fry `carton.find(picks[winnerId])`). If the resolved payload hasn't fully arrived, hold on the dark loader and let the poll fill it in.
 **Why:** matches Toast's app-wide honesty principle (no fake fallbacks); a transient lagged/partial poll payload otherwise crowns a bogus winner — defaulting to `participants[0]` or flooring a length to `lenToCm(0)` = 7cm — for a split second.
@@ -18,4 +18,4 @@ The resolved tie-breaker games render a full-screen DARK stage (`#070B16`, `abso
 
 **Fry-race scale must ZOOM to the contestants' band, not an absolute ruler.** Picked fry lengths cluster by luck (server `trueLen∈[0.28,1.0]`→9.5–16cm; players pull blind, often landing e.g. 10.1/10.3/10.4cm). On a fixed 0–16cm ruler those bars sit at ~63–65% — visually identical, so the requested "all rise together, longest keeps climbing while shorter ones freeze at different lengths" beat is invisible. Map heights through a dynamic window `floorCm=minCm-0.5*span, ceilCm=maxCm+0.7*span` (span floored ~0.4cm), and start the shared rising tape at `floorCm` (not 0). This yields a consistent staircase (~23–34% shortest → ~64–68% winner) for clustered, wide, and 2-player fields alike.
 **Why:** the drama the user wants depends on visible per-fry gaps; absolute cm scaling erases them whenever the draw is tight (which is common).
-**How to apply:** keep it HONEST — heights stay proportional to length *within the zoom*, each fry's tip shows its real cm (count-up `Math.min(lvl,cm)`), and the winner's true cm is in the banner; drop the absolute numbered ruler ticks (they'd lie about the zoomed scale) in favour of unlabeled gridlines.
+**How to apply:** keep it HONEST — heights stay proportional to length *within the zoom*; each fry's real cm counts up (`Math.min(lvl,cm)`) in the meta row beneath it and freezes at its true length; show NO absolute numbered ruler (it'd lie about the zoomed scale). The cream reskin dropped the gridlines/tip-cm-tag entirely — cm lives in the meta row now.

@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import type { GroupTieBreaker } from "@shared/schema";
 import { DestinationReveal } from "./DestinationReveal";
 import {
-  Avatar,
   memberName,
   memberPic,
   TB_EASE,
@@ -17,8 +16,6 @@ type Fry = { id: string; poke: number; trueLen: number; lean: number; w: number;
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 const lenToCm = (v: number) => 7 + v * 9;
 
-// Per-player accent colours for the race (cycles for big groups).
-const RACER_COLORS = ["#FF6B6B", "#FFCC02", "#4ECDC4", "#A78BFA", "#FB923C", "#34D399", "#60A5FA", "#F472B6"];
 const STUB_PCT = 3; // min bar height (% of track) so a fry is always visible
 
 export type FryViewProps = {
@@ -333,7 +330,7 @@ function Carton({
 // The cinematic "Longest Fry" reveal: a single rising tape measure where every
 // fry climbs at the same rate and freezes at its own length, so the longest is the
 // last one still rising. Runs ready → race → crown on its own timers, then hands
-// off to the shared DestinationReveal. Dark stage to match the destination reveal.
+// off to the shared DestinationReveal. Light "cream" stage matching the old design.
 function FryRaceReveal({
   participants,
   picks,
@@ -351,14 +348,13 @@ function FryRaceReveal({
   winnerId: string;
   onDone: () => void;
 }) {
-  const racers = participants.map((uid, i) => {
+  const racers = participants.map((uid) => {
     const fry = carton.find((f) => f.id === picks[uid]);
     return {
       uid,
       name: memberName(members, uid, meId),
       pic: memberPic(members, uid),
       cm: fry ? lenToCm(fry.trueLen) : lenToCm(0),
-      color: RACER_COLORS[i % RACER_COLORS.length],
       isWin: uid === winnerId,
     };
   });
@@ -434,86 +430,60 @@ function FryRaceReveal({
   const soloClimb = phase === "race" && lvl > secondCm;
 
   return (
-    <div className="absolute inset-0 z-[60] flex flex-col overflow-hidden bg-[#070B16]" data-testid="fry-race-reveal">
-      {/* atmosphere */}
-      <div className="absolute inset-0 bg-[radial-gradient(125%_85%_at_50%_-5%,#1C2A47_0%,#0C1325_52%,#070B16_100%)]" />
-      {/* winner wash */}
+    <div className="absolute inset-0 z-[60] flex flex-col overflow-hidden bg-[#FBF6EC]" data-testid="fry-race-reveal">
+      {/* warm cream base */}
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,#FFFDF8_0%,#FBF6EC_46%,#F7EEDC_100%)]" />
+      {/* soft golden glow in the top-right corner (old-design signature) */}
       <div
-        className="pointer-events-none absolute left-1/2 top-[14%] h-[440px] w-[440px] -translate-x-1/2 rounded-full transition-opacity duration-700"
+        className="pointer-events-none absolute -right-12 -top-12 h-[340px] w-[340px] rounded-full"
         style={{
           background:
-            "radial-gradient(circle, rgba(255,204,2,0.24) 0%, rgba(255,204,2,0.07) 42%, rgba(255,204,2,0) 70%)",
+            "radial-gradient(circle, rgba(255,206,74,0.55) 0%, rgba(255,221,128,0.22) 38%, rgba(255,221,128,0) 70%)",
+        }}
+      />
+      {/* winner warmth lifts gently as the longest fry pulls ahead */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-[10%] h-[420px] w-[420px] -translate-x-1/2 rounded-full transition-opacity duration-700"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(255,196,40,0.20) 0%, rgba(255,196,40,0.06) 44%, rgba(255,196,40,0) 70%)",
           opacity: crowned || soloClimb ? 1 : 0,
         }}
       />
 
       {/* ===== TOP BANNER ===== */}
       <div className="relative z-30 px-6 pt-[max(env(safe-area-inset-top),3rem)] text-center">
-        {!crowned ? (
-          <>
-            <div
-              className="mx-auto inline-flex items-center gap-1.5 rounded-full border border-[#FFCC02]/40 bg-[#FFCC02]/10 px-3 py-1.5 text-[11px] font-extrabold tracking-[0.16em] text-[#FFCC02]"
-              style={{ animation: phase === "race" ? "tbf-pulseSoft 0.6s ease-in-out infinite" : "none" }}
-            >
-              {phase === "race" ? "MEASURING…" : "LONGEST FRY WINS"}
-            </div>
-            <h1 className="mt-4 text-[25px] font-extrabold leading-tight text-white">
-              {phase === "ready"
-                ? `${n} ${n === 1 ? "fry" : "fries"} in the pot`
-                : soloClimb
-                  ? "…and it keeps going!"
-                  : "They're climbing!"}
-            </h1>
-            <p className="mt-1.5 text-[13px] font-medium text-slate-400">
-              {soloClimb ? "Last fry still rising takes it" : "Each freezes at its length — longest one wins"}
-            </p>
-          </>
-        ) : (
-          <div style={{ animation: "tbd-dropIn 0.5s cubic-bezier(.2,.9,.2,1.2) both" }}>
-            <div className="mx-auto inline-flex items-center gap-1.5 rounded-full bg-[#FFCC02] px-3 py-1 text-[11px] font-extrabold tracking-[0.18em] text-[#0B1325]">
-              <Crown size={13} className="fill-[#0B1325]" />
-              LONGEST PULL
-            </div>
-            <h2 className="mt-3 text-[26px] font-black leading-none text-white">
-              {winner.name === "You" ? "Your fry" : `${winner.name}'s fry`} —{" "}
-              <span className="text-[#FFCC02]">{winner.cm.toFixed(1)} cm</span>
-            </h2>
-            <p className="mt-1.5 text-[13px] font-bold text-slate-300">
-              {winner.name === "You" ? "you pull the pick" : `${winner.name} pulls the pick`}
-            </p>
-          </div>
-        )}
+        <div className="text-[12px] font-extrabold uppercase tracking-[0.24em] text-[#E0A21A]">The Reveal</div>
+        <h1 className="mt-2.5 text-[27px] font-extrabold leading-tight text-[#1C140A]">
+          {phase === "race" && !soloClimb
+            ? "They're climbing!"
+            : soloClimb
+              ? "…and it keeps going!"
+              : "Longest fry wins"}
+        </h1>
+        <p
+          className="mt-1.5 text-[13px] font-semibold text-[#9A7B3A]"
+          style={{ opacity: crowned ? 1 : 0, transition: "opacity 0.3s ease" }}
+        >
+          {winner.name === "You" ? "You pulled the longest" : `${winner.name} pulled the longest`}
+        </p>
       </div>
 
       {/* ===== MEASURE STAGE ===== */}
-      <div className="relative z-20 flex flex-1 flex-col justify-end px-4 pb-[max(env(safe-area-inset-bottom),1.5rem)]">
-        {/* track */}
-        <div className="relative w-full" style={{ height: "min(440px, 52dvh)" }}>
-          {/* measuring gridlines — unlabeled, because the window is zoomed to the
-              contestants' band (not an absolute 0cm scale); each fry's true length
-              rides its own tip and the winner's cm is called out in the banner */}
-          {[18, 38, 58, 78].map((p) => (
-            <div
-              key={p}
-              className="absolute left-2 right-2 border-t border-dashed border-white/10"
-              style={{ bottom: `${p}%` }}
-            />
-          ))}
-
-          {/* spotlight beam onto the winner */}
+      <div className="relative z-20 flex flex-1 flex-col justify-end px-6 pb-[max(env(safe-area-inset-bottom),2rem)]">
+        {/* track — fries grow from a shared baseline (no ruler; the window is zoomed
+            to the contestants' band so the gaps and the winner's solo climb read) */}
+        <div className="relative w-full" style={{ height: "min(400px, 48dvh)" }}>
+          {/* soft glow behind the winning column as it pulls ahead */}
           {(crowned || soloClimb) && (
             <div
-              className="pointer-events-none absolute z-10"
+              className="pointer-events-none absolute bottom-0 top-[6%] z-0"
               style={{
                 left: `${((winnerIdx + 0.5) / n) * 100}%`,
-                top: -40,
-                bottom: 0,
-                width: 130,
+                width: 150,
                 transform: "translateX(-50%)",
-                background:
-                  "linear-gradient(180deg, rgba(255,204,2,0.42) 0%, rgba(255,204,2,0.14) 45%, rgba(255,204,2,0) 100%)",
-                clipPath: "polygon(38% 0, 62% 0, 100% 100%, 0 100%)",
-                animation: "tbf-beamIn 0.5s ease-out both",
+                background: "radial-gradient(closest-side, rgba(255,198,44,0.28), rgba(255,198,44,0))",
+                animation: "tbf-pulseSoft 1.2s ease-in-out infinite",
               }}
             />
           )}
@@ -523,70 +493,51 @@ function FryRaceReveal({
             {racers.map((r) => {
               const measured = Math.min(lvl, r.cm);
               const barPct = Math.max(STUB_PCT, toPct(measured));
-              const locked = lvl >= r.cm - 0.02;
-              const dropped = locked && !r.isWin;
-              const dim = (crowned && !r.isWin) || (dropped && phase === "race");
-              const climbing = !locked || (r.isWin && !crowned);
+              const lit = r.isWin && (soloClimb || crowned);
               return (
                 <div key={r.uid} className="relative flex h-full flex-1 items-end justify-center">
-                  {/* crown on the winner */}
+                  {/* crown drops onto the winner */}
                   {crowned && r.isWin && (
                     <div
                       className="absolute left-1/2 z-30 -translate-x-1/2"
                       style={{
-                        bottom: `calc(${barPct}% + 30px)`,
+                        bottom: `calc(${barPct}% + 26px)`,
                         animation: "tbd-crownDrop 0.55s cubic-bezier(.2,.9,.2,1.4) both",
                       }}
                     >
-                      <Crown size={28} className="fill-[#FFCC02] text-[#FFCC02] drop-shadow-[0_3px_8px_rgba(0,0,0,0.5)]" />
-                    </div>
-                  )}
-                  {/* cm tag riding the tip — true length counts up as the tape measures
-                      each fry, then freezes when its tip is reached (hidden until the race) */}
-                  {phase !== "ready" && lvl > 0 && (
-                    <div
-                      className="absolute left-1/2 z-20 -translate-x-1/2 rounded-md px-1.5 py-0.5 text-[11px] font-extrabold"
-                      style={{
-                        bottom: `calc(${barPct}% + 8px)`,
-                        background: r.isWin && crowned ? "#FFCC02" : dropped ? "rgba(148,163,184,0.18)" : "rgba(255,255,255,0.12)",
-                        color: r.isWin && crowned ? "#0B1325" : dropped ? "#94A3B8" : "#E2E8F0",
-                        opacity: dim ? 0.5 : 1,
-                      }}
-                    >
-                      {measured.toFixed(1)}
+                      <Crown size={30} className="fill-[#F2B705] text-[#F2B705] drop-shadow-[0_3px_6px_rgba(180,120,0,0.4)]" />
                     </div>
                   )}
 
-                  {/* the fry bar */}
+                  {/* the glossy fry, rising from the shared baseline */}
                   <div
-                    className="relative w-[26px] max-w-[60%] rounded-t-[7px]"
+                    className="relative w-[30px] max-w-[62%] rounded-t-[8px] rounded-b-[3px]"
                     style={{
                       height: `${barPct}%`,
-                      background: r.isWin
-                        ? "linear-gradient(180deg,#FFE9A6 0%,#FFCC02 40%,#E8A200 100%)"
-                        : "linear-gradient(180deg,#FFE2A0 0%,#F4C04A 45%,#C98F2E 100%)",
-                      boxShadow:
-                        (r.isWin && crowned) || (r.isWin && soloClimb)
-                          ? "0 0 24px rgba(255,204,2,0.75)"
-                          : "0 6px 14px rgba(0,0,0,0.35)",
-                      filter: dim ? "grayscale(0.7) brightness(0.7)" : "none",
-                      opacity: dim ? 0.55 : 1,
-                      transition: "filter 0.35s ease, opacity 0.35s ease, box-shadow 0.3s ease",
+                      background:
+                        "linear-gradient(96deg,#FFE689 0%,#FBD24E 32%,#F4C32C 60%,#E2A516 85%,#C98C12 100%)",
+                      boxShadow: lit
+                        ? "0 0 26px rgba(255,196,40,0.7), 0 12px 18px rgba(176,120,12,0.3)"
+                        : "0 12px 18px rgba(184,134,28,0.22)",
+                      transition: "box-shadow 0.3s ease",
                       animation: r.isWin && soloClimb ? "tbf-winnerThrob 0.7s ease-in-out infinite" : "none",
                     }}
                   >
-                    {/* crinkle lines */}
+                    {/* top cap sheen */}
                     <div
-                      className="absolute inset-x-[5px] top-1 bottom-1 rounded-full"
-                      style={{ background: "repeating-linear-gradient(180deg, rgba(255,255,255,0.35) 0 2px, transparent 2px 9px)" }}
+                      className="absolute inset-x-0 top-0 h-3 rounded-t-[8px]"
+                      style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0))" }}
                     />
-                    {/* rising spark at the tip while climbing */}
-                    {climbing && phase === "race" && (
-                      <div
-                        className="absolute -top-0.5 left-1/2 h-2 w-2 rounded-full bg-white"
-                        style={{ filter: "blur(1px)", animation: "tbf-tipSpark 0.5s ease-in-out infinite" }}
-                      />
-                    )}
+                    {/* left specular streak */}
+                    <div
+                      className="absolute bottom-2 top-2 left-[6px] w-[2px] rounded-full"
+                      style={{ background: "rgba(255,255,255,0.6)" }}
+                    />
+                    {/* darker right edge → 3D depth */}
+                    <div
+                      className="absolute bottom-0 right-0 top-0 w-[5px] rounded-r-[3px]"
+                      style={{ background: "linear-gradient(180deg, rgba(150,96,10,0.45), rgba(120,76,8,0.6))" }}
+                    />
                   </div>
                 </div>
               );
@@ -594,27 +545,44 @@ function FryRaceReveal({
           </div>
         </div>
 
-        {/* avatar row, aligned under the track columns */}
-        <div className="mt-3 flex justify-around">
+        {/* meta row — measured length, avatar, name, aligned under each fry */}
+        <div className="mt-5 flex justify-around">
           {racers.map((r) => {
-            const dim = crowned && !r.isWin;
+            const measured = Math.min(lvl, r.cm);
+            const lit = r.isWin && crowned;
             return (
-              <div
-                key={r.uid}
-                className="flex flex-1 flex-col items-center"
-                style={{ opacity: dim ? 0.55 : 1, transition: "opacity 0.35s ease" }}
-              >
-                {/* carton base */}
-                <div className="h-3 w-[34px] rounded-b-sm" style={{ background: "linear-gradient(180deg,#E8533B,#C23B26)" }} />
-                <div
-                  className="mt-1.5 h-8 w-8 overflow-hidden rounded-full"
-                  style={{ boxShadow: `0 0 0 2px ${r.color}, 0 0 0 4px #070B16` }}
+              <div key={r.uid} className="flex flex-1 flex-col items-center">
+                <span
+                  className="text-[15px] font-extrabold tabular-nums"
+                  style={{
+                    color: lit ? "#B9820A" : "#241A0C",
+                    opacity: phase === "ready" ? 0 : 1,
+                    transition: "opacity 0.3s ease",
+                  }}
                 >
-                  <Avatar pic={r.pic} name={r.name} className="h-full w-full rounded-full" />
+                  {measured.toFixed(1)} cm
+                </span>
+                <div
+                  className="mt-3 flex h-12 w-12 items-center justify-center overflow-hidden rounded-full"
+                  style={{
+                    background: "radial-gradient(circle at 50% 36%, #F8EAC2, #EFD89A)",
+                    boxShadow: lit
+                      ? "0 0 0 2px #F2B705, 0 4px 10px rgba(180,130,20,0.25)"
+                      : "0 2px 6px rgba(170,130,40,0.18)",
+                    transition: "box-shadow 0.3s ease",
+                  }}
+                >
+                  {r.pic ? (
+                    <img src={r.pic} alt={r.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-[20px] font-bold text-[#7A3B1E]">
+                      {(r.name || "?").charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <span
-                  className="mt-1.5 max-w-[64px] truncate text-[11px] font-bold"
-                  style={{ color: r.isWin && crowned ? "#FFCC02" : "#94A3B8" }}
+                  className="mt-2 max-w-[80px] truncate text-[13px] font-bold"
+                  style={{ color: lit ? "#1C140A" : "#4A3A22" }}
                 >
                   {r.name}
                 </span>
@@ -655,11 +623,11 @@ export function FryView({
     const winnerId = tb.winnerLineUserId;
     const item = tb.finalItemId != null ? itemById.get(tb.finalItemId) : undefined;
     // Honest reveal: only crown a winner whose real pulled fry is present. If the
-    // resolved payload hasn't fully arrived, hold on the dark stage (the poll fills
+    // resolved payload hasn't fully arrived, hold on the cream stage (the poll fills
     // it in) rather than fabricating a length or defaulting to the first participant.
     const winnerFry = winnerId ? carton.find((f) => f.id === picks[winnerId]) : undefined;
     const darkHold = (
-      <div className="absolute inset-0 z-[60] flex items-center justify-center bg-[#070B16]">
+      <div className="absolute inset-0 z-[60] flex items-center justify-center bg-[#FBF6EC]">
         <Loader2 className="w-8 h-8 animate-spin text-[#FFCC02]" />
       </div>
     );
