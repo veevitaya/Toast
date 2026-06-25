@@ -693,6 +693,11 @@ input:focus {
   75% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(calc(var(--spin) * 0.8)) scale(0.9); opacity: 1; }
   100% { transform: translate(calc(-50% + var(--tx) * 1.1), calc(-50% + var(--ty) + var(--g))) rotate(var(--spin)) scale(0.45); opacity: 0; }
 }
+@keyframes tbd-confettiFall {
+  0% { transform: translate(0,-30px) rotate(0deg); opacity: 0; }
+  8% { opacity: 1; }
+  100% { transform: translate(var(--x), 900px) rotate(720deg); opacity: 0.85; }
+}
 @keyframes tbd-domeBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes tbd-steamRise { 0% { transform: translateY(6px); opacity: 0; } 30% { opacity: 0.6; } 100% { transform: translateY(-26px); opacity: 0; } }
 @keyframes tbd-medallionPop { 0% { transform: scale(0.6); } 60% { transform: scale(1.08); } 100% { transform: scale(1); } }
