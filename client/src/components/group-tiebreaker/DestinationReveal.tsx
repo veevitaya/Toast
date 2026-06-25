@@ -56,16 +56,23 @@ export function DestinationReveal({
 
   const confetti = useMemo(
     () =>
-      Array.from({ length: 42 }).map((_, i) => ({
-        id: i,
-        left: Math.random() * 100,
-        x: (Math.random() - 0.5) * 160,
-        delay: Math.random() * 0.5,
-        dur: 1.9 + Math.random() * 1.5,
-        size: 6 + Math.random() * 9,
-        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-        round: Math.random() > 0.55,
-      })),
+      Array.from({ length: 52 }).map((_, i) => {
+        // radial burst from the screen centre, out in every direction
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = 170 + Math.random() * 320;
+        return {
+          id: i,
+          tx: Math.cos(angle) * velocity,
+          ty: Math.sin(angle) * velocity,
+          g: 30 + Math.random() * 130,
+          spin: (Math.random() - 0.5) * 900,
+          delay: Math.random() * 0.18,
+          dur: 1.3 + Math.random() * 1.1,
+          size: 6 + Math.random() * 9,
+          color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+          round: Math.random() > 0.55,
+        };
+      }),
     [],
   );
 
@@ -276,16 +283,18 @@ export function DestinationReveal({
           {confetti.map((c) => (
             <span
               key={c.id}
-              className="absolute top-0"
+              className="absolute left-1/2 top-1/2"
               style={
                 {
-                  left: `${c.left}%`,
                   width: c.size,
                   height: c.round ? c.size : c.size * 0.5,
                   background: c.color,
                   borderRadius: c.round ? "50%" : 2,
-                  ["--x" as any]: `${c.x}px`,
-                  animation: `tbd-confettiFall ${c.dur}s linear ${c.delay}s infinite`,
+                  ["--tx" as any]: `${c.tx}px`,
+                  ["--ty" as any]: `${c.ty}px`,
+                  ["--g" as any]: `${c.g}px`,
+                  ["--spin" as any]: `${c.spin}deg`,
+                  animation: `tbd-confettiBurst ${c.dur}s cubic-bezier(0.22,0.61,0.36,1) ${c.delay}s infinite`,
                 } as CSSProperties
               }
             />
