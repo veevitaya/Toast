@@ -40,9 +40,10 @@ export function DestinationReveal({
     const timers = [
       setTimeout(() => setPhase("lifting"), 1500),
       setTimeout(() => setPhase("reveal"), 2350),
-      // Hold on the confetti reveal a good while before the opaque payoff card
-      // (z-60) slides over and hides it — this gap IS the visible confetti time.
-      setTimeout(() => setPhase("payoff"), 8500),
+      // Hold on the confetti reveal before the opaque payoff card (z-60) slides
+      // over and hides it — this gap IS the visible confetti time: 2350 + 4760ms
+      // = 4.76s of confetti.
+      setTimeout(() => setPhase("payoff"), 7110),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
