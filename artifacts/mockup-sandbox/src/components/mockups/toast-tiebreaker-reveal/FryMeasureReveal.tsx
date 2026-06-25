@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Navigation, Star, Clock, Crown, RotateCcw, MessageCircle, MapPin } from "lucide-react";
+import { Navigation, Star, Crown, RotateCcw, MessageCircle, MapPin, Lock } from "lucide-react";
 
-type Phase = "ready" | "measure" | "crown" | "payoff";
+type Phase = "ready" | "race" | "crown" | "payoff";
 
 type Player = { name: string; cm: number; color: string };
 
@@ -13,37 +13,146 @@ const PLAYERS: Player[] = [
 ];
 
 const WINNER = PLAYERS.reduce((b, p, i, a) => (p.cm > a[b].cm ? i : b), 0);
-const MAX_CM = 16;
-const TRACK_H = 430; // px available for the tallest fry
-const STUB = 26;
+const MAX_FRY = Math.max(...PLAYERS.map((p) => p.cm)); // longest true length
+const SECOND = [...PLAYERS.map((p) => p.cm)].sort((a, b) => b - a)[1]; // runner-up length
+const RULER_MAX = 16; // cm at top of the ruler
+const TRACK_H = 470; // px the ruler spans
+const STUB = 16;
 
-const easeOut = (x: number) => 1 - Math.pow(1 - x, 2.2);
+function DestinationScreen({
+  show,
+  image,
+  pickLabel,
+  name,
+  rating,
+  price,
+  eta,
+  match,
+  onReplay,
+}: {
+  show: boolean;
+  image: string;
+  pickLabel: string;
+  name: string;
+  rating: string;
+  price: string;
+  eta: string;
+  match: string;
+  onReplay: () => void;
+}) {
+  return (
+    <div
+      className="absolute inset-0 z-[60] flex flex-col bg-white"
+      style={{
+        transition: "opacity 0.5s ease, transform 0.55s cubic-bezier(.2,.9,.2,1.05)",
+        opacity: show ? 1 : 0,
+        transform: show ? "translateX(0) scale(1)" : "translateX(28px) scale(0.97)",
+        pointerEvents: show ? "auto" : "none",
+      }}
+    >
+      <div className="relative w-full overflow-hidden" style={{ height: 430 }}>
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url('${image}')`, animation: show ? "kenburns 7s ease-out both" : "none" }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(7,11,22,0.5) 0%, rgba(7,11,22,0) 26%, rgba(7,11,22,0.1) 55%, rgba(255,255,255,0) 80%, #fff 100%)",
+          }}
+        />
+        <div className="absolute left-5 top-12">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-[#FFCC02] px-3 py-1.5 text-[11px] font-extrabold tracking-[0.12em] text-[#0B1325] shadow-[0_6px_18px_rgba(0,0,0,0.3)]">
+            <Crown size={13} className="fill-[#0B1325]" /> {pickLabel}
+          </div>
+        </div>
+        <div className="absolute bottom-8 left-5 right-5">
+          <p className="mb-1 text-[12px] font-bold uppercase tracking-[0.22em] text-[#FFCC02]">Tonight's table</p>
+          <h2 className="text-[31px] font-black leading-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.6)]">
+            {name}
+          </h2>
+          <div className="mt-2 flex items-center gap-2 text-[13px] font-semibold text-white/90">
+            <span className="inline-flex items-center gap-1">
+              <Star size={13} className="fill-[#FFCC02] text-[#FFCC02]" /> {rating}
+            </span>
+            <span className="opacity-60">·</span>
+            <span>{price}</span>
+            <span className="opacity-60">·</span>
+            <span className="inline-flex items-center gap-1">
+              <MapPin size={12} className="text-[#FFCC02]" /> {eta}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative z-10 -mt-6 flex flex-1 flex-col rounded-t-[28px] bg-white px-6 pb-7 pt-5">
+        <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-slate-200" />
+        <div className="flex items-center justify-between">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#FFCC02]/20 px-2.5 py-1 text-[12px] font-extrabold text-[#A77B00]">
+            {match} group match
+          </span>
+          <span className="text-[12px] font-semibold text-slate-400">Open till 10pm</span>
+        </div>
+        <p className="mt-3 text-[16px] font-bold leading-snug text-slate-600">
+          {pickLabel} pulled the longest fry — so the table's headed here 🍽️
+        </p>
+
+        <div className="mt-auto pt-5">
+          <button className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#FFCC02] text-[17px] font-extrabold text-[#0B1325] shadow-[0_10px_28px_-6px_rgba(255,204,2,0.55)] transition-transform active:scale-[0.97]">
+            <Navigation size={20} className="fill-[#0B1325]" />
+            Get Directions
+          </button>
+          <button className="mt-2.5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#06C755] text-[15px] font-bold text-white transition-transform active:scale-[0.97]">
+            <MessageCircle size={18} className="fill-white" />
+            Share to LINE group
+          </button>
+        </div>
+      </div>
+
+      {show && (
+        <button
+          onClick={onReplay}
+          className="absolute right-4 top-12 z-[70] inline-flex items-center gap-1 rounded-full bg-black/15 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm"
+        >
+          <RotateCcw size={12} /> Replay
+        </button>
+      )}
+
+      <style>{`@keyframes kenburns { 0% { transform: scale(1.14); } 100% { transform: scale(1); } }`}</style>
+    </div>
+  );
+}
 
 export function FryMeasureReveal() {
   const [phase, setPhase] = useState<Phase>("ready");
-  const [p, setP] = useState(0); // global measure progress 0..1
+  const [lvl, setLvl] = useState(0); // current measured length (cm), shared by all fries
   const [cycle, setCycle] = useState(0);
   const rafRef = useRef<number>();
 
   useEffect(() => {
     setPhase("ready");
-    setP(0);
-    const t = setTimeout(() => setPhase("measure"), 1500);
+    setLvl(0);
+    const t = setTimeout(() => setPhase("race"), 1500);
     return () => clearTimeout(t);
   }, [cycle]);
 
+  // the race: one rising tape measure; every fry climbs at the SAME rate and
+  // freezes at its own length, so the longest is the last one still climbing.
   useEffect(() => {
-    if (phase !== "measure") return;
+    if (phase !== "race") return;
     const start = performance.now();
-    const dur = 1700;
+    const dur = 2600;
     let toCrown: ReturnType<typeof setTimeout> | undefined;
     const tick = (now: number) => {
-      const x = Math.min(1, (now - start) / dur);
-      setP(x);
-      if (x < 1) {
+      const t = Math.min(1, (now - start) / dur);
+      // ease out gently so the final solo climb lingers for suspense
+      const eased = 1 - Math.pow(1 - t, 1.7);
+      setLvl(eased * MAX_FRY);
+      if (t < 1) {
         rafRef.current = requestAnimationFrame(tick);
       } else {
-        toCrown = setTimeout(() => setPhase("crown"), 220);
+        toCrown = setTimeout(() => setPhase("crown"), 260);
       }
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -55,24 +164,20 @@ export function FryMeasureReveal() {
 
   useEffect(() => {
     if (phase !== "crown") return;
-    const t = setTimeout(() => setPhase("payoff"), 1200);
+    const t = setTimeout(() => setPhase("payoff"), 1300);
     return () => clearTimeout(t);
   }, [phase]);
 
   useEffect(() => {
     if (phase !== "payoff") return;
-    const t = setTimeout(() => setCycle((c) => c + 1), 6800);
+    const t = setTimeout(() => setCycle((c) => c + 1), 7200);
     return () => clearTimeout(t);
   }, [phase]);
 
   const settled = phase === "crown" || phase === "payoff";
   const isPayoff = phase === "payoff";
-
-  // per-fry staggered progress
-  const fp = (i: number) => {
-    const delay = i * 0.06;
-    return easeOut(Math.max(0, Math.min(1, (p - delay) / (1 - 0.18))));
-  };
+  // climax: only the winner is still climbing
+  const soloClimb = phase === "race" && lvl > SECOND;
 
   const confetti = useMemo(
     () =>
@@ -111,7 +216,7 @@ export function FryMeasureReveal() {
           style={{
             background:
               "radial-gradient(circle, rgba(255,204,2,0.26) 0%, rgba(255,204,2,0.08) 40%, rgba(255,204,2,0) 70%)",
-            opacity: settled ? 1 : 0,
+            opacity: settled || soloClimb ? 1 : 0,
           }}
         />
 
@@ -121,15 +226,15 @@ export function FryMeasureReveal() {
             <>
               <div
                 className="mx-auto inline-flex items-center gap-1.5 rounded-full border border-[#FFCC02]/40 bg-[#FFCC02]/10 px-3 py-1.5 text-[11px] font-extrabold tracking-[0.16em] text-[#FFCC02]"
-                style={{ animation: phase === "measure" ? "pulseSoft 0.6s ease-in-out infinite" : "none" }}
+                style={{ animation: phase === "race" ? "pulseSoft 0.6s ease-in-out infinite" : "none" }}
               >
-                🍟 {phase === "measure" ? "MEASURING…" : "LONGEST FRY WINS"}
+                🍟 {phase === "race" ? "MEASURING…" : "LONGEST FRY WINS"}
               </div>
               <h1 className="mt-4 text-[25px] font-extrabold leading-tight text-white">
-                {phase === "measure" ? "Who pulled longest?" : "4 fries in the pot"}
+                {phase !== "race" ? "4 fries in the pot" : soloClimb ? "…and it keeps going!" : "They're climbing!"}
               </h1>
               <p className="mt-1.5 text-[13px] font-medium text-slate-400">
-                Lengths hidden till now — longest one decides
+                {soloClimb ? "Last fry still rising takes it" : "Each freezes at its length — longest one wins"}
               </p>
             </>
           ) : (
@@ -152,7 +257,7 @@ export function FryMeasureReveal() {
         <div className="absolute left-0 right-0 z-20" style={{ top: 232, height: TRACK_H + 96 }}>
           {/* ruler ticks */}
           {[0, 5, 10, 15].map((cm) => {
-            const y = TRACK_H - (cm / MAX_CM) * TRACK_H;
+            const y = TRACK_H - (cm / RULER_MAX) * TRACK_H;
             return (
               <div key={cm} className="absolute left-0 right-0" style={{ top: y }}>
                 <div className="absolute left-3 right-3 border-t border-dashed border-white/8" />
@@ -162,7 +267,7 @@ export function FryMeasureReveal() {
           })}
 
           {/* spotlight beam onto winner */}
-          {settled && (
+          {(settled || soloClimb) && (
             <div
               className="absolute z-10"
               style={{
@@ -182,11 +287,14 @@ export function FryMeasureReveal() {
           {/* fries row */}
           <div className="absolute inset-x-0 flex items-end justify-around px-3" style={{ height: TRACK_H, top: 0 }}>
             {PLAYERS.map((pl, i) => {
-              const prog = fp(i);
-              const h = STUB + (((pl.cm / MAX_CM) * TRACK_H) - STUB) * prog;
-              const cmShown = (pl.cm * prog).toFixed(1);
+              const measured = Math.min(lvl, pl.cm);
+              const h = Math.max(STUB, (measured / RULER_MAX) * TRACK_H);
+              const cmShown = measured.toFixed(1);
               const isWin = i === WINNER;
-              const dim = settled && !isWin;
+              const locked = lvl >= pl.cm - 0.02; // this fry has reached its length
+              const dropped = locked && !isWin; // out of the race
+              const dim = (settled && !isWin) || (dropped && phase === "race");
+              const climbing = !locked || (isWin && !settled);
               return (
                 <div key={pl.name} className="relative flex h-full w-[22%] flex-col items-center justify-end">
                   {/* crown on winner */}
@@ -200,14 +308,15 @@ export function FryMeasureReveal() {
                   )}
                   {/* cm tag riding the tip */}
                   <div
-                    className="absolute z-20 rounded-md px-1.5 py-0.5 text-[11px] font-extrabold transition-colors"
+                    className="absolute z-20 inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-extrabold transition-colors"
                     style={{
                       bottom: h + 6,
-                      background: isWin && settled ? "#FFCC02" : "rgba(255,255,255,0.10)",
-                      color: isWin && settled ? "#0B1325" : "#E2E8F0",
-                      opacity: dim ? 0.4 : 1,
+                      background: isWin && settled ? "#FFCC02" : dropped ? "rgba(148,163,184,0.18)" : "rgba(255,255,255,0.12)",
+                      color: isWin && settled ? "#0B1325" : dropped ? "#94A3B8" : "#E2E8F0",
+                      opacity: dim ? 0.5 : 1,
                     }}
                   >
+                    {dropped && phase === "race" && <Lock size={9} />}
                     {cmShown}
                   </div>
 
@@ -216,17 +325,31 @@ export function FryMeasureReveal() {
                     className="relative w-[26px] rounded-t-[7px]"
                     style={{
                       height: h,
-                      transition: settled ? "filter 0.4s ease, opacity 0.4s ease" : "none",
                       background: isWin
                         ? "linear-gradient(180deg,#FFE9A6 0%,#FFCC02 40%,#E8A200 100%)"
                         : "linear-gradient(180deg,#FFE2A0 0%,#F4C04A 45%,#C98F2E 100%)",
-                      boxShadow: isWin && settled ? "0 0 22px rgba(255,204,2,0.7)" : "0 6px 14px rgba(0,0,0,0.35)",
+                      boxShadow:
+                        (isWin && settled) || (isWin && soloClimb)
+                          ? "0 0 24px rgba(255,204,2,0.75)"
+                          : "0 6px 14px rgba(0,0,0,0.35)",
                       filter: dim ? "grayscale(0.7) brightness(0.7)" : "none",
-                      opacity: dim ? 0.6 : 1,
+                      opacity: dim ? 0.55 : 1,
+                      transition: "filter 0.35s ease, opacity 0.35s ease, box-shadow 0.3s ease",
+                      animation: isWin && soloClimb ? "winnerThrob 0.7s ease-in-out infinite" : "none",
                     }}
                   >
                     {/* fry crinkle lines */}
-                    <div className="absolute inset-x-[5px] top-1 bottom-1 rounded-full" style={{ background: "repeating-linear-gradient(180deg, rgba(255,255,255,0.35) 0 2px, transparent 2px 9px)" }} />
+                    <div
+                      className="absolute inset-x-[5px] top-1 bottom-1 rounded-full"
+                      style={{ background: "repeating-linear-gradient(180deg, rgba(255,255,255,0.35) 0 2px, transparent 2px 9px)" }}
+                    />
+                    {/* rising spark at the tip while climbing */}
+                    {climbing && phase === "race" && (
+                      <div
+                        className="absolute -top-0.5 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-white"
+                        style={{ filter: "blur(1px)", animation: "tipSpark 0.5s ease-in-out infinite" }}
+                      />
+                    )}
                   </div>
 
                   {/* carton base + avatar */}
@@ -277,63 +400,18 @@ export function FryMeasureReveal() {
           </div>
         )}
 
-        {/* ===== PAYOFF CARD ===== */}
-        <div
-          className="absolute bottom-0 left-0 right-0 z-50 transition-all duration-700"
-          style={{ transform: isPayoff ? "translateY(0)" : "translateY(110%)", opacity: isPayoff ? 1 : 0 }}
-        >
-          <div className="rounded-t-[28px] bg-white px-5 pb-7 pt-5 shadow-[0_-12px_40px_rgba(0,0,0,0.5)]">
-            <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-slate-200" />
-
-            <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-[#FFF7DA] px-2.5 py-1 text-[11px] font-extrabold text-[#A77B00]">
-              <Crown size={12} className="fill-[#A77B00]" /> {PLAYERS[WINNER].name}'s pick · where we're eating
-            </div>
-            <h3 className="text-[15px] font-bold text-slate-500">Head out together 🚗</h3>
-
-            <div className="mt-3 flex gap-3">
-              <div
-                className="h-[78px] w-[78px] shrink-0 rounded-2xl bg-cover bg-center"
-                style={{ backgroundImage: "url('/__mockup/images/Winner-greencurry.png')" }}
-              />
-              <div className="min-w-0 flex-1">
-                <h4 className="truncate text-[20px] font-extrabold leading-tight text-[#0B1325]">Krua Apsorn</h4>
-                <div className="mt-1 flex items-center gap-2 text-[13px] text-slate-500">
-                  <span className="inline-flex items-center gap-1 font-bold text-slate-700">
-                    <Star size={13} className="fill-[#FFCC02] text-[#FFCC02]" /> 4.8
-                  </span>
-                  <span>·</span>
-                  <span>฿฿</span>
-                  <span>·</span>
-                  <span className="inline-flex items-center gap-1">
-                    <Clock size={12} /> 9 min
-                  </span>
-                </div>
-                <span className="mt-1.5 inline-flex items-center gap-1 rounded-md bg-[#FFCC02]/20 px-2 py-0.5 text-[12px] font-extrabold text-[#A77B00]">
-                  <MapPin size={11} /> 92% group match
-                </span>
-              </div>
-            </div>
-
-            <button className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#FFCC02] text-[17px] font-extrabold text-[#0B1325] shadow-[0_10px_28px_-6px_rgba(255,204,2,0.55)] transition-transform active:scale-[0.97]">
-              <Navigation size={20} className="fill-[#0B1325]" />
-              Get Directions
-            </button>
-            <button className="mt-2.5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#06C755] text-[15px] font-bold text-white transition-transform active:scale-[0.97]">
-              <MessageCircle size={18} className="fill-white" />
-              Share to LINE group
-            </button>
-          </div>
-        </div>
-
-        {/* replay */}
-        {isPayoff && (
-          <button
-            onClick={() => setCycle((c) => c + 1)}
-            className="absolute right-4 top-12 z-[60] inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm"
-          >
-            <RotateCcw size={12} /> Replay
-          </button>
-        )}
+        {/* ===== FULL-SCREEN DESTINATION ===== */}
+        <DestinationScreen
+          show={isPayoff}
+          image="/__mockup/images/Winner-greencurry.png"
+          pickLabel={PLAYERS[WINNER].name}
+          name="Krua Apsorn"
+          rating="4.8"
+          price="฿฿"
+          eta="Dinso Rd · 9 min away"
+          match="92%"
+          onReplay={() => setCycle((c) => c + 1)}
+        />
 
         <style>{`
           @keyframes confettiFall {
@@ -345,6 +423,8 @@ export function FryMeasureReveal() {
           @keyframes beamIn { 0% { opacity: 0; } 100% { opacity: 1; } }
           @keyframes dropIn { 0% { transform: translateY(-16px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
           @keyframes pulseSoft { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+          @keyframes tipSpark { 0%,100% { opacity: 0.4; transform: translate(-50%,0) scale(0.8); } 50% { opacity: 1; transform: translate(-50%,-2px) scale(1.2); } }
+          @keyframes winnerThrob { 0%,100% { box-shadow: 0 0 18px rgba(255,204,2,0.55); } 50% { box-shadow: 0 0 30px rgba(255,204,2,0.95); } }
         `}</style>
       </div>
     </div>

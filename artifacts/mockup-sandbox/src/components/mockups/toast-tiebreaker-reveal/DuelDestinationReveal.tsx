@@ -1,7 +1,114 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Navigation, Star, Clock, Crown, RotateCcw, MessageCircle, MapPin } from "lucide-react";
+import { Navigation, Star, Crown, RotateCcw, MessageCircle, MapPin } from "lucide-react";
 
 type Phase = "sealed" | "lifting" | "reveal" | "payoff";
+
+function DestinationScreen({
+  show,
+  image,
+  pickLabel,
+  name,
+  rating,
+  price,
+  eta,
+  match,
+  onReplay,
+}: {
+  show: boolean;
+  image: string;
+  pickLabel: string;
+  name: string;
+  rating: string;
+  price: string;
+  eta: string;
+  match: string;
+  onReplay: () => void;
+}) {
+  return (
+    <div
+      className="absolute inset-0 z-[60] flex flex-col bg-white"
+      style={{
+        transition: "opacity 0.5s ease, transform 0.55s cubic-bezier(.2,.9,.2,1.05)",
+        opacity: show ? 1 : 0,
+        transform: show ? "translateX(0) scale(1)" : "translateX(28px) scale(0.97)",
+        pointerEvents: show ? "auto" : "none",
+      }}
+    >
+      {/* hero */}
+      <div className="relative w-full overflow-hidden" style={{ height: 430 }}>
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url('${image}')`, animation: show ? "kenburns 7s ease-out both" : "none" }}
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(7,11,22,0.5) 0%, rgba(7,11,22,0) 26%, rgba(7,11,22,0.1) 55%, rgba(255,255,255,0) 80%, #fff 100%)",
+          }}
+        />
+        <div className="absolute left-5 top-12">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-[#FFCC02] px-3 py-1.5 text-[11px] font-extrabold tracking-[0.12em] text-[#0B1325] shadow-[0_6px_18px_rgba(0,0,0,0.3)]">
+            <Crown size={13} className="fill-[#0B1325]" /> {pickLabel}
+          </div>
+        </div>
+        <div className="absolute bottom-8 left-5 right-5">
+          <p className="mb-1 text-[12px] font-bold uppercase tracking-[0.22em] text-[#FFCC02]">Tonight's table</p>
+          <h2 className="text-[31px] font-black leading-tight text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.6)]">
+            {name}
+          </h2>
+          <div className="mt-2 flex items-center gap-2 text-[13px] font-semibold text-white/90">
+            <span className="inline-flex items-center gap-1">
+              <Star size={13} className="fill-[#FFCC02] text-[#FFCC02]" /> {rating}
+            </span>
+            <span className="opacity-60">·</span>
+            <span>{price}</span>
+            <span className="opacity-60">·</span>
+            <span className="inline-flex items-center gap-1">
+              <MapPin size={12} className="text-[#FFCC02]" /> {eta}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* panel */}
+      <div className="relative z-10 -mt-6 flex flex-1 flex-col rounded-t-[28px] bg-white px-6 pb-7 pt-5">
+        <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-slate-200" />
+        <div className="flex items-center justify-between">
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#FFCC02]/20 px-2.5 py-1 text-[12px] font-extrabold text-[#A77B00]">
+            {match} group match
+          </span>
+          <span className="text-[12px] font-semibold text-slate-400">Open till 10pm</span>
+        </div>
+        <p className="mt-3 text-[16px] font-bold leading-snug text-slate-600">
+          The duel's settled — and Toast's table is set. Everyone's headed here 🍽️
+        </p>
+
+        <div className="mt-auto pt-5">
+          <button className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#FFCC02] text-[17px] font-extrabold text-[#0B1325] shadow-[0_10px_28px_-6px_rgba(255,204,2,0.55)] transition-transform active:scale-[0.97]">
+            <Navigation size={20} className="fill-[#0B1325]" />
+            Get Directions
+          </button>
+          <button className="mt-2.5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#06C755] text-[15px] font-bold text-white transition-transform active:scale-[0.97]">
+            <MessageCircle size={18} className="fill-white" />
+            Share to LINE group
+          </button>
+        </div>
+      </div>
+
+      {show && (
+        <button
+          onClick={onReplay}
+          className="absolute right-4 top-12 z-[70] inline-flex items-center gap-1 rounded-full bg-black/15 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm"
+        >
+          <RotateCcw size={12} /> Replay
+        </button>
+      )}
+
+      <style>{`@keyframes kenburns { 0% { transform: scale(1.14); } 100% { transform: scale(1); } }`}</style>
+    </div>
+  );
+}
 
 export function DuelDestinationReveal() {
   const [phase, setPhase] = useState<Phase>("sealed");
@@ -12,8 +119,8 @@ export function DuelDestinationReveal() {
     const timers = [
       setTimeout(() => setPhase("lifting"), 1600),
       setTimeout(() => setPhase("reveal"), 2450),
-      setTimeout(() => setPhase("payoff"), 3500),
-      setTimeout(() => setCycle((c) => c + 1), 10200),
+      setTimeout(() => setPhase("payoff"), 3650),
+      setTimeout(() => setCycle((c) => c + 1), 10500),
     ];
     return () => timers.forEach(clearTimeout);
   }, [cycle]);
@@ -93,7 +200,7 @@ export function DuelDestinationReveal() {
           ) : (
             <div style={{ animation: "dropIn 0.5s cubic-bezier(.2,.9,.2,1.2) both" }}>
               <h1 className="mt-4 text-[15px] font-bold uppercase tracking-[0.26em] text-[#FFCC02]">
-                Tonight's table
+                The pick is in
               </h1>
             </div>
           )}
@@ -251,63 +358,18 @@ export function DuelDestinationReveal() {
           <div className="pointer-events-none absolute inset-0 z-50 bg-white" style={{ animation: "flash 0.5s ease-out 1 both" }} />
         )}
 
-        {/* ===== PAYOFF CARD ===== */}
-        <div
-          className="absolute bottom-0 left-0 right-0 z-40 transition-all duration-700"
-          style={{ transform: isPayoff ? "translateY(0)" : "translateY(110%)", opacity: isPayoff ? 1 : 0 }}
-        >
-          <div className="rounded-t-[28px] bg-white px-5 pb-7 pt-5 shadow-[0_-12px_40px_rgba(0,0,0,0.5)]">
-            <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-slate-200" />
-
-            <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-[#FFF7DA] px-2.5 py-1 text-[11px] font-extrabold text-[#A77B00]">
-              <Crown size={12} className="fill-[#A77B00]" /> Toast's pick · where we're eating
-            </div>
-            <h3 className="text-[15px] font-bold text-slate-500">Head out together 🚗</h3>
-
-            <div className="mt-3 flex gap-3">
-              <div
-                className="h-[78px] w-[78px] shrink-0 rounded-2xl bg-cover bg-center"
-                style={{ backgroundImage: "url('/__mockup/images/Winner-somtam.png')" }}
-              />
-              <div className="min-w-0 flex-1">
-                <h4 className="truncate text-[20px] font-extrabold leading-tight text-[#0B1325]">Som Tam Nua</h4>
-                <div className="mt-1 flex items-center gap-2 text-[13px] text-slate-500">
-                  <span className="inline-flex items-center gap-1 font-bold text-slate-700">
-                    <Star size={13} className="fill-[#FFCC02] text-[#FFCC02]" /> 4.7
-                  </span>
-                  <span>·</span>
-                  <span>฿฿</span>
-                  <span>·</span>
-                  <span className="inline-flex items-center gap-1">
-                    <Clock size={12} /> 6 min
-                  </span>
-                </div>
-                <span className="mt-1.5 inline-block rounded-md bg-[#FFCC02]/20 px-2 py-0.5 text-[12px] font-extrabold text-[#A77B00]">
-                  94% group match
-                </span>
-              </div>
-            </div>
-
-            <button className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#FFCC02] text-[17px] font-extrabold text-[#0B1325] shadow-[0_10px_28px_-6px_rgba(255,204,2,0.55)] transition-transform active:scale-[0.97]">
-              <Navigation size={20} className="fill-[#0B1325]" />
-              Get Directions
-            </button>
-            <button className="mt-2.5 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#06C755] text-[15px] font-bold text-white transition-transform active:scale-[0.97]">
-              <MessageCircle size={18} className="fill-white" />
-              Share to LINE group
-            </button>
-          </div>
-        </div>
-
-        {/* replay */}
-        {isPayoff && (
-          <button
-            onClick={() => setCycle((c) => c + 1)}
-            className="absolute right-4 top-12 z-50 inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm"
-          >
-            <RotateCcw size={12} /> Replay
-          </button>
-        )}
+        {/* ===== FULL-SCREEN DESTINATION ===== */}
+        <DestinationScreen
+          show={isPayoff}
+          image="/__mockup/images/Winner-somtam.png"
+          pickLabel="Toast's pick"
+          name="Som Tam Nua"
+          rating="4.7"
+          price="฿฿"
+          eta="Siam · 6 min away"
+          match="94%"
+          onReplay={() => setCycle((c) => c + 1)}
+        />
 
         <style>{`
           @keyframes confettiFall {
