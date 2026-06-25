@@ -686,6 +686,29 @@ input:focus {
 @keyframes tbRingPop { 0% { transform: scale(0.3); opacity: 0.55; } 100% { transform: scale(1.6); opacity: 0; } }
 .animate-ring-pop { animation: tbRingPop 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
+/* Destination reveal (graduated tie-breaker winner cinematic) — namespaced tbd-* */
+@keyframes tbd-confettiFall {
+  0% { transform: translate(0,-30px) rotate(0deg); opacity: 0; }
+  8% { opacity: 1; }
+  100% { transform: translate(var(--x), 900px) rotate(720deg); opacity: 0.85; }
+}
+@keyframes tbd-domeBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes tbd-steamRise { 0% { transform: translateY(6px); opacity: 0; } 30% { opacity: 0.6; } 100% { transform: translateY(-26px); opacity: 0; } }
+@keyframes tbd-medallionPop { 0% { transform: scale(0.6); } 60% { transform: scale(1.08); } 100% { transform: scale(1); } }
+@keyframes tbd-crownDrop { 0% { transform: translate(-50%,-26px) rotate(-12deg); opacity: 0; } 100% { transform: translate(-50%,0) rotate(0deg); opacity: 1; } }
+@keyframes tbd-burst { 0% { transform: translate(-50%,-50%) scale(0.3); opacity: 0; } 35% { opacity: 1; } 100% { transform: translate(-50%,-50%) scale(1.3); opacity: 0; } }
+@keyframes tbd-ringPing { 0% { transform: translate(-50%,-50%) scale(0.5); opacity: 0.8; } 100% { transform: translate(-50%,-50%) scale(2); opacity: 0; } }
+@keyframes tbd-popIn { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes tbd-dropIn { 0% { transform: translateY(-16px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes tbd-flash { 0% { opacity: 0; } 14% { opacity: 0.8; } 100% { opacity: 0; } }
+@keyframes tbd-drumDot { 0%, 100% { transform: scale(0.7); opacity: 0.4; } 50% { transform: scale(1.2); opacity: 1; } }
+@keyframes tbd-kenburns { 0% { transform: scale(1.14); } 100% { transform: scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tbd-reveal *, .tbd-reveal { animation: none !important; }
+  .tbd-reveal .tbd-decor { display: none !important; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-slide-up, .animate-scale-pop, .animate-clash-left, .animate-clash-right,
   .animate-windup-left, .animate-windup-right, .animate-pop-in {

@@ -8,4 +8,5 @@
 - [Group result LINE push](group-result-line-push.md) — fire result push on host's decision ACTION not the transient match overlay; send-timeout must stay << stale-claim window.
 - [Tie-breaker auto-start](tiebreaker-autostart.md) — group minigame auto-fires once per session at 3 full matches (host-only); manual button is the re-run path; lock only after a successful start.
 - [Toast asset tracking](toast-asset-tracking.md) — `attached_assets/`/`@assets` is git-ignored; ship images you commit from `client/src/assets/` via `@/assets/...` (mascots precedent).
+- [Tie-breaker DisplayItem naming](tiebreaker-displayitem-naming.md) — destination UI must title with item.place||item.name; menu-mode name is the dish, place is the restaurant.
 - [Group endpoint host auth](group-endpoint-host-auth.md) — host/member gates must verify `x-line-access-token` (override body id), not trust body `lineUserId`; `hostLineUserId` is public so body-id-only gating is spoofable.

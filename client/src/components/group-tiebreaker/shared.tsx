@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Star, MapPin } from "lucide-react";
 import type { GroupTieBreaker } from "@shared/schema";
 
 // Shared motion language for the tie-breaker flow — keeps entrances, springs and
@@ -153,56 +152,6 @@ export function Shell({ children, testId }: { children: ReactNode; testId?: stri
           <div className="absolute bottom-0 -left-24 w-72 h-72 rounded-full bg-[#FFE08A]/25 blur-3xl" />
         </div>
         {children}
-      </div>
-    </div>
-  );
-}
-
-export function WinnerHeroCard({
-  item,
-  heading,
-  badge,
-}: {
-  item: DisplayItem;
-  heading: string;
-  badge: string;
-}) {
-  return (
-    <div
-      className="toast-card overflow-hidden flex flex-col shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)]"
-      data-testid={`winner-item-${item.id}`}
-    >
-      <div className="relative h-[200px] w-full bg-slate-100">
-        {item.image ? (
-          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-6xl">{item.emoji}</div>
-        )}
-        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
-          <span className="text-base">{item.emoji}</span>
-          <span className="font-bold text-xs toast-ink tracking-wide">{badge}</span>
-        </div>
-      </div>
-      <div className="p-6">
-        <div className="flex justify-between items-start mb-2 gap-3">
-          <h2 className="text-2xl font-bold toast-ink leading-tight">{heading}</h2>
-          <div className="flex items-center gap-1 bg-green-50 text-green-700 px-2 py-1 rounded-md shrink-0">
-            <Star className="w-3.5 h-3.5 fill-current" />
-            <span className="font-bold text-sm">{item.rating}</span>
-          </div>
-        </div>
-        {item.cuisine && <p className="text-slate-500 text-sm mb-4 line-clamp-2">{item.cuisine}</p>}
-        <div className="flex gap-4 flex-wrap">
-          {item.area && (
-            <div className="flex items-center gap-1.5 text-slate-600 text-sm font-medium">
-              <MapPin className="w-4 h-4 text-slate-400" />
-              {item.area}
-            </div>
-          )}
-          <div className="flex items-center gap-1.5 text-slate-600 text-sm font-medium">
-            <span className="text-slate-400 font-bold">{item.price}</span>
-          </div>
-        </div>
       </div>
     </div>
   );

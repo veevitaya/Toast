@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Star, Crown, Swords, Loader2 } from "lucide-react";
+import { Swords, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import type { GroupTieBreaker } from "@shared/schema";
+import { DestinationReveal } from "./DestinationReveal";
 import {
   Avatar,
-  WinnerHeroCard,
   memberName,
   memberPic,
   TB_EASE,
@@ -69,7 +69,6 @@ export function DuelView({
   members,
   meId,
   isHost,
-  swipeType,
   onMove,
   moveSubmitting,
   onFinish,
@@ -132,65 +131,46 @@ export function DuelView({
   if (stage === "winner") {
     const iWon = tb.winnerLineUserId === meId;
     const item = tb.finalItemId != null ? itemById.get(tb.finalItemId) : undefined;
-    const heading = item ? (swipeType === "menu" ? item.name : item.name) : "Dinner sorted";
+    if (item) {
+      return (
+        <DestinationReveal
+          item={item}
+          pickLabel={iWon ? "Your pick" : `${oppName}'s pick`}
+          bannerText={iWon ? "YOU WON THE DUEL" : `${oppName.toUpperCase()} WON THE DUEL`}
+          subline={
+            iWon
+              ? "You won the duel — the table's headed here."
+              : `${oppName} won the duel — the table's headed here.`
+          }
+          isHost={isHost}
+          onFinish={onFinish}
+          finishing={finishing}
+          testId="duel-destination-reveal"
+        />
+      );
+    }
     return (
-      <div className="relative z-10 flex flex-col flex-1">
-        <div className="absolute top-0 left-0 w-full h-[360px] bg-gradient-to-b from-[#FFCC02]/30 to-transparent pointer-events-none" />
-        <div className="pt-12 pb-2 px-6 flex justify-center items-center z-10 relative">
-          <div className="flex flex-col items-center">
-            <span className="text-[13px] font-bold tracking-widest text-[#FFCC02] uppercase">Winner's Choice</span>
-            <span className="text-[12px] font-bold toast-ink">
-              {myScore} – {oppScore}
-            </span>
-          </div>
+      <div className="relative z-10 flex flex-col flex-1 px-6 pt-16 pb-8">
+        <div className="text-center mb-5">
+          <h1 className="text-3xl font-extrabold toast-ink mb-2">Dinner sorted</h1>
+          <p className="text-slate-500 font-medium text-[15px]">The table's decided.</p>
         </div>
-
-        <div className="px-6 flex-1 flex flex-col z-10 relative pb-8 mt-2 animate-slide-up">
-          <div className="text-center mb-5 relative">
-            <div className="relative flex justify-center mb-3">
-              <motion.div
-                className="w-12 h-12 rounded-2xl bg-[#FFCC02] flex items-center justify-center shadow-[0_12px_26px_-8px_rgba(255,204,2,0.75)]"
-                initial={{ scale: 0, rotate: -40 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={TB_SPRING}
-              >
-                <Crown className="w-6 h-6 text-[#0F172A]" strokeWidth={2.5} />
-              </motion.div>
-            </div>
-            <h1 className="relative text-3xl font-extrabold toast-ink mb-2">{heading}</h1>
-            <p className="relative text-slate-500 font-medium text-[15px]">
-              {iWon ? "Your champion takes the crown." : `${oppName}'s champion takes the crown.`}
-            </p>
-          </div>
-
-          {item && (
-            <motion.div
-              initial={{ opacity: 0, y: 22 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.45, ease: TB_EASE }}
+        <div className="mt-auto">
+          {isHost ? (
+            <button
+              onClick={onFinish}
+              disabled={finishing}
+              data-testid="button-tiebreaker-finish"
+              className="w-full toast-gold py-4 rounded-2xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,204,2,0.4)] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              <WinnerHeroCard item={item} heading={item.place && swipeType === "menu" ? item.place : item.name} badge="DINNER SORTED" />
-            </motion.div>
+              {finishing ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+              Lock it in · let's eat
+            </button>
+          ) : (
+            <div className="w-full bg-white/70 border border-black/[0.05] py-4 rounded-2xl font-bold text-[15px] toast-muted flex items-center justify-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" /> Waiting for the host…
+            </div>
           )}
-
-          <div className="mt-6">
-            {isHost ? (
-              <motion.button
-                onClick={onFinish}
-                disabled={finishing}
-                data-testid="button-tiebreaker-finish"
-                whileTap={{ scale: 0.96 }}
-                className="w-full toast-gold py-4 rounded-2xl font-bold text-[17px] shadow-[0_8px_20px_-6px_rgba(255,204,2,0.4)] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-              >
-                {finishing ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-                Lock it in · let's eat
-              </motion.button>
-            ) : (
-              <div className="w-full bg-white/70 border border-black/[0.05] py-4 rounded-2xl font-bold text-[15px] toast-muted flex items-center justify-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" /> Waiting for the host…
-              </div>
-            )}
-          </div>
         </div>
       </div>
     );
