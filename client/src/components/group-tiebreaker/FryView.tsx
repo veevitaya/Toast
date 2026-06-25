@@ -19,7 +19,6 @@ const lenToCm = (v: number) => 7 + v * 9;
 
 // Per-player accent colours for the race (cycles for big groups).
 const RACER_COLORS = ["#FF6B6B", "#FFCC02", "#4ECDC4", "#A78BFA", "#FB923C", "#34D399", "#60A5FA", "#F472B6"];
-const RULER_MAX = 16; // cm at the top of the ruler
 const STUB_PCT = 3; // min bar height (% of track) so a fry is always visible
 
 export type FryViewProps = {
@@ -366,9 +365,21 @@ function FryRaceReveal({
   const n = Math.max(1, racers.length);
   const cms = racers.map((r) => r.cm);
   const maxCm = Math.max(...cms, 0.1);
+  const minCm = Math.min(...cms);
   const secondCm = [...cms].sort((a, b) => b - a)[1] ?? 0;
   const winnerIdx = Math.max(0, racers.findIndex((r) => r.isWin));
   const winner = racers[winnerIdx] || racers[0];
+
+  // Picked fry lengths often cluster by luck (e.g. 10.1 / 10.3 / 10.4 cm), so an
+  // absolute 0–16cm ruler would render them at near-identical heights and the
+  // "longest keeps climbing" beat would be invisible. Zoom the measuring window to
+  // the contestants' band: heights stay proportional to length, but the gaps — and
+  // the winner's solo climb — always read clearly. Bars rise from floorCm, not 0.
+  const spanCm = Math.max(maxCm - minCm, 0.4);
+  const floorCm = Math.max(0, minCm - spanCm * 0.5);
+  const ceilCm = maxCm + spanCm * 0.7;
+  const winSpan = Math.max(ceilCm - floorCm, 0.1);
+  const toPct = (cm: number) => ((cm - floorCm) / winSpan) * 100;
 
   const [phase, setPhase] = useState<"ready" | "race" | "crown">("ready");
   const [lvl, setLvl] = useState(0); // current measured cm, shared by all fries
@@ -388,11 +399,12 @@ function FryRaceReveal({
     if (phase !== "race") return;
     const start = performance.now();
     const dur = 2600;
+    setLvl(floorCm); // begin the rise from the bottom of the zoomed window, not 0
     let toCrown: ReturnType<typeof setTimeout> | undefined;
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / dur);
       const eased = 1 - Math.pow(1 - t, 1.7);
-      setLvl(eased * maxCm);
+      setLvl(floorCm + eased * (maxCm - floorCm));
       if (t < 1) {
         rafRef.current = requestAnimationFrame(tick);
       } else {
@@ -404,7 +416,7 @@ function FryRaceReveal({
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (toCrown) clearTimeout(toCrown);
     };
-  }, [phase, maxCm]);
+  }, [phase, maxCm, floorCm]);
 
   // crown lingers, then hand off to the destination reveal (once)
   useEffect(() => {
@@ -477,12 +489,15 @@ function FryRaceReveal({
       <div className="relative z-20 flex flex-1 flex-col justify-end px-4 pb-[max(env(safe-area-inset-bottom),1.5rem)]">
         {/* track */}
         <div className="relative w-full" style={{ height: "min(440px, 52dvh)" }}>
-          {/* ruler ticks */}
-          {[0, 5, 10, 15].map((cm) => (
-            <div key={cm} className="absolute left-0 right-0" style={{ bottom: `${(cm / RULER_MAX) * 100}%` }}>
-              <div className="absolute left-2 right-2 border-t border-dashed border-white/10" />
-              <span className="absolute left-2 -top-3.5 text-[10px] font-bold text-slate-500">{cm}cm</span>
-            </div>
+          {/* measuring gridlines — unlabeled, because the window is zoomed to the
+              contestants' band (not an absolute 0cm scale); each fry's true length
+              rides its own tip and the winner's cm is called out in the banner */}
+          {[18, 38, 58, 78].map((p) => (
+            <div
+              key={p}
+              className="absolute left-2 right-2 border-t border-dashed border-white/10"
+              style={{ bottom: `${p}%` }}
+            />
           ))}
 
           {/* spotlight beam onto the winner */}
@@ -507,7 +522,7 @@ function FryRaceReveal({
           <div className="absolute inset-0 flex items-end justify-around">
             {racers.map((r) => {
               const measured = Math.min(lvl, r.cm);
-              const barPct = Math.max(STUB_PCT, (measured / RULER_MAX) * 100);
+              const barPct = Math.max(STUB_PCT, toPct(measured));
               const locked = lvl >= r.cm - 0.02;
               const dropped = locked && !r.isWin;
               const dim = (crowned && !r.isWin) || (dropped && phase === "race");
@@ -526,18 +541,21 @@ function FryRaceReveal({
                       <Crown size={28} className="fill-[#FFCC02] text-[#FFCC02] drop-shadow-[0_3px_8px_rgba(0,0,0,0.5)]" />
                     </div>
                   )}
-                  {/* cm tag riding the tip */}
-                  <div
-                    className="absolute left-1/2 z-20 -translate-x-1/2 rounded-md px-1.5 py-0.5 text-[11px] font-extrabold"
-                    style={{
-                      bottom: `calc(${barPct}% + 8px)`,
-                      background: r.isWin && crowned ? "#FFCC02" : dropped ? "rgba(148,163,184,0.18)" : "rgba(255,255,255,0.12)",
-                      color: r.isWin && crowned ? "#0B1325" : dropped ? "#94A3B8" : "#E2E8F0",
-                      opacity: dim ? 0.5 : 1,
-                    }}
-                  >
-                    {measured.toFixed(1)}
-                  </div>
+                  {/* cm tag riding the tip — true length counts up as the tape measures
+                      each fry, then freezes when its tip is reached (hidden until the race) */}
+                  {phase !== "ready" && lvl > 0 && (
+                    <div
+                      className="absolute left-1/2 z-20 -translate-x-1/2 rounded-md px-1.5 py-0.5 text-[11px] font-extrabold"
+                      style={{
+                        bottom: `calc(${barPct}% + 8px)`,
+                        background: r.isWin && crowned ? "#FFCC02" : dropped ? "rgba(148,163,184,0.18)" : "rgba(255,255,255,0.12)",
+                        color: r.isWin && crowned ? "#0B1325" : dropped ? "#94A3B8" : "#E2E8F0",
+                        opacity: dim ? 0.5 : 1,
+                      }}
+                    >
+                      {measured.toFixed(1)}
+                    </div>
+                  )}
 
                   {/* the fry bar */}
                   <div

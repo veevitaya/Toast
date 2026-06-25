@@ -7,7 +7,7 @@
 - [Group location → deck](group-location-deck.md) — drive the group deck by distance-SORT on real coords, not name-filter (which empties the central-BKK seed deck); lat/lng-ordered responses must key cache by lat/lng.
 - [Group result LINE push](group-result-line-push.md) — fire result push on host's decision ACTION not the transient match overlay; send-timeout must stay << stale-claim window.
 - [Tie-breaker auto-start](tiebreaker-autostart.md) — group minigame auto-fires once per session at 3 full matches (host-only); manual button is the re-run path; lock only after a successful start.
-- [Tie-breaker reveal](tiebreaker-reveal.md) — resolved reveals: dark→DestinationReveal handoff, honesty guard (no fabricated winner/7cm), poll-safe rAF/timer refs.
+- [Tie-breaker reveal](tiebreaker-reveal.md) — resolved reveals: dark→DestinationReveal handoff, honesty guard (no fabricated winner/7cm), poll-safe rAF/timer refs, fry-race ZOOM scale (clustered picks need a contestant-band window, not an absolute ruler).
 - [Toast asset tracking](toast-asset-tracking.md) — `attached_assets/`/`@assets` is git-ignored; ship images you commit from `client/src/assets/` via `@/assets/...` (mascots precedent).
 - [Tie-breaker DisplayItem naming](tiebreaker-displayitem-naming.md) — destination UI must title with item.place||item.name; menu-mode name is the dish, place is the restaurant.
 - [Group endpoint host auth](group-endpoint-host-auth.md) — host/member gates must verify `x-line-access-token` (override body id), not trust body `lineUserId`; `hostLineUserId` is public so body-id-only gating is spoofable.
