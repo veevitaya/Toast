@@ -54,41 +54,54 @@ export function DestinationReveal({
   const destName = item.place || item.name;
   const dish = item.place && item.place !== item.name ? item.name : null;
 
-  // One-shot pop from the screen centre, bursting out in every direction.
+  // One-shot pop that bursts out from the screen centre. Flakes are thin paper
+  // rectangles (a few round foil dots) with a random tilt + tumble speed so the
+  // 3D flip animation reads as real confetti rather than flying dots.
   const burst = useMemo(
     () =>
-      Array.from({ length: 34 }).map((_, i) => {
+      Array.from({ length: 30 }).map((_, i) => {
         const angle = Math.random() * Math.PI * 2;
-        const velocity = 150 + Math.random() * 260;
+        const velocity = 140 + Math.random() * 240;
+        const w = 5 + Math.random() * 6;
+        const round = Math.random() < 0.18;
         return {
           id: i,
+          w,
+          h: round ? w : w * (1.3 + Math.random() * 1.4),
+          round,
           tx: Math.cos(angle) * velocity,
           ty: Math.sin(angle) * velocity,
-          g: 40 + Math.random() * 120,
-          spin: (Math.random() - 0.5) * 800,
-          delay: Math.random() * 0.1,
-          dur: 0.9 + Math.random() * 0.5,
-          size: 6 + Math.random() * 8,
+          g: 140 + Math.random() * 200,
+          tilt: (Math.random() - 0.5) * 50,
+          tdur: 0.5 + Math.random() * 0.9,
+          delay: Math.random() * 0.12,
+          dur: 1.1 + Math.random() * 0.7,
           color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-          round: Math.random() > 0.55,
         };
       }),
     [],
   );
 
-  // Staggered sparkle rain that keeps falling from the top after the pop.
+  // Continuous flutter rain that keeps falling from the top after the pop.
   const fall = useMemo(
     () =>
-      Array.from({ length: 42 }).map((_, i) => ({
-        id: i,
-        left: Math.random() * 100,
-        x: (Math.random() - 0.5) * 160,
-        delay: 0.45 + Math.random() * 1.6,
-        dur: 1.9 + Math.random() * 1.5,
-        size: 6 + Math.random() * 9,
-        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-        round: Math.random() > 0.55,
-      })),
+      Array.from({ length: 44 }).map((_, i) => {
+        const w = 5 + Math.random() * 6;
+        const round = Math.random() < 0.18;
+        return {
+          id: i,
+          w,
+          h: round ? w : w * (1.3 + Math.random() * 1.4),
+          round,
+          left: Math.random() * 100,
+          sway: 14 + Math.random() * 42,
+          tilt: (Math.random() - 0.5) * 50,
+          tdur: 0.5 + Math.random() * 0.9,
+          delay: 0.4 + Math.random() * 2.2,
+          dur: 2.8 + Math.random() * 2.6,
+          color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        };
+      }),
     [],
   );
 
@@ -303,20 +316,30 @@ export function DestinationReveal({
               className="absolute left-1/2 top-1/2"
               style={
                 {
-                  width: c.size,
-                  height: c.round ? c.size : c.size * 0.5,
-                  background: c.color,
-                  borderRadius: c.round ? "50%" : 2,
+                  width: c.w,
+                  height: c.h,
+                  perspective: "500px",
                   ["--tx" as any]: `${c.tx}px`,
                   ["--ty" as any]: `${c.ty}px`,
                   ["--g" as any]: `${c.g}px`,
-                  ["--spin" as any]: `${c.spin}deg`,
-                  animation: `tbd-confettiBurst ${c.dur}s cubic-bezier(0.22,0.61,0.36,1) ${c.delay}s forwards`,
+                  animation: `tbd-confettiBurst ${c.dur}s cubic-bezier(0.16,0.84,0.44,1) ${c.delay}s forwards`,
                 } as CSSProperties
               }
-            />
+            >
+              <span
+                className="block h-full w-full"
+                style={
+                  {
+                    background: c.color,
+                    borderRadius: c.round ? "50%" : 1,
+                    ["--tilt" as any]: `${c.tilt}deg`,
+                    animation: `tbd-confettiTumble ${c.tdur}s linear ${c.delay}s infinite`,
+                  } as CSSProperties
+                }
+              />
+            </span>
           ))}
-          {/* staggered sparkles falling from the top */}
+          {/* continuous flutter rain falling from the top */}
           {fall.map((c) => (
             <span
               key={`fall-${c.id}`}
@@ -324,15 +347,26 @@ export function DestinationReveal({
               style={
                 {
                   left: `${c.left}%`,
-                  width: c.size,
-                  height: c.round ? c.size : c.size * 0.5,
-                  background: c.color,
-                  borderRadius: c.round ? "50%" : 2,
-                  ["--x" as any]: `${c.x}px`,
+                  width: c.w,
+                  height: c.h,
+                  perspective: "500px",
+                  ["--sway" as any]: `${c.sway}px`,
                   animation: `tbd-confettiFall ${c.dur}s linear ${c.delay}s infinite`,
                 } as CSSProperties
               }
-            />
+            >
+              <span
+                className="block h-full w-full"
+                style={
+                  {
+                    background: c.color,
+                    borderRadius: c.round ? "50%" : 1,
+                    ["--tilt" as any]: `${c.tilt}deg`,
+                    animation: `tbd-confettiTumble ${c.tdur}s linear ${c.delay}s infinite`,
+                  } as CSSProperties
+                }
+              />
+            </span>
           ))}
         </div>
       )}

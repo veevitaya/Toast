@@ -687,16 +687,26 @@ input:focus {
 .animate-ring-pop { animation: tbRingPop 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
 /* Destination reveal (graduated tie-breaker winner cinematic) — namespaced tbd-* */
+/* outer wrapper: explosive pop from centre, arcs out fast then sags with gravity */
 @keyframes tbd-confettiBurst {
-  0% { transform: translate(-50%, -50%) rotate(0deg) scale(0); opacity: 0; }
-  10% { transform: translate(-50%, -50%) rotate(calc(var(--spin) * 0.1)) scale(1.1); opacity: 1; }
-  75% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) rotate(calc(var(--spin) * 0.8)) scale(0.9); opacity: 1; }
-  100% { transform: translate(calc(-50% + var(--tx) * 1.1), calc(-50% + var(--ty) + var(--g))) rotate(var(--spin)) scale(0.45); opacity: 0; }
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  10% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  60% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--tx) * 1.06), calc(-50% + var(--ty) + var(--g))); opacity: 0; }
 }
+/* outer wrapper: floaty flutter fall, swaying side to side like real paper */
 @keyframes tbd-confettiFall {
-  0% { transform: translate(0,-30px) rotate(0deg); opacity: 0; }
-  8% { opacity: 1; }
-  100% { transform: translate(var(--x), 900px) rotate(720deg); opacity: 0.85; }
+  0% { transform: translate(0, -10vh); opacity: 0; }
+  6% { opacity: 1; }
+  25% { transform: translate(var(--sway), 22vh); }
+  50% { transform: translate(calc(var(--sway) * -1), 50vh); }
+  75% { transform: translate(var(--sway), 78vh); }
+  100% { transform: translate(calc(var(--sway) * -0.5), 112vh); opacity: 1; }
+}
+/* inner flake: continuous 3D tumble so it flips edge-on and catches the light */
+@keyframes tbd-confettiTumble {
+  0% { transform: rotateZ(var(--tilt)) rotateX(0deg) rotateY(0deg); }
+  100% { transform: rotateZ(var(--tilt)) rotateX(360deg) rotateY(540deg); }
 }
 @keyframes tbd-domeBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes tbd-steamRise { 0% { transform: translateY(6px); opacity: 0; } 30% { opacity: 0.6; } 100% { transform: translateY(-26px); opacity: 0; } }
