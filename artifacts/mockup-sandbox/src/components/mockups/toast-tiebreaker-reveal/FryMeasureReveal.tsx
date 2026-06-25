@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Navigation, Star, Crown, RotateCcw, MessageCircle, MapPin, Lock } from "lucide-react";
 
-type Phase = "ready" | "race" | "crown" | "payoff";
+type Phase = "ready" | "lift" | "race" | "crown" | "payoff";
 
 type Player = { name: string; cm: number; color: string };
 
@@ -133,8 +133,11 @@ export function FryMeasureReveal() {
   useEffect(() => {
     setPhase("ready");
     setLvl(0);
-    const t = setTimeout(() => setPhase("race"), 1500);
-    return () => clearTimeout(t);
+    const timers = [
+      setTimeout(() => setPhase("lift"), 1500),
+      setTimeout(() => setPhase("race"), 2350),
+    ];
+    return () => timers.forEach(clearTimeout);
   }, [cycle]);
 
   // the race: one rising tape measure; every fry climbs at the SAME rate and
@@ -176,6 +179,7 @@ export function FryMeasureReveal() {
 
   const settled = phase === "crown" || phase === "payoff";
   const isPayoff = phase === "payoff";
+  const lidGone = phase !== "ready"; // lid lifts away once we leave the sealed pose
   // climax: only the winner is still climbing
   const soloClimb = phase === "race" && lvl > SECOND;
 
@@ -231,10 +235,20 @@ export function FryMeasureReveal() {
                 🍟 {phase === "race" ? "MEASURING…" : "LONGEST FRY WINS"}
               </div>
               <h1 className="mt-4 text-[25px] font-extrabold leading-tight text-white">
-                {phase !== "race" ? "4 fries in the pot" : soloClimb ? "…and it keeps going!" : "They're climbing!"}
+                {phase === "ready"
+                  ? "4 fries under the lid"
+                  : phase === "lift"
+                    ? "Lifting the lid…"
+                    : soloClimb
+                      ? "…and it keeps going!"
+                      : "They're climbing!"}
               </h1>
               <p className="mt-1.5 text-[13px] font-medium text-slate-400">
-                {soloClimb ? "Last fry still rising takes it" : "Each freezes at its length — longest one wins"}
+                {phase === "ready" || phase === "lift"
+                  ? "Reveal the contenders, then measure"
+                  : soloClimb
+                    ? "Last fry still rising takes it"
+                    : "Each freezes at its length — longest one wins"}
               </p>
             </>
           ) : (
@@ -285,7 +299,10 @@ export function FryMeasureReveal() {
           )}
 
           {/* fries row */}
-          <div className="absolute inset-x-0 flex items-end justify-around px-3" style={{ height: TRACK_H, top: 0 }}>
+          <div
+            className="absolute inset-x-0 flex items-end justify-around px-3"
+            style={{ height: TRACK_H, top: 0, opacity: lidGone ? 1 : 0, transition: "opacity 0.45s ease 0.1s" }}
+          >
             {PLAYERS.map((pl, i) => {
               const measured = Math.min(lvl, pl.cm);
               const h = Math.max(STUB, (measured / RULER_MAX) * TRACK_H);
@@ -377,6 +394,63 @@ export function FryMeasureReveal() {
           </div>
         </div>
 
+        {/* ===== LID over the fry tray (lifts to reveal the contenders) ===== */}
+        <div
+          className="absolute left-1/2 z-30 -translate-x-1/2"
+          style={{
+            top: 600,
+            transition: "transform 0.9s cubic-bezier(.3,0,.2,1), opacity 0.7s ease-out",
+            transform: `translateX(-50%) translateY(${lidGone ? -380 : 0}px) scale(${lidGone ? 1.05 : 1})`,
+            opacity: lidGone ? 0 : 1,
+            pointerEvents: "none",
+          }}
+        >
+          {/* steam */}
+          {!lidGone &&
+            [0, 1, 2, 3].map((s) => (
+              <span
+                key={s}
+                className="absolute -top-9 rounded-full bg-white/30"
+                style={{
+                  left: 78 + s * 56,
+                  width: 7,
+                  height: 26,
+                  filter: "blur(4px)",
+                  animation: `steamRise 2.2s ease-in-out ${s * 0.32}s infinite`,
+                }}
+              />
+            ))}
+          {/* knob */}
+          <div
+            className="absolute left-1/2 top-[-14px] z-10 h-7 w-7 -translate-x-1/2 rounded-full"
+            style={{ background: "linear-gradient(140deg,#FFE9A6,#FFCC02 45%,#B98700)" }}
+          />
+          {/* dome */}
+          <div
+            className="relative overflow-hidden"
+            style={{
+              width: 326,
+              height: 132,
+              borderRadius: "166px 166px 20px 20px",
+              background: "linear-gradient(105deg,#FFE9A6 0%,#FFCC02 26%,#E0A800 52%,#FFD84D 74%,#B98700 100%)",
+              boxShadow: "0 20px 44px -10px rgba(0,0,0,0.55), inset 0 6px 16px rgba(255,255,255,0.45)",
+              animation: !lidGone ? "domeBob 2s ease-in-out infinite" : "none",
+            }}
+          >
+            {/* sheen */}
+            <div
+              className="absolute left-[30px] top-[12px] h-[104px] w-[44px] rounded-full"
+              style={{ background: "linear-gradient(180deg,rgba(255,255,255,0.75),rgba(255,255,255,0))", filter: "blur(3px)" }}
+            />
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[40px]">🍟</div>
+          </div>
+          {/* tray */}
+          <div
+            className="absolute left-1/2 top-[128px] -translate-x-1/2 rounded-[50%]"
+            style={{ width: 344, height: 26, background: "linear-gradient(180deg,#FFD84D,#C99300)", boxShadow: "0 14px 26px -6px rgba(0,0,0,0.55)" }}
+          />
+        </div>
+
         {/* ===== CONFETTI ===== */}
         {settled && (
           <div className="pointer-events-none absolute inset-0 z-40 overflow-hidden">
@@ -425,6 +499,8 @@ export function FryMeasureReveal() {
           @keyframes pulseSoft { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
           @keyframes tipSpark { 0%,100% { opacity: 0.4; transform: translate(-50%,0) scale(0.8); } 50% { opacity: 1; transform: translate(-50%,-2px) scale(1.2); } }
           @keyframes winnerThrob { 0%,100% { box-shadow: 0 0 18px rgba(255,204,2,0.55); } 50% { box-shadow: 0 0 30px rgba(255,204,2,0.95); } }
+          @keyframes domeBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+          @keyframes steamRise { 0% { transform: translateY(6px); opacity: 0; } 30% { opacity: 0.6; } 100% { transform: translateY(-26px); opacity: 0; } }
         `}</style>
       </div>
     </div>
