@@ -40,7 +40,9 @@ export function DestinationReveal({
     const timers = [
       setTimeout(() => setPhase("lifting"), 1500),
       setTimeout(() => setPhase("reveal"), 2350),
-      setTimeout(() => setPhase("payoff"), 3550),
+      // Hold on the confetti reveal longer before the opaque payoff card
+      // (z-60) slides over and hides it.
+      setTimeout(() => setPhase("payoff"), 5600),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
