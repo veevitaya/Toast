@@ -122,6 +122,90 @@ function FryBody({
   );
 }
 
+// A single fry for the reveal race — same realistic potato styling as FryBody
+// (3D side face, crispy browned tip, salt flecks, sheen), but it fills its
+// parent's height so the climbing bar drives how far it has grown.
+function RaceFry({
+  tone,
+  seed,
+  lean,
+  lit,
+  throb,
+}: {
+  tone: number;
+  seed: number;
+  lean: number;
+  lit: boolean;
+  throb: boolean;
+}) {
+  const faceTop = `hsl(${mix(50, 45, tone).toFixed(0)} ${mix(98, 92, tone).toFixed(0)}% ${mix(80, 71, tone).toFixed(0)}%)`;
+  const faceMid = `hsl(${mix(47, 42, tone).toFixed(0)} ${mix(96, 90, tone).toFixed(0)}% ${mix(70, 60, tone).toFixed(0)}%)`;
+  const faceBot = `hsl(${mix(44, 38, tone).toFixed(0)} ${mix(93, 86, tone).toFixed(0)}% ${mix(60, 49, tone).toFixed(0)}%)`;
+  const sideC = `hsl(${mix(40, 33, tone).toFixed(0)} ${mix(88, 80, tone).toFixed(0)}% ${mix(50, 39, tone).toFixed(0)}%)`;
+  const tipC = `hsl(${mix(41, 34, tone).toFixed(0)} ${mix(92, 84, tone).toFixed(0)}% ${mix(60, 48, tone).toFixed(0)}%)`;
+  const rnd = (n: number) => {
+    const x = Math.sin((seed + 1) * 12.9898 + n * 78.233) * 43758.5453;
+    return x - Math.floor(x);
+  };
+  const salt =
+    `radial-gradient(circle at ${(20 + rnd(1) * 58).toFixed(0)}% ${(16 + rnd(2) * 30).toFixed(0)}%, rgba(255,255,255,0.6) 0 1px, transparent 1.7px),` +
+    `radial-gradient(circle at ${(26 + rnd(3) * 52).toFixed(0)}% ${(44 + rnd(4) * 26).toFixed(0)}%, rgba(255,251,238,0.55) 0 0.9px, transparent 1.5px),` +
+    `radial-gradient(circle at ${(30 + rnd(5) * 48).toFixed(0)}% ${(70 + rnd(6) * 22).toFixed(0)}%, rgba(255,255,255,0.5) 0 0.8px, transparent 1.4px)`;
+  const tilt = Math.max(-2.5, Math.min(2.5, lean));
+  return (
+    <div
+      className="absolute inset-0"
+      style={{
+        transform: `rotate(${tilt}deg)`,
+        transformOrigin: "bottom center",
+        animation: throb ? "tbf-winnerThrob 0.7s ease-in-out infinite" : "none",
+        filter: lit
+          ? "drop-shadow(0 0 16px rgba(255,196,40,0.7)) drop-shadow(0 10px 14px rgba(176,120,12,0.3))"
+          : "drop-shadow(0 8px 12px rgba(184,134,28,0.22))",
+      }}
+    >
+      {/* right side face → reads as 3D thickness */}
+      <div
+        className="absolute"
+        style={{
+          right: 0,
+          top: 4,
+          bottom: 0,
+          width: 7,
+          background: `linear-gradient(180deg, ${sideC}, hsl(35 72% 33%))`,
+          borderRadius: "0 5px 3px 0",
+          boxShadow: "inset -1px 0 2px rgba(0,0,0,0.28)",
+        }}
+      />
+      {/* front face */}
+      <div
+        className="absolute overflow-hidden"
+        style={{
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 26,
+          borderRadius: "6px 6px 3px 3px",
+          backgroundImage: `${salt}, linear-gradient(180deg, ${faceTop} 0%, ${faceMid} 45%, ${faceBot} 100%)`,
+          boxShadow:
+            "inset -3px 0 5px rgba(155,95,10,0.26), inset 3px 0 4px rgba(255,255,255,0.5), inset 0 -6px 8px rgba(150,90,0,0.16), 0 2px 4px rgba(0,0,0,0.12)",
+        }}
+      >
+        {/* crispy browned tip — a consistent crisped band at the growing end */}
+        <div
+          className="absolute inset-x-0 top-0"
+          style={{ height: 16, background: `linear-gradient(180deg, ${tipC}, transparent)`, opacity: 0.85 }}
+        />
+        {/* soft sheen down the lit face */}
+        <div
+          className="absolute top-2 bottom-2"
+          style={{ left: 6, width: 1.5, background: "rgba(255,255,255,0.5)", borderRadius: 2 }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function Carton({
   carton,
   onPick,
@@ -355,6 +439,9 @@ function FryRaceReveal({
       name: memberName(members, uid, meId),
       pic: memberPic(members, uid),
       cm: fry ? lenToCm(fry.trueLen) : lenToCm(0),
+      tone: fry?.tone ?? 0.5,
+      lean: fry?.lean ?? 0,
+      seed: fry?.seed ?? 0,
       isWin: uid === winnerId,
     };
   });
@@ -509,34 +596,14 @@ function FryRaceReveal({
                     </div>
                   )}
 
-                  {/* the glossy fry, rising from the shared baseline */}
-                  <div
-                    className="relative w-[30px] max-w-[62%] rounded-t-[8px] rounded-b-[3px]"
-                    style={{
-                      height: `${barPct}%`,
-                      background:
-                        "linear-gradient(96deg,#FFE689 0%,#FBD24E 32%,#F4C32C 60%,#E2A516 85%,#C98C12 100%)",
-                      boxShadow: lit
-                        ? "0 0 26px rgba(255,196,40,0.7), 0 12px 18px rgba(176,120,12,0.3)"
-                        : "0 12px 18px rgba(184,134,28,0.22)",
-                      transition: "box-shadow 0.3s ease",
-                      animation: r.isWin && soloClimb ? "tbf-winnerThrob 0.7s ease-in-out infinite" : "none",
-                    }}
-                  >
-                    {/* top cap sheen */}
-                    <div
-                      className="absolute inset-x-0 top-0 h-3 rounded-t-[8px]"
-                      style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0))" }}
-                    />
-                    {/* left specular streak */}
-                    <div
-                      className="absolute bottom-2 top-2 left-[6px] w-[2px] rounded-full"
-                      style={{ background: "rgba(255,255,255,0.6)" }}
-                    />
-                    {/* darker right edge → 3D depth */}
-                    <div
-                      className="absolute bottom-0 right-0 top-0 w-[5px] rounded-r-[3px]"
-                      style={{ background: "linear-gradient(180deg, rgba(150,96,10,0.45), rgba(120,76,8,0.6))" }}
+                  {/* the fry, rising from the shared baseline */}
+                  <div className="relative w-[32px]" style={{ height: `${barPct}%` }}>
+                    <RaceFry
+                      tone={r.tone}
+                      seed={r.seed}
+                      lean={r.lean}
+                      lit={lit}
+                      throb={r.isWin && soloClimb}
                     />
                   </div>
                 </div>

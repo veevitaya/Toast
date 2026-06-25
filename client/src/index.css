@@ -708,7 +708,7 @@ input:focus {
 @keyframes tbf-pulseSoft { 0%, 100% { opacity: 0.65; } 50% { opacity: 1; } }
 @keyframes tbf-beamIn { 0% { opacity: 0; } 100% { opacity: 1; } }
 @keyframes tbf-tipSpark { 0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(0.8); } 50% { opacity: 1; transform: translateX(-50%) scale(1.25); } }
-@keyframes tbf-winnerThrob { 0%, 100% { box-shadow: 0 0 18px rgba(255,204,2,0.6); } 50% { box-shadow: 0 0 32px rgba(255,204,2,0.95); } }
+@keyframes tbf-winnerThrob { 0%, 100% { filter: drop-shadow(0 0 14px rgba(255,196,40,0.6)) drop-shadow(0 10px 14px rgba(176,120,12,0.3)); } 50% { filter: drop-shadow(0 0 26px rgba(255,196,40,0.95)) drop-shadow(0 10px 14px rgba(176,120,12,0.35)); } }
 
 @media (prefers-reduced-motion: reduce) {
   .tbd-reveal *, .tbd-reveal { animation: none !important; }

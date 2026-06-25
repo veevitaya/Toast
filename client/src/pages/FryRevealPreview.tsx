@@ -68,9 +68,9 @@ function buildMock(sc: Scenario) {
     id: `fry_${r.id}`,
     poke: cmToLen(r.cm),
     trueLen: cmToLen(r.cm),
-    lean: 0,
+    lean: [-2, 1.5, -1, 2, -1.5][i % 5],
     w: 14,
-    tone: 0.5,
+    tone: [0.42, 0.6, 0.5, 0.68, 0.36][i % 5],
     seed: i + 1,
   }));
   const picks: Record<string, string> = {};
