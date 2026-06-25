@@ -234,6 +234,13 @@ export default function TieBreakerDemo() {
                 <p className="text-[13px] text-slate-500">3 players · pull a fry · longest wins</p>
               </div>
             </button>
+            <button
+              onClick={() => navigate("/group/fry-reveal-preview")}
+              data-testid="button-demo-fry-reveal"
+              className="w-full text-center text-[13px] font-semibold text-slate-400 underline underline-offset-2 active:opacity-70 pt-1"
+            >
+              Just want the fry reveal? See it instantly →
+            </button>
           </div>
         )}
       </div>

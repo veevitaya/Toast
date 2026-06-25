@@ -24,6 +24,7 @@ const GroupTaste = lazy(() => import("@/pages/GroupTaste"));
 const WaitingRoom = lazy(() => import("@/pages/WaitingRoom"));
 const GroupSwipe = lazy(() => import("@/pages/GroupSwipe"));
 const TieBreakerDemo = lazy(() => import("@/pages/TieBreakerDemo"));
+const FryRevealPreview = lazy(() => import("@/pages/FryRevealPreview"));
 const SwipePage = lazy(() => import("@/pages/SwipePage"));
 const TrendingFeed = lazy(() => import("@/pages/TrendingFeed"));
 const RestaurantDetail = lazy(() => import("@/pages/RestaurantDetail"));
@@ -158,6 +159,11 @@ function Router() {
           {import.meta.env.DEV && (
             <Route path="/group/tiebreaker-demo">
               <AnimatedPage><TieBreakerDemo /></AnimatedPage>
+            </Route>
+          )}
+          {import.meta.env.DEV && (
+            <Route path="/group/fry-reveal-preview">
+              <AnimatedPage><FryRevealPreview /></AnimatedPage>
             </Route>
           )}
           <Route path="/trending">
