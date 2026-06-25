@@ -1329,9 +1329,13 @@ export default function GroupSwipe() {
   // paths (dish-match view, restaurant-match view, tie-breaker complete) is safe.
   const notifyResult = useCallback((kind: "menu" | "restaurant", id: number) => {
     if (!isHost || !sessionCode || !profile) return;
+    const lineToken = getAccessToken();
     fetchWithTimeout(`/api/group/sessions/${sessionCode}/notify-result`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(lineToken ? { "X-Line-Access-Token": lineToken } : {}),
+      },
       body: JSON.stringify({
         lineUserId: profile.userId,
         kind,

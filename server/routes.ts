@@ -4226,7 +4226,18 @@ export async function registerRoutes(
 
       const session = await storage.getGroupSession(code);
       if (!session) return res.status(404).json({ message: "Session not found" });
-      if (session.hostLineUserId !== input.lineUserId) {
+      // Resolve the caller's identity. A verified LINE access token (when present)
+      // overrides the client-supplied id, so a non-host who knows the session code
+      // can't spoof the host by sending the publicly-visible hostLineUserId in the
+      // body. Guest hosts (no LINE token) fall back to the body id, matching the
+      // rest of the group API.
+      let callerId = input.lineUserId;
+      const callerToken = req.headers["x-line-access-token"] as string | undefined;
+      if (callerToken) {
+        const verified = await verifyLineAccessToken(callerToken);
+        if (verified) callerId = verified.userId;
+      }
+      if (session.hostLineUserId !== callerId) {
         return res.status(403).json({ message: "Only the host can send the result notification" });
       }
       const sessionAge = Date.now() - new Date(session.createdAt).getTime();
@@ -4323,7 +4334,7 @@ export async function registerRoutes(
         }
 
         await storage.completeGroupSessionNotification(code, claimed.notificationStartedAt!, "sent");
-        logSessionEvent(code, "RESULT_NOTIFIED", input.lineUserId, { kind: input.kind, targetId, via, recipients });
+        logSessionEvent(code, "RESULT_NOTIFIED", callerId, { kind: input.kind, targetId, via, recipients });
         res.json({ sent: true, via, recipients });
       } catch (sendErr: any) {
         const msg = sendErr?.message ? String(sendErr.message).slice(0, 500) : "Unknown error";

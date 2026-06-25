@@ -119,6 +119,7 @@ export const modules: ModuleMap = {
   "./components/mockups/toast-rps-duel/Winner.tsx": () => import("../components/mockups/toast-rps-duel/Winner.tsx"),
   "./components/mockups/toast-solo-compare/EditSheetCompare.tsx": () => import("../components/mockups/toast-solo-compare/EditSheetCompare.tsx"),
   "./components/mockups/toast-solo-compare/InlinePrefsCompare.tsx": () => import("../components/mockups/toast-solo-compare/InlinePrefsCompare.tsx"),
+  "./components/mockups/toast-tiebreaker-reveal/WinnerReveal.tsx": () => import("../components/mockups/toast-tiebreaker-reveal/WinnerReveal.tsx"),
   "./components/mockups/toast-tutorials/GroupTutorial.tsx": () => import("../components/mockups/toast-tutorials/GroupTutorial.tsx"),
   "./components/mockups/toast-tutorials/HelpHub.tsx": () => import("../components/mockups/toast-tutorials/HelpHub.tsx"),
   "./components/mockups/toast-tutorials/SoloTutorial.tsx": () => import("../components/mockups/toast-tutorials/SoloTutorial.tsx"),
