@@ -25,3 +25,8 @@ returns the nearest available spots instead, so the deck is never empty.
 - A keyless reverse-geocode proxy (OSM Nominatim) is acceptable (same provider
   the app already uses for maps), but it must be per-IP rate limited and use a
   bounded cache.
+- When a location picker reverse-geocodes for a *display* label (Solo "What
+  sounds good?" mirrors Group "Set the Plan"), gate the primary action button on
+  *coords arrival*, not on the geocode finishing — the decision only needs
+  coords; the area name is cosmetic. Blocking the CTA on the name lookup
+  needlessly stalls the main action.

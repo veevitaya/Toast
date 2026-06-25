@@ -159,6 +159,8 @@ export default function SoloJourney() {
   const [locQuery, setLocQuery] = useState("");
   const [useCurrentLoc, setUseCurrentLoc] = useState(false);
   const [nearMeCoords, setNearMeCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [nearMeLabel, setNearMeLabel] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
   const [budget, setBudget] = useState<string | null>(null);
   const [dining, setDining] = useState<string | null>(null);
 
@@ -284,6 +286,8 @@ export default function SoloJourney() {
   const toggleLoc = (id: string) => {
     setUseCurrentLoc(false);
     setNearMeCoords(null);
+    setNearMeLabel(null);
+    setLocating(false);
     setLocQuery("");
     setSelectedLocs((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   };
@@ -292,6 +296,8 @@ export default function SoloJourney() {
     if (useCurrentLoc) {
       setUseCurrentLoc(false);
       setNearMeCoords(null);
+      setNearMeLabel(null);
+      setLocating(false);
       return;
     }
     setSelectedLocs([]);
@@ -301,14 +307,29 @@ export default function SoloJourney() {
       return;
     }
     setUseCurrentLoc(true);
+    setNearMeLabel(null);
+    setLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => setNearMeCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setNearMeCoords({ lat: latitude, lng: longitude });
+        try {
+          const r = await fetch(`/api/geocode/reverse?lat=${latitude}&lng=${longitude}`);
+          if (r.ok) {
+            const data = await r.json();
+            if (data?.name) setNearMeLabel(String(data.name));
+          }
+        } catch {}
+        setLocating(false);
+      },
       () => {
         setUseCurrentLoc(false);
         setNearMeCoords(null);
+        setNearMeLabel(null);
+        setLocating(false);
         toast({ title: t("soloJourney.location_denied") });
       },
-      { timeout: 8000, maximumAge: 60000 },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
     );
   };
 
@@ -316,6 +337,8 @@ export default function SoloJourney() {
     setSelectedLocs([]);
     setUseCurrentLoc(false);
     setNearMeCoords(null);
+    setNearMeLabel(null);
+    setLocating(false);
     setLocQuery("");
     setBudget(null);
     setDining(null);
@@ -400,9 +423,11 @@ export default function SoloJourney() {
 
   // ---- Derived values for the intent (fine-tune) UI ----
   const greeting = greetingFor(new Date().getHours());
-  // "Near me" is chosen but coordinates haven't resolved yet.
-  const locating = useCurrentLoc && !nearMeCoords;
   const locLabel = (id: string) => t(`soloJourney.loc_${id}`);
+  // "Near me" tapped but GPS coordinates haven't resolved yet — gates the decide
+  // CTA. The decision only needs coords; the reverse-geocoded area name is
+  // cosmetic and resolves separately (driving the location-row label).
+  const awaitingCoords = useCurrentLoc && !nearMeCoords;
   const q = locQuery.trim().toLowerCase();
   const locResults = useMemo(
     () => (q ? LOCATIONS.filter((l) => locLabel(l.id).toLowerCase().includes(q)) : []),
@@ -420,7 +445,7 @@ export default function SoloJourney() {
   const moodLabel = mood ? t(`soloJourney.${MOODS.find((m) => m.id === mood)?.key}`) : null;
   const budgetLabel = budget ? t(`soloJourney.budget_${budget}`) : null;
   const diningLabel = dining ? t(`soloJourney.dining_${dining}`) : null;
-  const locationLabels = useCurrentLoc ? [t("soloJourney.near_me")] : selectedLocObjs.map((l) => locLabel(l.id));
+  const locationLabels = useCurrentLoc ? [nearMeLabel || t("soloJourney.near_me")] : selectedLocObjs.map((l) => locLabel(l.id));
   const locationCount = useCurrentLoc ? 1 : selectedLocs.length;
   const filterCount = locationCount + (budget ? 1 : 0) + (dining ? 1 : 0);
 
@@ -593,7 +618,7 @@ export default function SoloJourney() {
 
                           {useCurrentLoc ? (
                             <span className="flex min-h-[44px] flex-1 items-center text-[14px] font-semibold text-foreground" data-testid="text-current-location">
-                              {locating ? t("soloJourney.locating") : t("soloJourney.current_location")}
+                              {locating ? t("soloJourney.locating") : (nearMeLabel || t("soloJourney.current_location"))}
                             </span>
                           ) : (
                             <input
@@ -604,7 +629,7 @@ export default function SoloJourney() {
                               onChange={(e) => {
                                 const v = e.target.value;
                                 setLocQuery(v);
-                                if (v.trim()) { setUseCurrentLoc(false); setNearMeCoords(null); }
+                                if (v.trim()) { setUseCurrentLoc(false); setNearMeCoords(null); setNearMeLabel(null); setLocating(false); }
                               }}
                               data-testid="input-location-search"
                               placeholder={t("soloJourney.location_search_ph")}
@@ -823,15 +848,15 @@ export default function SoloJourney() {
               <div className="sticky bottom-0 -mx-5">
                 <div className="h-6 bg-gradient-to-t from-background to-transparent" aria-hidden="true" />
                 <div className="bg-background px-5 pb-4">
-                  {(!mood || locating) && (
+                  {(!mood || awaitingCoords) && (
                     <p className="mb-2 text-center text-[12.5px] text-muted-foreground" data-testid="text-cta-hint">
-                      {locating ? t("soloJourney.locating") : t("soloJourney.cta_hint")}
+                      {awaitingCoords ? t("soloJourney.locating") : t("soloJourney.cta_hint")}
                     </p>
                   )}
                   <button
                     type="button"
                     onClick={handleDecide}
-                    disabled={!mood || locating}
+                    disabled={!mood || awaitingCoords}
                     className="flex w-full items-center justify-center gap-2 rounded-full bg-[#FFCC02] px-6 py-4 text-[16px] font-bold text-black shadow-[0_10px_30px_-8px_rgba(255,204,2,0.6)] transition-all active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
                     data-testid="button-decide"
                   >
