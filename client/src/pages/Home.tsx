@@ -19,7 +19,7 @@ import { useWeatherGreeting } from "@/hooks/use-weather-greeting";
 import { MODE_TO_VIBE } from "@shared/vibeConfig";
 import { ToastDecides } from "@/components/ToastDecides";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import toastLogoPath from "@/assets/toast_logo_v3_nobg.png";
+import toastLogoPath from "@/assets/toast_logo_v4_nobg.png";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import toastCharPath from "@assets/toast-solo-cropped.png";
 import toastWafflePath from "@assets/duo-highfive-cropped.png";
