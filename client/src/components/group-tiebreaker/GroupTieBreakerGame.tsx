@@ -194,7 +194,6 @@ function IntroSplash({ gameType, onContinue }: { gameType: string; onContinue: (
         src={img}
         alt={isRps ? "Toast versus Waffle" : "Longest fry wins"}
         className="w-full max-w-[300px] object-contain mb-7"
-        style={{ filter: "drop-shadow(0 18px 26px rgba(0,0,0,0.18))" }}
         initial={{ opacity: 0, scale: 0.6 }}
         animate={{ opacity: 1, scale: 1, y: [0, -10, 0] }}
         transition={{

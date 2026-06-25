@@ -346,7 +346,7 @@ function DestinationScreen({
       }}
     >
       {/* hero */}
-      <div className="relative w-full shrink-0 overflow-hidden" style={{ height: "min(430px, 52dvh)" }}>
+      <div className="relative w-full shrink-0 overflow-hidden" style={{ height: "min(560px, 62dvh)" }}>
         {hasImg ? (
           <div
             className="absolute inset-0 bg-cover bg-center"

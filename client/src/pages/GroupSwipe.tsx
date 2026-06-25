@@ -1952,9 +1952,9 @@ export default function GroupSwipe() {
 
         <div className="flex-1 overflow-y-auto flex flex-col items-center justify-start pt-[max(env(safe-area-inset-top),2.5rem)] px-5 pb-4">
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", damping: 15, stiffness: 200 }}
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", damping: 16, stiffness: 220 }}
             className="mb-2"
           >
             <div
@@ -1968,7 +1968,7 @@ export default function GroupSwipe() {
           <motion.h1
             initial={{ y: 16, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+            transition={{ delay: 0.08, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
             className="text-[26px] sm:text-[32px] font-semibold text-center mb-1"
           >
             {t("group_swipe.its_a_match")}
@@ -1976,7 +1976,7 @@ export default function GroupSwipe() {
           <motion.p
             initial={{ y: 16, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+            transition={{ delay: 0.16, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
             className="text-muted-foreground text-center mb-3 text-[14px] sm:text-[15px] leading-snug max-w-[260px]"
           >
             {t("group_swipe.everyone_agreed", { name: matchedItem.name })}
@@ -1984,7 +1984,7 @@ export default function GroupSwipe() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.3 }}
+            transition={{ delay: 0.22, duration: 0.3 }}
             className="flex flex-wrap justify-center gap-2 mb-4"
           >
             {members.map((m, i) => (
@@ -2012,7 +2012,7 @@ export default function GroupSwipe() {
           <motion.div
             initial={{ y: 24, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.6, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            transition={{ delay: 0.3, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
             className="w-full max-w-[280px] rounded-[20px] overflow-hidden"
             style={{ boxShadow: "0 20px 60px -15px rgba(0,0,0,0.18)" }}
             data-testid={`match-card-${matchedItem.id}`}
