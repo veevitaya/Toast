@@ -4,6 +4,7 @@ import { ArrowLeft, RotateCcw, Play } from "lucide-react";
 import { Shell } from "@/components/group-tiebreaker/shared";
 import type { DisplayItem, TieBreakerMember } from "@/components/group-tiebreaker/shared";
 import { FryView } from "@/components/group-tiebreaker/FryView";
+import { DestinationReveal } from "@/components/group-tiebreaker/DestinationReveal";
 import type { GroupTieBreaker } from "@shared/schema";
 
 // Reveal-only preview for the "Longest Fry" tie-breaker. It mounts the REAL resolved
@@ -14,6 +15,33 @@ import type { GroupTieBreaker } from "@shared/schema";
 const cmToLen = (cm: number) => (cm - 7) / 9; // inverse of lenToCm in FryView
 const FINAL_ITEM_ID = 9001;
 const ME = "you";
+
+// Frozen-on-confetti stills of the shared destination reveal — one where the winner
+// is a RESTAURANT, one where it's a winning MENU dish (served at a restaurant).
+const RESTO_ITEM: DisplayItem = {
+  id: FINAL_ITEM_ID,
+  name: "Err Urban Rustic Thai",
+  sub: "Thai • Rustic",
+  place: "Err Urban Rustic Thai",
+  image: "https://images.unsplash.com/photo-1559314809-0d155014e29e?w=800&auto=format&fit=crop&q=60",
+  rating: "4.7",
+  area: "Phra Nakhon",
+  price: "฿฿",
+  emoji: "🍛",
+  cuisine: "Rustic Thai comfort food, charcoal-grilled",
+};
+const MENU_ITEM: DisplayItem = {
+  ...RESTO_ITEM,
+  name: "Pad Krapow Moo Krob",
+  sub: "Crispy pork basil stir-fry",
+  emoji: "🌶️",
+};
+
+function initialRevealMode(): "restaurant" | "menu" | null {
+  if (typeof window === "undefined") return null;
+  const r = new URLSearchParams(window.location.search).get("reveal");
+  return r === "restaurant" || r === "menu" ? r : null;
+}
 
 type Racer = { id: string; name: string; cm: number };
 type Scenario = { key: string; title: string; blurb: string; racers: Racer[] };
@@ -127,6 +155,25 @@ export default function FryRevealPreview() {
   const [, navigate] = useLocation();
   const [scKey, setScKey] = useState<string | null>(initialScenarioKey);
   const [runId, setRunId] = useState(0);
+
+  const revealMode = useMemo(initialRevealMode, []);
+  if (revealMode) {
+    return (
+      <Shell testId="fry-reveal-confetti-preview">
+        <DestinationReveal
+          item={revealMode === "menu" ? MENU_ITEM : RESTO_ITEM}
+          pickLabel="Your pick"
+          bannerText="YOUR LONGEST FRY"
+          subline="Your fry was the longest — the table's headed here."
+          isHost
+          onFinish={() => {}}
+          finishing={false}
+          devFreezePhase="reveal"
+          testId="fry-confetti-preview"
+        />
+      </Shell>
+    );
+  }
 
   const scenario = SCENARIOS.find((s) => s.key === scKey) || null;
   // eslint-disable-next-line react-hooks/exhaustive-deps

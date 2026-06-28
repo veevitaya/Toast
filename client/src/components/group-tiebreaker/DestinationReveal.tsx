@@ -16,6 +16,9 @@ export type DestinationRevealProps = {
   onFinish: () => void;
   finishing: boolean;
   testId?: string;
+  /** Dev-only: pin a phase (e.g. the confetti "reveal") for deterministic
+   * screenshots instead of running the one-shot timeline. */
+  devFreezePhase?: Phase;
 };
 
 const CONFETTI_COLORS = ["#FFCC02", "#FFE17D", "#FF8A3D", "#FFF4D6", "#FFFFFF", "#FFB300"];
@@ -33,10 +36,12 @@ export function DestinationReveal({
   onFinish,
   finishing,
   testId,
+  devFreezePhase,
 }: DestinationRevealProps) {
-  const [phase, setPhase] = useState<Phase>("sealed");
+  const [phase, setPhase] = useState<Phase>(devFreezePhase ?? "sealed");
 
   useEffect(() => {
+    if (devFreezePhase) return;
     const timers = [
       setTimeout(() => setPhase("lifting"), 1500),
       setTimeout(() => setPhase("reveal"), 2350),
@@ -46,7 +51,7 @@ export function DestinationReveal({
       setTimeout(() => setPhase("payoff"), 5600),
     ];
     return () => timers.forEach(clearTimeout);
-  }, []);
+  }, [devFreezePhase]);
 
   const lidGone = phase !== "sealed";
   const isReveal = phase === "reveal" || phase === "payoff";

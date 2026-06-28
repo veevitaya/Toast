@@ -239,3 +239,15 @@ id = "IpfbD-9_Znfr8ZTLWrgEL"
 uri = "file://screenshots/mg-fry-4-reveal.jpg"
 type = "image"
 title = "Longest Fry — 4. The reveal"
+
+[[outputs]]
+id = "gl0QzEPErzG_4rcGiYqvN"
+uri = "file://screenshots/confetti-restaurant.jpg"
+type = "image"
+title = "Confetti reveal — winning RESTAURANT"
+
+[[outputs]]
+id = "OHEN9T_7HO9RKmn34MaZO"
+uri = "file://screenshots/confetti-menu.jpg"
+type = "image"
+title = "Confetti reveal — winning MENU dish (served at a restaurant)"
