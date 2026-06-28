@@ -359,7 +359,9 @@ export function DestinationReveal({
                   height: c.h,
                   perspective: "500px",
                   ["--sway" as any]: `${c.sway}px`,
-                  animation: `tbd-confettiFall ${c.dur}s linear ${c.delay}s infinite`,
+                  // `backwards` holds the off-screen (-10vh, opacity 0) start state
+                  // during the stagger delay so flakes don't sit stuck at the top edge.
+                  animation: `tbd-confettiFall ${c.dur}s linear ${c.delay}s infinite backwards`,
                 } as CSSProperties
               }
             >

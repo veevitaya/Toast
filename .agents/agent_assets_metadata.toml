@@ -244,10 +244,10 @@ title = "Longest Fry — 4. The reveal"
 id = "gl0QzEPErzG_4rcGiYqvN"
 uri = "file://screenshots/confetti-restaurant.jpg"
 type = "image"
-title = "Confetti reveal — winning RESTAURANT"
+title = "Confetti reveal — winning RESTAURANT (fixed)"
 
 [[outputs]]
 id = "OHEN9T_7HO9RKmn34MaZO"
 uri = "file://screenshots/confetti-menu.jpg"
 type = "image"
-title = "Confetti reveal — winning MENU dish (served at a restaurant)"
+title = "Confetti reveal — winning MENU dish (fixed)"
