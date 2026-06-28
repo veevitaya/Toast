@@ -62,28 +62,34 @@ export function DestinationReveal({
   const destName = item.place || item.name;
   const dish = item.place && item.place !== item.name ? item.name : null;
 
-  // One-shot pop that bursts out from the screen centre. Flakes are thin paper
-  // rectangles (a few round foil dots) with a random tilt + tumble speed so the
-  // 3D flip animation reads as real confetti rather than flying dots.
-  const burst = useMemo(
+  // Confetti-cannon blast: flakes fire UP and inward from the two bottom corners,
+  // arc to an apex, then fall back down — a real celebration shot rather than a flat
+  // radial pop. Flakes are thin paper rectangles (a few round foil dots) with a random
+  // tilt + tumble speed so the 3D flip reads as real confetti, not flying dots.
+  const cannon = useMemo(
     () =>
-      Array.from({ length: 30 }).map((_, i) => {
-        const angle = Math.random() * Math.PI * 2;
-        const velocity = 140 + Math.random() * 240;
+      Array.from({ length: 48 }).map((_, i) => {
+        const fromLeft = i % 2 === 0;
+        const dir = fromLeft ? 1 : -1;
         const w = 5 + Math.random() * 6;
         const round = Math.random() < 0.18;
+        const reach = (80 + Math.random() * 300) * dir; // horizontal travel (toward centre)
+        const peak = 360 + Math.random() * 380; // apex height above the corner (px)
+        const drop = 460 + Math.random() * 420; // distance fallen past the floor (px)
         return {
           id: i,
+          fromLeft,
           w,
           h: round ? w : w * (1.3 + Math.random() * 1.4),
           round,
-          tx: Math.cos(angle) * velocity,
-          ty: Math.sin(angle) * velocity,
-          g: 140 + Math.random() * 200,
+          x1: reach * (0.5 + Math.random() * 0.18), // horizontal offset at apex
+          x2: reach, // horizontal offset at the end of the fall
+          peak,
+          drop,
           tilt: (Math.random() - 0.5) * 50,
           tdur: 0.5 + Math.random() * 0.9,
-          delay: Math.random() * 0.12,
-          dur: 1.1 + Math.random() * 0.7,
+          delay: Math.random() * 0.18,
+          dur: 1.7 + Math.random() * 1.2,
           color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
         };
       }),
@@ -317,20 +323,21 @@ export function DestinationReveal({
       {/* ===== CONFETTI ===== */}
       {isReveal && (
         <div className="tbd-decor pointer-events-none absolute inset-0 z-40 overflow-hidden">
-          {/* one-shot pop from the centre */}
-          {burst.map((c) => (
+          {/* confetti-cannon blast up from the two bottom corners */}
+          {cannon.map((c) => (
             <span
-              key={`burst-${c.id}`}
-              className="absolute left-1/2 top-1/2"
+              key={`cannon-${c.id}`}
+              className={`absolute bottom-0 ${c.fromLeft ? "left-0" : "right-0"}`}
               style={
                 {
                   width: c.w,
                   height: c.h,
                   perspective: "500px",
-                  ["--tx" as any]: `${c.tx}px`,
-                  ["--ty" as any]: `${c.ty}px`,
-                  ["--g" as any]: `${c.g}px`,
-                  animation: `tbd-confettiBurst ${c.dur}s cubic-bezier(0.16,0.84,0.44,1) ${c.delay}s forwards`,
+                  ["--x1" as any]: `${c.x1}px`,
+                  ["--x2" as any]: `${c.x2}px`,
+                  ["--peak" as any]: `${c.peak}px`,
+                  ["--drop" as any]: `${c.drop}px`,
+                  animation: `tbd-confettiCannon ${c.dur}s linear ${c.delay}s forwards`,
                 } as CSSProperties
               }
             >

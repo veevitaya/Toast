@@ -687,12 +687,14 @@ input:focus {
 .animate-ring-pop { animation: tbRingPop 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
 /* Destination reveal (graduated tie-breaker winner cinematic) — namespaced tbd-* */
-/* outer wrapper: explosive pop from centre, arcs out fast then sags with gravity */
-@keyframes tbd-confettiBurst {
-  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
-  10% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  60% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))); opacity: 1; }
-  100% { transform: translate(calc(-50% + var(--tx) * 1.06), calc(-50% + var(--ty) + var(--g))); opacity: 0; }
+/* outer wrapper: confetti-cannon shot — fires up & inward from a bottom corner,
+   decelerates to an apex (gravity bleeding off the upward speed), then accelerates
+   back down past the floor. Per-segment easings make the arc read as real physics. */
+@keyframes tbd-confettiCannon {
+  0%   { transform: translate(0, 0) scale(0.4); opacity: 0; animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1); }
+  6%   { transform: translate(calc(var(--x1) * 0.16), calc(var(--peak) * -0.42)) scale(1); opacity: 1; animation-timing-function: cubic-bezier(0.1, 0.62, 0.32, 1); }
+  42%  { transform: translate(var(--x1), calc(var(--peak) * -1)) scale(1); opacity: 1; animation-timing-function: cubic-bezier(0.5, 0, 0.78, 0.5); }
+  100% { transform: translate(var(--x2), var(--drop)) scale(1); opacity: 0; }
 }
 /* outer wrapper: floaty flutter fall, swaying side to side like real paper */
 @keyframes tbd-confettiFall {
