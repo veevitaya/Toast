@@ -243,33 +243,6 @@
 .emoji-rise { animation: emoji-rise-kf 0.45s ease-in-out 1; }
 .emoji-slide { animation: emoji-slide-kf 0.45s ease-in-out 1; }
 
-@keyframes confetti-fall {
-  0% { transform: translateY(-10px) rotate(0deg) translateZ(0); opacity: 1; }
-  100% { transform: translateY(100vh) rotate(720deg) translateZ(0); opacity: 0; }
-}
-
-@keyframes confetti-explode {
-  0% {
-    transform: translate(0, 0) rotate(0deg) scale(0) translateZ(0);
-    opacity: 1;
-  }
-  10% {
-    transform: translate(calc(var(--tx) * 0.3), calc(var(--ty) * 0.3)) rotate(calc(var(--spin) * 0.3)) scale(1.2) translateZ(0);
-    opacity: 1;
-  }
-  40% {
-    transform: translate(calc(var(--tx) * 0.8), calc(var(--ty) * 0.7)) rotate(calc(var(--spin) * 0.7)) scale(1) translateZ(0);
-    opacity: 1;
-  }
-  70% {
-    transform: translate(var(--tx), var(--ty-end)) rotate(var(--spin)) scale(0.8) translateZ(0);
-    opacity: 0.7;
-  }
-  100% {
-    transform: translate(var(--tx), calc(var(--ty-end) + 120px)) rotate(var(--spin)) scale(0.3) translateZ(0);
-    opacity: 0;
-  }
-}
 
 @keyframes deal-bounce {
   0%, 100% { transform: translateY(0) rotate(0deg); }

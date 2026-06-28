@@ -174,45 +174,59 @@ const RESTAURANT_MODES = new Set(["saved", "partner", "fancy", "spicy", "healthy
 function ConfettiExplosion() {
   const colors = ["#FF385C", "#FFD700", "#00A699", "#FC642D", "#7B61FF", "#00D1C1", "#FF6B6B", "#4ECDC4", "#FFE66D", "#A855F7"];
   const shapes = ["circle", "rect", "star", "strip"];
+  // Confetti-cannon blast: pieces fire UP and inward from the two bottom corners,
+  // arc to an apex, then fall back down — same realistic celebration as the
+  // tie-breaker reveal (shared tbd-confettiCannon / tbd-confettiTumble keyframes).
   const pieces = useMemo(() =>
     Array.from({ length: 120 }).map((_, i) => {
-      const angle = (Math.random() * 360) * (Math.PI / 180);
-      const velocity = 200 + Math.random() * 500;
+      const fromLeft = i % 2 === 0;
+      const dir = fromLeft ? 1 : -1;
+      const reach = (80 + Math.random() * 340) * dir;
       return {
         id: i,
-        tx: Math.cos(angle) * velocity,
-        ty: Math.sin(angle) * velocity * -1,
-        tyEnd: 300 + Math.random() * 400,
-        spin: (Math.random() - 0.5) * 1080,
+        fromLeft,
+        x1: reach * (0.5 + Math.random() * 0.18),
+        x2: reach,
+        peak: 380 + Math.random() * 440,
+        drop: 480 + Math.random() * 460,
+        tilt: (Math.random() - 0.5) * 50,
+        tdur: 0.5 + Math.random() * 0.9,
         color: colors[Math.floor(Math.random() * colors.length)],
         shape: shapes[Math.floor(Math.random() * shapes.length)],
-        size: 4 + Math.random() * 8,
-        delay: Math.random() * 0.15,
+        size: 5 + Math.random() * 7,
+        delay: Math.random() * 0.18,
         duration: 1.8 + Math.random() * 1.2,
       };
     }), []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-[200]">
+    <div className="fixed inset-0 pointer-events-none z-[200] overflow-hidden">
       {pieces.map(p => (
-        <div
+        <span
           key={p.id}
-          className="absolute"
+          className={`absolute bottom-0 ${p.fromLeft ? "left-0" : "right-0"}`}
           style={{
-            top: "40%",
-            left: "50%",
-            width: p.shape === "strip" ? p.size * 0.3 : p.size,
-            height: p.shape === "circle" ? p.size : p.size * (p.shape === "strip" ? 2.5 : 0.6),
-            borderRadius: p.shape === "circle" ? "50%" : p.shape === "star" ? "2px" : "1px",
-            backgroundColor: p.color,
-            animation: `confetti-explode ${p.duration}s cubic-bezier(0.25,0.46,0.45,0.94) ${p.delay}s forwards`,
-            ["--tx" as any]: `${p.tx}px`,
-            ["--ty" as any]: `${p.ty}px`,
-            ["--ty-end" as any]: `${p.tyEnd}px`,
-            ["--spin" as any]: `${p.spin}deg`,
-            clipPath: p.shape === "star" ? "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)" : undefined,
+            width: p.shape === "strip" ? p.size * 0.35 : p.size,
+            height: p.shape === "circle" ? p.size : p.size * (p.shape === "strip" ? 2.6 : 0.62),
+            perspective: "500px",
+            ["--x1" as any]: `${p.x1}px`,
+            ["--x2" as any]: `${p.x2}px`,
+            ["--peak" as any]: `${p.peak}px`,
+            ["--drop" as any]: `${p.drop}px`,
+            animation: `tbd-confettiCannon ${p.duration}s linear ${p.delay}s forwards`,
           }}
-        />
+        >
+          <span
+            className="block h-full w-full"
+            style={{
+              backgroundColor: p.color,
+              borderRadius: p.shape === "circle" ? "50%" : p.shape === "star" ? "2px" : "1px",
+              clipPath: p.shape === "star" ? "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)" : undefined,
+              ["--tilt" as any]: `${p.tilt}deg`,
+              animation: `tbd-confettiTumble ${p.tdur}s linear ${p.delay}s infinite`,
+            }}
+          />
+        </span>
       ))}
     </div>
   );
