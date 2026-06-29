@@ -209,10 +209,12 @@ export default function GroupSetup() {
     const sessionId = await getOrCreateSessionId();
 
     if (profile) {
-      sessionStorage.setItem("toast_group_host_profile", JSON.stringify(profile));
+      // Persist host identity in localStorage (NOT sessionStorage) so it survives
+      // closing the tab/window — otherwise a returning host is treated as a guest.
+      localStorage.setItem("toast_group_host_profile", JSON.stringify(profile));
       localStorage.setItem("toast_guest_profile", JSON.stringify(profile));
     }
-    sessionStorage.setItem("toast_group_host_session", sessionId);
+    localStorage.setItem("toast_group_host_session", sessionId);
     try {
       sessionStorage.setItem("toast_group_plan", JSON.stringify({ date: dateLabel, time: TIMES[timeIdx], area }));
     } catch {}

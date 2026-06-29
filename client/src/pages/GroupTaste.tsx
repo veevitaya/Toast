@@ -55,7 +55,7 @@ export default function GroupTaste() {
   const [hostOfSession, setHostOfSession] = useState(() => {
     try {
       const sid = new URLSearchParams(window.location.search).get("session");
-      return !!sid && sessionStorage.getItem("toast_group_host_session") === sid;
+      return !!sid && localStorage.getItem("toast_group_host_session") === sid;
     } catch {
       return false;
     }

@@ -492,7 +492,11 @@ export default function GroupSwipe() {
   const [showDishRestaurants, setShowDishRestaurants] = useState(false);
   const [loadingDishRestaurants, setLoadingDishRestaurants] = useState(false);
   const [notifiedPartials, setNotifiedPartials] = useState<Set<number>>(new Set());
-  const [isHost, setIsHost] = useState(false);
+  const [isHost, setIsHost] = useState(() => {
+    // Restore host status immediately on rejoin from the persisted marker so the
+    // host doesn't briefly appear as a regular member; the session poll re-confirms.
+    try { return !!sessionCode && localStorage.getItem("toast_group_host_session") === sessionCode; } catch { return false; }
+  });
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [sessionEnded, setSessionEnded] = useState(false);
   const [sessionUnavailable, setSessionUnavailable] = useState(false);
@@ -866,8 +870,11 @@ export default function GroupSwipe() {
           return;
         }
         setMembers(data.members);
-        if (profile && data.session?.hostLineUserId === profile.userId) {
-          setIsHost(true);
+        // Self-correcting host confirmation: once the profile is loaded, set host
+        // status both ways from the server's hostLineUserId so a stale local marker
+        // can never keep host UI on a non-host identity (shared device / switch).
+        if (profile) {
+          setIsHost(data.session?.hostLineUserId === profile.userId);
         }
         if (!cancelled && data.session?.status === "completed" && !sessionEndedRef.current) {
           setSessionEnded(true);

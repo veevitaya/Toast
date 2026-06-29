@@ -44,14 +44,14 @@ interface SessionData {
 
 function getHostProfile(): { userId: string; displayName: string; pictureUrl?: string } | null {
   try {
-    const raw = sessionStorage.getItem("toast_group_host_profile");
+    const raw = localStorage.getItem("toast_group_host_profile");
     if (raw) return JSON.parse(raw);
   } catch {}
   return null;
 }
 
 function isHost(sessionId: string): boolean {
-  return sessionStorage.getItem("toast_group_host_session") === sessionId;
+  return localStorage.getItem("toast_group_host_session") === sessionId;
 }
 
 export default function WaitingRoom() {
@@ -445,9 +445,13 @@ export default function WaitingRoom() {
 
   const memberCount = members.length;
   const canStart = memberCount >= 2;
+  // Before server metadata loads, the persisted local marker drives instant host UI.
+  // Once session + profile are loaded, trust the server's hostLineUserId so a stale
+  // marker can't grant host controls to the wrong identity.
   const isActuallyHost =
-    hostOfSession ||
-    (!!sessionInfo && !!profile && profile.userId === sessionInfo.hostLineUserId);
+    !!sessionInfo && !!profile
+      ? profile.userId === sessionInfo.hostLineUserId
+      : hostOfSession;
 
   const handleStartSwiping = async () => {
     if (!isActuallyHost || !profile) return;

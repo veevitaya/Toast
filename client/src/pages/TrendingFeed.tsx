@@ -705,7 +705,7 @@ export default function TrendingFeed() {
         });
       }
 
-      sessionStorage.setItem("toast_group_host_session", sessionCode);
+      localStorage.setItem("toast_group_host_session", sessionCode);
       navigate(`/group/waiting?session=${sessionCode}`);
     } catch {
       toast({

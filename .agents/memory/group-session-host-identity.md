@@ -29,6 +29,17 @@ In GroupSwipe the member identity used for per-member API calls (e.g. fetching g
 
 **How to apply:** destructure `loading` from `useLineProfile` and `return` early while it's true; add `loading` (and `profile?.userId`) to the effect deps. `useLineProfile` always flips `loading` to false (LINE profile or stable guest fallback), so gating never deadlocks. This yields a single load with identity known.
 
+# Host marker must persist in localStorage, not sessionStorage
+
+The "I am host of session X" marker (`toast_group_host_session` = sessionCode, `toast_group_host_profile` = host profile) must live in **localStorage**, written at EVERY session-creation entry point (the plan screen + the "make this a group" buttons on solo/trending/decides). `sessionStorage` is per-tab and wiped on window/tab close, so a host who closes and rejoins comes back as a plain member with all host controls gone.
+
+**Why:** the host's instant UI hint (waiting-room host view, GroupSwipe host buttons) is gated on this local marker; the server's `hostLineUserId` is only the async confirmation. With the marker in sessionStorage it vanished on close.
+
+**How to apply:**
+- Keep all writers/readers on localStorage (search both keys before adding a new creation path).
+- For same-browser rejoin this also recovers LINE hosts, because session creation caches the host profile (LINE or guest id) into `localStorage.toast_guest_profile`, so `useLineProfile`'s fallback returns an id that still equals `hostLineUserId`.
+- Make host state **self-correcting**: once `profile` + server session metadata are loaded, set isHost BOTH ways from `hostLineUserId === profile.userId` (don't only ever set true). Otherwise a stale marker (shared device / identity switch) keeps host UI on a non-host. Before metadata loads, the local marker still drives instant host UI.
+
 # Group endpoints trust client-supplied lineUserId (app-wide pattern)
 
 All group-session endpoints (join, swipe, finalize-stats, complete, location, taste) identify the caller by the `lineUserId` in the request body/query plus a membership check — there is no signed per-member token for guests. LINE users can additionally pass `X-Line-Access-Token`, which the server verifies and uses to override the claimed id.
