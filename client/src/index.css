@@ -683,6 +683,17 @@ input:focus {
   0% { transform: rotateZ(var(--tilt)) rotateX(0deg) rotateY(0deg); }
   100% { transform: rotateZ(var(--tilt)) rotateX(360deg) rotateY(540deg); }
 }
+/* Swipe-match celebration confetti — a quick cannon burst that fires up & inward
+   from the bottom corners, decelerates toward the apex, and DISSOLVES in flight.
+   Unlike the tie-breaker reveal (which is covered by an opaque payoff card), this
+   overlay stays on screen, so pieces must fade out mid-air instead of hanging
+   opaque in the middle of the screen. */
+@keyframes swipe-confettiCannon {
+  0%   { transform: translate(0, 0) scale(0.4); opacity: 0; }
+  12%  { transform: translate(var(--x1), calc(var(--peak) * -0.62)) scale(1); opacity: 1; }
+  70%  { opacity: 0.7; }
+  100% { transform: translate(var(--x2), calc(var(--peak) * -1.05)) scale(0.7); opacity: 0; }
+}
 @keyframes tbd-domeBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes tbd-steamRise { 0% { transform: translateY(6px); opacity: 0; } 30% { opacity: 0.6; } 100% { transform: translateY(-26px); opacity: 0; } }
 @keyframes tbd-medallionPop { 0% { transform: scale(0.6); } 60% { transform: scale(1.08); } 100% { transform: scale(1); } }

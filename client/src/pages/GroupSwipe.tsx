@@ -66,9 +66,10 @@ interface RankedResult {
 function ConfettiExplosion() {
   const colors = ["#FF385C", "#FFD700", "#00A699", "#FC642D", "#7B61FF", "#00D1C1", "#FF6B6B", "#4ECDC4", "#FFE66D", "#A855F7"];
   const shapes = ["circle", "rect", "star", "strip"];
-  // Confetti-cannon blast: pieces fire UP and inward from the two bottom corners,
-  // arc to an apex, then fall back down — same realistic celebration as the
-  // tie-breaker reveal (shared tbd-confettiCannon / tbd-confettiTumble keyframes).
+  // Confetti-cannon burst: pieces fire UP and inward from the two bottom corners,
+  // decelerate toward an apex, and DISSOLVE in flight (fade out near the top)
+  // instead of hanging opaque in the middle of the screen. Uses swipe-confettiCannon
+  // (NOT the tie-breaker's tbd-confettiCannon, which is hidden by an opaque card).
   const pieces = useMemo(() =>
     Array.from({ length: 60 }).map((_, i) => {
       const fromLeft = i % 2 === 0;
@@ -87,7 +88,7 @@ function ConfettiExplosion() {
         shape: shapes[Math.floor(Math.random() * shapes.length)],
         size: 5 + Math.random() * 7,
         delay: Math.random() * 0.18,
-        duration: 1.8 + Math.random() * 1.2,
+        duration: 1.4 + Math.random() * 0.9,
       };
     }), []);
 
@@ -105,7 +106,7 @@ function ConfettiExplosion() {
             ["--x2" as any]: `${p.x2}px`,
             ["--peak" as any]: `${p.peak}px`,
             ["--drop" as any]: `${p.drop}px`,
-            animation: `tbd-confettiCannon ${p.duration}s linear ${p.delay}s forwards`,
+            animation: `swipe-confettiCannon ${p.duration}s cubic-bezier(0.16, 0.72, 0.24, 1) ${p.delay}s forwards`,
           }}
         >
           <span
