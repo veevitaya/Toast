@@ -117,6 +117,27 @@
   animation: page-in 0.18s ease-out both;
 }
 
+/* Skeleton shimmer — a light sweep over a muted base, for loading placeholders */
+@keyframes shimmer-sweep {
+  100% { transform: translateX(100%); }
+}
+.skeleton-base {
+  position: relative;
+  overflow: hidden;
+  background: hsl(var(--muted));
+}
+.skeleton-base::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.55), transparent);
+  animation: shimmer-sweep 1.5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-base::after { animation: none; }
+}
+
 .aspect-hero { aspect-ratio: 16/9; }
 .aspect-thumb { aspect-ratio: 16/10; }
 .aspect-card { aspect-ratio: 3/2; }
