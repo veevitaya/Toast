@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useRestaurants } from "@/hooks/use-restaurants";
 import { LoadingMascot } from "@/components/LoadingMascot";
 import { BottomNav } from "@/components/BottomNav";
-import { fadeUp, staggerContainer, staggerItem, pressable } from "@/lib/motion";
+import { fadeUp, staggerContainer, popItem, squishable } from "@/lib/motion";
 import drunkToastImg from "@assets/drunk_toast_nobg.png";
 
 const MOCK_RESTAURANTS_BY_MENU: Record<string, Array<{ id: number; name: string; category: string; rating: string; priceLevel: number; address: string; imageUrl: string; description: string; sponsored?: boolean }>> = {
@@ -245,8 +245,8 @@ export default function RestaurantList() {
           {restaurants.map((r: any, idx: number) => (
             <motion.div
               key={r.id}
-              variants={staggerItem}
-              {...pressable}
+              variants={popItem}
+              {...(reduce ? {} : squishable)}
               className={`flex gap-4 bg-white rounded-2xl cursor-pointer p-1 relative ${isBars ? "animate-drunk-sway" : ""}`}
               style={{
                 boxShadow: r.sponsored ? "0 2px 16px -3px rgba(234,179,8,0.15)" : "0 2px 12px -3px rgba(0,0,0,0.06)",

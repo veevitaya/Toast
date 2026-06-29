@@ -1,4 +1,6 @@
 import { useState, useCallback, memo } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { squishable } from "@/lib/motion";
 import { FoodIconFromEmoji, emojiToIconName } from "./FoodIcon";
 
 const EMOJI_ANIMATIONS: Record<string, string> = {
@@ -49,14 +51,30 @@ interface EmojiFilterProps {
   active?: boolean;
   onClick: () => void;
   variant?: "default" | "pill" | "wide";
+  pillId?: string;
+}
+
+function ActiveRing({ pillId }: { pillId: string }) {
+  const reduce = useReducedMotion();
+  if (reduce) {
+    return <div className="absolute inset-0 rounded-2xl ring-2 ring-[#FFCC02] pointer-events-none" />;
+  }
+  return (
+    <motion.div
+      layoutId={pillId}
+      className="absolute inset-0 rounded-2xl ring-2 ring-[#FFCC02] pointer-events-none"
+      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+    />
+  );
 }
 
 const cardBase = "bg-white dark:bg-card border border-gray-100/80 dark:border-border";
 const cardShadow = "0 3px 12px -4px rgba(0,0,0,0.06), 0 1px 4px -1px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.8)";
 const cardActiveShadow = "0 6px 24px -6px rgba(0,0,0,0.10), 0 2px 6px -2px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9)";
 
-export const EmojiFilter = memo(function EmojiFilter({ emoji, label, description, active = false, onClick, variant = "default" }: EmojiFilterProps) {
+export const EmojiFilter = memo(function EmojiFilter({ emoji, label, description, active = false, onClick, variant = "default", pillId }: EmojiFilterProps) {
   const [animating, setAnimating] = useState(false);
+  const reduce = useReducedMotion();
 
   const handleClick = useCallback(() => {
     setAnimating(true);
@@ -68,48 +86,54 @@ export const EmojiFilter = memo(function EmojiFilter({ emoji, label, description
 
   if (variant === "pill") {
     return (
-      <button
+      <motion.button
+        {...(reduce ? {} : squishable)}
         onClick={handleClick}
         data-testid={`filter-${label.toLowerCase().replace(/\s/g, '-')}`}
-        className={`flex-1 flex items-center gap-3 px-5 py-4 rounded-2xl text-left transition-all duration-200 active:scale-[0.97] gpu-accelerated ${cardBase}`}
+        className={`relative flex-1 flex items-center gap-3 px-5 py-4 rounded-2xl text-left transition-all duration-200 gpu-accelerated ${cardBase}`}
         style={{ boxShadow: active ? cardActiveShadow : cardShadow }}
       >
+        {active && pillId && <ActiveRing pillId={pillId} />}
         <AnimatedIcon emoji={emoji} size={32} playing={animating} />
         <div>
           <span className={`font-semibold text-sm block ${active ? "text-foreground" : ""}`}>{label}</span>
           {description && <span className="text-xs text-muted-foreground">{description}</span>}
         </div>
-      </button>
+      </motion.button>
     );
   }
 
   if (variant === "wide") {
     return (
-      <button
+      <motion.button
+        {...(reduce ? {} : squishable)}
         onClick={handleClick}
         data-testid={`filter-${label.toLowerCase().replace(/\s/g, '-')}`}
-        className={`w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-left transition-all duration-200 active:scale-[0.97] gpu-accelerated ${cardBase}`}
+        className={`relative w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-left transition-all duration-200 gpu-accelerated ${cardBase}`}
         style={{ boxShadow: active ? cardActiveShadow : cardShadow }}
       >
+        {active && pillId && <ActiveRing pillId={pillId} />}
         <AnimatedIcon emoji={emoji} size={32} playing={animating} />
         <div>
           <span className={`font-semibold text-sm ${active ? "text-foreground" : ""}`}>{label}</span>
           {description && <span className="text-xs text-muted-foreground ml-2">{description}</span>}
         </div>
-      </button>
+      </motion.button>
     );
   }
 
   return (
-    <button
+    <motion.button
+      {...(reduce ? {} : squishable)}
       onClick={handleClick}
       data-testid={`filter-${label.toLowerCase().replace(/\s/g, '-')}`}
-      className={`flex flex-col items-center justify-center px-3 py-4 rounded-2xl text-center transition-all duration-200 min-w-0 active:scale-[0.95] gpu-accelerated ${cardBase}`}
+      className={`relative flex flex-col items-center justify-center px-3 py-4 rounded-2xl text-center transition-all duration-200 min-w-0 gpu-accelerated ${cardBase}`}
       style={{ boxShadow: active ? cardActiveShadow : cardShadow }}
     >
+      {active && pillId && <ActiveRing pillId={pillId} />}
       <AnimatedIcon emoji={emoji} size={28} playing={animating} />
       <span className={`font-semibold text-xs leading-tight mt-1.5 ${active ? "text-foreground" : ""}`}>{label}</span>
-    </button>
+    </motion.button>
   );
 });
 

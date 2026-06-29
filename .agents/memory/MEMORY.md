@@ -11,4 +11,5 @@
 - [Toast asset tracking](toast-asset-tracking.md) — `attached_assets/`/`@assets` is git-ignored; ship images you commit from `client/src/assets/` via `@/assets/...` (mascots precedent).
 - [Tie-breaker DisplayItem naming](tiebreaker-displayitem-naming.md) — destination UI must title with item.place||item.name; menu-mode name is the dish, place is the restaurant.
 - [Group endpoint host auth](group-endpoint-host-auth.md) — host/member gates must verify `x-line-access-token` (override body id), not trust body `lineUserId`; `hostLineUserId` is public so body-id-only gating is spoofable.
+- [Toast motion conventions](toast-motion-conventions.md) — new transform presets (squishable) reduce-gate per call-site (pressable is the un-gated exception); tilt gates on hover+fine pointer; layoutId pills need unique id per region.
 - [Confetti keyframes](confetti-keyframes.md) — uncovered swipe-match confetti must dissolve in flight (swipe-confettiCannon); tie-breaker's cannon only looks ok because a card covers it ~3.25s.

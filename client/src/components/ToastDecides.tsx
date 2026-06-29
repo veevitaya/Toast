@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo, memo, lazy, Suspense } from "react";
 import { fetchWithTimeout } from "@/lib/queryClient";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useLocation } from "wouter";
 import {
   Sparkles, ArrowRight, X, ChevronDown, RotateCcw, Zap,
@@ -12,6 +12,8 @@ import { sendGroupInviteNoRedirect } from "@/lib/liff";
 import { trackDecisionEvent } from "@/lib/decisionEvents";
 import { useToast } from "@/hooks/use-toast";
 import { useBootstrapSession, type BootstrapPayload } from "@/hooks/useBootstrapSession";
+import { CountUp } from "@/components/motion-primitives";
+import { squishable } from "@/lib/motion";
 import mascotPath from "@assets/toast_mascot_nobg.png";
 import toastWaitingPath from "@assets/toast-waiting-cropped.png";
 
@@ -138,12 +140,13 @@ const ScoreBar = memo(function ScoreBar({ label, value, color }: { label: string
           style={{ backgroundColor: color }}
         />
       </div>
-      <span className="text-[11px] font-semibold text-foreground w-[28px] text-right">{value}%</span>
+      <span className="text-[11px] font-semibold text-foreground w-[28px] text-right"><CountUp value={value} />%</span>
     </div>
   );
 });
 
 const InsightCard = memo(function InsightCard({ rec, rank }: { rec: PersonalizedRec; rank: number }) {
+  const reduce = useReducedMotion();
   const [, navigate] = useLocation();
   const scores = rec.scores || { taste: 60, daypart: 50, popularity: 70, value: 65 };
   const isTop = rank === 0;
@@ -236,7 +239,8 @@ const InsightCard = memo(function InsightCard({ rec, rank }: { rec: Personalized
         )}
 
         <motion.button
-          whileTap={{ scale: 0.96 }}
+          whileTap={reduce ? undefined : squishable.whileTap}
+          transition={reduce ? undefined : squishable.transition}
           onClick={() => navigate(`/restaurant/${rec.id}`)}
           className={`w-full h-11 rounded-xl font-semibold text-[13px] flex items-center justify-center gap-2 ${
             isTop
@@ -317,7 +321,7 @@ const TasteDNAPanel = memo(function TasteDNAPanel({ recs }: { recs: Personalized
             <div className="w-10 h-10 rounded-xl mx-auto mb-1 flex items-center justify-center" style={{ backgroundColor: `${color}15` }}>
               <Icon className="w-4 h-4" style={{ color }} />
             </div>
-            <p className="text-[13px] font-bold text-foreground">{avgScores[key]}%</p>
+            <p className="text-[13px] font-bold text-foreground"><CountUp value={avgScores[key]} />%</p>
             <p className="text-[9px] text-muted-foreground">{label}</p>
           </div>
         ))}

@@ -43,9 +43,26 @@ export const staggerItem: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: DUR.base, ease: EASE_OUT } },
 };
 
+// --- Pop-scale list entrance (use as the stagger child where a livelier pop fits) ---
+export const popItem: Variants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    transition: { type: "spring", stiffness: 480, damping: 24, mass: 0.7 },
+  },
+};
+
 // --- Press feedback for tappable cards/buttons ---
 export const pressable = {
   whileTap: { scale: 0.97 },
+  transition: springSnappy,
+} as const;
+
+// --- Squish press: gentle non-uniform compress for tappables (opt-in; not for
+// image-heavy cards that already tilt). Settles with a snappy spring. ---
+export const squishable = {
+  whileTap: { scaleX: 1.02, scaleY: 0.95 },
   transition: springSnappy,
 } as const;
 

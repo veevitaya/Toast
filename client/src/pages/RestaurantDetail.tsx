@@ -13,6 +13,7 @@ import { SaveBucketPicker } from "@/components/SaveBucketPicker";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { handleImageError } from "@/lib/imageUtils";
 import { RestaurantCampaignBanner, getDealLabel } from "@/components/CampaignBanner";
+import { Reveal } from "@/components/motion-primitives";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import type { Campaign } from "@shared/schema";
 import noodsPhoto1 from "@assets/IMG_9279_1772025468067.jpeg";
@@ -356,7 +357,7 @@ export default function RestaurantDetail() {
   const todayHours = MOCK_HOURS.find((h) => h.day === today);
 
   return (
-    <div className="w-full h-[100dvh] overflow-y-auto hide-scrollbar bg-background pb-40" data-testid="restaurant-detail-page">
+    <div className="w-full h-[100dvh] overflow-y-auto overflow-x-hidden hide-scrollbar bg-background pb-40" data-testid="restaurant-detail-page">
       <div className="relative w-full h-72 overflow-hidden">
         <div
           ref={scrollRef}
@@ -503,7 +504,7 @@ export default function RestaurantDetail() {
 
         <ToastSponsoredSection restaurantId={restaurant.id} />
 
-        <div className="border-t border-gray-100/80 pt-5 mb-5">
+        <Reveal index={0} className="border-t border-gray-100/80 pt-5 mb-5">
           <button
             onClick={() => setShowHours(!showHours)}
             className="w-full flex items-center justify-between py-2"
@@ -543,17 +544,17 @@ export default function RestaurantDetail() {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </Reveal>
 
-        <div className="flex items-center gap-3 py-3 border-t border-gray-100/80 mb-5">
+        <Reveal index={1} className="flex items-center gap-3 py-3 border-t border-gray-100/80 mb-5">
           <span className="text-lg">📞</span>
           <div>
             <p className="font-bold text-sm">{t("restaurant.phone")}</p>
             <p className="text-sm text-muted-foreground">+66 2-XXX-XXXX</p>
           </div>
-        </div>
+        </Reveal>
 
-        <div className="border-t border-gray-100/80 pt-5 mb-6">
+        <Reveal index={2} className="border-t border-gray-100/80 pt-5 mb-6">
           <h2 className="font-bold text-lg mb-4">{t("restaurant.reviews")}</h2>
           <div className="space-y-5">
             {MOCK_REVIEWS.map((review, idx) => (
@@ -576,9 +577,9 @@ export default function RestaurantDetail() {
               </div>
             ))}
           </div>
-        </div>
+        </Reveal>
 
-        <div className="border-t border-gray-100/80 pt-5 mb-6">
+        <Reveal index={3} className="border-t border-gray-100/80 pt-5 mb-6">
           <h2 className="font-bold text-lg mb-3">{t("restaurant.location")}</h2>
           <div className="w-full h-40 rounded-2xl overflow-hidden border border-gray-100" style={{ isolation: "isolate" }}>
             <LocationMap
@@ -587,7 +588,7 @@ export default function RestaurantDetail() {
               name={restaurant.name}
             />
           </div>
-        </div>
+        </Reveal>
       </div>
 
       <div className="fixed left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100/80 px-6 py-3 z-50 flex gap-3" style={{ bottom: "calc(52px + max(env(safe-area-inset-bottom, 0px), 16px))" }}>

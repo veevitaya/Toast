@@ -8,6 +8,7 @@ import { LoadingMascot } from "./LoadingMascot";
 import { SaveBucketPicker } from "./SaveBucketPicker";
 import { useSavedRestaurants } from "@/hooks/use-saved-restaurants";
 import { handleImageError } from "@/lib/imageUtils";
+import { BlurImage, TiltCard } from "@/components/motion-primitives";
 
 function optimizeRowImage(url: string, width: number): string {
   if (!url || !url.includes("unsplash.com")) return url;
@@ -125,39 +126,41 @@ export const RestaurantRow = memo(function RestaurantRow({ title, subtitle, rest
             onClick={() => navigate(`/restaurant/${rest.id}`)}
             data-testid={`card-restaurant-${rest.id}`}
           >
-            <div
-              className={`w-full ${imageHeight} rounded-2xl overflow-hidden relative`}
-            >
-              <img
-                src={optimizeRowImage(rest.imageUrl, size === "xl" ? 300 : 200)}
-                alt={rest.name}
-                loading="lazy"
-                decoding="async"
-                className="w-full h-full object-cover"
-                draggable={false}
-                onError={handleImageError}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-              {rest.isNew && (
-                <div className="absolute top-2.5 left-2.5 bg-white/95 backdrop-blur-sm rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-foreground"
-                  style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
-                >
-                  New
-                </div>
-              )}
-              <HeartButton restaurantId={rest.id} restaurantName={rest.name} />
-            </div>
-            <div className="mt-2.5">
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-sm truncate flex-1">{rest.name}</h4>
-                <div className="flex items-center gap-0.5 ml-2">
-                  <span className="text-[10px]">★</span>
-                  <span className="text-xs font-medium">{rest.rating}</span>
-                </div>
+            <TiltCard>
+              <div
+                className={`w-full ${imageHeight} rounded-2xl overflow-hidden relative`}
+              >
+                <BlurImage
+                  src={optimizeRowImage(rest.imageUrl, size === "xl" ? 300 : 200)}
+                  alt={rest.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover"
+                  draggable={false}
+                  onError={handleImageError}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+                {rest.isNew && (
+                  <div className="absolute top-2.5 left-2.5 bg-white/95 backdrop-blur-sm rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-foreground"
+                    style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}
+                  >
+                    New
+                  </div>
+                )}
+                <HeartButton restaurantId={rest.id} restaurantName={rest.name} />
               </div>
-              <p className="text-xs text-muted-foreground truncate mt-0.5">{rest.category}</p>
-              <p className="text-xs text-muted-foreground mt-0.5 truncate">{"฿".repeat(rest.priceLevel)} · {rest.address}</p>
-            </div>
+              <div className="mt-2.5">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-sm truncate flex-1">{rest.name}</h4>
+                  <div className="flex items-center gap-0.5 ml-2">
+                    <span className="text-[10px]">★</span>
+                    <span className="text-xs font-medium">{rest.rating}</span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground truncate mt-0.5">{rest.category}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">{"฿".repeat(rest.priceLevel)} · {rest.address}</p>
+              </div>
+            </TiltCard>
           </motion.div>
         ))}
         <div className="flex-shrink-0 w-[2px]" aria-hidden="true" />

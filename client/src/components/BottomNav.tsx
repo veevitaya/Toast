@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useLocation } from "wouter";
 import { Search, TrendingUp, User, ArrowLeft } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
@@ -33,6 +33,7 @@ export function BottomNav({ showBack = true, onBack, hidden = false }: BottomNav
   const [location, navigate] = useLocation();
   const activeTab = getActiveTab(location);
   const { t } = useLanguage();
+  const reduce = useReducedMotion();
 
   const isHidden = hidden;
 
@@ -78,8 +79,18 @@ export function BottomNav({ showBack = true, onBack, hidden = false }: BottomNav
               className="relative flex flex-col items-center justify-center gap-1 px-3 py-1 transition-all duration-200"
               data-testid={`tab-${tab.key}`}
             >
+              {isActive &&
+                (reduce ? (
+                  <div className="absolute inset-0 rounded-xl bg-[#FFCC02]/15" />
+                ) : (
+                  <motion.div
+                    layoutId="navPill"
+                    className="absolute inset-0 rounded-xl bg-[#FFCC02]/15"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                ))}
               <Icon
-                className="transition-all duration-200"
+                className="relative z-10 transition-all duration-200"
                 style={{
                   width: 22,
                   height: 22,
@@ -88,7 +99,7 @@ export function BottomNav({ showBack = true, onBack, hidden = false }: BottomNav
                 strokeWidth={isActive ? 2.2 : 1.5}
               />
               <span
-                className={`text-[10px] leading-tight transition-colors duration-200 ${isActive ? "font-semibold" : "font-medium"}`}
+                className={`relative z-10 text-[10px] leading-tight transition-colors duration-200 ${isActive ? "font-semibold" : "font-medium"}`}
                 style={{ color: isActive ? BRAND_COLOR : "#9ca3af" }}
               >
                 {t(tab.labelKey)}

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { staggerContainer, staggerItem } from "@/lib/motion";
+import { staggerContainer, staggerItem, squishable } from "@/lib/motion";
+import { TextMask } from "@/components/motion-primitives";
 import { useLocation } from "wouter";
 import {
   Search, X, MapPin, ArrowRight, ChevronDown,
@@ -768,11 +769,15 @@ export default function Home() {
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
                 <h1
-                  className="text-[22px] font-bold text-foreground leading-[1.15] tracking-tight animate-page-in"
+                  className="text-[22px] font-bold text-foreground leading-[1.15] tracking-tight"
                   data-testid="text-greeting"
                 >
-                  {weatherGreeting.headline}<br />
-                  <span className="text-[15px] font-medium text-muted-foreground">{weatherGreeting.sub}</span>
+                  <TextMask
+                    lines={[
+                      { text: weatherGreeting.headline },
+                      { text: weatherGreeting.sub, className: "text-[15px] font-medium text-muted-foreground" },
+                    ]}
+                  />
                 </h1>
                 <div
                   className="flex items-center gap-2 mt-3 flex-wrap"
@@ -812,6 +817,7 @@ export default function Home() {
             >
               <motion.button
                 variants={staggerItem}
+                whileTap={reduce ? undefined : squishable.whileTap}
                 onClick={(e) => handleModeClickAnimated("/solo", e.currentTarget)}
                 data-testid="button-solo"
                 className="flex items-center justify-center gap-2.5 rounded-[20px] bg-white px-2.5 h-[100px] border border-gray-100 shadow-md overflow-hidden"
@@ -825,6 +831,7 @@ export default function Home() {
 
               <motion.button
                 variants={staggerItem}
+                whileTap={reduce ? undefined : squishable.whileTap}
                 onClick={(e) => handleModeClickAnimated("/group/setup", e.currentTarget)}
                 data-testid="button-group"
                 className="flex items-center justify-center gap-2.5 rounded-[20px] bg-white px-2.5 h-[100px] border border-gray-100 shadow-md overflow-hidden"

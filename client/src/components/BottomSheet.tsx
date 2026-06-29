@@ -366,21 +366,21 @@ export function BottomSheet({ activeMode, onModeChange, isGroup, onToggleGroup, 
                     {squareVibes.length > 0 && (
                       <div className="grid grid-cols-4 gap-2 mb-2">
                         {squareVibes.map(v => (
-                          <EmojiFilter key={v.mode} emoji={v.emoji} label={v.label} active={activeMode === v.mode} onClick={() => handleVibeClick(v)} />
+                          <EmojiFilter key={v.mode} emoji={v.emoji} label={v.label} active={activeMode === v.mode} onClick={() => handleVibeClick(v)} pillId="vibePillMain" />
                         ))}
                       </div>
                     )}
                     {wideRow1.length > 0 && (
                       <div className="grid grid-cols-2 gap-2 mb-2">
                         {wideRow1.map(v => (
-                          <EmojiFilter key={v.mode} emoji={v.emoji} label={v.label} active={activeMode === v.mode} onClick={() => handleVibeClick(v)} variant="wide" />
+                          <EmojiFilter key={v.mode} emoji={v.emoji} label={v.label} active={activeMode === v.mode} onClick={() => handleVibeClick(v)} variant="wide" pillId="vibePillMain" />
                         ))}
                       </div>
                     )}
                     {wideRow2.length > 0 && (
                       <div className="grid grid-cols-2 gap-2 mb-2">
                         {wideRow2.map(v => (
-                          <EmojiFilter key={v.mode} emoji={v.emoji} label={v.label} active={activeMode === v.mode} onClick={() => handleVibeClick(v)} variant="wide" />
+                          <EmojiFilter key={v.mode} emoji={v.emoji} label={v.label} active={activeMode === v.mode} onClick={() => handleVibeClick(v)} variant="wide" pillId="vibePillMain" />
                         ))}
                       </div>
                     )}
@@ -448,6 +448,7 @@ export function BottomSheet({ activeMode, onModeChange, isGroup, onToggleGroup, 
                                 navigate(`/solo/results${qs ? `?${qs}` : ""}`);
                               }}
                               variant="wide"
+                              pillId="vibePillModal"
                             />
                           </div>
                         ))}
