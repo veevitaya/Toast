@@ -168,7 +168,9 @@ export function SessionBar() {
           }
         });
       }
-    } catch {}
+    } catch (err) {
+      console.warn("SessionBar active-session reconciliation failed:", err);
+    }
   }, [profile?.userId, serverChecked, sessions]);
 
   useEffect(() => {

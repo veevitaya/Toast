@@ -863,6 +863,7 @@ export default function GroupSwipe() {
         }
         const data = await res.json();
         if (data.session?.status === "deleted") {
+          if (sessionCode) removeSession(sessionCode);
           setSessionUnavailable(true);
           return;
         }
@@ -879,6 +880,7 @@ export default function GroupSwipe() {
         }
         if (!cancelled && data.session?.status === "completed" && !sessionEndedRef.current) {
           setSessionEnded(true);
+          if (sessionCode) updateSession(sessionCode, { status: "completed", label: "View Results", route: `/group/swipe?session=${sessionCode}` });
         }
         pollFailCount.current = 0;
         setPollError(false);
@@ -1303,13 +1305,14 @@ export default function GroupSwipe() {
       // Ending simply wraps the session up and shows the results / top-picks page.
       // The tie-breaker mini-game is no longer auto-launched here — it is opt-in via
       // the "Can't decide?" button on the results page (handleStartTieBreaker).
-      await fetchWithTimeout(`/api/group/sessions/${sessionCode}/status`, {
+      const endRes = await fetchWithTimeout(`/api/group/sessions/${sessionCode}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "completed", lineUserId: profile.userId }),
       });
       setSessionEnded(true);
       setShowEndConfirm(false);
+      if (endRes.ok) updateSession(sessionCode, { status: "completed", label: "View Results", route: `/group/swipe?session=${sessionCode}` });
     } catch (err) {
       console.error("Failed to end session:", err);
     }
@@ -1403,12 +1406,17 @@ export default function GroupSwipe() {
   const handleTieBreakerComplete = useCallback((finalItemId: number, swipeType: string) => {
     setFinalPick({ id: finalItemId, swipeType });
     setTieBreakerActive(false);
+    const markLocalCompleted = () => {
+      if (sessionCode) updateSession(sessionCode, { status: "completed", label: "View Results", route: `/group/swipe?session=${sessionCode}` });
+    };
     if (isHost && sessionCode && profile) {
       fetchWithTimeout(`/api/group/sessions/${sessionCode}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "completed", lineUserId: profile.userId }),
-      }).catch(() => {});
+      }).then((res) => { if (res.ok) markLocalCompleted(); }).catch(() => {});
+    } else {
+      markLocalCompleted();
     }
 
     // After the mini-game settles, take everyone straight to the spot:
