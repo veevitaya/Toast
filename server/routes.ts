@@ -2643,7 +2643,7 @@ export async function registerRoutes(
       };
       const reviews = likeEvents.slice(0, 20).map((e, i) => {
         const rating = i % 5 <= 1 ? 5 : i % 5 === 2 ? 4 : i % 5 === 3 ? 3 : 2;
-        const daysDiff = Math.floor((Date.now() - new Date(e.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+        const daysDiff = Math.floor((Date.now() - new Date(e.timestamp).getTime()) / (1000 * 60 * 60 * 24));
         const dateStr = daysDiff === 0 ? "Today" : daysDiff === 1 ? "Yesterday" : daysDiff < 7 ? `${daysDiff} days ago` : daysDiff < 30 ? `${Math.ceil(daysDiff / 7)} weeks ago` : `${Math.ceil(daysDiff / 30)} months ago`;
         return {
           id: i + 1,
@@ -3481,7 +3481,7 @@ export async function registerRoutes(
       const input = schema.parse(req.body);
       const ownerId = req.ownerUser.id;
 
-      const restaurant = await storage.getRestaurant(input.restaurantId);
+      const restaurant = await storage.getRestaurantById(input.restaurantId);
       if (!restaurant) return res.status(404).json({ message: "Restaurant not found" });
 
       if (restaurant.ownerClaimStatus === "verified" || restaurant.ownerClaimStatus === "approved") {
@@ -5636,9 +5636,9 @@ export async function registerRoutes(
 
         const vibeCounts: Record<string, number> = {};
         for (const e of [...userEvents, ...partnerEvents]) {
-          if (e.eventType === "swipe_right" && e.metadata) {
+          if (e.eventType === "swipe_right" && e.metadataJson) {
             try {
-              const meta = typeof e.metadata === "string" ? JSON.parse(e.metadata) : e.metadata;
+              const meta = typeof e.metadataJson === "string" ? JSON.parse(e.metadataJson) : e.metadataJson;
               if (meta.vibes) {
                 for (const v of meta.vibes) {
                   vibeCounts[v] = (vibeCounts[v] || 0) + 1;

@@ -46,6 +46,10 @@ interface AdminSession {
   restaurantName?: string;
   isVerified?: boolean;
   subscriptionTier?: string;
+  teamMemberId?: number | null;
+  teamRole?: string | null;
+  id?: number;
+  _k?: string;
 }
 
 interface NavGroup {
