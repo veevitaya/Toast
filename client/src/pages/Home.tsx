@@ -741,11 +741,11 @@ export default function Home() {
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleModeClickAnimated("/group/setup", e.currentTarget); }}
-                      className="flex items-center rounded-2xl bg-white h-[72px] border border-gray-100 shadow-md overflow-hidden"
+                      className="flex items-center justify-center gap-2 rounded-2xl bg-white px-3 h-[72px] border border-gray-100 shadow-md"
                       data-testid="button-group-collapsed"
                     >
-                      <img src={toastWafflePath} alt="" className="h-[44px] w-auto object-contain flex-shrink-0 ml-1" />
-                      <div className="min-w-0 pr-3">
+                      <img src={toastWafflePath} alt="" className="h-[44px] w-auto object-contain flex-shrink-0" />
+                      <div className="min-w-0">
                         <p className="text-[14px] font-bold text-foreground leading-tight">{t("home.group_mode")}</p>
                         <p className="text-[10px] text-muted-foreground whitespace-nowrap">{t("home.with_friends")}</p>
                       </div>
