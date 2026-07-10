@@ -251,3 +251,9 @@ id = "OHEN9T_7HO9RKmn34MaZO"
 uri = "file://screenshots/confetti-menu.jpg"
 type = "image"
 title = "Confetti reveal — winning MENU dish (fixed)"
+
+[[outputs]]
+id = "O3PpP6fJSP_lJJzPZuLZR"
+uri = "file://exports/toast-copy-chart-en-th.xlsx"
+type = "table"
+title = "Toast Copy Chart — English / Thai (Main Screens)"
